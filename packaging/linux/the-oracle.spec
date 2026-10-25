@@ -26,5 +26,12 @@ a = Analysis(
     noarchive=False,
 )
 pyz = PYZ(a.pure)
-exe = EXE(pyz, a.scripts, a.binaries, a.datas, name="the-oracle", console=True)
+exe = EXE(
+    pyz,
+    a.scripts,
+    [],
+    exclude_binaries=True,
+    name="the-oracle",
+    console=True,
+)
 coll = COLLECT(exe, a.binaries, a.datas, name="the-oracle")

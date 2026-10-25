@@ -81,6 +81,7 @@ tools are not part of the shipped environment.
 | `charset-normalizer` | 3.4.9 | MIT | [source](https://github.com/jawah/charset_normalizer/blob/master/CHANGELOG.md) |
 | `chatterbox-tts` | 0.1.7+oracle1 | MIT | [source](https://github.com/resemble-ai/chatterbox) |
 | `click` | 8.5.0 | BSD-3-Clause | [source](https://click.palletsprojects.com/page/changes/) |
+| `cloudpickle` | 3.1.2 | BSD-3-Clause | [source](https://github.com/cloudpipe/cloudpickle) |
 | `conformer` | 0.3.2 | MIT | [source](https://github.com/lucidrains/conformer) |
 | `decorator` | 5.3.1 | BSD-3-Clause | — |
 | `deepmultilingualpunctuation` | 1.0.1 | MIT | [source](https://github.com/oliverguhr/deepmultilingualpunctuation) |
