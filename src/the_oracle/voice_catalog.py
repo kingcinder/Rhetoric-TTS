@@ -7,6 +7,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from the_oracle.models.cache import atomic_write
+
 
 @dataclass(frozen=True, slots=True)
 class VoiceChoice:
@@ -188,8 +190,8 @@ def save_blend_voice(
         "mode": mode,
     }
     payload["voices"] = [voice for voice in payload["voices"] if voice.get("name") != clean_name] + [entry]
-    catalog_path.parent.mkdir(parents=True, exist_ok=True)
-    catalog_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    text = json.dumps(payload, indent=2)
+    atomic_write(catalog_path, lambda temporary: temporary.write_text(text, encoding="utf-8"))
     return VoiceChoice(label=clean_name, path=str(derived), kind="blend")
 
 
@@ -250,8 +252,8 @@ def remove_blend_voice(profiles_dir: str | Path, name: str) -> bool:
     payload["voices"] = [voice for voice in payload["voices"] if voice.get("name") != name]
     if len(payload["voices"]) == before:
         return False
-    catalog_path.parent.mkdir(parents=True, exist_ok=True)
-    catalog_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    text = json.dumps(payload, indent=2)
+    atomic_write(catalog_path, lambda temporary: temporary.write_text(text, encoding="utf-8"))
     return True
 
 

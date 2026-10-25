@@ -1,5 +1,7 @@
 # Rhetoric
 
+The supported command name is `rhetoric`. The legacy `the-oracle` command remains available for existing installations.
+
 **Release V1.5.0 RC (engineering candidate; not approved for commercial release).**
 
 An isolated Linux managed install, doctor check, and real CPU render succeeded;

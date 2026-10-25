@@ -115,6 +115,32 @@ def test_manifest_round_trips_audio_cpp_knobs(tmp_path: Path) -> None:
     assert loaded.render_settings.audio_cpp_max_batch == 16
 
 
+@pytest.mark.parametrize("raw", ["null", "1"])
+def test_manifest_scalar_root_raises_typed_error(tmp_path: Path, raw: str) -> None:
+    manifest_path = tmp_path / "malformed.json"
+    manifest_path.write_text(raw, encoding="utf-8")
+
+    with pytest.raises(ProjectManifestError, match="root must be a JSON object"):
+        load_project_manifest(manifest_path)
+
+
+def test_manifest_default_artist_uses_rhetoric_brand(tmp_path: Path) -> None:
+    plan = RenderPlan(
+        title="t",
+        source_path="in.txt",
+        output_dir=str(tmp_path / "out"),
+        engine="chatterbox",
+        correction_mode="moderate",
+    )
+    settings = RenderSettings()
+    speakers = {
+        "A": SpeakerSettings(reference_path="a.wav", voice_settings=VoiceSettings()),
+        "B": SpeakerSettings(reference_path="b.wav", voice_settings=VoiceSettings()),
+    }
+
+    assert build_saved_project(plan, settings, speakers).artist == "Rhetoric"
+
+
 def test_manifest_round_trips_cuda_device_selection(tmp_path: Path) -> None:
     plan = RenderPlan(
         title="t",

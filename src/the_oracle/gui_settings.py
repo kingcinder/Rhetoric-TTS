@@ -13,6 +13,7 @@ from typing import Any
 from the_oracle.app_paths import normalize_output_filename
 from the_oracle.correction_modes import normalize_correction_mode
 from the_oracle.gui_utils import MAX_CAST_SPEAKERS, normalize_cast_keys
+from the_oracle.models.cache import atomic_write
 from the_oracle.models.project import VoiceSettings
 from the_oracle.models.settings import RenderSettings, SpeakerSettings
 from the_oracle.platform_support import app_config_dir
@@ -47,9 +48,8 @@ def recent_references_path() -> Path:
 
 def save_gui_settings(path: str | Path, payload: dict[str, Any]) -> Path:
     destination = Path(path)
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    destination.write_text(json.dumps(_normalize_payload(payload), indent=2, ensure_ascii=True), encoding="utf-8")
-    return destination
+    text = json.dumps(_normalize_payload(payload), indent=2, ensure_ascii=True)
+    return atomic_write(destination, lambda temporary: temporary.write_text(text, encoding="utf-8"))
 
 
 def load_gui_settings(path: str | Path) -> dict[str, Any]:
@@ -237,8 +237,8 @@ def load_app_settings() -> dict[str, Any]:
 def save_app_settings(payload: dict[str, Any]) -> Path:
     """Persist the app settings, normalizing so the file always round-trips."""
     path = app_settings_path()
-    path.write_text(json.dumps(_normalize_app_settings(payload), indent=2, ensure_ascii=True), encoding="utf-8")
-    return path
+    text = json.dumps(_normalize_app_settings(payload), indent=2, ensure_ascii=True)
+    return atomic_write(path, lambda temporary: temporary.write_text(text, encoding="utf-8"))
 
 
 def load_recent_reference_paths(limit: int = 10) -> list[str]:
@@ -267,7 +267,9 @@ def remember_recent_reference_path(path_value: str, limit: int = 10) -> None:
     normalized = str(Path(path_value).expanduser())
     existing = [item for item in load_recent_reference_paths(limit=limit * 2) if item != normalized]
     updated = [normalized, *existing][:limit]
-    recent_references_path().write_text(json.dumps(updated, indent=2, ensure_ascii=True), encoding="utf-8")
+    destination = recent_references_path()
+    text = json.dumps(updated, indent=2, ensure_ascii=True)
+    atomic_write(destination, lambda temporary: temporary.write_text(text, encoding="utf-8"))
 
 
 # ---------------------------------------------------------------------------

@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=75.8.0", "wheel"]
+requires = ["setuptools>=84.1.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -25,6 +25,7 @@ dependencies = [
   "soundfile==0.13.1",
   "symspellpy==6.9.0",
   "huggingface-hub==1.33.0",
+  "filelock>=4.2.1",
 ]
 
 [project.optional-dependencies]
@@ -50,6 +51,7 @@ dev = [
 ]
 
 [project.scripts]
+rhetoric = "the_oracle.cli:main"
 the-oracle = "the_oracle.cli:main"
 
 [tool.setuptools]

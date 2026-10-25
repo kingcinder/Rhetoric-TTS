@@ -88,7 +88,7 @@ def build_saved_project(plan: RenderPlan, render_settings: RenderSettings, speak
     return SavedProject(
         manifest_version=PROJECT_MANIFEST_VERSION,
         title=plan.title,
-        artist=plan.metadata.get("artist", "The Oracle"),
+        artist=plan.metadata.get("artist", "Rhetoric"),
         input_path=plan.source_path,
         output_path=plan.output_dir,
         engine="chatterbox",
@@ -117,6 +117,8 @@ def load_project_manifest(path: str | Path) -> SavedProject:
 
 
 def saved_project_from_dict(payload: dict[str, Any]) -> SavedProject:
+    if not isinstance(payload, dict):
+        raise ProjectManifestError("Project manifest root must be a JSON object.")
     required_fields = {
         "manifest_version",
         "title",
