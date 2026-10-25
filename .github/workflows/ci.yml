@@ -440,7 +440,7 @@ jobs:
           AUDIOCPP_MODELS_ROOT: ${{ runner.temp }}/oracle-vulkan-models
         run: |
           set -Eeuo pipefail
-          version="$(./.venv/bin/python -c 'from scripts.release import read_version; print(read_version("."))')"
+          version="$(./.venv/bin/python -c 'from pathlib import Path; from scripts.release import read_version; print(read_version(Path(".")))')"
           ./.venv/bin/python scripts/package_vulkan_binary.py \
             --binary "$PWD/audio.cpp/build/linux-vulkan-release/bin/audiocpp_cli" \
             --outdir release_artifacts/vulkan \
