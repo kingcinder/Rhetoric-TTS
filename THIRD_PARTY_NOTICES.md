@@ -82,6 +82,7 @@ tools are not part of the shipped environment.
 | `chatterbox-tts` | installed metadata | see installed metadata | — |
 | `click` | installed metadata | see installed metadata | — |
 | `cloudpickle` | installed metadata | see installed metadata | — |
+| `colorama` | installed metadata | see installed metadata | — |
 | `conformer` | installed metadata | see installed metadata | — |
 | `decorator` | installed metadata | see installed metadata | — |
 | `deepmultilingualpunctuation` | installed metadata | see installed metadata | — |

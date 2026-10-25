@@ -278,14 +278,43 @@ def _selected_requirements(pyproject: Path, extras: tuple[str, ...]) -> list[Req
     return requirements
 
 
+#: Platforms the release ships for. A platform-marked dependency counts when its
+#: marker holds on any of them, so the inventory does not depend on which OS
+#: runs the generator.
+_RELEASE_PLATFORMS: tuple[dict[str, str], ...] = (
+    {"sys_platform": "win32", "platform_system": "Windows", "os_name": "nt"},
+    {"sys_platform": "linux", "platform_system": "Linux", "os_name": "posix"},
+    {"sys_platform": "darwin", "platform_system": "Darwin", "os_name": "posix"},
+)
+
+
 def _marker_applies(requirement: Requirement) -> bool:
     if requirement.marker is None:
         return True
     try:
-        return requirement.marker.evaluate(default_environment())
+        base = default_environment()
+        return any(
+            requirement.marker.evaluate({**base, **platform}) for platform in _RELEASE_PLATFORMS
+        )
     except Exception:
         # A malformed marker must not silently shrink the inventory.
         return True
+
+
+#: Marker-gated runtime dependencies whose license facts are recorded here, so the
+#: notices do not depend on whether the machine running the generator has them
+#: installed. Each record was checked against the wheel's own metadata and
+#: LICENSE file. Installed copies still read their own metadata; this table is
+#: only the fallback for a missing distribution.
+_DECLARED_DISTRIBUTIONS: dict[str, Component] = {
+    "colorama": Component(
+        name="colorama",
+        version="0.4.6",
+        license="BSD-3-Clause",
+        kind="python",
+        source="https://github.com/tartley/colorama",
+    ),
+}
 
 
 def runtime_components(
@@ -314,6 +343,11 @@ def runtime_components(
             continue
         seen.add(name)
         dist = installations.get(name)
+        if dist is None and name in _DECLARED_DISTRIBUTIONS:
+            # Platform-gated dependency absent on this machine: use the recorded
+            # facts so the output matches a machine where it is installed.
+            components.append(_DECLARED_DISTRIBUTIONS[name])
+            continue
         if dist is None:
             # Keep an explicit missing entry: an uninstalled declared dependency
             # is a release-environment problem the caller should see.
