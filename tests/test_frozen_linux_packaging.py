@@ -59,6 +59,7 @@ def test_stage_appdir_uses_replaceable_runtime_and_keeps_user_data(tmp_path: Pat
     appdir = builder.stage_appdir(tmp_path / "AppDir", frozen)
 
     assert (appdir / "AppRun").is_file()
+    assert (appdir / "the-oracle.desktop").is_file()
     assert (appdir / "usr" / "bin" / "the-oracle").is_file()
     desktop = (appdir / "usr" / "share" / "applications" / "the-oracle.desktop").read_text(
         encoding="utf-8"

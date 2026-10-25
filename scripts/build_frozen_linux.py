@@ -104,7 +104,11 @@ def stage_appdir(appdir: Path, frozen_dist: Path) -> Path:
     launcher.chmod(launcher.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
     applications = appdir / "usr" / "share" / "applications"
     applications.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(REPO_ROOT / "packaging" / "linux" / "the-oracle.desktop", applications)
+    desktop = REPO_ROOT / "packaging" / "linux" / "the-oracle.desktop"
+    # AppImage tooling discovers the entry from the AppDir root; keep the
+    # freedesktop installation copy as well for installed .deb consumers.
+    shutil.copy2(desktop, appdir / desktop.name)
+    shutil.copy2(desktop, applications)
     icons = appdir / "usr" / "share" / "icons" / "hicolor" / "256x256" / "apps"
     icons.mkdir(parents=True, exist_ok=True)
     shutil.copy2(REPO_ROOT / "packaging" / "icons" / "oracle-tts-install.png", icons / "the-oracle.png")
