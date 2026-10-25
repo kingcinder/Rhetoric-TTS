@@ -13,6 +13,11 @@ from the_oracle import vulkan_prebuilt
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
+# scripts/package_vulkan_binary.py requires st_mode & 0o111. On Windows, chmod
+# cannot set exec bits; CPython reports them from the executable extension, so
+# the fixture uses the platform's executable name there.
+BINARY_NAME = "audiocpp_cli.exe" if sys.platform == "win32" else "audiocpp_cli"
+
 
 def _load_packager():
     spec = importlib.util.spec_from_file_location(
@@ -27,7 +32,7 @@ def _load_packager():
 
 def test_package_manifest_records_pinned_commit_and_hash(tmp_path: Path) -> None:
     packager = _load_packager()
-    binary = tmp_path / "audiocpp_cli"
+    binary = tmp_path / BINARY_NAME
     binary.write_bytes(b"vulkan binary")
     binary.chmod(0o755)
     artifacts = packager.package(binary, tmp_path / "out", version="1.5.0")
@@ -40,11 +45,11 @@ def test_package_manifest_records_pinned_commit_and_hash(tmp_path: Path) -> None
 
 def test_prebuilt_install_verifies_hash_and_extracts_binary(tmp_path: Path) -> None:
     packager = _load_packager()
-    binary = tmp_path / "audiocpp_cli"
+    binary = tmp_path / BINARY_NAME
     binary.write_bytes(b"vulkan binary")
     binary.chmod(0o755)
     artifacts = packager.package(binary, tmp_path / "out", version="1.5.0")
-    destination = tmp_path / "installed" / "audiocpp_cli"
+    destination = tmp_path / "installed" / BINARY_NAME
 
     installed = vulkan_prebuilt.install_from_manifest(artifacts.manifest, artifacts.archive, destination)
     assert installed == destination
@@ -54,7 +59,7 @@ def test_prebuilt_install_verifies_hash_and_extracts_binary(tmp_path: Path) -> N
 
 def test_prebuilt_install_refuses_changed_archive(tmp_path: Path) -> None:
     packager = _load_packager()
-    binary = tmp_path / "audiocpp_cli"
+    binary = tmp_path / BINARY_NAME
     binary.write_bytes(b"vulkan binary")
     binary.chmod(0o755)
     artifacts = packager.package(binary, tmp_path / "out", version="1.5.0")
@@ -62,13 +67,13 @@ def test_prebuilt_install_refuses_changed_archive(tmp_path: Path) -> None:
 
     with pytest.raises(vulkan_prebuilt.PrebuiltArtifactError, match="SHA-256"):
         vulkan_prebuilt.install_from_manifest(
-            artifacts.manifest, artifacts.archive, tmp_path / "installed" / "audiocpp_cli"
+            artifacts.manifest, artifacts.archive, tmp_path / "installed" / BINARY_NAME
         )
 
 
 def test_prebuilt_download_verifies_manifest_before_install(tmp_path: Path) -> None:
     packager = _load_packager()
-    binary = tmp_path / "audiocpp_cli"
+    binary = tmp_path / BINARY_NAME
     binary.write_bytes(b"vulkan binary")
     binary.chmod(0o755)
     artifacts = packager.package(binary, tmp_path / "out", version="1.5.0")
@@ -77,7 +82,7 @@ def test_prebuilt_download_verifies_manifest_before_install(tmp_path: Path) -> N
     def fetch(url: str, target: Path) -> None:
         target.write_bytes(files[Path(url).name])
 
-    destination = tmp_path / "installed" / "audiocpp_cli"
+    destination = tmp_path / "installed" / BINARY_NAME
     assert vulkan_prebuilt.download_and_install(
         "https://updates.example/manifest.json",
         f"https://updates.example/{artifacts.archive.name}",

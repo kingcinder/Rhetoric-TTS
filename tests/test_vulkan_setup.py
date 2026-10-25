@@ -70,6 +70,10 @@ def test_parse_model_export_extracts_path() -> None:
     assert vulkan_setup.parse_model_export("no export line here") == ""
 
 
+@pytest.mark.skipif(
+    sys.platform == "win32",
+    reason="model_download_plan runs the shebang script via bash; the Windows runner's bash.exe is the WSL stub with no distro installed",
+)
 def test_model_download_plan_reports_total_and_free_space(tmp_path: Path, monkeypatch) -> None:
     script = tmp_path / "download.sh"
     script.write_text("#!/bin/sh\nprintf 'check file size=120\\ncheck other size=80\\n'\n", encoding="utf-8")
@@ -84,6 +88,10 @@ def test_model_download_plan_reports_total_and_free_space(tmp_path: Path, monkey
     assert plan.has_space is True
 
 
+@pytest.mark.skipif(
+    sys.platform == "win32",
+    reason="model_download_plan runs the shebang script via bash; the Windows runner's bash.exe is the WSL stub with no distro installed",
+)
 def test_model_download_plan_refuses_when_free_space_is_insufficient(tmp_path: Path, monkeypatch) -> None:
     script = tmp_path / "download.sh"
     script.write_text("#!/bin/sh\nprintf 'check file size=1200\\n'\n", encoding="utf-8")
