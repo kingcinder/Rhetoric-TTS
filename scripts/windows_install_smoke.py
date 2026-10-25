@@ -303,6 +303,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     if "usage" not in tail.lower():
         raise SmokeFailure(f"the managed launcher printed no usage output:\n{tail}")
 
+    # This smoke is non-interactive. Record the current digest so the GUI can
+    # reach its main window; the real first-run click-through is unchanged.
+    from the_oracle import eula_acceptance
+
+    eula_acceptance.record_acceptance(REPO_ROOT)
+
     _step(f"launch the GUI through the Start Menu entry: {layout.start_menu_entry.name}")
     # A previous run's log must not be able to satisfy the wait.
     GUI_LAUNCH_LOG.unlink(missing_ok=True)
