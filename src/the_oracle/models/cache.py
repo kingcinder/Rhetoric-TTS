@@ -135,6 +135,20 @@ class CachePaths:
             path.mkdir(parents=True, exist_ok=True)
 
 
+def _is_within(candidate: Path, root: Path) -> bool:
+    """Case- and separator-insensitive containment check that also works on Windows.
+
+    ``Path.parents`` comparison is case-sensitive on Windows, so a root spelled
+    with different casing than the resolved candidate would be rejected even
+    though the path is inside it.
+    """
+    try:
+        return os.path.commonpath([os.path.normcase(str(candidate)), os.path.normcase(str(root))]) == os.path.normcase(str(root))
+    except ValueError:
+        # Different drives on Windows: cannot be contained.
+        return False
+
+
 class ProjectCache:
     @staticmethod
     def stem_cache_dir_for(project_dir: str | Path) -> Path:
@@ -207,7 +221,7 @@ class ProjectCache:
             raise ValueError(
                 f"Cache/export path cannot be resolved: {relative_path!r}."
             ) from exc
-        if resolved != root and root not in resolved.parents:
+        if not _is_within(resolved, root):
             raise ValueError(
                 f"Cache/export path escapes the project directory: {relative_path!r}."
             )

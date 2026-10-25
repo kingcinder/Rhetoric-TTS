@@ -146,6 +146,25 @@ def test_a_missing_measurement_on_one_side_is_a_difference(checker) -> None:
     assert "deterministic_smoke.runtime_seconds: 0.9 != <missing>" in found
 
 
+def test_an_unlicensed_run_skips_the_smoke_timing_without_failing(checker) -> None:
+    """A skipped smoke section legitimately lacks its timing field on both runs."""
+    left = _report(**{"deterministic_smoke": {"ok": True, "skipped": True}})
+    right = _report(**{"deterministic_smoke": {"ok": True, "skipped": True}})
+    left["deterministic_smoke"].pop("runtime_seconds", None)
+    right["deterministic_smoke"].pop("runtime_seconds", None)
+
+    assert checker.differences(left, right) == []
+
+
+def test_a_dropped_timing_in_a_live_smoke_section_still_fails(checker) -> None:
+    left = _report()
+    right = _report()
+    left["deterministic_smoke"].pop("runtime_seconds")
+    right["deterministic_smoke"].pop("runtime_seconds")
+
+    assert "deterministic_smoke.runtime_seconds: registered as a measurement but absent from the report" in checker.differences(left, right)
+
+
 def test_list_differences_are_reported_with_their_index(checker) -> None:
     left = _report()
     right = _report(**{"next_steps": ["first", "changed"]})

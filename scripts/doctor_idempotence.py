@@ -153,8 +153,32 @@ def differences(left: Any, right: Any, *, measured: tuple[str, ...] = MEASURED_F
     _compare(left, right, "", found, measured)
     for path in measured:
         if not _resolve(left, path)[0] and not _resolve(right, path)[0]:
+            if _skipped_on_both(left, right, path):
+                continue
             found.append(f"{path}: registered as a measurement but absent from the report")
     return found
+
+
+def _skipped_on_both(left: Any, right: Any, path: str) -> bool:
+    """True when the measurement's section is marked skipped in both reports.
+
+    An unlicensed doctor run skips the functional smoke entirely, so its
+    timing field is legitimately absent. Only an explicit ``skipped: true`` on
+    both sides excuses it; a renamed or dropped field in a live section still fails.
+    """
+    section = path.rsplit(".", 1)[0] if "." in path else None
+    if section is None:
+        return False
+    ok_left, node_left = _resolve(left, section)
+    ok_right, node_right = _resolve(right, section)
+    return (
+        ok_left
+        and ok_right
+        and isinstance(node_left, dict)
+        and isinstance(node_right, dict)
+        and node_left.get("skipped") is True
+        and node_right.get("skipped") is True
+    )
 
 
 def mask(report: Any) -> Any:
