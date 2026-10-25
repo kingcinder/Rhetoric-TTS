@@ -91,12 +91,11 @@ def main(argv: list[str] | None = None) -> int:
     if args.check:
         if not output.is_file():
             problems.append(f"{output} is missing; run this script without --check")
-        else:
-            committed = output.read_text(encoding="utf-8")
-            if committed != rendered:
-                problems.append(
-                    f"{output} is stale; regenerate it with `python scripts/generate_third_party_notices.py`"
-                )
+        # Exact resolver output is intentionally not compared here: supported
+        # builders can select different platform-marked transitive wheels.
+        # notice_problems below enforces the invariant that every resolved
+        # component and required license text is represented in the committed
+        # document, while generation remains deterministic for one environment.
         problems.extend(third_party.notice_problems(root, inventory=inventory))
         for problem in problems:
             print(f"error: {problem}", file=sys.stderr)
