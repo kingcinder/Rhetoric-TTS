@@ -70,97 +70,97 @@ tools are not part of the shipped environment.
 
 | Component | Version | License | Source |
 |---|---|---|---|
-| `annotated-doc` | installed metadata | MIT | [source](https://github.com/fastapi/annotated-doc) |
-| `antlr4-python3-runtime` | installed metadata | BSD-3-Clause | [source](http://www.antlr.org) |
-| `anyio` | installed metadata | MIT | [source](https://anyio.readthedocs.io/en/latest/) |
-| `audioread` | installed metadata | MIT | [source](https://github.com/beetbox/audioread/issues) |
-| `catalogue` | installed metadata | MIT | [source](https://github.com/explosion/catalogue) |
-| `certifi` | installed metadata | MPL-2.0 | [source](https://github.com/certifi/python-certifi) |
-| `cffi` | installed metadata | MIT-0 | [source](https://cffi.readthedocs.io/) |
-| `cfgv` | installed metadata | MIT | [source](https://github.com/asottile/cfgv) |
-| `charset-normalizer` | installed metadata | MIT | [source](https://github.com/jawah/charset_normalizer/blob/master/CHANGELOG.md) |
-| `chatterbox-tts` | installed metadata | MIT | [source](https://github.com/resemble-ai/chatterbox) |
-| `click` | installed metadata | BSD-3-Clause | [source](https://click.palletsprojects.com/page/changes/) |
-| `cloudpickle` | installed metadata | BSD-3-Clause | [source](https://github.com/cloudpipe/cloudpickle) |
-| `conformer` | installed metadata | MIT | [source](https://github.com/lucidrains/conformer) |
-| `decorator` | installed metadata | BSD-3-Clause | — |
-| `deepmultilingualpunctuation` | installed metadata | MIT | [source](https://github.com/oliverguhr/deepmultilingualpunctuation) |
-| `diffusers` | installed metadata | Apache-2.0 | [source](https://github.com/huggingface/diffusers) |
-| `distlib` | installed metadata | PSF-2.0 | [source](https://github.com/pypa/distlib) |
-| `editdistpy` | installed metadata | MIT | [source](https://github.com/mammothb/editdistpy/blob/master/CHANGELOG.md) |
-| `einops` | installed metadata | MIT | [source](https://github.com/arogozhnikov/einops) |
-| `filelock` | installed metadata | MIT | [source](https://py-filelock.readthedocs.io) |
-| `fsspec` | installed metadata | BSD-3-Clause | [source](https://filesystem-spec.readthedocs.io/en/latest/changelog.html) |
-| `h11` | installed metadata | MIT | [source](https://github.com/python-hyper/h11) |
-| `hf-xet` | installed metadata | Apache-2.0 | [source](https://huggingface.co/docs/hub/xet/index) |
-| `httpcore` | installed metadata | BSD-3-Clause | [source](https://www.encode.io/httpcore) |
-| `httpx` | installed metadata | BSD-3-Clause | [source](https://github.com/encode/httpx/blob/master/CHANGELOG.md) |
-| `huggingface_hub` | installed metadata | Apache-2.0 | [source](https://github.com/huggingface/huggingface_hub) |
-| `identify` | installed metadata | MIT | [source](https://github.com/pre-commit/identify) |
-| `idna` | installed metadata | BSD-3-Clause | [source](https://github.com/kjd/idna/blob/master/HISTORY.md) |
-| `importlib_metadata` | installed metadata | Apache-2.0 | [source](https://github.com/python/importlib_metadata) |
-| `Jinja2` | installed metadata | BSD-3-Clause | [source](https://jinja.palletsprojects.com/changes/) |
-| `joblib` | installed metadata | BSD-3-Clause | [source](https://joblib.readthedocs.io) |
-| `lazy-loader` | installed metadata | BSD-3-Clause | [source](https://scientific-python.org/specs/spec-0001/) |
-| `librosa` | installed metadata | ISC | [source](https://librosa.org) |
-| `llvmlite` | installed metadata | BSD-2-Clause AND Apache-2.0 WITH LLVM-exception | [source](http://llvmlite.readthedocs.io) |
-| `markdown-it-py` | installed metadata | MIT | [source](https://markdown-it-py.readthedocs.io) |
-| `MarkupSafe` | installed metadata | BSD-3-Clause | [source](https://palletsprojects.com/donate) |
-| `mdurl` | installed metadata | MIT | [source](https://github.com/executablebooks/mdurl) |
-| `ml_dtypes` | installed metadata | Apache-2.0 | [source](https://github.com/jax-ml/ml_dtypes) |
-| `mpmath` | installed metadata | BSD-3-Clause | [source](http://mpmath.org/) |
-| `msgpack` | installed metadata | Apache-2.0 | [source](https://msgpack.org/) |
-| `networkx` | installed metadata | BSD-3-Clause | [source](https://networkx.org/) |
-| `nodeenv` | installed metadata | BSD-3-Clause | [source](https://github.com/ekalinin/nodeenv) |
-| `numba` | installed metadata | BSD-3-Clause | [source](https://numba.pydata.org) |
-| `numpy` | installed metadata | BSD-3-Clause | [source](https://numpy.org) |
-| `omegaconf` | installed metadata | BSD-3-Clause | [source](https://github.com/omry/omegaconf) |
-| `onnx` | installed metadata | Apache-2.0 | [source](https://onnx.ai/) |
-| `packaging` | installed metadata | Apache-2.0 OR BSD-2-Clause | [source](https://packaging.pypa.io/) |
-| `pillow` | installed metadata | MIT-CMU | [source](https://pillow.readthedocs.io/en/stable/releasenotes/index.html) |
-| `platformdirs` | installed metadata | MIT | [source](https://platformdirs.readthedocs.io/en/latest/changelog.html) |
-| `pooch` | installed metadata | BSD-3-Clause | [source](https://www.fatiando.org/pooch) |
-| `pre_commit` | installed metadata | MIT | [source](https://github.com/pre-commit/pre-commit) |
-| `protobuf` | installed metadata | BSD-3-Clause | [source](https://developers.google.com/protocol-buffers/) |
-| `pycparser` | installed metadata | BSD-3-Clause | [source](https://github.com/eliben/pycparser) |
-| `pydub` | installed metadata | MIT | [source](http://pydub.com) |
-| `Pygments` | installed metadata | BSD-2-Clause | [source](https://pygments.org) |
-| `pyloudnorm` | installed metadata | MIT | [source](https://github.com/csteinmetz1/pyloudnorm) |
-| `PySide6` | installed metadata | LGPL-3.0 | [source](https://pyside.org) |
-| `PySide6_Addons` | installed metadata | LGPL-3.0 | [source](https://pyside.org) |
-| `PySide6_Essentials` | installed metadata | LGPL-3.0 | [source](https://pyside.org) |
-| `python-discovery` | installed metadata | MIT | [source](https://github.com/tox-dev/python-discovery/releases) |
-| `PyYAML` | installed metadata | MIT | [source](https://pyyaml.org/) |
-| `regex` | installed metadata | Apache-2.0 AND CNRI-Python | [source](https://github.com/mrabarnett/mrab-regex) |
-| `requests` | installed metadata | Apache-2.0 | [source](https://requests.readthedocs.io) |
-| `resemble-perth` | installed metadata | MIT | [source](https://github.com/resemble-ai/perth) |
-| `rich` | installed metadata | MIT | [source](https://rich.readthedocs.io/en/latest/) |
-| `s3tokenizer` | installed metadata | Apache-2.0 | [source](https://github.com/xingchensong/S3Tokenizer) |
-| `safetensors` | installed metadata | Apache-2.0 | [source](https://github.com/huggingface/safetensors) |
-| `scikit-learn` | installed metadata | BSD-3-Clause | [source](https://scikit-learn.org) |
-| `scipy` | installed metadata | BSD-3-Clause | [source](https://scipy.org/) |
-| `setuptools` | installed metadata | MIT | [source](https://github.com/pypa/setuptools) |
-| `shellingham` | installed metadata | ISC | [source](https://github.com/sarugaku/shellingham) |
-| `shiboken6` | installed metadata | LGPL-3.0 | [source](https://pyside.org) |
-| `sounddevice` | installed metadata | MIT | [source](https://python-sounddevice.readthedocs.io/) |
-| `soundfile` | installed metadata | BSD-3-Clause | [source](https://github.com/bastibe/python-soundfile) |
-| `soxr` | installed metadata | LGPL-2.1-or-later | [source](https://github.com/dofuuz/python-soxr) |
-| `spacy_pkuseg` | installed metadata | MIT | [source](https://github.com/explosion/spacy-pkuseg) |
-| `srsly` | installed metadata | MIT | [source](https://github.com/explosion/srsly) |
-| `sympy` | installed metadata | BSD-3-Clause | [source](https://sympy.org) |
-| `symspellpy` | installed metadata | MIT | [source](https://github.com/mammothb/symspellpy) |
-| `threadpoolctl` | installed metadata | BSD-3-Clause | [source](https://github.com/joblib/threadpoolctl) |
-| `tokenizers` | installed metadata | Apache-2.0 | [source](https://github.com/huggingface/tokenizers) |
-| `torch` | installed metadata | BSD-3-Clause | [source](https://pytorch.org/) |
-| `torchaudio` | installed metadata | BSD-3-Clause | [source](https://github.com/pytorch/audio) |
-| `torchvision` | installed metadata | BSD-3-Clause | [source](https://github.com/pytorch/vision) |
-| `tqdm` | installed metadata | MPL-2.0 | [source](https://tqdm.github.io) |
-| `transformers` | installed metadata | Apache-2.0 | [source](https://github.com/huggingface/transformers) |
-| `typer` | installed metadata | MIT | [source](https://github.com/fastapi/typer) |
-| `typing_extensions` | installed metadata | PSF-2.0 | [source](https://github.com/python/typing_extensions/issues) |
-| `urllib3` | installed metadata | MIT | [source](https://github.com/urllib3/urllib3/blob/main/CHANGES.rst) |
-| `virtualenv` | installed metadata | MIT | [source](https://thanks.dev/u/gh/gaborbernat) |
-| `zipp` | installed metadata | MIT | [source](https://github.com/jaraco/zipp) |
+| `annotated-doc` | installed metadata | see installed metadata | — |
+| `antlr4-python3-runtime` | installed metadata | see installed metadata | — |
+| `anyio` | installed metadata | see installed metadata | — |
+| `audioread` | installed metadata | see installed metadata | — |
+| `catalogue` | installed metadata | see installed metadata | — |
+| `certifi` | installed metadata | see installed metadata | — |
+| `cffi` | installed metadata | see installed metadata | — |
+| `cfgv` | installed metadata | see installed metadata | — |
+| `charset-normalizer` | installed metadata | see installed metadata | — |
+| `chatterbox-tts` | installed metadata | see installed metadata | — |
+| `click` | installed metadata | see installed metadata | — |
+| `cloudpickle` | installed metadata | see installed metadata | — |
+| `conformer` | installed metadata | see installed metadata | — |
+| `decorator` | installed metadata | see installed metadata | — |
+| `deepmultilingualpunctuation` | installed metadata | see installed metadata | — |
+| `diffusers` | installed metadata | see installed metadata | — |
+| `distlib` | installed metadata | see installed metadata | — |
+| `editdistpy` | installed metadata | see installed metadata | — |
+| `einops` | installed metadata | see installed metadata | — |
+| `filelock` | installed metadata | see installed metadata | — |
+| `fsspec` | installed metadata | see installed metadata | — |
+| `h11` | installed metadata | see installed metadata | — |
+| `hf-xet` | installed metadata | see installed metadata | — |
+| `httpcore` | installed metadata | see installed metadata | — |
+| `httpx` | installed metadata | see installed metadata | — |
+| `huggingface_hub` | installed metadata | see installed metadata | — |
+| `identify` | installed metadata | see installed metadata | — |
+| `idna` | installed metadata | see installed metadata | — |
+| `importlib_metadata` | installed metadata | see installed metadata | — |
+| `Jinja2` | installed metadata | see installed metadata | — |
+| `joblib` | installed metadata | see installed metadata | — |
+| `lazy-loader` | installed metadata | see installed metadata | — |
+| `librosa` | installed metadata | see installed metadata | — |
+| `llvmlite` | installed metadata | see installed metadata | — |
+| `markdown-it-py` | installed metadata | see installed metadata | — |
+| `MarkupSafe` | installed metadata | see installed metadata | — |
+| `mdurl` | installed metadata | see installed metadata | — |
+| `ml_dtypes` | installed metadata | see installed metadata | — |
+| `mpmath` | installed metadata | see installed metadata | — |
+| `msgpack` | installed metadata | see installed metadata | — |
+| `networkx` | installed metadata | see installed metadata | — |
+| `nodeenv` | installed metadata | see installed metadata | — |
+| `numba` | installed metadata | see installed metadata | — |
+| `numpy` | installed metadata | see installed metadata | — |
+| `omegaconf` | installed metadata | see installed metadata | — |
+| `onnx` | installed metadata | see installed metadata | — |
+| `packaging` | installed metadata | see installed metadata | — |
+| `pillow` | installed metadata | see installed metadata | — |
+| `platformdirs` | installed metadata | see installed metadata | — |
+| `pooch` | installed metadata | see installed metadata | — |
+| `pre_commit` | installed metadata | see installed metadata | — |
+| `protobuf` | installed metadata | see installed metadata | — |
+| `pycparser` | installed metadata | see installed metadata | — |
+| `pydub` | installed metadata | see installed metadata | — |
+| `Pygments` | installed metadata | see installed metadata | — |
+| `pyloudnorm` | installed metadata | see installed metadata | — |
+| `PySide6` | installed metadata | see installed metadata | — |
+| `PySide6_Addons` | installed metadata | see installed metadata | — |
+| `PySide6_Essentials` | installed metadata | see installed metadata | — |
+| `python-discovery` | installed metadata | see installed metadata | — |
+| `PyYAML` | installed metadata | see installed metadata | — |
+| `regex` | installed metadata | see installed metadata | — |
+| `requests` | installed metadata | see installed metadata | — |
+| `resemble-perth` | installed metadata | see installed metadata | — |
+| `rich` | installed metadata | see installed metadata | — |
+| `s3tokenizer` | installed metadata | see installed metadata | — |
+| `safetensors` | installed metadata | see installed metadata | — |
+| `scikit-learn` | installed metadata | see installed metadata | — |
+| `scipy` | installed metadata | see installed metadata | — |
+| `setuptools` | installed metadata | see installed metadata | — |
+| `shellingham` | installed metadata | see installed metadata | — |
+| `shiboken6` | installed metadata | see installed metadata | — |
+| `sounddevice` | installed metadata | see installed metadata | — |
+| `soundfile` | installed metadata | see installed metadata | — |
+| `soxr` | installed metadata | see installed metadata | — |
+| `spacy_pkuseg` | installed metadata | see installed metadata | — |
+| `srsly` | installed metadata | see installed metadata | — |
+| `sympy` | installed metadata | see installed metadata | — |
+| `symspellpy` | installed metadata | see installed metadata | — |
+| `threadpoolctl` | installed metadata | see installed metadata | — |
+| `tokenizers` | installed metadata | see installed metadata | — |
+| `torch` | installed metadata | see installed metadata | — |
+| `torchaudio` | installed metadata | see installed metadata | — |
+| `torchvision` | installed metadata | see installed metadata | — |
+| `tqdm` | installed metadata | see installed metadata | — |
+| `transformers` | installed metadata | see installed metadata | — |
+| `typer` | installed metadata | see installed metadata | — |
+| `typing_extensions` | installed metadata | see installed metadata | — |
+| `urllib3` | installed metadata | see installed metadata | — |
+| `virtualenv` | installed metadata | see installed metadata | — |
+| `zipp` | installed metadata | see installed metadata | — |
 
 ## Required notices
 

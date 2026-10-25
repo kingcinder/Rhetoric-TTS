@@ -510,8 +510,14 @@ def _table_row(component: Component) -> str:
     # produce different installed patch versions across supported Python and
     # OS builders. Keep the generated notice stable while retaining the exact
     # version in the installed wheel metadata shipped with each build.
-    version = "installed metadata" if component.kind == "python" else (component.version or "—")
-    return f"| `{component.name}` | {version} | {component.license or 'UNKNOWN'} | {source or '—'} |"
+    if component.kind == "python":
+        version = "installed metadata"
+        license_text = "see installed metadata"
+        source = "—"
+    else:
+        version = component.version or "—"
+        license_text = component.license or "UNKNOWN"
+    return f"| `{component.name}` | {version} | {license_text} | {source or '—'} |"
 
 
 def _required_notice(component: Component) -> str:
