@@ -1,0 +1,373 @@
+"""Single-engine Chatterbox adapter supporting standard, multilingual, and turbo variants."""
+
+from __future__ import annotations
+
+import logging
+import os
+import threading
+from time import perf_counter, time
+from dataclasses import dataclass
+from importlib.metadata import PackageNotFoundError, version
+from pathlib import Path
+from typing import Any
+
+import numpy as np
+from huggingface_hub import snapshot_download
+
+try:
+    from huggingface_hub.errors import LocalEntryNotFoundError
+except Exception:  # pragma: no cover - fallback for older huggingface_hub versions
+    LocalEntryNotFoundError = tuple()  # type: ignore[assignment]
+
+try:
+    from huggingface_hub.utils import LocalTokenNotFoundError
+except Exception:  # pragma: no cover - fallback for older huggingface_hub versions
+    LocalTokenNotFoundError = tuple()  # type: ignore[assignment]
+
+from the_oracle.models.cache import CachedReference, ProjectCache
+from the_oracle.models.pins import (
+    CHATTERBOX_MULTILINGUAL_PATTERNS,
+    CHATTERBOX_REPO,
+    CHATTERBOX_STANDARD_PATTERNS,
+    TURBO_ALLOW_PATTERNS as _PINNED_TURBO_PATTERNS,
+    TURBO_REPO_ID as _PINNED_TURBO_REPO,
+    pin_for,
+)
+from the_oracle.models.project import VoiceSettings, strip_pain_point_markers
+from the_oracle.platform_support import repo_python_display
+from the_oracle.utils.audio import (
+    DegenerateEngineOutput,
+    record_synthesis_retry,
+    sanitize_engine_audio,
+)
+from the_oracle.utils.hashing import hash_payload
+
+
+SUPPORTED_VARIANTS = ("standard", "multilingual", "turbo")
+TURBO_REPO_ID = _PINNED_TURBO_REPO
+TURBO_REVISION = pin_for(TURBO_REPO_ID)
+TURBO_ALLOW_PATTERNS = _PINNED_TURBO_PATTERNS
+
+LOGGER = logging.getLogger(__name__)
+
+
+class TurboModelError(RuntimeError):
+    """Raised when the turbo checkpoint cannot be prepared or initialized."""
+
+
+@dataclass(slots=True)
+class ChatterboxConditioning:
+    cache_id: str
+    path: Path
+    reference_hash: str
+    speaker: str
+    variant: str
+
+
+def _hf_token() -> str | None:
+    return os.getenv("HF_TOKEN") or os.getenv("HUGGING_FACE_HUB_TOKEN") or os.getenv("HUGGINGFACE_HUB_TOKEN")
+
+
+def _format_turbo_error(exc: Exception, *, cached_only: bool = False) -> str:
+    prefix = "Turbo checkpoint is not cached locally." if cached_only else "Turbo model initialization failed."
+    download_command = f"{repo_python_display()} scripts/download_models.py --variant turbo --device cpu"
+    if isinstance(exc, LocalTokenNotFoundError) or "Token is required (`token=True`)" in str(exc):
+        return (
+            f"{prefix} chatterbox-tts 0.1.7 forces HF auth for the public turbo checkpoint. "
+            "The Oracle bypasses that broken loader, but this environment still does not have a usable turbo checkpoint. "
+            f"Connect to the internet and run {download_command} "
+            "or set HF_TOKEN if your HF environment requires auth. "
+            f"Original error: {type(exc).__name__}: {exc}"
+        )
+    if isinstance(exc, LocalEntryNotFoundError):
+        return (
+            f"{prefix} Connect to the internet and run {download_command} "
+            "to prefetch the public turbo checkpoint."
+        )
+    return (
+        f"{prefix} Run {download_command} while online. "
+        f"Original error: {type(exc).__name__}: {exc}"
+    )
+
+
+def download_chatterbox_repo(*, local_files_only: bool = False) -> Path:
+    """Pinned, offline-safe checkout of the ``ResembleAI/chatterbox`` repo.
+
+    chatterbox-tts 0.1.7's own ``from_pretrained`` loaders call
+    ``hf_hub_download()`` without a revision (standard) or explicitly request
+    ``revision="main"`` (multilingual), so they would fetch the moving tip of
+    the repo. We bypass them: download the pinned commit once, then load with
+    ``from_local()``. With ``HF_HUB_OFFLINE=1`` (set by the managed launcher
+    on offline installs) this resolves purely from the local cache.
+    """
+    offline = local_files_only or os.environ.get("HF_HUB_OFFLINE", "").lower() in {"1", "true", "yes"}
+    return Path(
+        snapshot_download(
+            repo_id=CHATTERBOX_REPO,
+            revision=pin_for(CHATTERBOX_REPO),
+            token=_hf_token(),
+            local_files_only=offline,
+            allow_patterns=sorted(set(CHATTERBOX_STANDARD_PATTERNS) | set(CHATTERBOX_MULTILINGUAL_PATTERNS)),
+        )
+    )
+
+
+def download_turbo_checkpoint(*, local_files_only: bool = False) -> Path:
+    offline = local_files_only or os.environ.get("HF_HUB_OFFLINE", "").lower() in {"1", "true", "yes"}
+    return Path(
+        snapshot_download(
+            repo_id=TURBO_REPO_ID,
+            revision=TURBO_REVISION,
+            token=_hf_token(),
+            local_files_only=offline,
+            allow_patterns=TURBO_ALLOW_PATTERNS,
+        )
+    )
+
+
+def turbo_readiness_report(device: str = "cpu") -> dict[str, Any]:
+    payload: dict[str, Any] = {
+        "ok": False,
+        "cached": False,
+        "checkpoint_dir": "",
+        "device": device,
+        "error": "",
+    }
+    try:
+        checkpoint_dir = download_turbo_checkpoint(local_files_only=True)
+    except Exception as exc:
+        payload["error"] = _format_turbo_error(exc, cached_only=True)
+        return payload
+
+    payload["cached"] = True
+    payload["checkpoint_dir"] = str(checkpoint_dir)
+    try:
+        from chatterbox.tts_turbo import ChatterboxTurboTTS
+
+        model = ChatterboxTurboTTS.from_local(checkpoint_dir, device)
+    except Exception as exc:
+        payload["error"] = _format_turbo_error(exc)
+        return payload
+
+    payload["ok"] = True
+    payload["sample_rate"] = int(getattr(model, "sr", 0) or 0)
+    return payload
+
+
+class ChatterboxEngine:
+    engine_id = "chatterbox"
+
+    def __init__(self, variant: str = "standard", device: str | None = None, seed: int | None = None) -> None:
+        if variant not in SUPPORTED_VARIANTS:
+            raise ValueError(f"Unsupported Chatterbox variant: {variant}")
+        if seed is not None and seed < 0:
+            raise ValueError(f"seed must be a non-negative integer, got {seed!r}.")
+        self.variant = variant
+        self.device = device or self._detect_device()
+        self.seed = seed
+        self._model = None
+        self._condition_cls = None
+        self._languages = {"en": "English"}
+        self._loaded_conditioning: dict[str, Any] = {}
+        self._load_seconds: float | None = None
+        self._load_wall: float | None = None
+        # Guards the shared model object in synthesize(): assigning
+        # ``model.conds`` mutates engine-global state, so concurrent
+        # synthesize calls on one engine would cross-contaminate voices
+        # (utterance B rendered with utterance A's conditioning). The lock
+        # serializes the conds-swap + generate pair.
+        self._synthesize_lock = threading.Lock()
+
+    @property
+    def engine_version(self) -> str:
+        try:
+            return version("chatterbox-tts")
+        except PackageNotFoundError:
+            return "not-installed"
+
+    @property
+    def sample_rate(self) -> int:
+        return int(self.model.sr)
+
+    @property
+    def model(self):
+        if self._model is None:
+            load_start = perf_counter()
+            load_wall = time()
+            self._model, self._condition_cls, self._languages = self._load_variant()
+            self._load_seconds = round(perf_counter() - load_start, 6)
+            self._load_wall = load_wall
+        return self._model
+
+    @staticmethod
+    def _detect_device() -> str:
+        try:
+            import torch
+
+            return "cuda" if torch.cuda.is_available() else "cpu"
+        except Exception:
+            return "cpu"
+
+    def supported_languages(self) -> dict[str, str]:
+        _ = self.model
+        return dict(self._languages)
+
+    def ensure_model_ready(self) -> None:
+        _ = self.model
+
+    def _load_variant(self):
+        if self.variant == "multilingual":
+            from chatterbox.mtl_tts import ChatterboxMultilingualTTS, Conditionals, SUPPORTED_LANGUAGES
+
+            checkpoint_dir = download_chatterbox_repo()
+            return ChatterboxMultilingualTTS.from_local(checkpoint_dir, self.device), Conditionals, SUPPORTED_LANGUAGES
+        if self.variant == "turbo":
+            try:
+                from chatterbox.tts_turbo import ChatterboxTurboTTS, Conditionals
+
+                checkpoint_dir = download_turbo_checkpoint()
+                return ChatterboxTurboTTS.from_local(checkpoint_dir, self.device), Conditionals, {"en": "English"}
+            except Exception as exc:
+                raise TurboModelError(_format_turbo_error(exc)) from exc
+        from chatterbox.tts import ChatterboxTTS, Conditionals
+
+        checkpoint_dir = download_chatterbox_repo()
+        return ChatterboxTTS.from_local(checkpoint_dir, self.device), Conditionals, {"en": "English"}
+
+    def prepare_reference(self, project_cache: ProjectCache, speaker: str, reference_path: str) -> CachedReference:
+        return project_cache.cache_reference_audio(reference_path, speaker, self.sample_rate)
+
+    def prepare_conditioning(
+        self,
+        project_cache: ProjectCache,
+        speaker: str,
+        cached_reference: CachedReference,
+        settings: VoiceSettings,
+    ) -> ChatterboxConditioning:
+        cache_id = hash_payload(
+            {
+                "speaker": speaker,
+                "reference_hash": cached_reference.original_hash,
+                "variant": self.variant,
+                "conditioning_exaggeration": settings.exaggeration,
+                # norm_loudness changes the turbo conditioning payload, so it
+                # must be part of the key: without it a cached entry prepared
+                # with the opposite value would be silently reused. Scoped to
+                # turbo so the standard/multilingual cache keys (and existing
+                # caches) stay byte-identical.
+                "norm_loudness": settings.norm_loudness if self.variant == "turbo" else None,
+            }
+        )
+        condition_path = project_cache.conditioning_path(cache_id)
+        if not condition_path.exists():
+            if self.variant == "turbo":
+                self.model.prepare_conditionals(
+                    cached_reference.normalized_path,
+                    exaggeration=settings.exaggeration,
+                    norm_loudness=settings.norm_loudness,
+                )
+            else:
+                self.model.prepare_conditionals(
+                    cached_reference.normalized_path,
+                    exaggeration=settings.exaggeration,
+                )
+            self.model.conds.save(condition_path)
+        return ChatterboxConditioning(
+            cache_id=cache_id,
+            path=condition_path,
+            reference_hash=cached_reference.original_hash,
+            speaker=speaker,
+            variant=self.variant,
+        )
+
+    def synthesize(self, text: str, conditioning: ChatterboxConditioning, settings: VoiceSettings) -> np.ndarray:
+        """Synthesize one utterance, retrying one hiccup at a fresh seed.
+
+        The output gate (:func:`sanitize_engine_audio`) rejects recognized
+        degenerate generations — the model's own documented pathology, not an
+        input problem. When it fires, synthesis runs exactly once more: an
+        unseeded engine's second draw is already fresh randomness, and a
+        seeded one retries at ``seed + 1`` — re-running at the SAME seed
+        would deterministically reproduce the same degenerate output, since
+        ``generate()`` re-seeds torch's global RNG before every call. A
+        second rejection propagates so the caller's failure path reports it
+        and the stem is never cached.
+        """
+        try:
+            return self._generate_once(text, conditioning, settings, self.seed)
+        except DegenerateEngineOutput as first_error:
+            retry_seed = None if self.seed is None else self.seed + 1
+            LOGGER.warning(
+                "Engine gate rejected synthesis output (%s); retrying once at %s.",
+                first_error,
+                f"seed {retry_seed}" if retry_seed is not None else "fresh randomness (no seed configured)",
+            )
+            retried = self._generate_once(text, conditioning, settings, retry_seed)
+            record_synthesis_retry("chatterbox", first_error, retry_seed)
+            return retried
+
+    def _generate_once(
+        self,
+        text: str,
+        conditioning: ChatterboxConditioning,
+        settings: VoiceSettings,
+        seed: int | None,
+    ) -> np.ndarray:
+        # Final engine-boundary guard: author pain-point tildes are review
+        # annotations, not prosody. Chatterbox's own punc_norm preserves '~'
+        # and can turn it into the exact hitch this marker is meant to flag.
+        text = strip_pain_point_markers(text)
+        cache_key = str(conditioning.path)
+        conds = self._loaded_conditioning.get(cache_key)
+        if conds is None:
+            try:
+                conds = self._condition_cls.load(conditioning.path, map_location=self.device)
+            except TypeError:
+                conds = self._condition_cls.load(conditioning.path)
+            conds = conds.to(self.device)
+            self._loaded_conditioning[cache_key] = conds
+
+        # The conds assignment below mutates the SHARED model object: the
+        # conditioning stays installed for the whole generate() call, so the
+        # swap and the inference must be serialized as one critical section.
+        # Otherwise two threads synthesizing different voices race and each
+        # can render with the other's conditioning.
+        with self._synthesize_lock:
+            self.model.conds = conds
+
+            kwargs: dict[str, Any] = {
+                "text": text,
+                "audio_prompt_path": None,
+                "cfg_weight": settings.cfg_weight,
+                "exaggeration": settings.exaggeration,
+                "temperature": settings.temperature,
+                "repetition_penalty": settings.repetition_penalty,
+                "min_p": settings.min_p,
+                "top_p": settings.top_p,
+            }
+            if self.variant == "multilingual":
+                kwargs["language_id"] = settings.language
+            if self.variant == "turbo":
+                kwargs["top_k"] = settings.top_k
+                kwargs["norm_loudness"] = settings.norm_loudness
+            if seed is not None:
+                # Chatterbox samples via torch.multinomial, which draws from
+                # torch's global RNG. Seeding right before generate() makes every
+                # utterance bit-reproducible across runs (same inputs -> same
+                # audio), independent of how many tokens a previous utterance
+                # consumed from the stream.
+                try:
+                    import torch
+
+                    torch.manual_seed(seed)
+                except Exception:
+                    pass
+            audio = self.model.generate(**kwargs)
+        if hasattr(audio, "detach"):
+            audio = audio.detach().cpu().numpy()
+        audio_array = np.asarray(audio, dtype=np.float32).squeeze()
+        # Hiccup gate: NaN spans are repaired, degenerate stems (DC tone /
+        # silence / empty) are rejected here so a defect is never cached as a
+        # good stem and hardened into every later render. See
+        # sanitize_engine_audio for the failure taxonomy.
+        return sanitize_engine_audio(audio_array, text=text)

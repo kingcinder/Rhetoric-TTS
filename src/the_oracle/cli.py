@@ -1,0 +1,1976 @@
+"""Command line interface for the Chatterbox-only The Oracle app."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import re
+import sys
+from pathlib import Path
+
+from the_oracle import __version__
+from the_oracle.models.project import VoiceSettings
+from the_oracle.models.settings import RenderSettings, SpeakerSettings
+from the_oracle.pipeline import NoAudioToAssembleError, OraclePipeline, PartialRenderError
+from the_oracle.project_manifest import build_saved_project, load_project_manifest, save_project_manifest
+from the_oracle.tts_engines.vulkan_backend import AudioCppUnavailableError, RDNA1VulkanError
+from the_oracle.utils.logging import configure_logging
+from the_oracle.voice_catalog import default_voice_choices
+
+
+_UNLICENSED_ALLOWED_COMMANDS = frozenset({
+    "activate",
+    "license-status",
+    "doctor",
+    "install",
+    "uninstall",
+    "gui",
+})
+
+_SERIAL_REQUIRED_COMMANDS = frozenset({
+    "machine-id",
+    "privacy-status",
+    "privacy-opt-in",
+    "privacy-opt-out",
+    "support-bundle",
+    "bug-report",
+    "setup-vulkan",
+    "check-input",
+    "voices",
+    "fix-folder",
+    "sweep-cache",
+    "render-report",
+    "render",
+})
+
+
+def _require_cli_serial_number(command: str) -> int | None:
+    """Return a refusal code for every command outside the unlicensed allow-list."""
+    if command in _UNLICENSED_ALLOWED_COMMANDS:
+        return None
+    from the_oracle.licensing import LicenseRequired, current_license, require
+
+    try:
+        require(current_license(), command)
+    except LicenseRequired as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
+    return None
+
+
+def _nonnegative_int(value: str) -> int:
+    """argparse type: a non-negative integer (Vulkan device indexes start at 0)."""
+    parsed = int(value)
+    if parsed < 0:
+        raise argparse.ArgumentTypeError(f"expected a non-negative integer, got {value!r}")
+    return parsed
+
+
+def _positive_int(value: str) -> int:
+    """argparse type: a positive integer (thread counts start at 1)."""
+    parsed = int(value)
+    if parsed < 1:
+        raise argparse.ArgumentTypeError(f"expected a positive integer, got {value!r}")
+    return parsed
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        prog="the-oracle",
+        description="The Oracle renders two-speaker dialogue into FLAC with Chatterbox.",
+    )
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=f"%(prog)s {__version__}",
+        help="Show the installed version and exit.",
+    )
+    subparsers = parser.add_subparsers(dest="command", required=True)
+
+    subparsers.add_parser("gui", help="Launch the desktop GUI.")
+
+    subparsers.add_parser(
+        "license-status",
+        help="Show this install's serial-number status and expiry. Never contacts a server.",
+    )
+
+    license_activate = subparsers.add_parser(
+        "activate",
+        help="Activate the suite with a serial number. Offline by construction: no server is contacted.",
+    )
+    license_activate.add_argument(
+        "token",
+        nargs="?",
+        help="The ORACLE1 serial number. Omit it to read it from stdin (piping works).",
+    )
+
+    subparsers.add_parser(
+        "machine-id",
+        help="Print the machine fingerprint (SHA-256 hash only; the raw id is never stored).",
+    )
+
+    subparsers.add_parser(
+        "privacy-status",
+        help="Show the local crash-reporting consent state and what is on disk. Reads nothing but local files.",
+    )
+    subparsers.add_parser(
+        "privacy-opt-in",
+        help="Enable local crash capture. Reports stay on this disk; nothing is ever uploaded.",
+    )
+    privacy_opt_out = subparsers.add_parser(
+        "privacy-opt-out",
+        help="Disable local crash capture. Existing reports are kept unless --purge is given.",
+    )
+    privacy_opt_out.add_argument(
+        "--purge",
+        action="store_true",
+        help="Also delete every stored crash report (irreversible).",
+    )
+
+    support_bundle = subparsers.add_parser(
+        "support-bundle",
+        help="Create a redacted diagnostic bundle for support. Nothing is uploaded; review the zip before sharing it.",
+    )
+    support_bundle.add_argument(
+        "--out",
+        default=None,
+        help="Where to write the zip (default: Output/oracle-support-<version>-<UTC stamp>.zip).",
+    )
+    support_bundle.add_argument(
+        "--include-crash-reports",
+        action="store_true",
+        help="Include local crash reports, but only when crash-reporting consent is on.",
+    )
+    support_bundle.add_argument(
+        "--no-doctor",
+        action="store_true",
+        help="Skip running the doctor; the bundle is still created.",
+    )
+    support_bundle.add_argument(
+        "--json",
+        action="store_true",
+        help="Print the bundle manifest as JSON instead of a human-readable summary.",
+    )
+
+    bug_report = subparsers.add_parser(
+        "bug-report",
+        help="Compose, preview, package, and share a bug report. Drafts stay local; nothing is uploaded.",
+    )
+    bug_report_sub = bug_report.add_subparsers(dest="bug_report_command", required=True)
+    bug_report_new = bug_report_sub.add_parser(
+        "new",
+        help="Create a local draft with a redacted diagnostics snapshot.",
+    )
+    bug_report_new.add_argument("--title", required=True, help="One-line summary (8-160 characters).")
+    bug_report_new.add_argument("--summary", default="", help="What happened, in a sentence or two.")
+    bug_report_new.add_argument(
+        "--step",
+        dest="steps",
+        action="append",
+        default=[],
+        metavar="TEXT",
+        help="One reproduction step; repeat the flag for each step.",
+    )
+    bug_report_new.add_argument("--expected", default="", help="What you expected to happen.")
+    bug_report_new.add_argument("--actual", default="", help="What actually happened.")
+    bug_report_new.add_argument(
+        "--area",
+        default="other",
+        choices=("render", "gui", "ingest", "voice", "audio", "license", "install", "performance", "other"),
+        help="Which part of the app the problem is in.",
+    )
+    bug_report_new.add_argument(
+        "--severity",
+        default="normal",
+        choices=("low", "normal", "high", "blocking"),
+        help="How much the problem blocks you.",
+    )
+    bug_report_new.add_argument("--contact", default="", help="How support should reply (optional).")
+    bug_report_new.add_argument(
+        "--crash",
+        nargs="?",
+        const="newest",
+        default=None,
+        metavar="RECORD",
+        help="Name a local crash record to reference, or omit the value for the newest one.",
+    )
+    bug_report_new.add_argument(
+        "--no-diagnostics",
+        action="store_true",
+        help="Do not attach the diagnostics snapshot (not recommended).",
+    )
+    bug_report_new.add_argument(
+        "--no-doctor",
+        action="store_true",
+        help="Skip the doctor subprocess; the rest of the diagnostics are still collected.",
+    )
+    bug_report_new.add_argument("--json", action="store_true", help="Emit the draft as JSON.")
+
+    bug_report_list = bug_report_sub.add_parser("list", help="List local drafts, newest first.")
+    bug_report_list.add_argument("--json", action="store_true", help="Emit the drafts as JSON.")
+
+    bug_report_show = bug_report_sub.add_parser(
+        "show", help="Print a draft as Markdown (or JSON), ready to review before sharing."
+    )
+    bug_report_show.add_argument("report_id", help="The report id printed by `bug-report new`.")
+    bug_report_show.add_argument("--json", action="store_true", help="Emit the stored draft as JSON.")
+    bug_report_show.add_argument(
+        "--no-diagnostics",
+        action="store_true",
+        help="Leave the diagnostics section out of the Markdown.",
+    )
+
+    bug_report_package = bug_report_sub.add_parser(
+        "package",
+        help="Build one support zip containing the report, diagnostics, and redacted support bundle.",
+    )
+    bug_report_package.add_argument("report_id", help="The report id to package.")
+    bug_report_package.add_argument("--out", default=None, help="Where to write the zip.")
+    bug_report_package.add_argument(
+        "--include-crash-reports",
+        action="store_true",
+        help="Include local crash records, but only when crash-reporting consent is on.",
+    )
+    bug_report_package.add_argument(
+        "--no-doctor", action="store_true", help="Skip the doctor subprocess in the package."
+    )
+    bug_report_package.add_argument("--json", action="store_true", help="Emit the result as JSON.")
+
+    bug_report_issue = bug_report_sub.add_parser(
+        "issue", help="Print a prefilled GitHub issue link and support email link for a draft."
+    )
+    bug_report_issue.add_argument("report_id", help="The report id to build links for.")
+    bug_report_issue.add_argument("--json", action="store_true", help="Emit both links as JSON.")
+
+    bug_report_delete = bug_report_sub.add_parser("delete", help="Delete one local draft.")
+    bug_report_delete.add_argument("report_id", help="The report id to delete.")
+    bug_report_delete.add_argument(
+        "--yes", action="store_true", help="Confirm deletion (required; the CLI never prompts)."
+    )
+
+    bug_report_diagnose = bug_report_sub.add_parser(
+        "diagnose", help="Print the diagnostics snapshot a report would attach."
+    )
+    bug_report_diagnose.add_argument(
+        "--no-doctor", action="store_true", help="Skip the doctor subprocess."
+    )
+    bug_report_diagnose.add_argument("--json", action="store_true", help="Emit the full snapshot as JSON.")
+
+    setup_vulkan = subparsers.add_parser(
+        "setup-vulkan",
+        help="One-shot automatic setup for the Vulkan (GPU) backend: build audiocpp_cli and download the Chatterbox model if missing.",
+    )
+
+    check_input = subparsers.add_parser(
+        "check-input",
+        help="Lint a dialogue file's formatting without rendering: report speaker turns the engine would misread and, with --fix, correct them in place.",
+    )
+    check_input.add_argument("file", help="Path to the .txt or .md dialogue file to check.")
+    check_input.add_argument(
+        "--fix",
+        action="store_true",
+        help="Correct fixable issues in place (timestamped backup kept) instead of only reporting them.",
+    )
+    voices = subparsers.add_parser(
+        "voices",
+        help="List the default Seashells reference clips usable in --speaker-ref flags.",
+    )
+    voices.add_argument(
+        "--json",
+        action="store_true",
+        help="Emit a JSON array of {label, path} instead of human-readable text.",
+    )
+    fix_folder = subparsers.add_parser(
+        "fix-folder",
+        help="Batch-find and fix formatting issues across every text file in a folder (recursing into subfolders), with per-file backups and a combined report.",
+    )
+    fix_folder.add_argument("folder", help="Folder to scan (recursed into subfolders; hidden/backup/VCS files skipped).")
+    fix_folder.add_argument(
+        "--json",
+        action="store_true",
+        help="Emit the report as a single JSON document on stdout (per-file issue/fix lists, "
+        "applied rewrites) instead of human-readable text, so scripts can parse it.",
+    )
+    fix_folder.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Report what would be fixed without writing anything (default without --fix semantics).",
+    )
+    fix_folder.add_argument(
+        "--no-backup",
+        action="store_true",
+        help="Skip the timestamped per-file backups kept next to each corrected file.",
+    )
+    check_input.add_argument(
+        "--json",
+        action="store_true",
+        help="Emit the report as a single JSON document on stdout (issues list, "
+        "fixable/warning counts, speaker-voice suggestions) instead of "
+        "human-readable text, so CI pipelines can parse it.",
+    )
+    check_input.add_argument(
+        "--speakerA-ref",
+        dest="speaker_a_ref",
+        help=argparse.SUPPRESS,
+    )
+    check_input.add_argument(
+        "--speakerB-ref",
+        dest="speaker_b_ref",
+        help=argparse.SUPPRESS,
+    )
+    check_input.add_argument(
+        "--speaker-ref",
+        dest="speaker_refs",
+        action="append",
+        default=[],
+        metavar="KEY=PATH",
+        help=argparse.SUPPRESS,
+    )
+    check_input.add_argument(
+        "--check-refs",
+        action="store_true",
+        help="Validate the speaker references passed via --speakerA-ref/--speakerB-ref/"
+        "--speaker-ref: each path must exist and decode as readable audio. Reported "
+        "per reference (and in --json), and a bad reference fails the check (exit 1).",
+    )
+
+    sweep_cache = subparsers.add_parser(
+        "sweep-cache",
+        help="Sweep a project's stem cache through the servable-stem gate: report (and with --apply, purge) "
+        "degenerate or corrupt entries so the next render re-synthesizes them.",
+    )
+    sweep_cache.add_argument("project", help="Path to the render project directory (the one holding cache/utterances).")
+    sweep_cache.add_argument(
+        "--apply",
+        action="store_true",
+        help="Actually delete purged entries. Without it the command is a dry run: identical report, nothing deleted.",
+    )
+    sweep_cache.add_argument(
+        "--sample-rate",
+        type=int,
+        default=None,
+        help="Purge entries at any other sample rate too (the rate the project renders at; assembly requires a shared rate).",
+    )
+    sweep_cache.add_argument(
+        "--json",
+        action="store_true",
+        help="Emit the full report as a single JSON document on stdout instead of human-readable text.",
+    )
+
+    render_report = subparsers.add_parser(
+        "render-report",
+        help="Studio: measure a finished render and report its technical conformance "
+        "(level, clipping, silence, sample rate, utterance and speaker counts).",
+    )
+    render_report.add_argument(
+        "project",
+        help="The render's project directory (the one holding the assembled .flac and render_plan.json).",
+    )
+    render_report.add_argument(
+        "--json",
+        action="store_true",
+        help="Emit the report as a single JSON document on stdout instead of human-readable text.",
+    )
+    render_report.add_argument(
+        "--out",
+        default=None,
+        help="Also write the report JSON to this path (written atomically).",
+    )
+
+    render = subparsers.add_parser("render", help="Batch render a dialogue file.")
+    render.add_argument("--project", help="Load a saved project manifest.")
+    render.add_argument("--save-project", dest="save_project", help="Write the current project manifest after preparation/render.")
+    render.add_argument("--input", help="Path to .txt or .md dialogue file.")
+    render.add_argument("--outdir", help="Output project directory.")
+    render.add_argument("--speakerA-ref", dest="speaker_a_ref", help="Reference audio for Speaker A.")
+    render.add_argument("--speakerB-ref", dest="speaker_b_ref", help="Reference audio for Speaker B.")
+    render.add_argument(
+        "--speaker-ref",
+        dest="speaker_refs",
+        action="append",
+        default=[],
+        metavar="KEY=PATH",
+        help="Reference audio for an additional character voice, e.g. --speaker-ref C=/path/ref.wav. "
+        "Repeatable for up to 24 voices. Characters without a configured reference "
+        "fall back to the first provided voice.",
+    )
+    render.add_argument(
+        "--monologue",
+        action="store_true",
+        help="Render the whole input as a single narrator voice (Speaker A), ignoring per-line attribution.",
+    )
+    render.add_argument("--model-variant", choices=["standard", "multilingual", "turbo"], default="standard")
+    render.add_argument("--device-mode", choices=["cpu", "cuda", "vulkan"], default="cpu", help="PyTorch device: cpu or CUDA; Vulkan is retained for compatibility and uses the audio.cpp backend.")
+    render.add_argument("--cuda-device", type=_nonnegative_int, default=None, metavar="N", help="CUDA device index for PyTorch inference (default: CUDA's default device). Requires --device-mode cuda.")
+    render.add_argument("--no-audio-cpp-setup", action="store_true", help="Skip the automatic audio.cpp build/model download before a Vulkan render; fail fast instead.")
+    render.add_argument("--inference-backend",
+        choices=["pytorch", "vulkan"],
+        default="pytorch",
+        help="Inference backend: 'pytorch' (default, Chatterbox in-process) or 'vulkan' "
+        "(opt-in, shells out to audio.cpp built with the Vulkan backend). "
+        "Ignored when --project is used (the saved manifest governs).",
+    )
+    render.add_argument(
+        "--audio-cpp-device",
+        type=_nonnegative_int,
+        default=None,
+        metavar="N",
+        help="Vulkan device index passed to audio.cpp as --device <N> (constructor arg wins "
+        "over ORACLE_AUDIOCPP_DEVICE). Requires --inference-backend vulkan. Ignored when "
+        "--project is used (the saved manifest governs).",
+    )
+    render.add_argument(
+        "--audio-cpp-threads",
+        type=_positive_int,
+        default=None,
+        metavar="N",
+        help="Thread count passed to audio.cpp as --threads <N> (constructor arg wins over "
+        "ORACLE_AUDIOCPP_THREADS). Requires --inference-backend vulkan. Ignored when "
+        "--project is used (the saved manifest governs).",
+    )
+    render.add_argument(
+        "--audio-cpp-timeout",
+        type=_positive_int,
+        default=None,
+        metavar="SECONDS",
+        help="Per-synthesis timeout in seconds passed to audio.cpp (constructor arg wins "
+        "over ORACLE_AUDIOCPP_TIMEOUT, default 600). Requires --inference-backend vulkan. "
+        "Ignored when --project is used (the saved manifest governs).",
+    )
+    render.add_argument(
+        "--audio-cpp-max-batch",
+        type=_positive_int,
+        default=None,
+        metavar="N",
+        help="Maximum cache-missing stems per audio.cpp --request-sequence subprocess "
+        "(constructor arg wins over ORACLE_AUDIOCPP_MAX_BATCH, default 32). Requires "
+        "--inference-backend vulkan. Ignored when --project is used (the saved "
+        "manifest governs).",
+    )
+    render.add_argument("--language", default="en", help="Language code for multilingual mode. Ignored for standard/turbo.")
+    render.add_argument("--cfg-weight", type=float, default=0.5)
+    render.add_argument("--exaggeration", type=float, default=0.5)
+    render.add_argument("--temperature", type=float, default=0.8)
+    render.add_argument("--repetition-penalty", type=float, default=1.2)
+    render.add_argument("--min-p", type=float, default=0.05)
+    render.add_argument("--top-p", type=float, default=1.0)
+    render.add_argument("--target-wpm", type=float, help="Optional target words-per-minute pacing hint.")
+    render.add_argument(
+        "--correction-mode",
+        choices=["aggressive", "moderate", "mild", "off", "conservative"],
+        default="moderate",
+        help="Text repair strength. 'conservative' is kept as an alias for 'moderate'.",
+    )
+    render.add_argument("--loudness", choices=["off", "light", "medium"], default="light")
+    render.add_argument("--no-stems", action="store_true", help="Skip exporting stems into the project folder.")
+    render.add_argument(
+        "--seed",
+        type=int,
+        default=None,
+        help="Deterministic sampling seed: renders with identical inputs produce "
+        "byte-identical audio across runs (PyTorch: torch.manual_seed; "
+        "Vulkan: audio.cpp --seed).",
+    )
+    render.add_argument("--title", default="", help="Override exported title metadata.")
+    render.add_argument("--srt", action="store_true", help="Also write an SRT subtitle file next to the rendered FLAC.")
+    render.add_argument(
+        "--fix-input",
+        action="store_true",
+        help="Check the input file with the ingestion transformer and automatically correct "
+        "fixable formatting issues in place before rendering (dash/pipe separators, "
+        "bracketed labels, bulleted turns, orphan labels, chat-export timestamps, "
+        "non-UTF-8 encodings). A timestamped backup of the original is kept next to "
+        "the file. Without this flag the check still runs and reports issues on "
+        "stderr, but never modifies the file. Requires --input.",
+    )
+    render.add_argument(
+        "--fix-input-interactive",
+        action="store_true",
+        help="Like --fix-input, but review first: show the formatting summary and a "
+        "rule-labeled diff of the exact rewrite, then prompt yes/no before writing "
+        "(a timestamped backup is kept). Answering no aborts the render with the "
+        "file untouched. Requires a terminal; refuses silently in non-interactive "
+        "runs (pipes/CI) so automation never blocks on a prompt. Requires --input.",
+    )
+    render.add_argument(
+        "--check-input-json",
+        action="store_true",
+        help="Emit the input-formatting report as a single JSON document on stdout "
+        "(issues list, fixable/warning counts, speaker-voice suggestions, and with "
+        "--fix-input the applied fix count and backup path) instead of "
+        "human-readable stderr text. Requires --input.",
+    )
+    return parser
+
+
+def _voice_settings_from_args(args: argparse.Namespace) -> VoiceSettings:
+    language = args.language if args.model_variant == "multilingual" else "en"
+    return VoiceSettings(
+        variant=args.model_variant,
+        language=language,
+        cfg_weight=args.cfg_weight,
+        exaggeration=args.exaggeration,
+        temperature=args.temperature,
+        repetition_penalty=args.repetition_penalty,
+        min_p=args.min_p,
+        top_p=args.top_p,
+    )
+
+
+def _srt_script_if_converted(input_path: str) -> str:
+    """Return the converted subtitle script when a fix produced one."""
+    from the_oracle.subtitle_targets import converted_script_target
+
+    file_path = Path(input_path)
+    if file_path.suffix.lower() in (".srt", ".vtt"):
+        script = converted_script_target(file_path)
+        if script.is_file():
+            return str(script)
+    return input_path
+
+
+def _maybe_convert_srt(input_path: str) -> str:
+    """Convert a subtitle input (``.srt``/``.vtt``) to a script, returning the input to use.
+
+    Subtitle files cannot be ingested directly (every cue degrades into
+    narration), so a valid SubRip or WebVTT input is converted to a sibling
+    ``<name>.srt.txt``/``<name>.vtt.txt`` script and that script is rendered
+    instead — the subtitle file itself is never modified. Anything that is
+    not a valid subtitle file (including a missing or unreadable file) is
+    returned unchanged so the ordinary error paths report it.
+    """
+    from the_oracle.srt_ingest import ensure_subtitle_script
+
+    try:
+        script_path, outcome = ensure_subtitle_script(input_path)
+    except (OSError, ValueError) as exc:
+        raise SystemExit(f"SRT conversion failed: {exc}") from exc
+    if outcome is None:
+        return input_path
+    if outcome == "reused":
+        # A previous conversion already produced the script; reuse it.
+        print(
+            f"SRT input: reusing previously converted script {script_path}",
+            file=sys.stderr,
+        )
+    else:
+        _converted, cue_count, speaker_count = outcome
+        print(
+            f"SRT input: converted {cue_count} cue(s) from {Path(input_path).name} into "
+            f"{Path(script_path).name} ({speaker_count} speaker(s)); rendering the script.",
+            file=sys.stderr,
+        )
+    # The converted script names a cast; tell the user which voice flags to
+    # provide so the render can attribute every speaker.
+    _print_speaker_ref_hints(script_path)
+    return script_path
+
+
+def _input_issue_json(issue, *, fixable: bool) -> dict:
+    """Serialize one transformer issue for the machine-readable report."""
+    return {
+        "line": issue.line_number,
+        "snippet": issue.snippet,
+        "fixable": fixable,
+        "description": issue.fix_description if fixable else issue.description,
+        "rule": getattr(issue, "rule", "") or None,
+    }
+
+
+def _input_json_document(
+    input_path: str,
+    analysis,
+    *,
+    error: str | None = None,
+    fixed_count: int | None = None,
+    backup: str | None = None,
+    speaker_refs: list[dict] | None = None,
+    rejected: list[str] | None = None,
+    checked_refs: list[dict] | None = None,
+) -> dict:
+    """Build the input-formatting JSON report (one document per run).
+
+    ``speaker_refs``/``rejected_labels`` are always present so consumers can
+    rely on a stable schema; ``fixed_count``/``backup`` appear only when a
+    fix was applied. ``subtitle_encoding`` appears only for ``.srt``/``.vtt``
+    inputs that could be classified: the doctor's mixed-encoding verdict for
+    the same bytes (utf8/fallback/mixed/blocked, or unreadable), so the CLI
+    and the doctor agree about a subtitle file before a render.
+    """
+    document: dict = {"file": input_path}
+    path = Path(input_path)
+    if path.suffix.lower() in (".srt", ".vtt") and path.is_file():
+        # The doctor's mixed-encoding classification, so check-input --json
+        # and the doctor agree about a subtitle file before a render (the
+        # render path's --check-input-json shares this builder). An existing
+        # file that cannot be read is reported as unreadable, never dropped.
+        from the_oracle.srt_ingest import classify_subtitle_bytes
+
+        try:
+            document["subtitle_encoding"] = classify_subtitle_bytes(path.read_bytes())
+        except OSError:
+            document["subtitle_encoding"] = "unreadable"
+    if error is not None:
+        document["error"] = error
+        document["fixable_count"] = 0
+        document["warning_count"] = 0
+        document["issues"] = []
+    else:
+        document["fixable_count"] = len(analysis.fixable_issues)
+        document["warning_count"] = len(analysis.warning_issues)
+        document["issues"] = [
+            _input_issue_json(issue, fixable=True) for issue in analysis.fixable_issues
+        ] + [
+            _input_issue_json(issue, fixable=False) for issue in analysis.warning_issues
+        ]
+    if fixed_count is not None:
+        document["fixed_count"] = fixed_count
+    if backup is not None:
+        document["backup"] = backup
+    document["speaker_refs"] = speaker_refs or []
+    document["rejected_labels"] = rejected or []
+    if checked_refs is not None:
+        document["checked_refs"] = checked_refs
+        document["refs_ok"] = all(r["ref_status"] in ("ok", "unset") for r in checked_refs)
+    return document
+
+
+
+
+
+def _check_input_formatting(input_path: str, fix: bool, json_output: bool = False) -> None:
+    """Run the ingestion transformer over the CLI render's input file.
+
+    Detected issues are always reported: human-readable on stderr, or as a
+    JSON document on stdout when ``json_output`` is set (so pipelines can
+    parse it; stdout keeps the report separate from render logs on stderr).
+    With ``fix=True`` the fixable issues are corrected in place (timestamped
+    backup kept) before the render proceeds. Never raises for
+    missing/unreadable files: those are reported (as JSON in json mode) and
+    ``prepare_plan`` reports them with its own clear error.
+    """
+    import json
+
+    from the_oracle.ingest_transformer import analyze_input_file, fix_input_file
+
+    def _issue_json(issue, *, fixable: bool) -> dict:
+        return _input_issue_json(issue, fixable=fixable)
+
+    def _report(
+        analysis,
+        *,
+        error: str | None = None,
+        fixed_count: int | None = None,
+        backup: str | None = None,
+        speaker_refs: list[dict] | None = None,
+        rejected: list[str] | None = None,
+    ) -> None:
+        document = _input_json_document(
+            input_path,
+            analysis,
+            error=error,
+            fixed_count=fixed_count,
+            backup=backup,
+            speaker_refs=speaker_refs,
+            rejected=rejected,
+        )
+        print(json.dumps(document, ensure_ascii=False))
+
+    if json_output:
+        if not Path(input_path).is_file():
+            _report(None, error="file not found")
+            return
+        try:
+            analysis = analyze_input_file(input_path)
+        except (OSError, ValueError, UnicodeDecodeError) as exc:
+            _report(None, error=f"unreadable: {exc}")
+            return
+        # Speaker-voice suggestions come from the post-fix text so a cast
+        # member only visible after a transform is still suggested.
+        from the_oracle.ingest_transformer import speaker_ref_report_for_file
+
+        refs, rejected = speaker_ref_report_for_file(Path(input_path), None)
+        if not analysis.has_issues or not fix or not analysis.fixable_issues:
+            # Exactly one JSON document per run, so a consumer can always
+            # parse stdout as a single object.
+            _report(analysis, speaker_refs=refs, rejected=rejected)
+            return
+        try:
+            _text, fix_count, backup_path = fix_input_file(input_path)
+        except (OSError, ValueError) as exc:
+            raise SystemExit(f"--fix-input failed: {exc}") from exc
+        # One document: the pre-fix issue list plus what was applied, so
+        # consumers see both what was wrong and that the file changed on disk.
+        _report(analysis, fixed_count=fix_count, backup=backup_path, speaker_refs=refs, rejected=rejected)
+        return
+
+    try:
+        analysis = analyze_input_file(input_path)
+    except (OSError, ValueError, UnicodeDecodeError):
+        return
+    if not analysis.has_issues:
+        _print_speaker_ref_hints(input_path)
+        return
+    fixable = analysis.fixable_issues
+    warnings = analysis.warning_issues
+    print(
+        f"Input formatting: {len(fixable)} fixable issue(s), "
+        f"{len(warnings)} warning(s) in {input_path}",
+        file=sys.stderr,
+    )
+    for issue in fixable[:5]:
+        where = f"line {issue.line_number}" if issue.line_number else "file"
+        rule = f" [{getattr(issue, 'rule', '') or 'file'}]" if issue.line_number else ""
+        print(f"  - {where}{rule}: {issue.fix_description}", file=sys.stderr)
+    for issue in warnings[:5]:
+        where = f"line {issue.line_number}" if issue.line_number else "file"
+        print(f"  - {where}: {issue.description}", file=sys.stderr)
+    if len(fixable) > 5 or len(warnings) > 5:
+        print("  - ... (see the GUI's Preview Fixed Text dialog for the full list)", file=sys.stderr)
+    # The post-fix cast can be suggested even before the user fixes the
+    # file — the suggestions come from the transformed text.
+    _print_speaker_ref_hints(input_path)
+    if not fix:
+        if fixable:
+            print(
+                "Re-run with --fix-input to correct the fixable issues automatically.",
+                file=sys.stderr,
+            )
+        return
+    if not fixable:
+        print("--fix-input: no fixable issues; the file was left unchanged.", file=sys.stderr)
+        return
+    try:
+        _text, fix_count, backup_path = fix_input_file(input_path)
+    except (OSError, ValueError) as exc:
+        raise SystemExit(f"--fix-input failed: {exc}") from exc
+    print(f"--fix-input: corrected {fix_count} issue(s) in {input_path}", file=sys.stderr)
+    if backup_path:
+        print(f"    backup: {backup_path}", file=sys.stderr)
+    _print_speaker_ref_hints(input_path)
+
+
+def _check_input_formatting_interactive(input_path: str, *, prompt=input) -> bool:
+    """Interactive review-before-fix: the terminal version of the GUI popup.
+
+    Shows the issue summary and a rule-labeled diff of the exact rewrite,
+    then asks before writing. Returns True when the render should proceed
+    (no issues, or fix applied); False when the user declined the fix. The
+    ``prompt`` parameter is injectable so tests can script the answer.
+    """
+    from the_oracle.ingest_transformer import (
+        _decode_best_effort,
+        analyze_input_file,
+        fix_input_file,
+        labeled_fixed_diff,
+        transform_text_detailed,
+    )
+
+    file_path = Path(input_path)
+    try:
+        analysis = analyze_input_file(file_path)
+    except (OSError, ValueError, UnicodeDecodeError):
+        return True  # ordinary error paths report this
+    if not analysis.has_issues:
+        return True
+
+    fixable = analysis.fixable_issues
+    warnings = analysis.warning_issues
+    print(f"Input formatting review for {file_path}", file=sys.stderr)
+    if fixable:
+        print(f"  {len(fixable)} fixable issue(s) can be corrected automatically:", file=sys.stderr)
+        for issue in fixable[:8]:
+            where = f"line {issue.line_number}" if issue.line_number else "file"
+            print(f"    - {where}: {issue.fix_description}", file=sys.stderr)
+        if len(fixable) > 8:
+            print(f"    ... and {len(fixable) - 8} more", file=sys.stderr)
+    if warnings:
+        print(f"  {len(warnings)} warning(s) that cannot be fixed automatically:", file=sys.stderr)
+        for issue in warnings[:8]:
+            where = f"line {issue.line_number}" if issue.line_number else "file"
+            print(f"    ! {where}: {issue.description}", file=sys.stderr)
+
+    if not fixable:
+        # Warnings only: nothing to review or write.
+        return True
+
+    try:
+        raw = file_path.read_bytes()
+    except OSError:
+        return True
+    original = (
+        analysis.encoding_fixed_text
+        if analysis.encoding_fixed_text is not None
+        else _decode_best_effort(raw)
+    )
+    fixed_text, line_fixes = transform_text_detailed(original)
+    print(file=sys.stderr)
+    print(labeled_fixed_diff(original, fixed_text, line_fixes), file=sys.stderr)
+
+    try:
+        answer = prompt("Apply these fixes before rendering? [y/N]: ")
+    except EOFError:
+        answer = None
+    if not answer or answer.strip().lower() not in ("y", "yes"):
+        print("Fix declined: the input file was left unchanged; aborting render.", file=sys.stderr)
+        return False
+    try:
+        _text, fix_count, backup_path = fix_input_file(file_path)
+    except (OSError, ValueError) as exc:
+        raise SystemExit(f"--fix-input-interactive failed: {exc}") from exc
+    print(f"--fix-input-interactive: corrected {fix_count} issue(s) in {input_path}", file=sys.stderr)
+    if backup_path:
+        print(f"    backup: {backup_path}", file=sys.stderr)
+    return True
+
+
+def _print_speaker_ref_hints(input_path: str) -> None:
+    """Print the exact --speaker-ref flags for the script's cast (stderr).
+
+    The wording is not spelled out here: ``speaker_ref_hints`` owns it, so this
+    surface and the GUI's popup cannot drift apart. Only the bullets belong to
+    this function, because a terminal can distinguish a suggestion from a
+    warning and a dialog notice does not need to.
+    """
+    from the_oracle.ingest_transformer import speaker_ref_report_for_file
+    from the_oracle.speaker_ref_hints import hint_lines
+
+    refs, rejected = speaker_ref_report_for_file(Path(input_path), None)
+    for line in hint_lines(refs, rejected):
+        print(line, file=sys.stderr)
+
+
+
+
+
+def _validate_speaker_ref_paths(pairs: list[tuple[str, str | None]]) -> list[dict]:
+    """Check each ``(voice_key, path)`` speaker ref exists and decodes as audio.
+
+    Returns one ``{voice_key, path, ref_status}`` dict per entry; status is
+    ``"unset"`` when no path was given for that voice, ``"ok"``, or
+    ``"bad: <reason>"``. Validation uses soundfile's header probe — cheap,
+    no full decode — so a truncated or non-audio file with a plausible
+    name still fails loudly.
+    """
+    import soundfile as sf
+
+    checked: list[dict] = []
+    for voice_key, path_text in pairs:
+        entry: dict = {"voice_key": voice_key, "path": path_text or ""}
+        if not (path_text or "").strip():
+            entry["ref_status"] = "unset"
+        else:
+            path = Path(path_text)
+            if not path.is_file():
+                entry["ref_status"] = "bad: file not found"
+            else:
+                try:
+                    info = sf.info(str(path))
+                    if info.frames <= 0:
+                        entry["ref_status"] = "bad: audio file contains no frames"
+                    else:
+                        entry["ref_status"] = "ok"
+                except (sf.LibsndfileError, RuntimeError, ValueError) as exc:
+                    entry["ref_status"] = f"bad: not readable audio ({exc})"
+        checked.append(entry)
+    return checked
+
+
+def _report_checked_refs(checked_refs: list[dict]) -> int:
+    """Print --check-refs results; return 1 if any reference is bad, else 0."""
+    if not checked_refs:
+        return 0
+    print("Speaker references (--check-refs):")
+    bad = False
+    for ref in checked_refs:
+        marker = "OK" if ref["ref_status"] in ("ok", "unset") else "BAD"
+        if marker == "BAD":
+            bad = True
+        path_note = ref["path"] or "(no path given)"
+        print(f"  [{marker}] voice {ref['voice_key']}: {path_note} — {ref['ref_status']}")
+    return 1 if bad else 0
+
+
+def _check_ref_pairs_from_args(args: argparse.Namespace) -> list[tuple[str, str | None]]:
+    """Collect the ``(voice_key, path)`` pairs the user passed for validation."""
+    pairs: list[tuple[str, str | None]] = [
+        ("A", getattr(args, "speaker_a_ref", None)),
+        ("B", getattr(args, "speaker_b_ref", None)),
+    ]
+    for raw in getattr(args, "speaker_refs", None) or []:
+        key, _sep, value = raw.partition("=")
+        pairs.append((key.strip().upper(), value.strip() or None))
+    return pairs
+
+
+def handle_check_input(args: argparse.Namespace) -> int:
+    """Lint a dialogue file's formatting without loading the render pipeline.
+
+    Exit code 0 = no issues (or fixed with --fix); 1 = issues found (or
+    warnings remain after --fix); 2 = file could not be read. Nothing is
+    written unless --fix is given, and --fix never rewrites warnings.
+    """
+    from the_oracle.ingest_transformer import analyze_input_file, fix_input_file
+
+    file_path = Path(args.file)
+    json_mode = bool(getattr(args, "json", False))
+    check_refs = bool(getattr(args, "check_refs", False))
+    checked_refs: list[dict] = (
+        _validate_speaker_ref_paths(_check_ref_pairs_from_args(args)) if check_refs else []
+    )
+    if not file_path.is_file():
+        if json_mode:
+            print(json.dumps(_input_json_document(args.file, None, error="file not found"), ensure_ascii=False))
+        else:
+            print(f"check-input: file not found: {file_path}", file=sys.stderr)
+        return 2
+    try:
+        analysis = analyze_input_file(file_path)
+    except (OSError, ValueError, UnicodeDecodeError) as exc:
+        if json_mode:
+            print(json.dumps(_input_json_document(args.file, None, error=f"unreadable: {exc}"), ensure_ascii=False))
+        else:
+            print(f"check-input: the file could not be read: {exc}", file=sys.stderr)
+        return 2
+
+    if json_mode:
+        # Exactly one JSON document per run, on stdout; nothing else is
+        # printed in json mode so pipelines can parse stdout cleanly.
+        from the_oracle.ingest_transformer import speaker_ref_report_for_file
+
+        refs, rejected = speaker_ref_report_for_file(file_path, None)
+        fixed_count: int | None = None
+        backup: str | None = None
+        if args.fix and analysis.fixable_issues:
+            try:
+                _written, fixed_count, backup = fix_input_file(file_path)
+            except (OSError, ValueError) as exc:
+                print(
+                    json.dumps(_input_json_document(args.file, None, error=f"fix failed: {exc}"), ensure_ascii=False)
+                )
+                return 2
+            # Re-analyze so the document describes the file's current state;
+            # the exit code and the document then always agree.
+            try:
+                analysis = analyze_input_file(file_path)
+            except (OSError, ValueError, UnicodeDecodeError):
+                return 0
+        document = _input_json_document(
+            str(file_path),
+            analysis,
+            fixed_count=fixed_count,
+            backup=backup,
+            speaker_refs=refs,
+            rejected=rejected,
+            checked_refs=checked_refs,
+        )
+        print(json.dumps(document, ensure_ascii=False))
+        bad_refs = [r for r in checked_refs if r["ref_status"] not in ("ok", "unset")]
+        if bad_refs:
+            return 1
+        return 0 if not analysis.has_issues else 1
+
+    if not analysis.has_issues:
+        print(f"{file_path}: no formatting issues found.")
+        _print_speaker_ref_hints(str(file_path))
+        return _report_checked_refs(checked_refs) or 0
+
+    fixable = analysis.fixable_issues
+    warnings = analysis.warning_issues
+
+    if args.fix and fixable:
+        try:
+            _text, fix_count, backup_path = fix_input_file(file_path)
+        except (OSError, ValueError) as exc:
+            print(f"check-input: the file could not be corrected: {exc}", file=sys.stderr)
+            return 2
+        print(f"check-input: corrected {fix_count} issue(s) in {file_path}")
+        if backup_path:
+            print(f"    backup: {backup_path}")
+        # Re-analyze the corrected file so the exit code reflects what is
+        # left, not what was there.
+        try:
+            analysis = analyze_input_file(file_path)
+        except (OSError, ValueError, UnicodeDecodeError):
+            return 0
+        if not analysis.has_issues:
+            print(f"{file_path}: no formatting issues remain.")
+            _print_speaker_ref_hints(str(file_path))
+            return _report_checked_refs(checked_refs) or 0
+        fixable = analysis.fixable_issues
+        warnings = analysis.warning_issues
+
+    if fixable:
+        print(f"{file_path}: {len(fixable)} fixable formatting issue(s), {len(warnings)} warning(s):")
+    else:
+        print(f"{file_path}: {len(warnings)} formatting warning(s):")
+    for issue in fixable[:10]:
+        where = f"line {issue.line_number}" if issue.line_number else "file"
+        rule = f" [{getattr(issue, 'rule', '') or 'file'}]" if issue.line_number else ""
+        print(f"  - {where}{rule}: {issue.fix_description}")
+    for issue in warnings[:10]:
+        where = f"line {issue.line_number}" if issue.line_number else "file"
+        print(f"  ! {where}: {issue.description}")
+    if len(fixable) > 10 or len(warnings) > 10:
+        print("  - ... (truncated)")
+    if fixable:
+        hint = "remain (never rewritten automatically)" if args.fix else "corrected automatically"
+        print(f"Re-run with --fix to have the fixable issues {hint}.")
+    _print_speaker_ref_hints(str(file_path))
+    # The branch only runs when issues remain, so exit 1 either way; the
+    # report still prints so a bad reference is surfaced alongside them.
+    _report_checked_refs(checked_refs)
+    return 1
+
+
+def handle_sweep_cache(args: argparse.Namespace) -> int:
+    """Sweep a project cache through the servable-stem gate and report.
+
+    Human output names every purged hash with its reason and the totals, and
+    states the re-synthesis consequence plainly: the next render will
+    re-synthesize exactly the purged hashes (the purge list IS the
+    re-synthesis set — the sweep never synthesizes). ``--json`` emits the
+    full report document for scripts. Exit 1 when nothing was sweepable (no
+    cache), 2 when a purge failed on disk; a clean sweep — including one that
+    purged entries — exits 0.
+    """
+    from the_oracle.pipeline import sweep_project_cache
+
+    project = Path(args.project)
+    if not project.exists():
+        print(f"Project directory not found: {project}", file=sys.stderr)
+        return 1
+    report = sweep_project_cache(
+        project,
+        expected_sample_rate=args.sample_rate,
+        apply=bool(args.apply),
+    )
+    # The missing-cache warning is reported the same way in both modes — a
+    # --json caller needs the structured warning too — but either way it is
+    # an operator-visible problem (exit 1), not a silent clean run.
+    if report["cache_missing_warning"]:
+        if args.json:
+            print(json.dumps(report, ensure_ascii=False, indent=2))
+        else:
+            print(report["cache_missing_warning"], file=sys.stderr)
+        return 1
+    if args.json:
+        print(json.dumps(report, ensure_ascii=False, indent=2))
+    else:
+        mode = "purged" if args.apply else "would purge (dry run)"
+        print(f"Sweep of {report['project_dir']} ({mode}):")
+        print(
+            f"  scanned {report['scanned']}: kept {report['kept']} spoken + "
+            f"{report['kept_pause']} pause stems"
+        )
+        if report["purged"]:
+            print(f"  {mode}: {report['purged']}")
+            for entry in report["purged_detail"]:
+                print(f"    - {entry['hash']}  ({entry['reason']})")
+            print("  The next render will re-synthesize exactly these hashes.")
+        else:
+            print("  nothing to purge — every entry is servable.")
+        for error in report["errors"]:
+            print(f"  ERROR: {error}", file=sys.stderr)
+    if report["errors"]:
+        return 2
+    return 0
+
+
+def handle_voices(args: argparse.Namespace) -> int:
+    """List the default Seashells reference clips (the render fallbacks).
+
+    Human output is one ``label -> path`` line per clip, ordered as the
+    render path picks them (first line = Speaker A's default, second =
+    Speaker B's); ``--json`` emits an array of ``{label, path}`` so
+    scripts can wire the paths into ``--speaker-ref`` flags
+    programmatically. Exit code 1 (no crash) when no clips exist at all.
+    """
+    from the_oracle.voice_catalog import default_voice_choices
+
+    repo_root = Path(__file__).resolve().parents[2]
+    choices = default_voice_choices(repo_root)
+    if args.json:
+        print(json.dumps([{"label": c.label, "path": c.path} for c in choices], ensure_ascii=False, indent=2))
+    else:
+        if not choices:
+            print("No default Seashells reference clips were found.", file=sys.stderr)
+            return 1
+        for index, choice in enumerate(choices):
+            marker = "" if index >= 2 else f" (default Speaker {'A' if index == 0 else 'B'})"
+            print(f"{choice.label} -> {choice.path}{marker}")
+    return 0
+
+
+def handle_render(args: argparse.Namespace) -> int:
+    if args.project:
+        saved = load_project_manifest(args.project)
+        plan = saved.plan
+        settings = saved.render_settings
+        speakers = saved.speaker_settings
+    else:
+        # Validate inputs before constructing the pipeline: OraclePipeline()
+        # loads the optional repair stack, so a missing-flag mistake should
+        # fail fast instead of after an expensive load.
+        if args.fix_input and args.fix_input_interactive:
+            # An explicit error instead of silently favoring one flag: the
+            # combination is almost always a script mistake, and a surprise
+            # behavior (whichever fix ran) is worse than a clear refusal.
+            raise SystemExit(
+                "--fix-input and --fix-input-interactive are mutually exclusive.\n"
+                "  --fix-input corrects fixable issues in place without asking.\n"
+                "  --fix-input-interactive shows the diff and prompts before writing.\n"
+                "Pick the one you want; drop the other."
+            )
+        missing = [name for name, value in {"--input": args.input, "--outdir": args.outdir}.items() if not value]
+        if missing:
+            raise SystemExit(
+                "render requires either --project, or --input and --outdir. "
+                f"Missing: {', '.join(missing)}"
+            )
+        if args.device_mode != "cuda" and args.cuda_device is not None:
+            raise SystemExit("--cuda-device requires --device-mode cuda.")
+        if args.device_mode == "cuda" and args.inference_backend == "vulkan":
+            raise SystemExit("--device-mode cuda cannot be combined with --inference-backend vulkan; use --inference-backend pytorch.")
+        if args.inference_backend != "vulkan" and (
+            args.audio_cpp_device is not None
+            or args.audio_cpp_threads is not None
+            or args.audio_cpp_timeout is not None
+            or args.audio_cpp_max_batch is not None
+        ):
+            raise SystemExit(
+                "--audio-cpp-device, --audio-cpp-threads, --audio-cpp-timeout, and "
+                "--audio-cpp-max-batch are Vulkan-backend knobs and require "
+                "--inference-backend vulkan."
+            )
+        if args.inference_backend == "vulkan" and args.model_variant == "turbo":
+            raise SystemExit(
+                "--inference-backend vulkan does not support the turbo variant. "
+                "Use --model-variant standard (or multilingual) with Vulkan, or "
+                "--inference-backend pytorch for turbo."
+            )
+
+        # Speaker references default to the repo-local Seashells clips (the
+        # GUI's "Default Voices" list) when the flags are omitted.
+        speaker_a_ref = args.speaker_a_ref
+        speaker_b_ref = args.speaker_b_ref
+        if not speaker_a_ref or not speaker_b_ref:
+            defaults = default_voice_choices(Path(__file__).resolve().parents[2])
+            if defaults:
+                speaker_a_ref = speaker_a_ref or defaults[0].path
+                speaker_b_ref = speaker_b_ref or (defaults[1].path if len(defaults) > 1 else defaults[0].path)
+        # Monologue mode renders every line in Speaker A's voice, so it only
+        # requires A; a missing B must not block a one-narrator render.
+        if not speaker_a_ref or (not speaker_b_ref and not args.monologue):
+            raise SystemExit(
+                "render requires either --project, or --speakerA-ref/--speakerB-ref. "
+                "No default Seashells voices were found to fall back on."
+            )
+        if not speaker_b_ref:
+            speaker_b_ref = speaker_a_ref
+
+        # SRT auto-detection: an .srt input is converted to a canonical
+        # dialogue script before any analysis, because subtitles ingested
+        # raw degrade into narration.
+        args.input = _maybe_convert_srt(args.input)
+
+        # Ingestion transformer: report input-formatting issues before the
+        # (expensive) pipeline load; with --fix-input, correct them in place,
+        # or with --fix-input-interactive show the review + prompt first.
+        # A declined fix aborts here, before the pipeline loads anything.
+        if args.fix_input_interactive:
+            if not sys.stdin.isatty():
+                print(
+                    "--fix-input-interactive requires a terminal; continuing without "
+                    "the review prompt (the file is not modified).",
+                    file=sys.stderr,
+                )
+                _check_input_formatting(args.input, fix=False, json_output=bool(args.check_input_json))
+            elif not _check_input_formatting_interactive(args.input):
+                return 2
+            else:
+                # An interactive fix may have converted an .srt input to a
+                # script; render the corrected file.
+                args.input = _srt_script_if_converted(args.input)
+        else:
+            _check_input_formatting(args.input, fix=bool(args.fix_input), json_output=bool(args.check_input_json))
+            if args.fix_input:
+                args.input = _srt_script_if_converted(args.input)
+
+        settings = RenderSettings(
+            correction_mode=args.correction_mode,
+            model_variant=args.model_variant,
+            language=args.language if args.model_variant == "multilingual" else "en",
+            export_stems=not args.no_stems,
+            loudness_preset=args.loudness,
+            device_mode=args.device_mode,
+            cuda_device=args.cuda_device,
+            inference_backend=args.inference_backend,
+            audio_cpp_device=args.audio_cpp_device,
+            audio_cpp_threads=args.audio_cpp_threads,
+            audio_cpp_timeout=args.audio_cpp_timeout,
+            audio_cpp_max_batch=args.audio_cpp_max_batch,
+            seed=args.seed,
+            target_wpm=args.target_wpm,
+            monologue=args.monologue,
+            metadata={"title": args.title} if args.title else {},
+        )
+        voice_settings = _voice_settings_from_args(args)
+        speakers = {
+            "A": SpeakerSettings(reference_path=speaker_a_ref, voice_settings=voice_settings),
+            "B": SpeakerSettings(reference_path=speaker_b_ref, voice_settings=voice_settings),
+        }
+        for raw in args.speaker_refs:
+            key, sep, path = raw.partition("=")
+            if not sep or not key.strip() or not path.strip():
+                raise SystemExit(
+                    f"Invalid --speaker-ref {raw!r}: expected KEY=PATH, e.g. --speaker-ref C=/path/ref.wav"
+                )
+            key = key.strip().upper()
+            if key in ("A", "B"):
+                raise SystemExit(
+                    f"--speaker-ref {key} duplicates --speakerA-ref/--speakerB-ref; use those flags for A and B."
+                )
+            if not re.fullmatch(r"[A-X]", key):
+                raise SystemExit(
+                    f"Invalid --speaker-ref key {key!r}: voices are A..X (up to 24)."
+                )
+            speakers[key] = SpeakerSettings(reference_path=path.strip(), voice_settings=voice_settings)
+
+    pipeline = OraclePipeline()
+
+    if not args.project:
+        plan = pipeline.prepare_plan(args.input, args.outdir, speakers, settings)
+
+    if settings.inference_backend == "vulkan" and not args.no_audio_cpp_setup:
+        # Automatic CPU→GPU switch: build audiocpp_cli and/or download the
+        # Chatterbox model when missing, then set the env vars for this process
+        # so the existing engine path just works. --no-audio-cpp-setup keeps the
+        # old fail-fast behavior (the engine's ensure_model_ready still guards).
+        from the_oracle.vulkan_setup import run_vulkan_setup, vulkan_setup_needed
+
+        def _progress(line: str) -> None:
+            print(f"  [vulkan setup] {line}", file=sys.stderr)
+
+        # When everything is already in place this prints a single "ready"
+        # line instead of a no-op setup round-trip. run_vulkan_setup's
+        # progress callback already streams every script line, so the result's
+        # messages list must NOT be re-printed (that doubled the output).
+        if vulkan_setup_needed():
+            print("Vulkan backend selected: installing missing prerequisites...", file=sys.stderr)
+            result = run_vulkan_setup(progress=_progress)
+            if not result.ok:
+                raise SystemExit(f"Vulkan backend auto-setup failed: {result.error}")
+        print("Vulkan backend ready.", file=sys.stderr)
+
+    configure_logging(Path(plan.output_dir) / "logs" / "cli.log")
+    try:
+        output_path = pipeline.render(plan, settings)
+    except PartialRenderError as exc:
+        # The per-chunk failures are in the log; tell the user which rows
+        # failed so they can inspect rather than staring at a traceback.
+        rows = ", ".join(str(index) for index in exc.failed_rows)
+        raise SystemExit(f"{exc} Failed rows: {rows}.")
+    except (AudioCppUnavailableError, RDNA1VulkanError, NoAudioToAssembleError) as exc:
+        # These messages already say how to recover (download/build the model,
+        # fall back to --inference-backend pytorch, or fix the input); surface
+        # them cleanly instead of a raw traceback.
+        raise SystemExit(str(exc))
+    if args.srt:
+        from the_oracle.audio.export_srt import write_srt
+
+        from the_oracle.subtitle_targets import subtitle_sidecar_target
+
+        write_srt(subtitle_sidecar_target(output_path), plan.utterances)
+    if args.save_project:
+        save_project_manifest(args.save_project, build_saved_project(plan, settings, speakers))
+    print(output_path)
+    return 0
+
+
+def handle_fix_folder(args: argparse.Namespace) -> int:
+    """Batch-scan a folder and (optionally) apply every fixable rewrite.
+
+    Exit code 0 = nothing to fix or fixes applied cleanly; 1 = warnings
+    remain somewhere in the folder (fixable issues are always fixed when
+    applying); 2 = the folder could not be scanned. Nothing is written in
+    ``--dry-run`` mode or in ``--json`` mode without ``--fix`` semantics —
+    here ``--dry-run`` is the only preview switch, since a folder scan that
+    rewrites files is destructive and must be requested explicitly.
+    """
+    from the_oracle.ingest_transformer import apply_folder_fixes, preview_folder_fixes
+
+    folder = Path(args.folder)
+    json_mode = bool(getattr(args, "json", False))
+    dry_run = bool(getattr(args, "dry_run", False))
+    keep_backup = not bool(getattr(args, "no_backup", False))
+    if not folder.is_dir():
+        if json_mode:
+            print(json.dumps(_folder_json_document(str(folder), error="folder not found"), ensure_ascii=False))
+        else:
+            print(f"fix-folder: folder not found: {folder}", file=sys.stderr)
+        return 2
+    try:
+        fixable, warnings_only = preview_folder_fixes(folder)
+    except ValueError as exc:
+        if "No fixable" in str(exc):
+            # Nothing fixable anywhere — a clean scan, not a failure.
+            if json_mode:
+                print(json.dumps(_folder_json_document(str(folder), dry_run=dry_run), ensure_ascii=False))
+            else:
+                print(f"fix-folder: {exc}")
+            return 0
+        if json_mode:  # pragma: no cover - defensive
+            print(json.dumps(_folder_json_document(str(folder), error=f"scan failed: {exc}"), ensure_ascii=False))
+        else:  # pragma: no cover - defensive
+            print(f"fix-folder: the folder could not be scanned: {exc}", file=sys.stderr)
+        return 2
+    except OSError as exc:
+        if json_mode:
+            print(json.dumps(_folder_json_document(str(folder), error=f"scan failed: {exc}"), ensure_ascii=False))
+        else:
+            print(f"fix-folder: the folder could not be scanned: {exc}", file=sys.stderr)
+        return 2
+
+    applied: list[dict] = []
+    if not dry_run:
+        try:
+            written = apply_folder_fixes(fixable, backup=keep_backup)
+        except OSError as exc:
+            if json_mode:
+                print(json.dumps(_folder_json_document(str(folder), error=f"apply failed: {exc}"), ensure_ascii=False))
+            else:
+                print(f"fix-folder: corrections could not be written: {exc}", file=sys.stderr)
+            return 2
+        for target, fix_count, backup_path in written:
+            applied.append({"file": target, "fixed_count": fix_count, "backup": backup_path})
+
+    if json_mode:
+        document = _folder_json_document(
+            str(folder),
+            fixable=fixable,
+            warnings_only=warnings_only,
+            applied=applied,
+            dry_run=dry_run,
+        )
+        print(json.dumps(document, ensure_ascii=False))
+        return 1 if warnings_only else 0
+
+    if dry_run:
+        print(f"fix-folder: {len(fixable)} file(s) would be corrected, {len(warnings_only)} warning-only file(s):")
+    else:
+        print(f"fix-folder: corrected {len(fixable)} file(s), {len(warnings_only)} warning-only file(s):")
+    for fix in fixable:
+        print(f"  - {fix.path.relative_to(folder)}: {fix.fix_count} fix(es)")
+    for analysis in warnings_only:
+        print(f"  ! {Path(analysis.path).relative_to(folder)}: {len(analysis.warning_issues)} warning(s) (never rewritten)")
+    if dry_run:
+        print("Dry run: nothing written. Re-run without --dry-run to apply.")
+    elif applied:
+        total_backups = sum(1 for entry in applied if entry["backup"])
+        if total_backups:
+            print(f"    backups kept: {total_backups}")
+    if warnings_only:
+        print("Warnings remain (never rewritten automatically); review them with check-input.")
+        return 1
+    return 0
+
+
+def _folder_json_document(
+    folder_path: str,
+    *,
+    fixable: list | None = None,
+    warnings_only: list | None = None,
+    applied: list[dict] | None = None,
+    dry_run: bool = False,
+    error: str | None = None,
+) -> dict:
+    """Build the fix-folder JSON report (one document per run).
+
+    Keys follow the stable-schema convention: ``fixes``, ``warnings`` and
+    ``applied`` are always present (empty lists when nothing applies), so
+    scripts can index them unconditionally.
+    """
+    document: dict = {"folder": folder_path}
+    if error is not None:
+        document["error"] = error
+        document["fixes"] = []
+        document["warnings"] = []
+        document["applied"] = []
+        return document
+    document["dry_run"] = dry_run
+    fixes_json: list[dict] = []
+    for fix in fixable or []:
+        fixes_json.append(
+            {
+                "file": str(fix.path),
+                "fix_count": fix.fix_count,
+                "line_fixes": [
+                    {"line": lf.output_line, "rule": lf.rule, "original": lf.original}
+                    for lf in fix.line_fixes
+                ],
+            }
+        )
+    document["fixes"] = fixes_json
+    document["warnings"] = [
+        {
+            "file": analysis.path,
+            "issues": [
+                _input_issue_json(issue, fixable=False) for issue in analysis.warning_issues
+            ],
+        }
+        for analysis in warnings_only or []
+    ]
+    document["applied"] = applied or []
+    return document
+
+
+def handle_activate(args: argparse.Namespace) -> int:
+    """Store a serial number after full offline verification. Refusal before
+    any bytes are written keeps the store unable to hold a bad value."""
+    from the_oracle.licensing import save_token, verify_token
+    from the_oracle.licensing.machine import machine_hash
+    from the_oracle.offline import repo_root
+
+    token = (args.token or sys.stdin.read()).strip()
+    if not token:
+        print("error: no serial number given. Pass it as an argument or pipe it to stdin.", file=sys.stderr)
+        return 2
+    verdict = verify_token(token, machine_hash=machine_hash())
+    if not verdict.ok:
+        print(json.dumps({"ok": False, "state": verdict.state, "detail": verdict.detail}, indent=2))
+        return 1
+    result = save_token(
+        repo_root(),
+        token,
+        verify_before_save=lambda candidate: verify_token(candidate, machine_hash=machine_hash()),
+    )
+    if result.state != "saved":
+        print(json.dumps({"ok": False, "state": result.state, "detail": result.detail}, indent=2))
+        return 1
+    licensee = verdict.licensee or "(no licensee recorded)"
+    print(f"Activated: serial number for {licensee}.")
+    print("Offline activation — no server was contacted.")
+    return 0
+
+
+def handle_machine_id() -> int:
+    """Print the fingerprint hash on stdout (it is what gets pasted into a
+    machine-locked license request); the privacy note goes to stderr."""
+    from the_oracle.licensing.machine import fingerprint_context_note, machine_hash
+
+    print(machine_hash())
+    print(fingerprint_context_note(), file=sys.stderr)
+    return 0
+
+
+def handle_privacy_status() -> int:
+    """The consent state and what capture has put on disk. Opted-out is a
+    normal state, not an error; the JSON is the machine-readable view the
+    doctor's human line summarizes."""
+    from the_oracle import crash
+    from the_oracle.offline import repo_root
+
+    root = repo_root()
+    records = crash.list_records(root)
+    native_dump = crash.crash_dir(root) / "native-crash.txt"
+    try:
+        native_present = native_dump.exists() and native_dump.stat().st_size > 0
+    except OSError:
+        native_present = False
+    print(
+        json.dumps(
+            {
+                "consent": crash.read_consent(root),
+                "records": len(records),
+                "newest": records[0].name if records else None,
+                "native_dump_present": native_present,
+                "location": str(crash.crash_dir(root)),
+                "detail": "Local-only capture; nothing is ever uploaded. Enable with privacy-opt-in."
+                if not crash.read_consent(root)
+                else "Enabled. Reports stay in the location above until you delete them.",
+            },
+            indent=2,
+        )
+    )
+    return 0
+
+
+def handle_privacy_opt_in() -> int:
+    """The explicit opt-in path. Consent is fail-closed everywhere else; this
+    command is the only thing that can turn capture on."""
+    from the_oracle import crash
+    from the_oracle.crash import handlers as crash_handlers
+    from the_oracle.offline import repo_root
+
+    root = repo_root()
+    crash.write_consent(root, True)
+    crash_handlers.enable_faulthandler_catch(root)  # arms native-crash capture
+    print("Local crash reporting enabled.")
+    print("Reports stay in this install's crash_reports/ folder and never leave this machine.")
+    print("Revoke anytime with the-oracle privacy-opt-out (--purge also deletes stored reports).")
+    return 0
+
+
+def handle_privacy_opt_out(args: argparse.Namespace) -> int:
+    """Revocation takes effect immediately: hooks re-check consent at fire
+    time, and faulthandler is disarmed here. --purge is an explicit flag, not
+    a prompt (the CLI refuses interactive prompts on non-TTY); the confirm
+    dialog belongs to the GUI slice."""
+    from the_oracle import crash
+    from the_oracle.crash import handlers as crash_handlers
+    from the_oracle.offline import repo_root
+
+    root = repo_root()
+    crash.write_consent(root, False)
+    crash_handlers.disable_faulthandler_catch()
+    kept = len(crash.list_records(root))
+    if args.purge:
+        removed = crash.clear_records(root)
+        print(f"Opted out of local crash reporting. Deleted {removed} stored report(s).")
+    else:
+        print(f"Opted out of local crash reporting. {kept} existing report(s) kept on disk.")
+        print("Delete them too with: the-oracle privacy-opt-out --purge")
+    return 0
+
+
+def handle_support_bundle(args: argparse.Namespace) -> int:
+    """Create a redacted support zip. The bundle is local-only; the command
+    never uploads it and tells the user to review it before sharing."""
+    from the_oracle.offline import repo_root
+    from the_oracle.support_bundle import build_support_bundle
+
+    result = build_support_bundle(
+        repo_root(),
+        args.out,
+        include_crash_reports=args.include_crash_reports,
+        run_doctor=not args.no_doctor,
+    )
+    if args.json:
+        print(json.dumps(result.manifest, indent=2))
+        return 0
+    print(f"Support bundle written to {result.path}")
+    print("Review the archive before sharing it; nothing was uploaded.")
+    if result.skipped:
+        print("Skipped: " + "; ".join(result.skipped), file=sys.stderr)
+    return 0
+
+
+def _resolve_crash_record(root: Path, requested: str | None) -> str | None:
+    """Resolve --crash to one local record name. A report references a record;
+    it never reads or copies the crash data itself (the package's consent
+    gate does that)."""
+    from the_oracle import crash
+
+    if not requested:
+        return None
+    records = crash.list_records(root)
+    if not records:
+        raise ValueError("no local crash records exist; run `the-oracle privacy-status`")
+    if requested == "newest":
+        return records[0].name
+    name = Path(requested).name
+    if any(record.name == name for record in records):
+        return name
+    raise ValueError(f"no crash record named {name!r}")
+
+
+def _handle_bug_report_new(args: argparse.Namespace) -> int:
+    from the_oracle.offline import repo_root
+    from the_oracle.support import issue_url, mailto_url, new_report, save_report, share_note
+
+    root = repo_root()
+    try:
+        crash_record = _resolve_crash_record(root, args.crash)
+    except ValueError as error:
+        print(f"error: {error}", file=sys.stderr)
+        return 2
+    try:
+        report = new_report(
+            root,
+            title=args.title,
+            summary=args.summary,
+            steps=args.steps,
+            expected=args.expected,
+            actual=args.actual,
+            area=args.area,
+            severity=args.severity,
+            contact=args.contact,
+            crash_record=crash_record,
+            include_diagnostics=not args.no_diagnostics,
+            run_doctor=not args.no_doctor,
+        )
+    except ValueError as error:
+        print(f"error: {error}", file=sys.stderr)
+        return 2
+    path = save_report(root, report)
+    issue = issue_url(report)
+    mail = mailto_url(report)
+    if args.json:
+        print(
+            json.dumps(
+                {
+                    "report": report.to_dict(),
+                    "path": str(path),
+                    "issue_url": issue,
+                    "mailto_url": mail,
+                },
+                indent=2,
+            )
+        )
+        return 0
+    print(f"Bug report {report.report_id} saved to {path}")
+    print(share_note(report))
+    print("Nothing was uploaded.")
+    return 0
+
+
+def _handle_bug_report_list(args: argparse.Namespace) -> int:
+    from the_oracle.offline import repo_root
+    from the_oracle.support import list_reports
+
+    reports = list_reports(repo_root())
+    if args.json:
+        print(
+            json.dumps(
+                [
+                    {
+                        "report_id": report.report_id,
+                        "created_utc": report.created_utc,
+                        "updated_utc": report.updated_utc,
+                        "title": report.title,
+                        "area": report.area,
+                        "severity": report.severity,
+                        "bundle_path": report.bundle_path,
+                    }
+                    for report in reports
+                ],
+                indent=2,
+            )
+        )
+        return 0
+    if not reports:
+        print("No bug reports yet.")
+        print('Create one with: the-oracle bug-report new --title "..." --summary "..."')
+        return 0
+    for report in reports:
+        print(
+            f"{report.report_id}  {report.created_utc[:10]}  "
+            f"{report.severity:<8}  {report.area:<11}  {report.title}"
+        )
+    print(f"\n{len(reports)} report(s). Show one with: the-oracle bug-report show <id>")
+    return 0
+
+
+def _handle_bug_report_show(args: argparse.Namespace) -> int:
+    from the_oracle.offline import repo_root
+    from the_oracle.support import load_report, report_json, report_markdown
+
+    try:
+        report = load_report(repo_root(), args.report_id)
+    except (FileNotFoundError, ValueError) as error:
+        print(f"error: {error}", file=sys.stderr)
+        return 1
+    if args.json:
+        print(report_json(report))
+    else:
+        print(report_markdown(report, include_diagnostics=not args.no_diagnostics))
+    return 0
+
+
+def _handle_bug_report_package(args: argparse.Namespace) -> int:
+    from the_oracle.offline import repo_root
+    from the_oracle.support import build_report_package, load_report
+
+    root = repo_root()
+    try:
+        report = load_report(root, args.report_id)
+        result = build_report_package(
+            root,
+            report,
+            args.out,
+            include_crash_reports=args.include_crash_reports,
+            run_doctor=not args.no_doctor,
+        )
+    except (FileNotFoundError, ValueError, OSError) as error:
+        print(f"error: {error}", file=sys.stderr)
+        return 1
+    if args.json:
+        print(
+            json.dumps(
+                {
+                    "report_id": result.report.report_id,
+                    "path": str(result.path),
+                    "manifest": result.bundle.manifest,
+                    "issue_url": result.issue_url,
+                    "mailto_url": result.mailto_url,
+                    "crash_reports_included": result.crash_reports_included,
+                },
+                indent=2,
+            )
+        )
+        return 0
+    print(f"Support package written to {result.path}")
+    print(f"Included {len(result.bundle.included)} file(s).")
+    if result.crash_reports_included:
+        print("Crash records were included (local consent was on).")
+    else:
+        print("No crash records included (consent off or not requested).")
+    if result.bundle.skipped:
+        print("Skipped: " + "; ".join(result.bundle.skipped), file=sys.stderr)
+    print("Review the archive before sharing it; nothing was uploaded.")
+    print("Bug report link: run `the-oracle bug-report issue " + report.report_id + "`")
+    return 0
+
+
+def _handle_bug_report_issue(args: argparse.Namespace) -> int:
+    from the_oracle.offline import repo_root
+    from the_oracle.support import issue_url, load_report, mailto_url
+
+    try:
+        report = load_report(repo_root(), args.report_id)
+    except (FileNotFoundError, ValueError) as error:
+        print(f"error: {error}", file=sys.stderr)
+        return 1
+    issue = issue_url(report)
+    mail = mailto_url(report)
+    if args.json:
+        print(json.dumps({"issue_url": issue, "mailto_url": mail}, indent=2))
+        return 0
+    print("Prefilled issue (open it yourself; nothing was opened):")
+    print(issue)
+    print()
+    print("Prefilled support email:")
+    print(mail)
+    print()
+    print("Attach the package from `the-oracle bug-report package " + report.report_id + "`.")
+    return 0
+
+
+def _handle_bug_report_delete(args: argparse.Namespace) -> int:
+    from the_oracle.offline import repo_root
+    from the_oracle.support import delete_report
+
+    if not args.yes:
+        print(
+            "error: deleting a report needs --yes (the CLI never prompts). "
+            f"Re-run: the-oracle bug-report delete {args.report_id} --yes",
+            file=sys.stderr,
+        )
+        return 2
+    if delete_report(repo_root(), args.report_id):
+        print(f"Deleted bug report {args.report_id}.")
+        return 0
+    print(f"error: no bug report with id {args.report_id!r}", file=sys.stderr)
+    return 1
+
+
+def _handle_bug_report_diagnose(args: argparse.Namespace) -> int:
+    from the_oracle.offline import repo_root
+    from the_oracle.support import collect_diagnostics, compact_diagnostics
+
+    diagnostics = collect_diagnostics(repo_root(), run_doctor=not args.no_doctor)
+    if args.json:
+        print(json.dumps(diagnostics, indent=2))
+        return 0
+    compact = compact_diagnostics(diagnostics)
+    system = compact.get("system", {})
+    print(f"The Oracle {compact.get('app_version')} diagnostics (redacted)")
+    print(f"  system:   {system.get('system')} {system.get('release')} ({system.get('machine')})")
+    print(f"  python:   {system.get('python')} ({system.get('python_bits')}-bit)")
+    print(f"  cpu:      {system.get('cpu_count')} core(s), {system.get('processor') or 'unknown'}")
+    print(f"  qt:       {compact.get('qt', {}).get('pyside6_version') or 'not installed'}")
+    print(f"  engine:   chatterbox={compact.get('engines', {}).get('chatterbox_available')}")
+    print(f"  ffmpeg:   {compact.get('ffmpeg', {}).get('present')}")
+    print(f"  crash:    consent={compact.get('crash', {}).get('capture_consent')} "
+          f"records={compact.get('crash', {}).get('record_count')}")
+    doctor = compact.get("doctor", {})
+    print(f"  doctor:   {doctor.get('ok') if doctor.get('ran') else doctor.get('detail')}")
+    print()
+    print("No paths, usernames, serial numbers, or environment values are included.")
+    return 0
+
+
+def handle_bug_report(args: argparse.Namespace) -> int:
+    """Dispatch the nested bug-report commands (argparse leaves the choice on
+    ``args.bug_report_command``; the flat dispatch style stays in main())."""
+    handlers = {
+        "new": _handle_bug_report_new,
+        "list": _handle_bug_report_list,
+        "show": _handle_bug_report_show,
+        "package": _handle_bug_report_package,
+        "issue": _handle_bug_report_issue,
+        "delete": _handle_bug_report_delete,
+        "diagnose": _handle_bug_report_diagnose,
+    }
+    return handlers[args.bug_report_command](args)
+
+
+def handle_license_status() -> int:
+    """Print the install's license status as JSON. Offline by construction:
+    verification is a pure function of the stored token and embedded keys."""
+    from the_oracle.licensing import current_license
+
+    status = current_license()
+    payload = {
+        "ok": status.ok,
+        "licensed": status.ok,
+        "state": status.state,
+        "licensee": status.licensee,
+        "lic_id": status.lic_id,
+        "key_id": status.key_id,
+        "exp": status.exp,
+        "machine_locked": status.machine_locked,
+        "detail": status.detail,
+    }
+    print(json.dumps(payload, indent=2))
+    return 0 if status.ok else 1
+
+
+def handle_render_report(args) -> int:
+    """Measure a finished render and report its conformance.
+
+    This report requires a valid serial number and never changes the project.
+
+    Nothing here writes to the project: the render and its plan are read only.
+    """
+    from the_oracle import render_report
+    try:
+        report = render_report.build_report(Path(args.project))
+    except render_report.ReportError as error:
+        print(f"render-report: {error}", file=sys.stderr)
+        return 2
+
+    if args.json:
+        print(json.dumps(report, indent=2))
+    else:
+        print(render_report.report_text(report))
+    if args.out:
+        written = render_report.write_report(report, Path(args.out))
+        print(f"Report written to {written}", file=sys.stderr)
+    return 0
+
+
+def handle_setup_vulkan() -> int:
+    """One-shot automatic setup for the Vulkan (GPU) backend.
+
+    Builds audiocpp_cli and downloads the Chatterbox model when missing and
+    applies them to the session. The CLI render path and the GUI apply the
+    same paths automatically, so no shell exports are needed. Exit code 0 on
+    success, 1 with a clear error otherwise.
+    """
+    from the_oracle import offline
+
+    if offline.is_offline_install():
+        # The Vulkan GGUF model is not part of the offline bundle, so on an
+        # offline install there is nothing to resolve it from and setup's
+        # model step could only fail -- after attempting a network fetch the
+        # offline guarantee forbids. Refuse with the way out instead.
+        print(
+            "Vulkan backend setup is unavailable on an offline install: the Vulkan GGUF"
+            " model is not part of the offline bundle, and an offline install must never"
+            " attempt a network fetch.",
+            file=sys.stderr,
+        )
+        print(
+            "To enable Vulkan, re-run `the-oracle setup-vulkan` on a networked machine"
+            " after deleting the .oracle_offline marker in the install root (deleting the"
+            " marker re-enables network model fetches), or re-install without"
+            " --offline-bundle.",
+            file=sys.stderr,
+        )
+        return 1
+    from the_oracle.vulkan_setup import run_vulkan_setup
+
+    def _progress(line: str) -> None:
+        print(f"  [vulkan setup] {line}", file=sys.stderr)
+
+    print("Vulkan backend setup: checking prerequisites...", file=sys.stderr)
+    result = run_vulkan_setup(progress=_progress)
+    if not result.ok:
+        print(f"Vulkan backend setup failed: {result.error}", file=sys.stderr)
+        return 1
+    print()
+    print("Vulkan backend ready:")
+    if result.binary:
+        print(f"    binary: {result.binary}")
+    if result.model:
+        print(f"    model:  {result.model}")
+    print()
+    print("The Oracle applies these automatically for --inference-backend vulkan")
+    print("renders and in the GUI -- no shell exports are required.")
+    return 0
+
+
+def main(argv: list[str] | None = None) -> int:
+    # Before any model work: an offline install must resolve every model from the
+    # seeded cache. Done here (not in the render/gui handlers) so every console
+    # entry point inherits it, including `the-oracle render` invoked directly
+    # rather than through the managed launcher.
+    from the_oracle.offline import apply_offline_environment
+
+    apply_offline_environment()
+    # Crash capture (CRASH_TELEMETRY_DESIGN §3): hooks install once, consent
+    # is read at fire time and is off unless the user opted in, so this is a
+    # no-op for every unconsented install.
+    from the_oracle.crash import handlers as crash_handlers
+
+    crash_handlers.install()
+    # Native-crash capture arms on EVERY launch, not only at consent
+    # transitions (STATE.md Noticed 2026-09-28: a consented relaunch ran
+    # unarmed). Idempotent; fails closed to unarmed when consent is off.
+    crash_handlers.arm_native_capture()
+    parser = build_parser()
+    args = parser.parse_args(argv)
+    refusal = _require_cli_serial_number(args.command)
+    if refusal is not None:
+        return refusal
+    if args.command == "gui":
+        from the_oracle.app_gui import launch_gui
+
+        configure_logging()
+        launch_gui()
+        return 0
+    if args.command == "render":
+        return handle_render(args)
+    if args.command == "check-input":
+        return handle_check_input(args)
+    if args.command == "voices":
+        return handle_voices(args)
+    if args.command == "fix-folder":
+        return handle_fix_folder(args)
+    if args.command == "sweep-cache":
+        return handle_sweep_cache(args)
+    if args.command == "render-report":
+        from the_oracle.licensing import LicenseRequired, current_license, require
+
+        try:
+            require(current_license(), "render-report")
+        except LicenseRequired as exc:
+            print(f"{exc}", file=sys.stderr)
+            return 1
+        return handle_render_report(args)
+    if args.command == "support-bundle":
+        return handle_support_bundle(args)
+    if args.command == "bug-report":
+        return handle_bug_report(args)
+    if args.command == "setup-vulkan":
+        return handle_setup_vulkan()
+    if args.command == "license-status":
+        return handle_license_status()
+    if args.command == "activate":
+        return handle_activate(args)
+    if args.command == "machine-id":
+        return handle_machine_id()
+    if args.command == "privacy-status":
+        return handle_privacy_status()
+    if args.command == "privacy-opt-in":
+        return handle_privacy_opt_in()
+    if args.command == "privacy-opt-out":
+        return handle_privacy_opt_out(args)
+    parser.error("Unknown command.")
+    return 2
+
+
+if __name__ == "__main__":
+    raise SystemExit(main(sys.argv[1:]))

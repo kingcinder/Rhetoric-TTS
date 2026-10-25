@@ -1,0 +1,1217 @@
+"""GUI tests for the input-formatting preview dialog and popup flow."""
+
+from __future__ import annotations
+
+import os
+from pathlib import Path
+
+import pytest
+
+from tests.helpers import isolate_user_config
+
+os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+
+from the_oracle.ingest_transformer import preview_fixed_text
+
+pytestmark = pytest.mark.slow
+
+
+def _fake_pipeline_class():
+    from tests.test_app_gui_profiles import _FakePipeline
+
+    return _FakePipeline
+
+
+@pytest.fixture(scope="module")
+def qt_app():
+    from PySide6.QtWidgets import QApplication
+
+    app = QApplication.instance() or QApplication([])
+    yield app
+
+
+class _FakeAudioOutput:
+    def __init__(self, *_args, **_kwargs) -> None:
+        pass
+
+
+class _FakeMediaPlayer:
+    def __init__(self, *_args, **_kwargs) -> None:
+        from tests.test_app_gui_profiles import _FakeSignal
+
+        self.audio_output = None
+        self.source = None
+        self.played = 0
+        self.stopped = 0
+        self.mediaStatusChanged = _FakeSignal()
+
+    def setAudioOutput(self, output) -> None:
+        self.audio_output = output
+
+    def setSource(self, source) -> None:
+        self.source = source
+
+    def play(self) -> None:
+        self.played += 1
+
+    def stop(self) -> None:
+        self.stopped += 1
+
+
+def _build_window(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
+    from tests.test_app_gui_profiles import (
+        _FakeChatterboxEngine,
+        _FakeModelDownloadThread,
+        _FakePipeline,
+        _FakeSignal,
+        _FakeVulkanPreflightThread,
+        _FakeVulkanProbeThread,
+        _FakeVulkanSetupThread,
+    )
+    import the_oracle.app_gui as app_gui
+    from the_oracle.app_paths import ensure_repo_default_paths
+
+    paths = ensure_repo_default_paths(tmp_path / "repo")
+    monkeypatch.setattr(app_gui, "QAudioOutput", _FakeAudioOutput)
+    monkeypatch.setattr(app_gui, "QMediaPlayer", _FakeMediaPlayer)
+    monkeypatch.setattr(app_gui, "OraclePipeline", _FakePipeline)
+    monkeypatch.setattr(app_gui, "ChatterboxEngine", _FakeChatterboxEngine)
+    monkeypatch.setattr(app_gui, "VulkanDeviceProbeThread", _FakeVulkanProbeThread)
+    monkeypatch.setattr(app_gui, "VulkanPreflightThread", _FakeVulkanPreflightThread)
+    monkeypatch.setattr(app_gui, "VulkanSetupThread", _FakeVulkanSetupThread)
+    monkeypatch.setattr(app_gui, "ModelDownloadThread", _FakeModelDownloadThread)
+    monkeypatch.setattr(app_gui, "ensure_repo_default_paths", lambda _repo_root: paths)
+    monkeypatch.setattr(app_gui, "default_voice_choices", lambda _repo_root, **_kwargs: [])
+    monkeypatch.setattr(app_gui, "load_recent_reference_paths", lambda limit=10: [])
+    model_file = tmp_path / "chatterbox-model"
+    model_file.write_text("model", encoding="utf-8")
+    monkeypatch.setattr(app_gui, "find_audiocpp_binary", lambda: tmp_path / "audiocpp_cli")
+    monkeypatch.setenv("ORACLE_AUDIOCPP_MODEL", str(model_file))
+    isolate_user_config(monkeypatch, tmp_path / "config")
+    window = app_gui.MainWindow()
+    return window, paths
+
+
+def test_preview_dialog_shows_side_by_side_and_accepts(qt_app, monkeypatch, tmp_path) -> None:
+    window, _paths = _build_window(monkeypatch, tmp_path)
+    original = "A - Hello there.\nB - Hi back.\n"
+    fixed = "A: Hello there.\nB: Hi back.\n"
+
+    # Invoke the preview builder directly and simulate acceptance by calling
+    # the dialog's accept() from inside a patched exec().
+    import the_oracle.app_gui as app_gui
+
+    class _PreviewDialog(app_gui.QDialog):
+        accepted = False
+
+        def exec(self):  # noqa: D102 - test double
+            _PreviewDialog.accepted = True
+            from PySide6.QtWidgets import QPlainTextEdit
+
+            views = self.findChildren(QPlainTextEdit)
+            assert len(views) == 2, "side-by-side preview needs two panes"
+            left, right = views[0].toPlainText(), views[1].toPlainText()
+            # Left pane: the original; right pane: corrections with their
+            # fix-rule label as a suffix.
+            assert "A - Hello there." in left
+            assert "B - Hi back." in left
+            assert "+ A: Hello there. [dash/pipe separator]" in right
+            assert "+ B: Hi back. [dash/pipe separator]" in right
+            # Pane headers identify the layout.
+            from PySide6.QtWidgets import QLabel
+
+            labels = [w.text() for w in self.findChildren(QLabel)]
+            assert "Original" in labels
+            assert any("Corrected" in label for label in labels)
+            return app_gui.QDialog.DialogCode.Accepted
+
+    monkeypatch.setattr(app_gui, "QDialog", _PreviewDialog)
+    from the_oracle.ingest_transformer import transform_text_detailed
+
+    _fixed, line_fixes = transform_text_detailed(original)
+    result = window._show_fix_preview_dialog(original, fixed, 2, line_fixes=line_fixes)
+    assert result is True
+    assert _PreviewDialog.accepted
+
+
+def test_preview_dialog_synchronizes_pane_scrolling(qt_app, monkeypatch, tmp_path) -> None:
+    """Scrolling one pane drives the other (long-script reviewability)."""
+    window, _paths = _build_window(monkeypatch, tmp_path)
+    original = "A - Hello there.\nB - Hi back.\n"
+    fixed = "A: Hello there.\nB: Hi back.\n"
+    import the_oracle.app_gui as app_gui
+
+    captured: dict = {}
+
+    class _PreviewDialog(app_gui.QDialog):
+        def exec(self):  # noqa: D102 - test double: capture scroll coupling
+            from PySide6.QtWidgets import QPlainTextEdit
+
+            views = self.findChildren(QPlainTextEdit)
+            left_bar = views[0].verticalScrollBar()
+            right_bar = views[1].verticalScrollBar()
+            # Drive the left scrollbar; the right one must follow.
+            left_bar.setValue(int(left_bar.maximum() / 2))
+            captured["followed"] = right_bar.value() == left_bar.value()
+            # And the reverse direction.
+            right_bar.setValue(0)
+            captured["followed_back"] = left_bar.value() == 0
+            return app_gui.QDialog.DialogCode.Accepted
+
+    monkeypatch.setattr(app_gui, "QDialog", _PreviewDialog)
+    window._show_fix_preview_dialog(original, fixed, 2)
+    assert captured["followed"] and captured["followed_back"]
+
+
+def test_preview_dialog_reject_leaves_file(qt_app, monkeypatch, tmp_path) -> None:
+    window, _paths = _build_window(monkeypatch, tmp_path)
+    import the_oracle.app_gui as app_gui
+
+    class _PreviewDialog(app_gui.QDialog):
+        def exec(self):  # noqa: D102 - test double
+            return app_gui.QDialog.DialogCode.Rejected
+
+    monkeypatch.setattr(app_gui, "QDialog", _PreviewDialog)
+    result = window._show_fix_preview_dialog("A - hi.\n", "A: hi.\n", 1)
+    assert result is False
+
+
+def test_transformer_check_shows_popup_and_previews_before_fix(
+    qt_app, monkeypatch, tmp_path
+) -> None:
+    """The full popup flow: warning popup -> preview dialog -> file fixed."""
+    window, _paths = _build_window(monkeypatch, tmp_path)
+    import the_oracle.app_gui as app_gui
+    from tests.test_app_gui_profiles import _FakeSignal  # noqa: F401
+
+    target = tmp_path / "input" / "messy.txt"
+    target.parent.mkdir(exist_ok=True)
+    target.write_text("A - Hello there.\nB - Hi back.\n", encoding="utf-8")
+    window.input_path.setText(str(target))
+
+    # The warning popup: user clicks the "Fix File Automatically" button.
+    popup_buttons: list[object] = []
+
+    class _Popup(app_gui.QMessageBox):
+        fix_button = None
+
+        # Static popups the check flow raises after the fix must not block
+        # offscreen: stub them like exec above.
+        information = staticmethod(lambda *a, **k: 0)
+        critical = staticmethod(lambda *a, **k: 0)
+
+        def exec(self):  # noqa: D102 - test double
+            assert self.icon() == app_gui.QMessageBox.Icon.Warning
+            assert "formatting" in self.text().lower()
+            _Popup.fix_button = self.buttons()[0]
+            self.clickedButton = lambda: _Popup.fix_button  # type: ignore[method-assign]
+            return 0
+
+    monkeypatch.setattr(app_gui, "QMessageBox", _Popup)
+
+    # The preview dialog: user accepts.
+    class _PreviewDialog(app_gui.QDialog):
+        def exec(self):  # noqa: D102 - test double
+            from PySide6.QtWidgets import QPlainTextEdit
+
+            views = self.findChildren(QPlainTextEdit)
+            assert views, "preview dialog must appear before the fix is applied"
+            return app_gui.QDialog.DialogCode.Accepted
+
+    real_qdialog = app_gui.QDialog
+    monkeypatch.setattr(
+        app_gui, "QDialog", type("QDialog", (real_qdialog,), {"exec": _PreviewDialog.exec})
+    )
+
+    proceed = window._run_ingest_transformer_check()
+    assert proceed is True
+    assert target.read_text(encoding="utf-8") == "A: Hello there.\nB: Hi back.\n"
+    # A timestamped backup of the original exists next to the file.
+    backups = list(target.parent.glob("messy.txt.bak-*"))
+    assert len(backups) == 1
+    assert backups[0].read_text(encoding="utf-8") == "A - Hello there.\nB - Hi back.\n"
+
+
+def test_transformer_check_cancel_in_preview_keeps_file(qt_app, monkeypatch, tmp_path) -> None:
+    """Cancelling inside the preview dialog leaves the file untouched."""
+    window, _paths = _build_window(monkeypatch, tmp_path)
+    import the_oracle.app_gui as app_gui
+
+    target = tmp_path / "input" / "messy2.txt"
+    target.parent.mkdir(exist_ok=True)
+    target.write_text("A - Hello there.\n", encoding="utf-8")
+    window.input_path.setText(str(target))
+
+    class _Popup(app_gui.QMessageBox):
+        information = staticmethod(lambda *a, **k: 0)
+        critical = staticmethod(lambda *a, **k: 0)
+
+        def exec(self):  # noqa: D102 - test double
+            _Popup.fix_button = self.buttons()[0]
+            self.clickedButton = lambda: _Popup.fix_button  # type: ignore[method-assign]
+            return 0
+
+    monkeypatch.setattr(app_gui, "QMessageBox", _Popup)
+
+    real_qdialog = app_gui.QDialog
+
+    class _PreviewDialog(real_qdialog):
+        def exec(self):  # noqa: D102 - test double
+            return real_qdialog.DialogCode.Rejected
+
+    monkeypatch.setattr(app_gui, "QDialog", _PreviewDialog)
+
+    proceed = window._run_ingest_transformer_check()
+    assert proceed is False
+    # File untouched, no backup written.
+    assert target.read_text(encoding="utf-8") == "A - Hello there.\n"
+    assert not list(target.parent.glob("messy2.txt.bak-*"))
+
+
+def test_clean_file_skips_popup_entirely(qt_app, monkeypatch, tmp_path) -> None:
+    window, _paths = _build_window(monkeypatch, tmp_path)
+    import the_oracle.app_gui as app_gui
+
+    target = tmp_path / "input" / "clean.txt"
+    target.parent.mkdir(exist_ok=True)
+    target.write_text("A: Hello there.\nB: Hi back.\n", encoding="utf-8")
+    window.input_path.setText(str(target))
+
+    def _fail_exec(self):  # pragma: no cover - must never run
+        raise AssertionError("no popup should appear for a clean file")
+
+    monkeypatch.setattr(app_gui.QMessageBox, "exec", _fail_exec)
+    assert window._run_ingest_transformer_check() is True
+    assert target.read_text(encoding="utf-8") == "A: Hello there.\nB: Hi back.\n"
+
+
+def test_analyze_reruns_automatically_after_fix(qt_app, monkeypatch, tmp_path) -> None:
+    """One Analyze click on a messy file must produce a plan built from the
+    CORRECTED content: fix -> Analyze re-runs itself with no second click."""
+    window, _paths = _build_window(monkeypatch, tmp_path)
+    import the_oracle.app_gui as app_gui
+    from the_oracle.models.project import RenderPlan, Utterance, VoiceProfile, VoiceSettings
+
+    target = tmp_path / "input" / "messy3.txt"
+    target.parent.mkdir(exist_ok=True)
+    target.write_text("A - Hello there.\nB - Hi back.\n", encoding="utf-8")
+    window.input_path.setText(str(target))
+
+    seen_at_plan_time: dict[str, str] = {}
+
+    class _PlanPipeline(_fake_pipeline_class()):
+        def __init__(self, **kwargs) -> None:
+            super().__init__(**kwargs)
+
+        def prepare_plan(self, input_path, output_dir, speaker_settings, settings):
+            seen_at_plan_time["content"] = Path(input_path).read_text(encoding="utf-8")
+            profile = VoiceProfile(name="A", speaker="A", reference_audio=[], engine_params=VoiceSettings())
+            plan = RenderPlan(
+                title="t",
+                source_path=input_path,
+                output_dir=str(output_dir),
+                engine="chatterbox",
+                correction_mode="moderate",
+                metadata={"model_variant": "standard"},
+                voice_profiles={"A": profile, "B": profile},
+            )
+            plan.utterances = [
+                Utterance(index=0, original_text="Hello there.", repaired_text="Hello there.", speaker="A", emotion="neutral"),
+                Utterance(index=1, original_text="Hi back.", repaired_text="Hi back.", speaker="B", emotion="neutral"),
+            ]
+            return plan
+
+    monkeypatch.setattr(app_gui, "OraclePipeline", _PlanPipeline)
+
+    class _Popup(app_gui.QMessageBox):
+        information = staticmethod(lambda *a, **k: None)
+        critical = staticmethod(lambda *a, **k: None)
+
+        def exec(self):  # noqa: D102 - test double: user clicks the fix button
+            _Popup.fix_button = self.buttons()[0]
+            self.clickedButton = lambda: _Popup.fix_button  # type: ignore[method-assign]
+            return 0
+
+    real_qdialog = app_gui.QDialog
+
+    class _PreviewDialog(real_qdialog):
+        def exec(self):  # noqa: D102 - test double: user accepts the preview
+            return real_qdialog.DialogCode.Accepted
+
+    monkeypatch.setattr(app_gui, "QMessageBox", _Popup)
+    monkeypatch.setattr(app_gui, "QDialog", _PreviewDialog)
+
+    window.prepare_project()  # a single Analyze click
+
+    # The plan was built from the corrected file, not the original.
+    assert seen_at_plan_time["content"] == "A: Hello there.\nB: Hi back.\n"
+    assert window.plan is not None
+    assert [u.speaker for u in window.plan.utterances] == ["A", "B"]
+    # The file and its backup are on disk exactly as the flow promises.
+    assert target.read_text(encoding="utf-8") == "A: Hello there.\nB: Hi back.\n"
+    backups = list(target.parent.glob("messy3.txt.bak-*"))
+    assert len(backups) == 1
+
+
+def test_status_panel_reports_the_auto_fix(qt_app, monkeypatch, tmp_path) -> None:
+    """The error/status panel records the correction and the automatic
+    re-analysis, so the one-click flow is visible instead of silent."""
+    window, _paths = _build_window(monkeypatch, tmp_path)
+    import the_oracle.app_gui as app_gui
+
+    target = tmp_path / "input" / "messy4.txt"
+    target.parent.mkdir(exist_ok=True)
+    target.write_text("A - Hello there.\n", encoding="utf-8")
+    window.input_path.setText(str(target))
+
+    class _Popup(app_gui.QMessageBox):
+        information = staticmethod(lambda *a, **k: None)
+        critical = staticmethod(lambda *a, **k: None)
+
+        def exec(self):  # noqa: D102 - test double: user clicks the fix button
+            _Popup.fix_button = self.buttons()[0]
+            self.clickedButton = lambda: _Popup.fix_button  # type: ignore[method-assign]
+            return 0
+
+    real_qdialog = app_gui.QDialog
+
+    class _PreviewDialog(real_qdialog):
+        def exec(self):  # noqa: D102 - test double: user accepts the preview
+            return real_qdialog.DialogCode.Accepted
+
+    monkeypatch.setattr(app_gui, "QMessageBox", _Popup)
+    monkeypatch.setattr(app_gui, "QDialog", _PreviewDialog)
+
+    assert window._run_ingest_transformer_check() is True
+    panel_text = window.error_panel.toPlainText()
+    assert "corrected 1 problem(s) in messy4.txt" in panel_text
+    assert "re-analyzing the corrected file now" in panel_text
+    assert "backup:" in panel_text
+
+
+# ---------------------------------------------------------------------------
+# Batch folder fix flow
+# ---------------------------------------------------------------------------
+
+
+def test_batch_fix_scans_previews_and_applies(qt_app, monkeypatch, tmp_path) -> None:
+    """Folder picker -> combined preview -> apply writes every file + backups,
+    and the status panel reports per-file results."""
+    window, _paths = _build_window(monkeypatch, tmp_path)
+    import the_oracle.app_gui as app_gui
+    from the_oracle.ingest_transformer import FolderFix
+
+    folder = tmp_path / "inputs"
+    folder.mkdir()
+    (folder / "messy.txt").write_text("A - Hello there.\n", encoding="utf-8")
+    (folder / "brackets.md").write_text("[A]: Greetings.\n", encoding="utf-8")
+    (folder / "clean.txt").write_text("A: All good here.\n", encoding="utf-8")
+    sub = folder / "sub"
+    sub.mkdir()
+    (sub / "nested.txt").write_text("B - Deep.\n", encoding="utf-8")
+
+    monkeypatch.setattr(
+        app_gui.QFileDialog, "getExistingDirectory", staticmethod(lambda *a, **k: str(folder))
+    )
+
+    real_qdialog = app_gui.QDialog
+
+    class _BatchDialog(real_qdialog):
+        def exec(self):  # noqa: D102 - test double: user accepts the batch preview
+            from PySide6.QtWidgets import QPlainTextEdit, QTreeWidget
+
+            trees = self.findChildren(QTreeWidget)
+            assert trees, "batch preview has no folder tree"
+            tree = trees[0]
+            labels = [tree.topLevelItem(0).child(i).text(0) for i in range(tree.topLevelItem(0).childCount())]
+            # Tree lists every fixable file by path relative to the folder,
+            # including the subfolder file (recursive scan).
+            assert sorted(labels) == ["brackets.md", "messy.txt", os.path.join("sub", "nested.txt")]
+            views = self.findChildren(QPlainTextEdit)
+            assert views, "batch preview has no diff view"
+            diff = views[0].toPlainText()
+            # The preselected first file's rule-labeled diff is shown.
+            assert "+ [bracketed label] A: Greetings." in diff
+            return real_qdialog.DialogCode.Accepted
+
+    information_calls: list[str] = []
+    monkeypatch.setattr(app_gui, "QDialog", _BatchDialog)
+    monkeypatch.setattr(
+        app_gui.QMessageBox,
+        "information",
+        staticmethod(lambda *a, **k: information_calls.append(str(k)) or information_calls.append(str(a))),
+    )
+
+    window._batch_fix_input_folder()
+
+    # Files were rewritten, originals backed up.
+    assert (folder / "messy.txt").read_text(encoding="utf-8") == "A: Hello there.\n"
+    assert (folder / "brackets.md").read_text(encoding="utf-8") == "A: Greetings.\n"
+    assert (folder / "clean.txt").read_text(encoding="utf-8") == "A: All good here.\n"
+    assert (sub / "nested.txt").read_text(encoding="utf-8") == "B: Deep.\n"
+    backups = list(folder.rglob("*.bak-*"))
+    assert len(backups) == 3
+    # Status panel reports the batch and each file (with subfolder paths).
+    panel = window.error_panel.toPlainText()
+    assert "Batch fix: corrected 3 formatting problem(s) across 3 file(s)" in panel
+    assert "messy.txt: 1 fix(es)" in panel
+    assert "brackets.md: 1 fix(es)" in panel
+    assert "nested.txt: 1 fix(es)" in panel
+
+
+def test_batch_fix_cancel_changes_nothing(qt_app, monkeypatch, tmp_path) -> None:
+    """Rejecting the combined preview leaves every file untouched."""
+    window, _paths = _build_window(monkeypatch, tmp_path)
+    import the_oracle.app_gui as app_gui
+
+    folder = tmp_path / "inputs"
+    folder.mkdir()
+    (folder / "messy.txt").write_text("A - Hello there.\n", encoding="utf-8")
+
+    monkeypatch.setattr(
+        app_gui.QFileDialog, "getExistingDirectory", staticmethod(lambda *a, **k: str(folder))
+    )
+
+    real_qdialog = app_gui.QDialog
+
+    class _BatchDialog(real_qdialog):
+        def exec(self):  # noqa: D102 - test double: user cancels
+            return real_qdialog.DialogCode.Rejected
+
+    monkeypatch.setattr(app_gui, "QDialog", _BatchDialog)
+
+    window._batch_fix_input_folder()
+
+    assert (folder / "messy.txt").read_text(encoding="utf-8") == "A - Hello there.\n"
+    assert not list(folder.glob("*.bak-*"))
+    assert "Batch fix cancelled: no files were changed." in window.error_panel.toPlainText()
+
+
+def test_batch_fix_clean_folder_shows_no_preview(qt_app, monkeypatch, tmp_path) -> None:
+    """A folder with nothing to fix gets an informational popup, no dialog."""
+    window, _paths = _build_window(monkeypatch, tmp_path)
+    import the_oracle.app_gui as app_gui
+
+    folder = tmp_path / "inputs"
+    folder.mkdir()
+    (folder / "clean.txt").write_text("A: All good here.\n", encoding="utf-8")
+
+    monkeypatch.setattr(
+        app_gui.QFileDialog, "getExistingDirectory", staticmethod(lambda *a, **k: str(folder))
+    )
+
+    messages: list[str] = []
+
+    class _Popup(app_gui.QMessageBox):
+        @staticmethod
+        def information(*args, **kwargs) -> None:  # noqa: D102 - test double
+            messages.append(str(args[2]) if len(args) >= 3 else str(kwargs))
+
+        @staticmethod
+        def critical(*args, **kwargs) -> None:  # noqa: D102 - test double
+            messages.append("CRITICAL: " + str(args))
+
+    monkeypatch.setattr(app_gui, "QMessageBox", _Popup)
+
+    window._batch_fix_input_folder()
+
+    assert any("No formatting problems found" in m for m in messages), messages
+    # No fix dialogs were opened and nothing was written.
+    assert (folder / "clean.txt").read_text(encoding="utf-8") == "A: All good here.\n"
+
+
+# ---------------------------------------------------------------------------
+# "Remember my choice" / trusted-file auto-accept
+# ---------------------------------------------------------------------------
+
+
+def test_trusted_file_is_autocorrected_without_popup(qt_app, monkeypatch, tmp_path) -> None:
+    """A remembered file is fixed silently: no popup, no preview dialog."""
+    window, _paths = _build_window(monkeypatch, tmp_path)
+    import the_oracle.app_gui as app_gui
+
+    target = tmp_path / "input" / "trusted.txt"
+    target.parent.mkdir(exist_ok=True)
+    target.write_text("A - Hello there.\n", encoding="utf-8")
+    window.input_path.setText(str(target))
+    window._remember_trusted_input_file(str(target))
+
+    opened: list[str] = []
+
+    class _NoPopup(app_gui.QMessageBox):
+        def exec(self):  # noqa: D102 - test double: must never open
+            opened.append("popup")
+            return 0
+
+    class _NoDialog(app_gui.QDialog):
+        def exec(self):  # noqa: D102 - test double: must never open
+            opened.append("dialog")
+            return 0
+
+    monkeypatch.setattr(app_gui, "QMessageBox", _NoPopup)
+    monkeypatch.setattr(app_gui, "QDialog", _NoDialog)
+
+    assert window._run_ingest_transformer_check() is True
+    assert opened == [], "trusted file must not open popup or preview"
+    assert target.read_text(encoding="utf-8") == "A: Hello there.\n"
+    assert "auto-corrected 1 problem(s)" in window.error_panel.toPlainText()
+    backups = list(target.parent.glob("*.bak-*"))
+    assert len(backups) == 1
+
+
+def test_remember_checkbox_persists_trust_on_accept(qt_app, monkeypatch, tmp_path) -> None:
+    """Ticking the checkbox and accepting adds the file to the trusted list."""
+    window, _paths = _build_window(monkeypatch, tmp_path)
+    import the_oracle.app_gui as app_gui
+    from PySide6.QtWidgets import QCheckBox
+
+    target = tmp_path / "messy.txt"
+    target.write_text("A - Hello there.\n", encoding="utf-8")
+    original, fixed, fix_count, _issues, line_fixes = preview_fixed_text(target)
+
+    class _PreviewDialog(app_gui.QDialog):
+        def exec(self):  # noqa: D102 - user accepts with the checkbox ticked
+            boxes = self.findChildren(QCheckBox)
+            assert len(boxes) == 1, "preview dialog must offer the remember checkbox"
+            assert "Remember this choice" in boxes[0].text()
+            boxes[0].setChecked(True)
+            return app_gui.QDialog.DialogCode.Accepted
+
+    monkeypatch.setattr(app_gui, "QDialog", _PreviewDialog)
+    assert window._show_fix_preview_dialog(original, fixed, fix_count, line_fixes, input_file=str(target)) is True
+    assert window._input_file_is_trusted(str(target))
+
+
+def test_unchecked_remember_box_does_not_trust(qt_app, monkeypatch, tmp_path) -> None:
+    window, _paths = _build_window(monkeypatch, tmp_path)
+    import the_oracle.app_gui as app_gui
+    from PySide6.QtWidgets import QCheckBox
+
+    target = tmp_path / "messy.txt"
+    target.write_text("A - Hello there.\n", encoding="utf-8")
+    original, fixed, fix_count, _issues, line_fixes = preview_fixed_text(target)
+
+    class _PreviewDialog(app_gui.QDialog):
+        def exec(self):  # noqa: D102 - user accepts WITHOUT the checkbox
+            boxes = self.findChildren(QCheckBox)
+            assert boxes and not boxes[0].isChecked()
+            return app_gui.QDialog.DialogCode.Accepted
+
+    monkeypatch.setattr(app_gui, "QDialog", _PreviewDialog)
+    assert window._show_fix_preview_dialog(original, fixed, fix_count, line_fixes, input_file=str(target)) is True
+    assert not window._input_file_is_trusted(str(target))
+
+
+def test_untrusted_file_still_prompts(qt_app, monkeypatch, tmp_path) -> None:
+    """Trust is per-file: other files keep the full popup + preview flow."""
+    window, _paths = _build_window(monkeypatch, tmp_path)
+    import the_oracle.app_gui as app_gui
+
+    trusted_file = tmp_path / "trusted.txt"
+    trusted_file.write_text("A - Hello there.\n", encoding="utf-8")
+    window._remember_trusted_input_file(str(trusted_file))
+
+    other = tmp_path / "other.txt"
+    other.write_text("B - Hi back.\n", encoding="utf-8")
+    window.input_path.setText(str(other))
+
+    popup_opened: list[bool] = []
+
+    class _Popup(app_gui.QMessageBox):
+        information = staticmethod(lambda *a, **k: None)
+        critical = staticmethod(lambda *a, **k: None)
+
+        def exec(self):  # noqa: D102 - user clicks the fix button (Cancel role)
+            popup_opened.append(True)
+            cancel_button = next(
+                button
+                for button in self.buttons()
+                if button.text().lower().startswith("cancel")
+            )
+            self.clickedButton = lambda: cancel_button  # type: ignore[method-assign]
+            return 0
+
+    monkeypatch.setattr(app_gui, "QMessageBox", _Popup)
+
+    assert window._run_ingest_transformer_check() is False
+    assert popup_opened == [True]
+    # The untrusted file was not touched.
+    assert other.read_text(encoding="utf-8") == "B - Hi back.\n"
+
+
+def test_trust_persists_across_windows(qt_app, monkeypatch, tmp_path) -> None:
+    """Remembered trust round-trips through the app-settings file."""
+    window, paths = _build_window(monkeypatch, tmp_path)
+    window._app_settings_ready = True  # persistence is enabled after GUI shown
+    target = tmp_path / "longterm.txt"
+    target.write_text("A - Hello there.\n", encoding="utf-8")
+    window._remember_trusted_input_file(str(target))
+
+    # A fresh window loads persisted settings from disk.
+    window2, _paths2 = _build_window(monkeypatch, tmp_path)
+    assert window2._input_file_is_trusted(str(target))
+    # ...and the file itself holds the resolved path.
+    from the_oracle.gui_settings import load_app_settings
+
+    reloaded = load_app_settings()
+    assert str(target.resolve()) in reloaded.get("trusted_format_files", [])
+
+
+def test_batch_tree_selection_switches_diff(qt_app, monkeypatch, tmp_path) -> None:
+    """Selecting another file in the tree shows that file's labeled diff."""
+    window, _paths = _build_window(monkeypatch, tmp_path)
+    import the_oracle.app_gui as app_gui
+
+    folder = tmp_path / "inputs"
+    folder.mkdir()
+    (folder / "dash.txt").write_text("A - Hello.\n", encoding="utf-8")
+    (folder / "brackets.md").write_text("[A]: Greetings.\n", encoding="utf-8")
+
+    monkeypatch.setattr(
+        app_gui.QFileDialog, "getExistingDirectory", staticmethod(lambda *a, **k: str(folder))
+    )
+
+    real_qdialog = app_gui.QDialog
+    seen: dict = {}
+
+    class _BatchDialog(real_qdialog):
+        def exec(self):  # noqa: D102 - select each tree entry, capture diffs
+            from PySide6.QtWidgets import QPlainTextEdit, QTreeWidget
+
+            tree = self.findChildren(QTreeWidget)[0]
+            view = self.findChildren(QPlainTextEdit)[0]
+            root = tree.topLevelItem(0)
+            for i in range(root.childCount()):
+                child = root.child(i)
+                tree.setCurrentItem(child)
+                seen[child.text(0)] = view.toPlainText()
+            return real_qdialog.DialogCode.Accepted
+
+    monkeypatch.setattr(app_gui, "QDialog", _BatchDialog)
+    accepted = window._show_batch_fix_preview_dialog(str(folder), *_fixes_and_warnings(folder))
+    assert isinstance(accepted, list) and len(accepted) == 2
+    assert "dash/pipe separator" in seen["dash.txt"]
+    assert "bracketed label" in seen["brackets.md"]
+
+
+def _fixes_and_warnings(folder):
+    from the_oracle.ingest_transformer import preview_folder_fixes
+
+    return preview_folder_fixes(folder)
+
+
+def test_batch_tree_checkboxes_exclude_files_from_apply(qt_app, monkeypatch, tmp_path) -> None:
+    """Unticking a file removes it from the returned apply list."""
+    window, _paths = _build_window(monkeypatch, tmp_path)
+    import the_oracle.app_gui as app_gui
+
+    folder = tmp_path / "inputs"
+    folder.mkdir()
+    (folder / "dash.txt").write_text("A - Hello.\n", encoding="utf-8")
+    (folder / "brackets.md").write_text("[A]: Greetings.\n", encoding="utf-8")
+    (folder / "period.txt").write_text("A. Period style.\n", encoding="utf-8")
+
+    monkeypatch.setattr(
+        app_gui.QFileDialog, "getExistingDirectory", staticmethod(lambda *a, **k: str(folder))
+    )
+
+    real_qdialog = app_gui.QDialog
+    from PySide6.QtCore import Qt
+    from PySide6.QtWidgets import QPushButton, QTreeWidget
+
+    class _BatchDialog(real_qdialog):
+        def exec(self):  # noqa: D102 - untick one file, verify the rest apply
+            tree = self.findChildren(QTreeWidget)[0]
+            root = tree.topLevelItem(0)
+            assert root.childCount() == 3
+            # All ticked by default.
+            for i in range(root.childCount()):
+                assert root.child(i).checkState(0) == Qt.Checked
+            items = {root.child(i).text(0): root.child(i) for i in range(root.childCount())}
+            # Untick one file.
+            items["dash.txt"].setCheckState(0, Qt.Unchecked)
+            apply_button = self.findChildren(QPushButton)[0]
+            assert "2 of 3" in apply_button.text()
+            assert apply_button.isEnabled()
+            # Untick everything: the apply button must disable.
+            for item in items.values():
+                item.setCheckState(0, Qt.Unchecked)
+            assert not apply_button.isEnabled()
+            # Re-tick two files to apply.
+            items["dash.txt"].setCheckState(0, Qt.Checked)
+            items["period.txt"].setCheckState(0, Qt.Checked)
+            assert "2 of 3" in apply_button.text()
+            return real_qdialog.DialogCode.Accepted
+
+    monkeypatch.setattr(app_gui, "QDialog", _BatchDialog)
+    accepted = window._show_batch_fix_preview_dialog(str(folder), *_fixes_and_warnings(folder))
+    included_names = {fix.path.name for fix in accepted}
+    assert included_names == {"dash.txt", "period.txt"}  # brackets.md excluded
+
+
+def test_popup_and_panel_surface_speaker_ref_hints(qt_app, monkeypatch, tmp_path) -> None:
+    """The fix flow suggests the exact voice flags for the (post-fix) cast."""
+    window, _paths = _build_window(monkeypatch, tmp_path)
+    import the_oracle.app_gui as app_gui
+
+    target = tmp_path / "messy.txt"
+    target.write_text("[Winston]: The plans are ready.\nJulia: Agreed.\n", encoding="utf-8")
+    window.input_path.setText(str(target))
+
+    seen: dict = {}
+    real_exec = app_gui.QMessageBox.exec
+
+    def fake_exec(self):  # noqa: ANN001 - capture the popup, pick Fix
+        seen.setdefault("popup", self)
+        seen.setdefault("popup_text", self.informativeText())
+        fix_button = next(
+            (b for b in self.buttons() if b.text() == "Fix File Automatically"), None
+        )
+        if fix_button is not None:
+            # Store the chosen button for clickedButton() to report.
+            self._chosen = fix_button
+        return 0
+
+    def fake_clicked(self):  # noqa: ANN001
+        return getattr(self, "_chosen", None)
+
+    monkeypatch.setattr(app_gui.QMessageBox, "exec", fake_exec)
+    monkeypatch.setattr(app_gui.QMessageBox, "clickedButton", fake_clicked)
+
+    real_dialog = app_gui.QDialog
+
+    class _PreviewDialog(real_dialog):
+        def exec(self):  # noqa: D102 - accept the fix
+            return real_dialog.DialogCode.Accepted
+
+    monkeypatch.setattr(app_gui, "QDialog", _PreviewDialog)
+
+    def fake_information(parent, title, text):  # noqa: ANN001
+        seen["corrected"] = text
+
+    monkeypatch.setattr(app_gui.QMessageBox, "information", staticmethod(fake_information))
+    assert window._run_ingest_transformer_check() is True
+    corrected_text = seen.get("corrected", "")
+    # The pre-fix warning popup itself carries the cast suggestions too.
+    assert "Speaker voices to provide" in seen.get("popup_text", "")
+    assert "winston -> voice A" in seen.get("popup_text", "")
+    assert "Speaker voices to provide" in corrected_text
+    assert "winston -> voice A" in corrected_text
+    assert "julia -> voice B" in corrected_text
+    # The status panel mirrors the hints.
+    panel = window.error_panel.toPlainText()
+    assert "winston -> voice A" in panel
+
+
+def test_preview_dialog_color_codes_changed_rows(qt_app, monkeypatch, tmp_path) -> None:
+    """Changed rows get red highlights left, green highlights right."""
+    window, _paths = _build_window(monkeypatch, tmp_path)
+    from the_oracle.ingest_transformer import preview_fixed_text
+
+    target = tmp_path / "messy.txt"
+    target.write_text(
+        "[Speaker A]: Hello there.\nA: clean line untouched.\nB:\nHi back.\n",
+        encoding="utf-8",
+    )
+    original_text, fixed_text, fix_count, _issues, line_fixes = preview_fixed_text(target)
+
+    captured: dict = {}
+    import the_oracle.app_gui as app_gui
+    real_dialog = app_gui.QDialog
+
+    class _PreviewDialog(real_dialog):
+        def exec(self):  # noqa: D102 - capture pane highlights
+            from PySide6.QtWidgets import QPlainTextEdit
+
+            panes = self.findChildren(QPlainTextEdit)
+            assert len(panes) == 2
+            captured["left_selections"] = len(panes[0].extraSelections())
+            captured["right_selections"] = len(panes[1].extraSelections())
+            return real_dialog.DialogCode.Rejected
+
+    monkeypatch.setattr(app_gui, "QDialog", _PreviewDialog)
+    accepted = window._show_fix_preview_dialog(
+        original_text, fixed_text, fix_count, line_fixes, input_file=str(target)
+    )
+    assert accepted is False  # Rejected above; we only needed the built dialog
+    # Two rewritten regions (bracketed label + orphan label join): each has a
+    # red row on the left and its green counterpart on the right.
+    assert captured["left_selections"] >= 2
+    assert captured["right_selections"] >= 2
+
+
+def test_preview_dialog_remembers_geometry_between_sessions(qt_app, monkeypatch, tmp_path) -> None:
+    """The dialog's size/position persists via app settings and restores."""
+    window, _paths = _build_window(monkeypatch, tmp_path)
+    window._app_settings_ready = True
+    from the_oracle.ingest_transformer import preview_fixed_text
+
+    target = tmp_path / "messy.txt"
+    target.write_text("[Speaker A]: Hello there.\n", encoding="utf-8")
+    original_text, fixed_text, fix_count, _issues, line_fixes = preview_fixed_text(target)
+
+    import the_oracle.app_gui as app_gui
+    from PySide6.QtCore import QByteArray
+
+    real_dialog = app_gui.QDialog
+    saved_blobs: list[bytes] = []
+
+    class _PreviewDialog(real_dialog):
+        def exec(self):  # noqa: D102 - accept, after claiming a known size
+            self.resize(1100, 640)
+            return real_dialog.DialogCode.Accepted
+
+    # Capture the blob the dialog saves, then verify a fresh dialog restores it.
+    original_restore = real_dialog.restoreGeometry
+
+    def spy_restore(self, blob):  # noqa: ANN001
+        saved_blobs.append(bytes(blob))
+        return original_restore(self, blob)
+
+    monkeypatch.setattr(app_gui, "QDialog", _PreviewDialog)
+
+    accepted = window._show_fix_preview_dialog(
+        original_text, fixed_text, fix_count, line_fixes, input_file=str(target)
+    )
+    assert accepted is True
+    stored = window._app_settings.get("preview_dialog_geometry")
+    assert isinstance(stored, str) and stored
+    decoded = QByteArray.fromBase64(stored.encode("ascii"))
+    assert not decoded.isNull()
+
+    # Second "session": a fresh dialog restoring the stored blob picks up the size.
+    fresh = real_dialog()
+    assert fresh.restoreGeometry(decoded) is True
+
+
+def test_batch_rule_filter_excludes_rule_from_apply(qt_app, monkeypatch, tmp_path) -> None:
+    """Unticking a rule checkbox applies only the remaining rules' fixes."""
+    window, _paths = _build_window(monkeypatch, tmp_path)
+    import the_oracle.app_gui as app_gui
+
+    folder = tmp_path / "inputs"
+    folder.mkdir()
+    (folder / "a.txt").write_text("[A]: Hello.\n[2024-01-01 10:00] B: Hi.\n", encoding="utf-8")
+    (folder / "b.txt").write_text("C. Period style.\n", encoding="utf-8")
+    monkeypatch.setattr(
+        app_gui.QFileDialog, "getExistingDirectory", staticmethod(lambda *a, **k: str(folder))
+    )
+
+    real_dialog = app_gui.QDialog
+    from PySide6.QtWidgets import QCheckBox, QPushButton
+
+    class _BatchDialog(real_dialog):
+        def exec(self):  # noqa: D102 - untick every rule except timestamp
+            boxes = [b for b in self.findChildren(QCheckBox) if b.text() and b.text() != "Remember this choice and fix this file automatically in the future"]
+            texts = {b.text() for b in boxes}
+            assert "bracketed label" in texts and "chat-export timestamp" in texts and "period separator" in texts
+            for box in boxes:
+                if box.text() != "chat-export timestamp":
+                    box.setChecked(False)
+            apply_button = self.findChildren(QPushButton)[0]
+            assert "1 of 2" in apply_button.text()  # b.txt fully filtered out
+            return real_dialog.DialogCode.Accepted
+
+    monkeypatch.setattr(app_gui, "QDialog", _BatchDialog)
+    accepted = window._show_batch_fix_preview_dialog(str(folder), *_fixes_and_warnings(folder))
+    assert [fix.path.name for fix in accepted] == ["a.txt"]
+    assert [lf.rule for lf in accepted[0].line_fixes] == ["timestamp"]
+    # The excluded rule's line survives untouched in the rewrite.
+    assert "[A]: Hello." in accepted[0].fixed_text
+
+
+def test_preview_dialog_colors_rule_labels(qt_app, monkeypatch, tmp_path) -> None:
+    """Each [rule label] in the diff panes is tinted with its rule's color."""
+    window, _paths = _build_window(monkeypatch, tmp_path)
+    from the_oracle.ingest_transformer import preview_fixed_text, rule_color
+
+    target = tmp_path / "messy.txt"
+    target.write_text(
+        "[Speaker A]: Hello there.\n[2024-01-01 10:00] Julia: Do they suspect anything?\n",
+        encoding="utf-8",
+    )
+    original_text, fixed_text, fix_count, _issues, line_fixes = preview_fixed_text(target)
+    expected = {rule_color("bracket"), rule_color("timestamp")}
+
+    import the_oracle.app_gui as app_gui
+
+    real_dialog = app_gui.QDialog
+    seen: dict = {}
+
+    class _PreviewDialog(real_dialog):
+        def exec(self):  # noqa: D102 - capture right-pane foreground colors
+            from PySide6.QtWidgets import QPlainTextEdit
+
+            panes = self.findChildren(QPlainTextEdit)
+            colors = {
+                s.format.foreground().color().name() for s in panes[1].extraSelections()
+            }
+            seen["colors"] = colors
+            from PySide6.QtCore import Qt as _Qt
+
+            seen["left_details"] = [
+                (s.format.foreground().style(), s.cursor.selectedText()[:30])
+                for s in panes[0].extraSelections()
+            ]
+            # PySide6 enums are always truthy; compare against NoBrush.
+            seen["left_brushless"] = all(
+                style == _Qt.BrushStyle.NoBrush for style, _text in seen["left_details"]
+            )
+            return real_dialog.DialogCode.Rejected
+
+    monkeypatch.setattr(app_gui, "QDialog", _PreviewDialog)
+    window._show_fix_preview_dialog(original_text, fixed_text, fix_count, line_fixes)
+    rgb_from_hex = lambda hexname: (  # noqa: E731
+        int(hexname[1:3], 16), int(hexname[3:5], 16), int(hexname[5:7], 16)
+    )
+    assert expected <= {rgb_from_hex(c) for c in seen["colors"]}
+    # The left pane's row backgrounds are pure backgrounds (no text tint).
+    assert seen["left_brushless"] is True, seen["left_details"]
+
+
+# ------------- subtitle conversion in the GUI picker and analyze path -------------
+
+
+_VTT_GUI = "WEBVTT\n\n00:00:01.000 --> 00:00:04.000\n<v Winston>The party is tonight.\n"
+
+
+def test_input_picker_converts_subtitle_to_script(qt_app, monkeypatch, tmp_path) -> None:
+    """Picking a subtitle file fills the field with the converted script."""
+    window, _paths = _build_window(monkeypatch, tmp_path)
+    import the_oracle.app_gui as app_gui
+
+    vtt = tmp_path / "episode.vtt"
+    vtt.write_text(_VTT_GUI, encoding="utf-8")
+    monkeypatch.setattr(
+        app_gui.QFileDialog,
+        "getOpenFileName",
+        staticmethod(lambda *a, **k: (str(vtt), "Subtitles (*.srt *.vtt)")),
+    )
+    window._pick_input()
+    assert window.input_path.text() == str(tmp_path / "episode.vtt.txt")
+    assert (tmp_path / "episode.vtt.txt").read_text(encoding="utf-8").startswith("winston:")
+    assert vtt.read_text(encoding="utf-8") == _VTT_GUI  # subtitle untouched
+    assert "Converted" in window.error_panel.toPlainText()
+
+
+def test_analyze_path_converts_typed_subtitle_path(qt_app, monkeypatch, tmp_path) -> None:
+    """A subtitle path typed into the field is converted before analysis."""
+    window, _paths = _build_window(monkeypatch, tmp_path)
+    vtt = tmp_path / "episode.vtt"
+    vtt.write_text(_VTT_GUI, encoding="utf-8")
+    window.input_path.setText(str(vtt))
+
+    # Stop the real analysis right after the conversion step: patch the
+    # transformer check to observe the (already re-pointed) field.
+    seen: dict = {}
+    import the_oracle.app_gui as app_gui
+    monkeypatch.setattr(
+        type(window),
+        "_run_ingest_transformer_check",
+        lambda self: seen.setdefault("input", self.input_path.text()) or True,
+    )
+    def _fail_pipeline(self):
+        raise AssertionError("no pipeline")
+
+    monkeypatch.setattr(type(window), "_pipeline", _fail_pipeline)
+    # The exception path opens a modal QMessageBox; stub it so the test
+    # never blocks.
+    monkeypatch.setattr(
+        app_gui.QMessageBox, "critical", staticmethod(lambda *a, **k: None)
+    )
+    # _ensure_outdir_exists would create dirs; patch to avoid FS work.
+    monkeypatch.setattr(
+        type(window), "_ensure_outdir_exists", lambda self, p: tmp_path / "out"
+    )
+    window.prepare_project()
+    assert seen["input"] == str(tmp_path / "episode.vtt.txt")
+    assert window.input_path.text() == str(tmp_path / "episode.vtt.txt")
+    assert "Converted" in window.error_panel.toPlainText()
+
+
+def test_cp1252_srt_converts_offscreen(qt_app, monkeypatch, tmp_path) -> None:
+    """Real offscreen GUI smoke test: a legacy-encoded .srt converts.
+
+    The full MainWindow is constructed on the offscreen Qt platform with the
+    engine fakes, exactly as a user session would build it, and the picked
+    subtitle file is driven through the window's real conversion path. The
+    file is written as CP1252 (Windows-1252, the legacy Windows default):
+    pure-ASCII bytes with em dashes and accented names, which are invalid
+    UTF-8, so the decode chain must fall back to CP1252 for conversion to
+    happen at all.
+    """
+    window, _paths = _build_window(monkeypatch, tmp_path)
+    srt = tmp_path / "episode.srt"
+    srt.write_bytes(
+        "1\n00:00:01,000 --> 00:00:03,000\nWinston: Bonjour\u2014it\u2019s a fine caf\u00e9.\n\n"
+        "2\n00:00:04,000 --> 00:00:06,000\n- Indeed.\n- Agreed.\n"
+        "".encode("cp1252")
+    )
+    assert b"caf\xe9" in srt.read_bytes()  # CP1252 \xe9 = é, not valid UTF-8
+    script = window._convert_subtitle_input(str(srt))
+    assert script == str(tmp_path / "episode.srt.txt")
+    converted = Path(script).read_text(encoding="utf-8")
+    assert "winston: Bonjour\u2014it\u2019s a fine caf\u00e9. Indeed." in converted
+    assert "Narrator: Agreed." in converted
+    assert "Converted" in window.error_panel.toPlainText()
+    # The subtitle file itself is untouched (convert-not-overwrite).
+    assert srt.read_bytes().decode("cp1252").startswith("1\n")
+
+
+def test_utf8_bom_srt_converts_offscreen(qt_app, monkeypatch, tmp_path) -> None:
+    """Real offscreen GUI smoke test: a UTF-8 .srt carrying a BOM converts.
+
+    Editors on Windows routinely save UTF-8 subtitles with an EF BB BF
+    prefix; the decode chain's ``utf-8-sig`` step must swallow it, so the
+    conversion succeeds AND the BOM never leaks into the converted script
+    (a leading U+FEFF would otherwise ride along into the first utterance).
+    """
+    window, _paths = _build_window(monkeypatch, tmp_path)
+    srt = tmp_path / "bom.srt"
+    srt.write_bytes(
+        b"\xef\xbb\xbf"
+        + "1\n00:00:01,000 --> 00:00:03,000\nWinston: Bonjour\u2014it\u2019s a fine caf\u00e9.\n\n"
+        "2\n00:00:04,000 --> 00:00:06,000\nJulia: Agreed.\n".encode("utf-8")
+    )
+    assert srt.read_bytes().startswith(b"\xef\xbb\xbf")  # the BOM is really there
+    script = window._convert_subtitle_input(str(srt))
+    assert script == str(tmp_path / "bom.srt.txt")
+    converted = Path(script).read_text(encoding="utf-8")
+    assert converted.startswith("winston: Bonjour\u2014it\u2019s a fine caf\u00e9.")
+    assert "\ufeff" not in converted, "BOM must be stripped, not copied into the script"
+    assert "julia: [pause=1000] Agreed." in converted
+    assert "Converted" in window.error_panel.toPlainText()
+    # The subtitle file itself is untouched (convert-not-overwrite).
+    assert srt.read_bytes().startswith(b"\xef\xbb\xbf")
+
+
+def test_mixed_encoding_vtt_converts_offscreen(qt_app, monkeypatch, tmp_path) -> None:
+    """Real offscreen GUI smoke test: a mixed-encoding .vtt converts with
+    every cue recovered on its own encoding.
+
+    Cue 1 is UTF-8-encoded and cue 2 CP1252-encoded (the classic concatenat
+    of files saved by two different editors). The whole-file ``utf-8-sig``
+    decode fails (cue 2's lone \xe8), and the conversion recovers per cue:
+    each blank-line-delimited segment decodes on its own encoding, so BOTH
+    cues arrive exactly instead of the UTF-8 cue degrading to CP1252
+    mojibake. (The old contract pinned that mojibake deliberately; the
+    2026-09-28 mixed-encoding salvage slice closed the gap and this pin
+    moved with it — still converting, never blocking or raising.)
+    """
+    window, _paths = _build_window(monkeypatch, tmp_path)
+    vtt = tmp_path / "mixed.vtt"
+    vtt.write_bytes(
+        "WEBVTT\n\n00:00:01.000 --> 00:00:04.000\n<v Winston>Bonjour\u2014it\u2019s a fine caf\u00e9.\n\n".encode("utf-8")
+        + "00:00:05.000 --> 00:00:08.000\n<v Julia>Tr\u00e8s bien, indeed.\n".encode("cp1252")
+    )
+    assert b"\xe8" in vtt.read_bytes()  # the CP1252-only byte that breaks strict UTF-8
+    script = window._convert_subtitle_input(str(vtt))
+    assert script == str(tmp_path / "mixed.vtt.txt")
+    converted = Path(script).read_text(encoding="utf-8")
+    # The CP1252 cue survives byte-exact (\xe8 -> \u00e8).
+    assert "julia: [pause=1000] Tr\u00e8s bien, indeed." in converted
+    # The UTF-8 cue now decodes exactly too (\u00e9 stays \u00e9), still
+    # attributed to winston — the mojibake pin (\u00c3\u00a9) is gone.
+    assert converted.startswith("winston: ")
+    assert "caf\u00e9" in converted
+    assert "ca\u00c3\u00a9" not in converted, "mojibake returned"
+    assert "Converted" in window.error_panel.toPlainText()
+    # The subtitle file itself is untouched (convert-not-overwrite).
+    assert b"WEBVTT" in vtt.read_bytes()
+
+
+def test_analyze_path_leaves_non_subtitle_alone(qt_app, monkeypatch, tmp_path) -> None:
+    window, _paths = _build_window(monkeypatch, tmp_path)
+    plain = tmp_path / "script.txt"
+    plain.write_text("A: Hello.\n", encoding="utf-8")
+    window.input_path.setText(str(plain))
+    assert window._convert_subtitle_input(str(plain)) == str(plain)
+
+
+# ------------- Settings: restore most recent input-file backup -------------
+
+
+def test_fix_records_backup_for_restore(qt_app, monkeypatch, tmp_path) -> None:
+    window, _paths = _build_window(monkeypatch, tmp_path)
+    script = tmp_path / "script.txt"
+    script.write_text("[A]: Hello.\n", encoding="utf-8")
+    backup = script.with_name(script.name + ".bak-20260912-000000")
+    backup.write_text("[A]: Hello.\n", encoding="utf-8")
+    window._remember_format_backup(str(script), str(backup))
+    records = window._app_settings["recent_format_backups"]
+    assert records and records[0]["file"] == str(script.resolve())
+    assert records[0]["backup"] == str(backup.resolve())
+    assert records[0]["stamp"]
+
+
+def test_restore_most_recent_backup_undoes_fix(qt_app, monkeypatch, tmp_path) -> None:
+    import the_oracle.app_gui as app_gui
+    from unittest.mock import patch
+
+    window, _paths = _build_window(monkeypatch, tmp_path)
+    script = tmp_path / "script.txt"
+    script.write_text("A: Hello.\n", encoding="utf-8")  # the corrected version
+    backup = script.with_name(script.name + ".bak-20260912-000000")
+    backup.write_text("[A]: Hello.\n", encoding="utf-8")  # the original
+    window._app_settings["recent_format_backups"] = [
+        {"file": str(script), "backup": str(backup), "stamp": "2026-09-12 00:00:00"}
+    ]
+    window.input_path.setText(str(script))
+    with patch.object(app_gui.QMessageBox, "question", return_value=app_gui.QMessageBox.StandardButton.Yes), \
+         patch.object(app_gui.QMessageBox, "information") as info:
+        window._restore_most_recent_format_backup()
+    assert script.read_text(encoding="utf-8") == "[A]: Hello.\n"  # original back
+    assert window._app_settings["recent_format_backups"] == []  # consumed
+    # The input field was re-pointed at the restored file.
+    assert Path(window.input_path.text()).resolve() == script.resolve()
+    assert info.called
+    assert "Restored" in window.error_panel.toPlainText()
+
+
+def test_restore_declined_leaves_file_alone(qt_app, monkeypatch, tmp_path) -> None:
+    import the_oracle.app_gui as app_gui
+    from unittest.mock import patch
+
+    window, _paths = _build_window(monkeypatch, tmp_path)
+    script = tmp_path / "script.txt"
+    script.write_text("A: Hello.\n", encoding="utf-8")
+    backup = script.with_name(script.name + ".bak-1")
+    backup.write_text("[A]: Hello.\n", encoding="utf-8")
+    window._app_settings["recent_format_backups"] = [
+        {"file": str(script), "backup": str(backup), "stamp": "x"}
+    ]
+    with patch.object(app_gui.QMessageBox, "question", return_value=app_gui.QMessageBox.StandardButton.No):
+        window._restore_most_recent_format_backup()
+    assert script.read_text(encoding="utf-8") == "A: Hello.\n"  # untouched
+    # The record survives so the user can restore later.
+    assert window._app_settings["recent_format_backups"]
+
+
+def test_restore_with_no_records_shows_hint(qt_app, monkeypatch, tmp_path) -> None:
+    import the_oracle.app_gui as app_gui
+    from unittest.mock import patch
+
+    window, _paths = _build_window(monkeypatch, tmp_path)
+    window._app_settings["recent_format_backups"] = []
+    with patch.object(app_gui.QMessageBox, "information") as info:
+        window._restore_most_recent_format_backup()
+    assert info.called
+    text = info.call_args[0][2]
+    assert "No input-file backups" in text
+
+
+def test_restore_missing_backup_prunes_record(qt_app, monkeypatch, tmp_path) -> None:
+    import the_oracle.app_gui as app_gui
+    from unittest.mock import patch
+
+    window, _paths = _build_window(monkeypatch, tmp_path)
+    script = tmp_path / "script.txt"
+    script.write_text("A: Hello.\n", encoding="utf-8")
+    window._app_settings["recent_format_backups"] = [
+        {"file": str(script), "backup": str(tmp_path / "gone.bak"), "stamp": "x"}
+    ]
+    with patch.object(app_gui.QMessageBox, "critical") as crit:
+        window._restore_most_recent_format_backup()
+    assert crit.called
+    assert window._app_settings["recent_format_backups"] == []
+    assert script.read_text(encoding="utf-8") == "A: Hello.\n"  # untouched

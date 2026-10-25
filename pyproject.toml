@@ -1,0 +1,88 @@
+[build-system]
+requires = ["setuptools>=75.8.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "the-oracle"
+dynamic = ["version"]
+description = "Rhetoric is a local desktop app for rendering dialogue (monologue or multi-speaker casts) to FLAC with the Chatterbox TTS model, on CPU or CUDA through PyTorch, or an opt-in Vulkan GPU backend."
+readme = "README.md"
+requires-python = ">=3.11,<3.13"
+license = { text = "Proprietary" }
+authors = [
+  { name = "Rhetoric contributors", email = "codysa90@gmail.com" }
+]
+dependencies = [
+  "markdown-it-py==3.0.0",
+  "numpy>=1.26,<2",
+  "Pillow>=13.0.0",
+  "urllib3>=2.8.0",
+  "packaging>=24.0",
+  "PySide6==6.8.2.1",
+  "sounddevice>=0.4.6,<0.6",
+  "scikit-learn==1.6.1",
+  "scipy==1.15.2",
+  "soundfile==0.13.1",
+  "symspellpy==6.9.0",
+  "huggingface-hub==1.33.0",
+]
+
+[project.optional-dependencies]
+ml = [
+  "deepmultilingualpunctuation==1.0.1",
+  "transformers==5.20.0",
+]
+chatterbox = [
+  "chatterbox-tts==0.1.7",
+  "cloudpickle==3.1.2",
+  "torch==2.6.0",
+  "torchaudio==2.6.0",
+  "torchvision==0.21.0",
+]
+dev = [
+  "pytest==9.0.3",
+  "pytest-xdist==3.6.1",
+  "cloudpickle==3.1.2",
+  # Reproduction + audit tooling (Phase 1/3 of the 1.4.0 release work).
+  "pip-audit==2.10.1",
+  "detect-secrets==1.5.0",
+  "pip-licenses==5.5.5",
+]
+
+[project.scripts]
+the-oracle = "the_oracle.cli:main"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+include-package-data = true
+# Carry the license and the generated third-party notices into the wheel's
+# .dist-info/licenses/ directory, so an installed copy keeps its notices.
+license-files = [
+  "LICENSE",
+  "PRIVACY.md",
+  "EULA-DRAFT.md",
+  "THIRD_PARTY_NOTICES.md",
+  "THIRD_PARTY_LICENSES/*",
+]
+
+[tool.setuptools.dynamic]
+version = { attr = "the_oracle.__version__" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+the_oracle = ["text_repair/data/*.txt", "EULA-DRAFT.md"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--dist=loadgroup"
+pythonpath = ["src"]
+markers = [
+  # The GUI certification gates are deliberately NOT marked: they are the suite's
+  # only proof that a theme reaches a rendered window, so a `-m "not slow"` run
+  # must not be able to report green without them (pinned in
+  # tests/test_fast_subset.py). This marker is for tests whose cost is the reason
+  # they are absent from that loop, not for the certifications.
+  "slow: long-running tests (GUI, integration, or model-heavy) that the fast suite skips",
+]

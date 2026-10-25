@@ -1,0 +1,756 @@
+#!/usr/bin/env python3
+"""Release tooling for The Oracle.
+
+Version metadata lives in exactly one place: ``__version__`` in
+``src/the_oracle/__init__.py``. ``pyproject.toml`` declares it dynamically
+(``[tool.setuptools.dynamic]``), and the README / STATE.md release banners
+are rewritten from it by ``--sync-banners``. No other tracked file may carry
+the number — ``--check`` enforces that invariant.
+
+Usage:
+    python scripts/release.py --check
+        Verify the single-source invariant only (read-only; CI-safe):
+        pyproject/banners agree with ``__version__`` AND CHANGELOG.md has a
+        section for the current version dated the release day (today), with
+        the file structurally sound: exactly one ``[Unreleased]`` placeholder,
+        released sections newest-first, and no empty shipped section. The
+        release-day date rule is told apart from drift: a section dated before
+        today for a version whose tracked checksum manifest exists is the
+        by-design post-cut state, reported as a note and still exiting 0, so
+        day-after verification needs no pinned date.
+
+    python scripts/release.py --sync-changelog
+        Stamp the release into CHANGELOG.md: retitle the ``## [Unreleased]``
+        body into ``## [<version>] — <today>`` (or rewrite an existing
+        section's date to today). The release-day changelog edit --check
+        requires, as one command.
+
+    python scripts/release.py --sync-banners
+        Rewrite the version inside the README / STATE.md release banners
+        from ``__version__``. The only other metadata-writing mode.
+
+    python scripts/release.py [--outdir DIR] [--skip-tests]
+        Full release: check, refuse a dirty tree, run the test suite,
+        build the sdist + wheel with the in-venv setuptools PEP 517 hooks
+        (no network, no ``build`` package needed), and write a versioned
+        ``checksums-<version>.sha256`` manifest beside the artifacts. A copy
+        of that manifest is written into the tracked ``release_checksums/``
+        directory, so a published artifact can be verified against this
+        repository instead of against the gitignored build folder it came
+        from. Commit that copy (the script prints the path); a manifest
+        already recorded for the version is never rewritten silently.
+"""
+
+from __future__ import annotations
+
+import argparse
+import ast
+import hashlib
+import os
+import re
+import subprocess
+import sys
+import tomllib
+from dataclasses import dataclass, field
+from datetime import date
+from pathlib import Path
+
+
+class ReleaseError(Exception):
+    """A release step cannot proceed; message is user-facing."""
+
+
+#: Files carrying a human-facing release banner, with the exact line prefix
+#: that identifies the banner. The version inside the line is rewritten by
+#: --sync-banners and verified by --check.
+BANNER_SITES: tuple[tuple[str, str], ...] = (
+    ("README.md", "**Release V"),
+    ("STATE.md", "**Current release: V"),
+)
+OPTIONAL_BANNER_SITES = frozenset({"STATE.md"})
+
+_BANNER_VERSION_RE = re.compile(r"V(\d+\.\d+\.\d+)")
+
+#: A released-version heading in CHANGELOG.md: ``## [1.2.0] — 2026-09-20``
+#: (em dash, single spaces). The date is the release day; --check requires
+#: the current version's section to be dated today, so a version bump can
+#: never land without its user-facing changelog entry.
+_CHANGELOG_HEADING_RE = re.compile(r"^## \[(?P<version>\d+\.\d+\.\d+)\] — (?P<date>\d{4}-\d{2}-\d{2})\s*$")
+
+#: The working placeholder heading. Exactly one may exist. --sync-changelog
+#: re-inserts it BELOW the freshly stamped version section, which is why the
+#: ordering and emptiness checks deliberately skip it.
+_UNRELEASED_HEADING = "## [Unreleased]"
+
+#: The single source of truth, as setuptools must read it.
+_VERSION_ATTR = "the_oracle.__version__"
+
+# Printed by the build subprocess so artifact names survive any unrelated
+# setuptools chatter on stdout.
+_ARTIFACT_PREFIX = "ARTIFACT:"
+
+#: Tracked directory holding a copy of each release's checksums manifest, so a
+#: published artifact stays verifiable from a clone. Deliberately NOT the
+#: gitignored build folder (``release_artifacts/``).
+RELEASE_CHECKSUMS_DIR = "release_checksums"
+
+_BUILD_SNIPPET = (
+    "import sys\n"
+    "from setuptools import build_meta\n"
+    # Bind the outdir BEFORE any hook call: build_meta reassigns sys.argv in
+    # place (['setup.py', 'sdist', ...]) and never restores it, so a second
+    # hook reading sys.argv[1] would receive a setuptools-internal flag.
+    "outdir = sys.argv[1]\n"
+    f"print('{_ARTIFACT_PREFIX}' + build_meta.build_sdist(outdir))\n"
+    f"print('{_ARTIFACT_PREFIX}' + build_meta.build_wheel(outdir))\n"
+)
+
+
+def checksums_filename(version: str) -> str:
+    """The manifest filename ``write_checksums`` produces and Step 4 commits.
+
+    One owner, because the tracked path ``--check`` reads to tell a shipped
+    version from an unshipped one has to be the name the release actually
+    wrote -- two spellings that drift apart would silently un-ship a release.
+    """
+    return f"checksums-{version}.sha256"
+
+
+def tracked_checksums_path(repo_root: Path, version: str) -> Path:
+    """Where this repository's tracked record of ``version``'s manifest lives."""
+    return repo_root / RELEASE_CHECKSUMS_DIR / checksums_filename(version)
+
+
+def shipped_manifest(repo_root: Path, version: str) -> Path | None:
+    """The tracked manifest for ``version``, or ``None`` if it never shipped.
+
+    Its presence is the in-repo evidence that the version's release already
+    ran -- the cut checklist commits that copy (Step 4) -- which is what makes
+    a CHANGELOG section dated before today the by-design post-cut state rather
+    than a stale heading. Deliberately a repository fact and not a calendar
+    guess: a bumped version whose notes were hand-dated early has no manifest
+    yet, so it stays drift and the pre-cut gate is not weakened.
+    """
+    manifest = tracked_checksums_path(repo_root, version)
+    return manifest if manifest.is_file() else None
+
+
+def read_version(repo_root: Path) -> str:
+    """Return the ``__version__`` literal, without importing the package."""
+    init = repo_root / "src" / "the_oracle" / "__init__.py"
+    if not init.is_file():
+        return ""
+    tree = ast.parse(init.read_text(encoding="utf-8"))
+    for node in tree.body:
+        if (
+            isinstance(node, ast.Assign)
+            and any(isinstance(t, ast.Name) and t.id == "__version__" for t in node.targets)
+            and isinstance(node.value, ast.Constant)
+            and isinstance(node.value.value, str)
+        ):
+            return node.value.value
+    return ""
+
+
+def pyproject_problems(repo_root: Path) -> list[str]:
+    """Drift between pyproject.toml and the single source of truth."""
+    path = repo_root / "pyproject.toml"
+    if not path.is_file():
+        return ["pyproject.toml: missing"]
+    data = tomllib.loads(path.read_text(encoding="utf-8"))
+    project = data.get("project", {})
+    problems: list[str] = []
+    if "version" in project:
+        problems.append(
+            'pyproject.toml: [project] sets a version literal; declare dynamic = ["version"] '
+            "and let [tool.setuptools.dynamic] read the_oracle.__version__"
+        )
+    if "version" not in project.get("dynamic", []):
+        problems.append("pyproject.toml: [project] does not declare 'version' in dynamic")
+    attr = data.get("tool", {}).get("setuptools", {}).get("dynamic", {}).get("version", {}).get("attr")
+    if attr != _VERSION_ATTR:
+        problems.append(
+            f"pyproject.toml: [tool.setuptools.dynamic] version.attr must be {_VERSION_ATTR!r}"
+        )
+    return problems
+
+
+#: Where a product tree keeps its license verify-key registry.
+_LICENSING_KEYS_REL = Path("src") / "the_oracle" / "licensing" / "keys.py"
+
+#: RFC 8032 §7.1 published test-vector public keys. Their seeds are in the
+#: spec, so any registry entry equal to one of them is forgeable by any reader
+#: — the exact shape of the historical ``k1`` defect.
+_FORGEABLE_VERIFY_KEYS = frozenset(
+    {
+        "d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a",
+        "3d4017c3e843895a92b70aa74d1b7ebc9c982ccf2ec4968cc0cd55f12af4660c",
+    }
+)
+
+
+def licensing_key_problems(repo_root: Path) -> list[str]:
+    """Distribution gate: never build artifacts around a forgeable key registry.
+
+    Two release blockers live here. A registry holding a published test vector
+    key means anyone can mint licences (the historical ``k1`` defect), and an
+    EMPTY registry means no customer can ever activate — the client fails
+    closed, so shipping it silently produces an install that stays unlicensed
+    for every token. Both refuse the build instead.
+
+    The registry is read **from the tree under release**, as source, rather than
+    by importing the package: an import resolves against whatever is already on
+    ``sys.path``, which is the running installation and not necessarily the tree
+    being packaged. A tree with no registry file at all (a fixture repo, or a
+    build of some other package) is left alone.
+
+    Deliberately not part of ``check_report``: the version/CHANGELOG invariant
+    is a property of the tracked tree and is checked on every ``--check``, while
+    key custody is a property of what gets *distributed*. Keeping them apart
+    means ``--check`` stays a fast, always-green-on-a-clean-tree signal and the
+    blocker still cannot be published.
+    """
+    keys_path = repo_root / _LICENSING_KEYS_REL
+    if not keys_path.is_file():
+        return []
+    try:
+        source = keys_path.read_text(encoding="utf-8")
+    except OSError as error:
+        return [f"licensing: cannot read the verify-key registry ({error})"]
+
+    # Only literal registrations count; the module's own prose about the
+    # retired key must not read as one.
+    registered = [
+        value.lower()
+        for value in re.findall(r'bytes\.fromhex\(\s*"([0-9a-fA-F]{64})"\s*\)', source)
+    ]
+    problems: list[str] = []
+    if not registered:
+        problems.append(
+            "licensing: no production verify key is registered in "
+            f"{_LICENSING_KEYS_REL.as_posix()}, so no licence can ever be minted "
+            "for this build. Run `python scripts/license_sign.py keygen` on your "
+            "own machine, store signing_seed_hex in your secret manager, and "
+            "register ONLY verify_key_hex as a new key id."
+        )
+    for value in registered:
+        if value in _FORGEABLE_VERIFY_KEYS:
+            problems.append(
+                f"licensing: {_LICENSING_KEYS_REL.as_posix()} registers the published "
+                "RFC 8032 test-vector public key "
+                f"{value[:16]}…, so any reader can mint licences with it"
+            )
+    return problems
+
+
+def banner_problems(repo_root: Path, version: str) -> list[str]:
+    """Drift between the release banners and the single source of truth."""
+    problems: list[str] = []
+    for filename, prefix in BANNER_SITES:
+        path = repo_root / filename
+        if not path.is_file():
+            if filename in OPTIONAL_BANNER_SITES:
+                continue
+            problems.append(f"{filename}: missing (expected a banner line starting {prefix!r})")
+            continue
+        banner_lines = [line for line in path.read_text(encoding="utf-8").splitlines() if line.startswith(prefix)]
+        if len(banner_lines) != 1:
+            problems.append(
+                f"{filename}: expected exactly one banner line starting {prefix!r}, found {len(banner_lines)}"
+            )
+            continue
+        match = _BANNER_VERSION_RE.search(banner_lines[0])
+        if not match:
+            problems.append(f"{filename}: banner line carries no V<major>.<minor>.<patch>: {banner_lines[0]!r}")
+        elif match.group(1) != version:
+            problems.append(
+                f"{filename}: banner says V{match.group(1)} but __version__ (the single source) says {version}"
+            )
+    return problems
+
+
+def _changelog_version_key(version: str) -> tuple[int, ...]:
+    """Numeric sort key for a released-version heading (shape already validated)."""
+    return tuple(int(part) for part in version.split("."))
+
+
+def changelog_report(repo_root: Path, version: str, today: date) -> CheckReport:
+    """Structural + current-version drift between CHANGELOG.md and the release.
+
+    Beyond the current version's exactly-one-dated-section rule, the gate
+    audits the file's whole structure so a botched hand- or tool-edit cannot
+    pass unnoticed:
+
+    * more than one ``## [Unreleased]`` placeholder (the misfire of
+      hand-duplicating it, or re-inserting it after a partial sync);
+    * released sections out of order — newest first, numerically. The
+      ``[Unreleased]`` placeholder is exempt: ``--sync-changelog`` legitimately
+      stamps the new version's section above the empty placeholder it
+      re-inserts;
+    * a shipped (non-Unreleased) section with no entries — a version stamped
+      into the changelog without recording anything. ``###`` sub-headings and
+      blockquote prose don't count as entries.
+
+    The date rule is classified rather than reported flat: a section dated
+    BEFORE today for a version whose tracked checksum manifest exists is the
+    by-design post-cut state (that release already ran, so the heading carries
+    the day it ran) and comes back in ``CheckReport.post_cut``, not in
+    ``problems``.
+    """
+    path = repo_root / "CHANGELOG.md"
+    if not path.is_file():
+        return CheckReport(
+            problems=[
+                "CHANGELOG.md: missing (expected a '## [<version>] — <YYYY-MM-DD>' "
+                "heading for the release)"
+            ]
+        )
+    lines = path.read_text(encoding="utf-8").splitlines()
+
+    # Every section in file order: released versions with their stamped date,
+    # plus the first [Unreleased] placeholder (date None). Extra placeholders
+    # are counted but not positioned — their count alone is the finding.
+    ordered: list[tuple[str, str | None, int]] = []
+    unreleased_count = 0
+    for index, line in enumerate(lines):
+        match = _CHANGELOG_HEADING_RE.match(line)
+        if match:
+            ordered.append((match.group("version"), match.group("date"), index))
+        elif line.rstrip() == _UNRELEASED_HEADING:
+            unreleased_count += 1
+            if unreleased_count == 1:
+                ordered.append(("[Unreleased]", None, index))
+
+    def section_end(start: int) -> int:
+        """Line index where the section starting at ``start`` ends (next '## ')."""
+        for i in range(start + 1, len(lines)):
+            if lines[i].startswith("## "):
+                return i
+        return len(lines)
+
+    problems: list[str] = []
+    post_cut: list[str] = []
+
+    if unreleased_count > 1:
+        problems.append(
+            f"CHANGELOG.md: {unreleased_count} '## [Unreleased]' sections; expected "
+            "exactly one — merge them into a single placeholder above the newest release"
+        )
+
+    released = [(entry, section_end(entry[2])) for entry in ordered if entry[0] != "[Unreleased]"]
+    for (prev_entry, _prev_end), (curr_entry, _curr_end) in zip(released, released[1:]):
+        prev_version, _prev_date, prev_lineno = prev_entry
+        curr_version, _curr_date, curr_lineno = curr_entry
+        if _changelog_version_key(curr_version) > _changelog_version_key(prev_version):
+            problems.append(
+                f"CHANGELOG.md:{curr_lineno + 1}: sections are out of order — [{curr_version}] "
+                f"is newer than [{prev_version}] (line {prev_lineno + 1}) but appears below "
+                "it; keep releases newest-first"
+            )
+
+    for (sec_version, _sec_date, start), end in released:
+        body = lines[start + 1 : end]
+        if not any(
+            line.strip()
+            and not line.lstrip().startswith("#")
+            and not line.lstrip().startswith(">")
+            for line in body
+        ):
+            problems.append(
+                f"CHANGELOG.md:{start + 1}: the [{sec_version}] section is empty — a shipped "
+                "version must record at least one user-facing change (sub-headings and "
+                "blockquote prose don't count); write the notes or remove the section"
+            )
+
+    sections: list[tuple[int, str]] = [
+        (lineno, date_str) for sec_version, date_str, lineno in ordered if sec_version == version
+    ]
+    if not sections:
+        problems.append(
+            f"CHANGELOG.md: no section for version {version} — add a heading "
+            f"'## [{version}] — {today.isoformat()}' above the release notes"
+        )
+        return CheckReport(problems=problems)
+    if len(sections) > 1:
+        problems.append(
+            f"CHANGELOG.md: {len(sections)} sections for version {version} "
+            f"(lines {', '.join(str(lineno + 1) for lineno, _ in sections)}); expected exactly one"
+        )
+        return CheckReport(problems=problems)
+    lineno, stamped = sections[0]
+    try:
+        stamped_date = date.fromisoformat(stamped)
+    except ValueError:
+        problems.append(
+            f"CHANGELOG.md:{lineno + 1}: {stamped!r} is not a valid calendar date "
+            f"(expected YYYY-MM-DD, e.g. {today.isoformat()})"
+        )
+        return CheckReport(problems=problems)
+    if stamped_date != today:
+        shipped = shipped_manifest(repo_root, version)
+        if shipped is not None and stamped_date < today:
+            post_cut.append(
+                f"CHANGELOG.md:{lineno + 1}: the {version} section is dated {stamped} and today "
+                f"is {today.isoformat()} — the by-design post-cut state, not drift: "
+                f"{shipped.relative_to(repo_root).as_posix()} is tracked, so that release already "
+                "ran and its section carries the day it ran. Nothing to fix; "
+                "--sync-changelog stamps a NEW release, not this one."
+            )
+        else:
+            problems.append(
+                f"CHANGELOG.md:{lineno + 1}: the {version} section is dated {stamped} but today is "
+                f"{today.isoformat()}; a release section must be dated the day the release "
+                f"runs — update the heading to '## [{version}] — {today.isoformat()}'"
+            )
+    return CheckReport(problems=problems, post_cut=post_cut)
+
+
+def sync_changelog(repo_root: Path, version: str, *, today: date | None = None) -> list[str]:
+    """Stamp the release into CHANGELOG.md; return changed file names.
+
+    The release-day edit --check demands, as one command: an existing
+    ``## [<version>] — <date>`` heading is rewritten to today's date, and
+    when the version has no section at all, the ``## [Unreleased]`` block's
+    body (up to the next heading) is retitled into ``## [<version>] —
+    <today>`` with ``[Unreleased]`` re-inserted below as an empty
+    placeholder, so subsequent work accumulates there again. Missing file,
+    or no heading AND no ``[Unreleased]`` section to retitle, raises
+    :class:`ReleaseError`. Idempotent: a second run on the same day rewrites
+    nothing and returns an empty list.
+    """
+    if today is None:
+        today = date.today()
+    changed: list[str] = []
+    path = repo_root / "CHANGELOG.md"
+    if not path.is_file():
+        raise ReleaseError("CHANGELOG.md: missing; cannot stamp the release into it")
+    lines = path.read_text(encoding="utf-8").splitlines()
+
+    heading_hit: int | None = None
+    unreleased_hit: int | None = None
+    for index, line in enumerate(lines):
+        match = _CHANGELOG_HEADING_RE.match(line)
+        if match and match.group("version") == version:
+            heading_hit = index
+        elif line.startswith("## [Unreleased]"):
+            unreleased_hit = index
+
+    stamped = False
+    if heading_hit is not None:
+        new_line = _CHANGELOG_HEADING_RE.sub(
+            f"## [{version}] — {today.isoformat()}", lines[heading_hit], count=1
+        )
+        if new_line != lines[heading_hit]:
+            lines[heading_hit] = new_line
+            stamped = True
+    else:
+        if unreleased_hit is None:
+            raise ReleaseError(
+                "CHANGELOG.md: no '## [<version>]' heading and no '## [Unreleased]' "
+                f"section to retitle — add the heading '## [{version}] — {today.isoformat()}' manually"
+            )
+        # The section runs to the next SIBLING '## ' heading; '###' sub-headings
+        # inside the body belong to the section being moved.
+        next_heading = next(
+            (i for i in range(unreleased_hit + 1, len(lines)) if lines[i].startswith("## ")),
+            len(lines),
+        )
+        body = lines[unreleased_hit + 1 : next_heading]
+        while body and body[-1] == "":
+            body.pop()
+        new_section = [f"## [{version}] — {today.isoformat()}", *body]
+        placeholder = ["", "## [Unreleased]", "", "### Changed", "", "- (nothing yet)", ""]
+        lines[unreleased_hit:next_heading] = [*new_section, *placeholder]
+        stamped = True
+
+    if stamped:
+        path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+        changed.append("CHANGELOG.md")
+    return changed
+
+
+@dataclass(frozen=True)
+class CheckReport:
+    """``--check``'s verdict, with drift and the by-design note kept apart.
+
+    ``problems`` are things to fix. ``post_cut`` is the one finding that looks
+    like drift and is not: a CHANGELOG section dated before today for a version
+    whose release already shipped, which the release-day rule would otherwise
+    flag forever. Reading that distinction off the report is what retires the
+    pinned-date workaround: day-after verification sees "green, and here is why
+    the date looks stale" from one run, instead of a MISMATCH that can only be
+    dismissed by re-running with ``today=<cut day>``.
+    """
+
+    problems: list[str] = field(default_factory=list)
+    post_cut: list[str] = field(default_factory=list)
+
+    @property
+    def ok(self) -> bool:
+        return not self.problems
+
+
+def check_report(repo_root: Path, *, today: date | None = None) -> CheckReport:
+    """Every way the tracked tree disagrees about the version, classified.
+
+    ``today`` defaults to ``date.today()``. Everything except the post-cut date
+    is drift; that one state is carried in ``CheckReport.post_cut`` with the
+    evidence that makes it by-design.
+    """
+    if today is None:
+        today = date.today()
+    report = CheckReport()
+    version = read_version(repo_root)
+    if not version:
+        report.problems.append("src/the_oracle/__init__.py: no __version__ string literal found")
+    report.problems.extend(pyproject_problems(repo_root))
+    if version:
+        report.problems.extend(banner_problems(repo_root, version))
+        changelog = changelog_report(repo_root, version, today)
+        report.problems.extend(changelog.problems)
+        report.post_cut.extend(changelog.post_cut)
+    return report
+
+
+def check(repo_root: Path, *, today: date | None = None) -> list[str]:
+    """Every way the tracked tree disagrees about the version (drift only).
+
+    The post-cut date is deliberately absent: it is the release-day rule firing
+    on a release that already ran, not a disagreement to fix, and
+    ``check_report`` carries it as a note. Callers that want both use
+    ``check_report``; this stays the drift-only view so a caller cannot act on
+    a note as if it were damage.
+    """
+    return check_report(repo_root, today=today).problems
+
+
+def sync_banners(repo_root: Path, version: str) -> list[str]:
+    """Rewrite the version inside each banner line; return changed files."""
+    changed: list[str] = []
+    for filename, prefix in BANNER_SITES:
+        path = repo_root / filename
+        if not path.is_file():
+            if filename in OPTIONAL_BANNER_SITES:
+                continue
+            raise ReleaseError(f"{filename}: missing; cannot sync its release banner")
+        lines = path.read_text(encoding="utf-8").splitlines(keepends=True)
+        hits = [index for index, line in enumerate(lines) if line.startswith(prefix)]
+        if len(hits) != 1:
+            raise ReleaseError(
+                f"{filename}: expected exactly one banner line starting {prefix!r}, found {len(hits)}"
+            )
+        new_line = _BANNER_VERSION_RE.sub(f"V{version}", lines[hits[0]], count=1)
+        if new_line != lines[hits[0]]:
+            lines[hits[0]] = new_line
+            path.write_text("".join(lines), encoding="utf-8")
+            changed.append(filename)
+    return changed
+
+
+def tree_is_dirty(repo_root: Path) -> bool:
+    """True when git reports any uncommitted change (staged, unstaged, or untracked)."""
+    result = subprocess.run(
+        ["git", "status", "--porcelain"],
+        cwd=str(repo_root),
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    return bool(result.stdout.strip())
+
+
+def run_tests(repo_root: Path) -> None:
+    """Run the full suite; QT_QPA_PLATFORM defaults to offscreen for headless hosts."""
+    env = dict(os.environ)
+    env.setdefault("QT_QPA_PLATFORM", "offscreen")
+    subprocess.run([sys.executable, "-m", "pytest"], cwd=str(repo_root), env=env, check=True)
+
+
+def build_artifacts(repo_root: Path, outdir: Path, version: str) -> list[Path]:
+    """Build sdist + wheel via the PEP 517 hooks; return versioned artifact paths."""
+    outdir.mkdir(parents=True, exist_ok=True)
+    result = subprocess.run(
+        [sys.executable, "-c", _BUILD_SNIPPET, str(outdir)],
+        cwd=str(repo_root),
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    names = [line[len(_ARTIFACT_PREFIX):].strip() for line in result.stdout.splitlines() if line.startswith(_ARTIFACT_PREFIX)]
+    if len(names) != 2:
+        raise ReleaseError(f"expected the build to report one sdist and one wheel, got {names!r}")
+    artifacts: list[Path] = []
+    for name in names:
+        if version not in name:
+            raise ReleaseError(f"artifact {name!r} is not versioned (expected {version} in the file name)")
+        path = outdir / name
+        if not path.is_file():
+            raise ReleaseError(f"the build reported {name!r} but it is missing from {outdir}")
+        artifacts.append(path)
+    return artifacts
+
+
+def _sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+
+
+
+def write_checksums(outdir: Path, version: str, artifacts: list[Path]) -> Path:
+    """Write a sha256sum -c manifest over exactly this run's artifacts.
+
+    Scoped to the passed artifacts rather than a directory scan: a rebuild in
+    a non-empty outdir must not checksum stale manifests or unrelated files.
+    """
+    if not artifacts:
+        raise ReleaseError(f"no artifacts to checksum in {outdir}")
+    manifest = outdir / checksums_filename(version)
+    # newline="\n" is the format, not a convenience: the manifest is a
+    # sha256sum -c input, which is byte-oriented. Text-mode translation on
+    # Windows writes CRLF, and the trailing "\r" then becomes part of the
+    # filename the tool tries to open — the manifest a Windows release run
+    # produced could never be verified by the runbook's own Step 4.2 check
+    # (measured 2026-10-13 on a real windows-latest runner: exit 1).
+    manifest.write_text(
+        "".join(f"{_sha256(path)}  {path.name}\n" for path in sorted(artifacts, key=lambda p: p.name)),
+        encoding="utf-8",
+        newline="\n",
+    )
+    return manifest
+
+
+def store_release_checksums(repo_root: Path, version: str, manifest: Path) -> Path:
+    """Record the run's manifest in the tracked ``release_checksums/`` folder.
+
+    The build folder is gitignored, so a manifest living only there can never
+    verify a published artifact from a clone — whoever downloaded
+    ``the_oracle-<version>.tar.gz`` has nothing in the repository to check it
+    against. This copy is the record git carries: the manifest is written
+    verbatim (byte-identical to the outdir manifest, so ``sha256sum -c`` reads
+    the same file either way).
+
+    An existing record for the version is never rewritten silently: changed
+    hashes for an already-published artifact are exactly the thing a checksum
+    manifest exists to prevent anyone from doing unnoticed, so that is a
+    refusal with instructions, not an overwrite. A rebuild that reproduces the
+    same bytes is a no-op.
+    """
+    tracked_dir = repo_root / RELEASE_CHECKSUMS_DIR
+    content = manifest.read_bytes()
+    tracked = tracked_dir / manifest.name
+    if tracked.is_file():
+        if tracked.read_bytes() == content:
+            return tracked
+        raise ReleaseError(
+            f"{Path(RELEASE_CHECKSUMS_DIR, manifest.name).as_posix()}: already "
+            f"records different hashes for {version}. A published artifact's "
+            "recorded checksums must not be rewritten silently — delete that "
+            "file deliberately if this build supersedes the published one."
+        )
+    tracked_dir.mkdir(parents=True, exist_ok=True)
+    tracked.write_bytes(content)
+    return tracked
+
+
+def _require_version(repo_root: Path) -> str:
+    version = read_version(repo_root)
+    if not version:
+        raise ReleaseError("src/the_oracle/__init__.py: no __version__ string literal found")
+    return version
+
+
+def _report(report: CheckReport) -> int:
+    """Render a verdict: notes first, then drift, then the success line.
+
+    The note goes to stderr beside MISMATCH rather than stdout, so the success
+    line stays the one thing a script reads off stdout and "a note" is never
+    mistaken for the verdict.
+    """
+    for note in report.post_cut:
+        print(f"POST-CUT: {note}", file=sys.stderr)
+    if report.problems:
+        for problem in report.problems:
+            print(f"MISMATCH: {problem}", file=sys.stderr)
+        return 1
+    print("single-source version invariant holds")
+    return 0
+
+
+def _release(repo: Path, outdir_arg: str, *, skip_tests: bool) -> int:
+    status = _report(check_report(repo))
+    if status != 0:
+        return status
+    # Key custody is a distribution blocker, not a version-invariant one.
+    key_problems = licensing_key_problems(repo)
+    if key_problems:
+        for problem in key_problems:
+            print(f"BLOCKED: {problem}", file=sys.stderr)
+        return 1
+    version = _require_version(repo)
+    if tree_is_dirty(repo):
+        print(
+            "refusing to release from a dirty tree — run --sync-banners, commit, then rerun",
+            file=sys.stderr,
+        )
+        return 1
+    if not skip_tests:
+        print("running the test suite ...")
+        run_tests(repo)
+    outdir = repo / outdir_arg
+    print(f"building sdist + wheel into {outdir} ...")
+    artifacts = build_artifacts(repo, outdir, version)
+    manifest = write_checksums(outdir, version, artifacts)
+    tracked = store_release_checksums(repo, version, manifest)
+    tracked_rel = tracked.relative_to(repo).as_posix()
+    print("artifacts:")
+    for path in artifacts:
+        print(f"  {path}")
+    print(f"checksums: {manifest}")
+    print(f"checksums (tracked copy): {tracked_rel}")
+    print(
+        "next: commit the tracked manifest so the published hashes live in the "
+        f"repo — git add {tracked_rel}"
+    )
+    return 0
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description="Build verified release artifacts for The Oracle.")
+    parser.add_argument("--check", action="store_true", help="verify the version invariant: pyproject/banners/CHANGELOG heading match __version__; a shipped version's older section date reports as the by-design post-cut note, not drift")
+    parser.add_argument("--sync-banners", action="store_true", help="rewrite README/STATE release banners from __version__")
+    parser.add_argument("--sync-changelog", action="store_true", help="stamp/insert the CHANGELOG.md section for the current version, dated today")
+    parser.add_argument("--outdir", default="release_artifacts", help="artifact output directory, relative to the repo root")
+    parser.add_argument("--skip-tests", action="store_true", help="skip the pytest run before building")
+    parser.add_argument("--repo-root", type=Path, default=None, help="repo root (default: the checkout this script lives in)")
+    args = parser.parse_args(argv)
+    repo = args.repo_root if args.repo_root is not None else Path(__file__).resolve().parents[1]
+
+    try:
+        if args.check:
+            return _report(check_report(repo))
+        if args.sync_changelog:
+            version = _require_version(repo)
+            changed = sync_changelog(repo, version)
+            print(f"stamped CHANGELOG.md for {version}" if changed else f"CHANGELOG.md already carries the {version} section dated today")
+            return _report(check_report(repo))
+        if args.sync_banners:
+            version = _require_version(repo)
+            changed = sync_banners(repo, version)
+            print(f"synced {', '.join(changed)} to V{version}" if changed else f"banners already at V{version}")
+            return _report(check_report(repo))
+        return _release(repo, args.outdir, skip_tests=args.skip_tests)
+    except ReleaseError as exc:
+        print(f"release: {exc}", file=sys.stderr)
+        return 1
+    except subprocess.CalledProcessError as exc:
+        print(f"release: command failed ({exc.returncode}): {' '.join(map(str, exc.cmd))}", file=sys.stderr)
+        return 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

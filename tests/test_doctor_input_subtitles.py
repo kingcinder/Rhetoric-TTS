@@ -1,0 +1,447 @@
+"""Tests for the doctor's Input/ subtitle-encoding check (scripts/doctor.py).
+
+The subtitle decode chain (``the_oracle.srt_ingest``) reads UTF-8 with BOM
+first and falls back to CP1252. This doctor check surfaces, before a render,
+which Input/ subtitle files would take that fallback — and, critically,
+which would be BLOCKED by it: ``convert_srt_file`` re-decodes strictly, so a
+file carrying bytes CP1252 does not define (0x81 et al) passes the lossy
+pre-check and then fails conversion outright. The tests pin the
+classification, the read-only contract (missing Input/ is reported, never
+created), the human-report rendering, and the next-steps wiring.
+"""
+
+from __future__ import annotations
+
+import importlib.util
+from pathlib import Path
+
+DOCTOR_PATH = Path(__file__).resolve().parents[1] / "scripts" / "doctor.py"
+
+
+def _load_doctor():
+    spec = importlib.util.spec_from_file_location("oracle_doctor", DOCTOR_PATH)
+    module = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None
+    spec.loader.exec_module(module)
+    return module
+
+
+# --- classification ----------------------------------------------------------
+
+
+def test_classifies_utf8_fallback_and_blocked_files(tmp_path: Path) -> None:
+    doctor = _load_doctor()
+    input_dir = tmp_path / "Input"
+    (input_dir / "sub").mkdir(parents=True)
+
+    (input_dir / "clean.srt").write_text("1\n00:00:01,000 --> 00:00:02,000\nWinston: café.\n", encoding="utf-8")
+    # A UTF-8 BOM must classify as UTF-8, not as a fallback file.
+    (input_dir / "bom.vtt").write_bytes(
+        b"\xef\xbb\xbf" + "WEBVTT\n\n00:00:01.000 --> 00:00:02.000\n<v Julia>voilà.\n".encode("utf-8")
+    )
+    # Cleanly legacy-encoded: converts via the CP1252 fallback (also nested,
+    # proving the scan is recursive).
+    (input_dir / "sub" / "legacy.srt").write_bytes(
+        "1\n00:00:01,000 --> 00:00:02,000\nWinston: café.\n".encode("cp1252")
+    )
+    # 0x81 is not defined in CP1252: the lossy pre-check passes it, the
+    # strict conversion re-decode would reject it.
+    (input_dir / "broken.srt").write_bytes(
+        "1\n00:00:01,000 --> 00:00:02,000\nWinston: ".encode("cp1252") + b"\x81" + "\n".encode("ascii")
+    )
+
+    status = doctor._input_subtitles_status(tmp_path)
+
+    assert status["scanned"] == 4
+    assert status["utf8_count"] == 2
+    assert [entry["path"] for entry in status["fallback"]] == ["Input/sub/legacy.srt"]
+    # A cleanly legacy file is not mixed: per-cue recovery changes nothing.
+    assert status["mixed"] == []
+    # 0x81 has no CP1252 mapping: blocked, with the actionable error.
+    assert [entry["path"] for entry in status["blocked"]] == ["Input/broken.srt"]
+    assert status["ok"] is False
+
+
+def test_classifies_mixed_encoding_file_as_recovered_per_cue(tmp_path: Path) -> None:
+    """A UTF-8 cue inside a legacy file is the shape the per-cue recovery
+    (f6b9418) fixed: the doctor must name it as mixed-encoding — recovered
+    per cue — instead of lumping it into the plain CP1252 fallback."""
+    doctor = _load_doctor()
+    input_dir = tmp_path / "Input"
+    input_dir.mkdir()
+    utf8_cue = "1\n00:00:01,000 --> 00:00:02,000\nWinston: café.\n".encode("utf-8")
+    legacy_cue = "2\n00:00:02,000 --> 00:00:03,000\nJulia: voilà.\n".encode("cp1252")
+    (input_dir / "mixed.srt").write_bytes(utf8_cue + b"\n\n" + legacy_cue)
+
+    status = doctor._input_subtitles_status(tmp_path)
+
+    assert status["scanned"] == 1
+    assert status["utf8_count"] == 0
+    assert [entry["path"] for entry in status["mixed"]] == ["Input/mixed.srt"]
+    assert status["fallback"] == []
+    assert status["ok"] is True
+
+
+def test_ascii_cue_alongside_legacy_cue_is_plain_fallback_not_mixed(tmp_path: Path) -> None:
+    """A cue that reads identically under both encodings (pure ASCII) is not
+    a rescue — the file is cleanly legacy from the recovery's point of view."""
+    doctor = _load_doctor()
+    input_dir = tmp_path / "Input"
+    input_dir.mkdir()
+    ascii_cue = b"1\n00:00:01,000 --> 00:00:02,000\nWinston: hello.\n"
+    legacy_cue = "2\n00:00:02,000 --> 00:00:03,000\nJulia: voilà.\n".encode("cp1252")
+    (input_dir / "mostly_legacy.srt").write_bytes(ascii_cue + b"\n\n" + legacy_cue)
+
+    status = doctor._input_subtitles_status(tmp_path)
+
+    assert [entry["path"] for entry in status["fallback"]] == ["Input/mostly_legacy.srt"]
+    assert status["mixed"] == []
+
+
+def test_flags_blocked_file_with_cp1252_undefined_bytes(tmp_path: Path) -> None:
+    doctor = _load_doctor()
+    input_dir = tmp_path / "Input"
+    input_dir.mkdir()
+    (input_dir / "weird.vtt").write_bytes(b"WEBVTT\n\n\x81\n")
+
+    status = doctor._input_subtitles_status(tmp_path)
+
+    assert status["ok"] is False
+    assert len(status["blocked"]) == 1
+    entry = status["blocked"][0]
+    assert entry["path"] == "Input/weird.vtt"
+    assert "CP1252 cannot decode" in entry["error"]
+    # The per-cue recovery degrades hole-byte cues to replacement marks
+    # instead of failing conversion — the message must say so, not claim a
+    # failure that no longer happens.
+    assert "degrades that cue to replacement marks" in entry["error"]
+    assert "Re-save the file as UTF-8" in entry["error"]
+    assert "Input/weird.vtt" in status["error"]
+
+
+def test_missing_input_dir_reported_and_not_created(tmp_path: Path) -> None:
+    """Read-only contract: no Input/ is reported, never mkdir'd."""
+    doctor = _load_doctor()
+
+    status = doctor._input_subtitles_status(tmp_path)
+
+    assert status["exists"] is False
+    assert status["scanned"] == 0
+    assert status["ok"] is True
+    assert not (tmp_path / "Input").exists(), "the check must not create Input/"
+
+
+def test_non_subtitle_files_are_ignored(tmp_path: Path) -> None:
+    doctor = _load_doctor()
+    input_dir = tmp_path / "Input"
+    input_dir.mkdir()
+    (input_dir / "script.txt").write_bytes(b"\xff\xfe not a subtitle")
+    (input_dir / "readme.md").write_text("prose", encoding="utf-8")
+
+    status = doctor._input_subtitles_status(tmp_path)
+
+    assert status["scanned"] == 0
+    assert status["ok"] is True
+
+
+def test_cli_classifier_agrees_with_the_doctor_on_every_class(tmp_path: Path) -> None:
+    """check-input --json (and the render path's --check-input-json) classify
+    subtitle bytes through ``the_oracle.srt_ingest.classify_subtitle_bytes``;
+    the doctor classifies through its mirrored scan. The two surfaces are
+    only useful together if they cannot disagree about the same file before a
+    render — so the same bytes must get the same verdict on every class.
+    (This is the agreement direction the other pins here don't cover: they
+    pin the doctor's shapes against the real chain's, not the doctor's
+    per-file verdicts against the classifier the CLI actually calls.)"""
+    from the_oracle.srt_ingest import classify_subtitle_bytes
+
+    doctor = _load_doctor()
+    input_dir = tmp_path / "Input"
+    input_dir.mkdir()
+    utf8_cue = "1\n00:00:01,000 --> 00:00:02,000\nWinston: café.\n".encode("utf-8")
+    legacy_cue = "2\n00:00:02,000 --> 00:00:03,000\nJulia: voilà.\n".encode("cp1252")
+    files = {
+        "utf8.srt": (
+            "1\n00:00:01,000 --> 00:00:02,000\nWinston: café.\n".encode("utf-8"),
+            "utf8",
+        ),
+        "mixed.srt": (utf8_cue + b"\n\n" + legacy_cue, "mixed"),
+        "legacy.vtt": (
+            "WEBVTT\n\n00:00:01.000 --> 00:00:02.000\nvoilà.\n".encode("cp1252"),
+            "fallback",
+        ),
+        "blocked.vtt": (b"WEBVTT\n\n\x81\n", "blocked"),
+    }
+    for name, (data, _) in files.items():
+        (input_dir / name).write_bytes(data)
+
+    status = doctor._input_subtitles_status(tmp_path)
+
+    def doctor_bucket(name: str) -> str:
+        rel = f"Input/{name}"
+        for bucket in ("fallback", "mixed", "blocked"):
+            if any(entry["path"] == rel for entry in status[bucket]):
+                return bucket
+        return "utf8"
+
+    for name, (_, expected) in files.items():
+        assert classify_subtitle_bytes((input_dir / name).read_bytes()) == expected
+        assert doctor_bucket(name) == expected, name
+
+
+# --- human report ------------------------------------------------------------
+
+
+def _full_report(input_subtitles: dict) -> dict:
+    """A report fixture with every key _print_human_report reads."""
+    return {
+        "repo_root": "/repo",
+        "platform": "test-platform",
+        "ci_mode": False,
+        "python": {"ok": True, "executable": "python3", "version": "3.12.0"},
+        "ffmpeg": {"ok": True, "path": "/usr/bin/ffmpeg"},
+        "entrypoint": {"ok": True, "fresh_shell_path": "/bin/the-oracle", "path_entrypoint": "", "venv_entrypoint": ""},
+        "chatterbox_import": {"ok": True, "target": "from chatterbox.tts import ChatterboxTTS", "error": ""},
+        "chatterbox_init": {"ok": True, "seconds": 1.0, "skipped": False, "error": ""},
+        "perth": {"ok": True, "watermarker_symbol": "PerthImplicitWatermarker", "error": ""},
+        "turbo": {"ok": True, "checkpoint_dir": "/cache", "error": ""},
+        "cuda_backend": {"runtime_available": False, "reason": "none", "devices": []},
+        "qt": {
+            "ok": True,
+            "plugin_path": "/plugins",
+            "qt_platform": "offscreen",
+            "error": "",
+            "missing_libraries": [],
+            "suggested_packages": [],
+        },
+        "voice_sources": {
+            "ok": True,
+            "primary_source": "seashells",
+            "default_voice_assessment": "ok",
+            "seashell_clip_count": 3,
+            "fallback_clip_count": 0,
+            "better_local_assets_detail": "",
+            "voice_mixing_detail": "",
+        },
+        "deterministic_smoke": {"ok": True, "output_path": "/repo/build/out.flac", "error": ""},
+        "real_engine_smoke": {"ok": True, "expected_paths": {"output": "/repo/build/smoke.flac"}, "output_exists": True},
+        "vulkan_backend": {
+            "ok": False,
+            "binary_built": False,
+            "model_override_set": False,
+            "model_file_exists": False,
+            "model_path": "",
+            "vulkan_device": False,
+            "device_name": "",
+            "rdna1_device": False,
+            "device_index_env": "",
+            "threads_env": "",
+            "batch_env": "",
+            "vendored_patch_applied": None,
+            "caveat": "",
+            "error": "",
+            "audio_cpp_devices": [],
+        },
+        "dependency_pins": {"ok": True, "error": "", "checked_count": 5},
+        "input_subtitles": input_subtitles,
+        "next_steps": [],
+    }
+
+
+def test_human_report_lists_fallback_files_and_blocked_detail(capsys) -> None:
+    doctor = _load_doctor()
+    report = _full_report(
+        {
+            "ok": False,
+            "input_dir": "/repo/Input",
+            "exists": True,
+            "scanned": 2,
+            "utf8_count": 1,
+            "fallback": [{"path": "Input/legacy.srt"}],
+            "blocked": [{"path": "Input/weird.vtt", "error": "contains byte(s) CP1252 cannot decode"}],
+            "unreadable": [],
+            "error": "Input/weird.vtt: contains byte(s) CP1252 cannot decode",
+        }
+    )
+
+    doctor._print_human_report(report)
+
+    out = capsys.readouterr().out
+    assert "Input subtitle encoding: 2 subtitle file(s) scanned; 1 UTF-8; CP1252 fallback: Input/legacy.srt" in out
+    assert "Input/weird.vtt: contains byte(s) CP1252 cannot decode" in out
+
+
+def test_human_report_names_mixed_encoding_files_as_recovered_per_cue(capsys) -> None:
+    doctor = _load_doctor()
+    report = _full_report(
+        {
+            "ok": True,
+            "input_dir": "/repo/Input",
+            "exists": True,
+            "scanned": 1,
+            "utf8_count": 0,
+            "fallback": [],
+            "mixed": [{"path": "Input/mixed.srt"}],
+            "blocked": [],
+            "unreadable": [],
+            "error": "",
+        }
+    )
+
+    doctor._print_human_report(report)
+
+    out = capsys.readouterr().out
+    assert (
+        "Input subtitle encoding: 1 subtitle file(s) scanned; "
+        "mixed-encoding, recovered per cue: Input/mixed.srt"
+    ) in out
+
+
+def test_human_report_tolerates_older_reports_without_the_mixed_key(capsys) -> None:
+    """A report dict from before the mixed-encoding extension renders without
+    the new line and without crashing (same contract as input_subtitles)."""
+    doctor = _load_doctor()
+    report = _full_report(
+        {
+            "ok": True,
+            "input_dir": "/repo/Input",
+            "exists": True,
+            "scanned": 1,
+            "utf8_count": 0,
+            "fallback": [{"path": "Input/legacy.srt"}],
+            "blocked": [],
+            "unreadable": [],
+            "error": "",
+        }
+    )
+
+    doctor._print_human_report(report)
+
+    out = capsys.readouterr().out
+    assert "CP1252 fallback: Input/legacy.srt" in out
+    assert "recovered per cue" not in out
+
+
+def test_human_report_skips_line_when_input_dir_missing(capsys) -> None:
+    doctor = _load_doctor()
+    report = _full_report({"ok": True, "input_dir": "/repo/Input", "exists": False, "scanned": 0, "utf8_count": 0, "fallback": [], "blocked": [], "unreadable": []})
+
+    doctor._print_human_report(report)
+
+    out = capsys.readouterr().out
+    assert "SKIP Input subtitle encoding: Input/ not present" in out
+
+
+def test_human_report_handles_older_reports_without_the_key(capsys) -> None:
+    """Backwards compatibility: a report dict without input_subtitles must not
+    crash the renderer (same contract as dependency_pins)."""
+    doctor = _load_doctor()
+    report = _full_report(None)
+    del report["input_subtitles"]
+
+    doctor._print_human_report(report)
+
+    out = capsys.readouterr().out
+    assert "Input subtitle encoding" not in out
+
+
+# --- next steps wiring --------------------------------------------------------
+
+
+def _minimal_report_for_next_steps(input_subtitles: dict) -> dict:
+    return {
+        "python": {"ok": True},
+        "ffmpeg": {"ok": True},
+        "qt": {"suggested_packages": []},
+        "entrypoint": {"ok": True, "path_has_local_bin": True},
+        "chatterbox_import": {"ok": True},
+        "chatterbox_init": {"ok": True, "skipped": False},
+        "perth": {"ok": True},
+        "deterministic_smoke": {"ok": True},
+        "real_engine_smoke": {"ok": True},
+        "turbo": {"ok": True},
+        "voice_sources": {"primary_source": "seashells"},
+        "vulkan_backend": {
+            "binary_built": False,
+            "model_override_set": False,
+            "model_file_exists": False,
+            "vendored_patch_applied": None,
+            "device_index_env": "",
+            "audio_cpp_devices": [],
+        },
+        "input_subtitles": input_subtitles,
+    }
+
+
+def test_next_steps_name_every_blocked_unreadable_and_foreign_occurrence() -> None:
+    """The 71d8840 completeness precedent, applied to the doctor's next-steps:
+    MULTIPLE blocked files, an unreadable file, and MULTIPLE foreign preview
+    files must each get their own named step — the loops in _build_next_steps
+    are per-entry by contract. A first-match-only regression (report one
+    subtitle file and one preview file, drop the rest) would leave the user
+    with a silently truncated remediation list while the doctor still said
+    WARN. Pinned synthetically with exact per-token membership; the quiet-case
+    test above vacuity-guards the scan (it proves the builder reads these
+    exact report keys)."""
+    doctor = _load_doctor()
+    report = _minimal_report_for_next_steps(
+        {
+            "blocked": [
+                {"path": "Input/first.vtt", "error": "blocked error one"},
+                {"path": "Input/second.vtt", "error": "blocked error two"},
+            ],
+            "unreadable": [{"path": "Input/gone.srt", "error": "permission denied"}],
+        }
+    )
+    report["preview_writers"] = {
+        "foreign": [{"path": "previews/x1.flac"}, {"path": "previews/x2.flac"}],
+    }
+
+    steps = doctor._build_next_steps(report, ci_mode=True)
+
+    for token, error_hint in (
+        ("Input/first.vtt", "blocked error one"),
+        ("Input/second.vtt", "blocked error two"),
+        ("Input/gone.srt", "permission denied"),
+        ("previews/x1.flac", None),
+        ("previews/x2.flac", None),
+    ):
+        named = [step for step in steps if token in step]
+        assert named, f"{token} must be named in next steps — every occurrence, not the first"
+        if error_hint:
+            assert error_hint in named[0], f"{token}'s own error must travel with it"
+    # Per-occurrence steps, not one combined line that could dedupe:
+    assert sum("Input/first.vtt" in step for step in steps) == 1
+    assert sum("Input/second.vtt" in step for step in steps) == 1
+    assert sum("previews/x1.flac" in step for step in steps) == 1
+    assert sum("previews/x2.flac" in step for step in steps) == 1
+
+
+def test_next_steps_flags_blocked_subtitle_file() -> None:
+    doctor = _load_doctor()
+    report = _minimal_report_for_next_steps(
+        {"blocked": [{"path": "Input/weird.vtt", "error": "contains byte(s) CP1252 cannot decode; subtitle conversion would fail after the fallback pre-check. Re-save the file as UTF-8."}], "unreadable": []}
+    )
+
+    steps = doctor._build_next_steps(report, ci_mode=True)
+
+    assert any("Input/weird.vtt" in step and "Re-save the file as UTF-8" in step for step in steps)
+
+
+def test_next_steps_quiet_when_no_subtitle_problems() -> None:
+    doctor = _load_doctor()
+    report = _minimal_report_for_next_steps({"blocked": [], "unreadable": []})
+
+    steps = doctor._build_next_steps(report, ci_mode=True)
+
+    assert not any("Input/" in step for step in steps)
+
+
+# --- wiring guard -------------------------------------------------------------
+
+
+def test_check_is_wired_into_the_report() -> None:
+    """Vacuity guard: the check must actually run in run()'s report."""
+    doctor_src = DOCTOR_PATH.read_text(encoding="utf-8")
+    assert '"input_subtitles": _input_subtitles_status(repo_root),' in doctor_src
+    assert doctor_src.count("_input_subtitles_status(") >= 2  # definition + call site

@@ -1,0 +1,726 @@
+"""Versioned GUI settings profiles and reusable local templates."""
+
+from __future__ import annotations
+
+import json
+import logging
+import re
+from dataclasses import dataclass
+from datetime import datetime
+from pathlib import Path
+from typing import Any
+
+from the_oracle.app_paths import normalize_output_filename
+from the_oracle.correction_modes import normalize_correction_mode
+from the_oracle.gui_utils import MAX_CAST_SPEAKERS, normalize_cast_keys
+from the_oracle.models.project import VoiceSettings
+from the_oracle.models.settings import RenderSettings, SpeakerSettings
+from the_oracle.platform_support import app_config_dir
+
+
+GUI_SETTINGS_VERSION = 1
+_SUPPORTED_DEVICE_MODES = {"cpu", "cuda"}
+_SUPPORTED_INFERENCE_BACKENDS = {"pytorch", "vulkan"}
+_SUPPORTED_BLEND_MODES = {"mix", "alternate", "layer"}
+_LOG = logging.getLogger(__name__)
+
+
+class GUISettingsError(ValueError):
+    """Raised when a GUI settings profile is invalid or incompatible."""
+
+
+def user_config_dir() -> Path:
+    return app_config_dir("the_oracle")
+
+
+def template_dir() -> Path:
+    path = user_config_dir() / "templates"
+    path.mkdir(parents=True, exist_ok=True)
+    return path
+
+
+def recent_references_path() -> Path:
+    path = user_config_dir()
+    path.mkdir(parents=True, exist_ok=True)
+    return path / "recent_reference_clips.json"
+
+
+def save_gui_settings(path: str | Path, payload: dict[str, Any]) -> Path:
+    destination = Path(path)
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    destination.write_text(json.dumps(_normalize_payload(payload), indent=2, ensure_ascii=True), encoding="utf-8")
+    return destination
+
+
+def load_gui_settings(path: str | Path) -> dict[str, Any]:
+    source = Path(path)
+    try:
+        payload = json.loads(source.read_text(encoding="utf-8"))
+    except OSError as exc:
+        # A vanished/renamed file (or unreadable path) must surface as the
+        # same error type the GUI handlers catch — raw FileNotFoundError
+        # escaped the template-menu click handler and crashed with an
+        # unhandled traceback instead of a message box.
+        raise GUISettingsError(f"Settings file could not be read: {exc}") from exc
+    except json.JSONDecodeError as exc:
+        raise GUISettingsError(f"Settings file is not valid JSON: {source}\n{exc}") from exc
+    return _normalize_payload(payload)
+
+
+def save_template(name: str, payload: dict[str, Any]) -> Path:
+    destination = template_dir() / f"{_safe_name(name)}.json"
+    return save_gui_settings(destination, payload)
+
+
+def load_template(name: str) -> dict[str, Any]:
+    return load_gui_settings(template_dir() / f"{_safe_name(name)}.json")
+
+
+def list_templates() -> list[str]:
+    return sorted(path.stem for path in template_dir().glob("*.json"))
+
+
+def app_settings_path() -> Path:
+    """Path of the app-level settings file (backend memory + audio.cpp paths).
+
+    Unlike profiles/templates, this file is written automatically (not by a
+    Save dialog) and read at every app launch, so the chosen inference backend
+    and the resolved ``ORACLE_AUDIOCPP_CLI``/``ORACLE_AUDIOCPP_MODEL`` paths
+    survive across sessions without any manual wiring.
+    """
+    path = user_config_dir()
+    path.mkdir(parents=True, exist_ok=True)
+    return path / "app_settings.json"
+
+
+def _normalize_path_string(value: Any) -> str:
+    """Coerce a persisted filesystem path to a plain string ("" when absent)."""
+    if value is None:
+        return ""
+    return str(value).strip()
+
+
+def _normalize_remember_backend(value: Any) -> bool:
+    """Coerce the remember-backend flag to a bool (default: True).
+
+    ``bool("false")`` is True, so a hand-edited file that spells the flag as
+    a string would otherwise flip the semantics; string values are parsed
+    textually and anything else is truthy-checked.
+    """
+    if isinstance(value, str):
+        return value.strip().lower() not in {"", "0", "false", "no", "off"}
+    return bool(value)
+
+
+def _normalize_app_settings(payload: dict[str, Any] | None) -> dict[str, Any]:
+    """Coerce an app-settings payload to the supported schema.
+
+    A hand-edited or older file must never crash the app at launch: every
+    field is normalized (unsupported backend -> pytorch, bad device index ->
+    None, non-bool remember flag -> True) and unknown keys are dropped.
+    """
+    data = payload if isinstance(payload, dict) else {}
+    normalized = {
+        "version": 1,
+        "remember_backend": _normalize_remember_backend(data.get("remember_backend", True)),
+        "inference_backend": _normalize_inference_backend(data.get("inference_backend", "pytorch")),
+        "device_mode": _normalize_device_mode(data.get("device_mode", "cpu")),
+        "cuda_device": _normalize_audio_cpp_device(data.get("cuda_device")),
+        "audio_cpp_device": _normalize_audio_cpp_device(data.get("audio_cpp_device")),
+        "audio_cpp_threads": _normalize_audio_cpp_threads(data.get("audio_cpp_threads")),
+        "audio_cpp_timeout": _normalize_audio_cpp_timeout(data.get("audio_cpp_timeout")),
+        "audio_cpp_max_batch": _normalize_audio_cpp_max_batch(data.get("audio_cpp_max_batch")),
+        "audio_cpp_cli": _normalize_path_string(data.get("audio_cpp_cli")),
+        "audio_cpp_model": _normalize_path_string(data.get("audio_cpp_model")),
+    }
+    # Workspace-persistence keys (theme, remembered input file, splitter
+    # sizes, section shares/collapses, window geometry). Pass-through with
+    # light type hygiene: anything malformed falls back to the default on the
+    # reading side, so a hand-edited file can never crash the GUI at launch.
+    if isinstance(data.get("theme"), str):
+        normalized["theme"] = data["theme"]
+    if isinstance(data.get("last_input_file"), str):
+        normalized["last_input_file"] = data["last_input_file"]
+    for key in ("default_input_dir", "default_output_dir"):
+        if isinstance(data.get(key), str):
+            normalized[key] = data[key].strip()
+    if isinstance(data.get("output_filename_warning"), bool):
+        normalized["output_filename_warning"] = data["output_filename_warning"]
+    for key in ("gui", "splitters", "sections", "window_geometry"):
+        if isinstance(data.get(key), (dict, list)):
+            normalized[key] = data[key]
+    if isinstance(data.get("inference_wizard_completed"), bool):
+        normalized["inference_wizard_completed"] = data["inference_wizard_completed"]
+    if isinstance(data.get("inference_wizard_dismissed"), bool):
+        normalized["inference_wizard_dismissed"] = data["inference_wizard_dismissed"]
+    if isinstance(data.get("recording_wizard_completed"), bool):
+        normalized["recording_wizard_completed"] = data["recording_wizard_completed"]
+    if isinstance(data.get("recording_wizard_dismissed"), bool):
+        normalized["recording_wizard_dismissed"] = data["recording_wizard_dismissed"]
+    # Files whose input-formatting fixes the user pre-approved ("remember my
+    # choice" in the preview dialog). Pass-through with light hygiene: only
+    # non-empty absolute-ish path strings are kept.
+    if isinstance(data.get("trusted_format_files"), list):
+        trusted = [entry for entry in data["trusted_format_files"] if isinstance(entry, str) and entry.strip()]
+        if trusted:
+            normalized["trusted_format_files"] = trusted
+    # Remembered size/position of the Preview Fixed Text dialog (a Qt
+    # geometry blob, base64-encoded). Pass-through: non-string or empty
+    # values are dropped, a corrupt blob fails restoreGeometry harmlessly.
+    if isinstance(data.get("preview_dialog_geometry"), str) and data["preview_dialog_geometry"]:
+        normalized["preview_dialog_geometry"] = data["preview_dialog_geometry"]
+    # Recent input-file fix backups (most recent first). Each entry is a
+    # small record: the fixed file, its backup, and when the fix ran. Light
+    # hygiene only — the reader tolerates anything malformed.
+    if isinstance(data.get("recent_format_backups"), list):
+        records: list[dict[str, str]] = []
+        for entry in data["recent_format_backups"]:
+            if not isinstance(entry, dict):
+                continue
+            file_value = entry.get("file")
+            backup_value = entry.get("backup")
+            stamp_value = entry.get("stamp")
+            if (
+                isinstance(file_value, str)
+                and file_value.strip()
+                and isinstance(backup_value, str)
+                and backup_value.strip()
+            ):
+                records.append(
+                    {
+                        "file": file_value,
+                        "backup": backup_value,
+                        "stamp": stamp_value if isinstance(stamp_value, str) else "",
+                    }
+                )
+        if records:
+            normalized["recent_format_backups"] = records
+    if isinstance(data.get("recording_settings"), dict):
+        recording = dict(data["recording_settings"])
+        for key in ("input_file", "output_dir", "output_filename"):
+            if key in recording and not isinstance(recording[key], str):
+                recording.pop(key, None)
+        for key in ("microphone_index", "samplerate"):
+            if key not in recording:
+                continue
+            if recording[key] is None:
+                recording.pop(key, None)
+                continue
+            try:
+                recording[key] = int(recording[key])
+            except (TypeError, ValueError):
+                recording.pop(key, None)
+        for key in ("generic_name_warning", "remember_input_default", "remember_output_default"):
+            if key in recording and not isinstance(recording[key], bool):
+                recording.pop(key, None)
+        normalized["recording_settings"] = recording
+    return normalized
+
+
+def load_app_settings() -> dict[str, Any]:
+    """Load the persisted app settings (backend memory + audio.cpp paths).
+
+    Returns the normalized default payload when the file is missing or
+    unreadable, so a fresh install or a corrupted file simply starts with
+    defaults instead of crashing the GUI.
+    """
+    path = app_settings_path()
+    if not path.exists():
+        return _normalize_app_settings({})
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return _normalize_app_settings({})
+    return _normalize_app_settings(payload)
+
+
+def save_app_settings(payload: dict[str, Any]) -> Path:
+    """Persist the app settings, normalizing so the file always round-trips."""
+    path = app_settings_path()
+    path.write_text(json.dumps(_normalize_app_settings(payload), indent=2, ensure_ascii=True), encoding="utf-8")
+    return path
+
+
+def load_recent_reference_paths(limit: int = 10) -> list[str]:
+    """Return the remembered reference-clip paths, newest first.
+
+    A corrupt ``recent_reference_clips.json`` (bad JSON, wrong shape,
+    unreadable file) must never crash GUI startup: fall back to an empty
+    list so the app simply starts with no recent references.
+    """
+    path = recent_references_path()
+    if not path.exists():
+        return []
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError, UnicodeDecodeError):
+        _LOG.warning("Ignoring corrupt recent-references file: %s", path)
+        return []
+    if not isinstance(payload, list):
+        _LOG.warning("Ignoring malformed recent-references file (not a list): %s", path)
+        return []
+    entries = [str(item) for item in payload if isinstance(item, str)]
+    return entries[:limit]
+
+
+def remember_recent_reference_path(path_value: str, limit: int = 10) -> None:
+    normalized = str(Path(path_value).expanduser())
+    existing = [item for item in load_recent_reference_paths(limit=limit * 2) if item != normalized]
+    updated = [normalized, *existing][:limit]
+    recent_references_path().write_text(json.dumps(updated, indent=2, ensure_ascii=True), encoding="utf-8")
+
+
+# ---------------------------------------------------------------------------
+# Input format-health bookkeeping: the trusted-file approvals ("remember my
+# choice" in the fix preview) and the per-file backup records a fix leaves
+# behind. These mutate the caller's live settings dict -- the app owns that
+# dict and persists it -- so the whole lifecycle of both payloads (hygiene on
+# load in _normalize_app_settings, policy on write here) has one owner.
+# ---------------------------------------------------------------------------
+
+
+def input_file_is_trusted(settings: dict[str, Any], input_file: str) -> bool:
+    """True when the user pre-approved auto-fixes for this exact file."""
+    trusted = settings.get("trusted_format_files", [])
+    return bool(trusted) and str(Path(input_file).resolve()) in {str(Path(p).resolve()) for p in trusted}
+
+
+def remember_trusted_input_file(settings: dict[str, Any], input_file: str) -> None:
+    """Add the file to the trusted list (resolved path, deduped)."""
+    resolved = str(Path(input_file).resolve())
+    trusted = list(settings.get("trusted_format_files", []))
+    if resolved not in trusted:
+        trusted.append(resolved)
+    settings["trusted_format_files"] = trusted
+
+
+def clear_trusted_input_files(settings: dict[str, Any]) -> None:
+    """Forget every pre-approved file."""
+    settings["trusted_format_files"] = []
+
+
+def remember_format_backup(
+    settings: dict[str, Any], fixed_file: str, backup_path: str | None, *, stamp: str | None = None
+) -> None:
+    """Record a fix's backup: deduped per file, newest first, capped at 20."""
+    if not backup_path:
+        return
+    if stamp is None:
+        stamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    resolved = str(Path(fixed_file).resolve())
+    backup = str(Path(backup_path).resolve())
+    records = [
+        r
+        for r in settings.get("recent_format_backups", [])
+        if isinstance(r, dict) and r.get("file") != resolved
+    ]
+    records.insert(0, {"file": resolved, "backup": backup, "stamp": stamp})
+    settings["recent_format_backups"] = records[:20]
+
+
+def _usable_backup_records(settings: dict[str, Any]) -> list[dict[str, str]]:
+    return [
+        r
+        for r in settings.get("recent_format_backups", [])
+        if isinstance(r, dict) and r.get("file") and r.get("backup")
+    ]
+
+
+def next_format_backup(settings: dict[str, Any]) -> dict[str, str] | None:
+    """The most recent usable backup record, without consuming it."""
+    records = _usable_backup_records(settings)
+    return records[0] if records else None
+
+
+def drop_next_format_backup(settings: dict[str, Any]) -> None:
+    """Discard the most recent backup record (applied, or found missing)."""
+    settings["recent_format_backups"] = _usable_backup_records(settings)[1:]
+
+
+def _normalize_device_mode(value: str) -> str:
+    """Coerce device_mode to a supported PyTorch device.
+
+    CUDA is retained when selected in a profile; runtime hardware validation
+    happens when the render starts so a profile can move between machines.
+    """
+    candidate = str(value).strip().lower()
+    if candidate not in _SUPPORTED_DEVICE_MODES:
+        _LOG.debug(
+            "Unsupported device_mode %r in settings file, replacing with 'cpu'.",
+            value,
+        )
+        return "cpu"
+    return candidate
+
+
+def _normalize_audio_cpp_device(value: Any) -> int | None:
+    """Coerce audio_cpp_device to a non-negative int (Vulkan device index) or None.
+
+    None / missing means "let audio.cpp pick"; anything non-numeric or
+    negative is replaced with None so a hand-edited file cannot produce an
+    invalid RenderSettings at load time.
+    """
+    if value is None:
+        return None
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError):
+        return None
+    return parsed if parsed >= 0 else None
+
+
+def _normalize_audio_cpp_threads(value: Any) -> int | None:
+    """Coerce audio_cpp_threads to a positive int or None.
+
+    None / missing means "audio.cpp's own default"; anything non-numeric or
+    non-positive is replaced with None.
+    """
+    if value is None:
+        return None
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError):
+        return None
+    return parsed if parsed >= 1 else None
+
+
+def _normalize_audio_cpp_timeout(value: Any) -> int | None:
+    """Coerce audio_cpp_timeout to a positive int (seconds) or None.
+
+    None / missing means "the engine's default (600s)"; anything non-numeric
+    or non-positive is replaced with None so a hand-edited file cannot produce
+    an invalid RenderSettings at load time.
+    """
+    if value is None:
+        return None
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError):
+        return None
+    return parsed if parsed >= 1 else None
+
+
+def _normalize_audio_cpp_max_batch(value: Any) -> int | None:
+    """Coerce audio_cpp_max_batch to a positive int (request count) or None.
+
+    None / missing means "the engine's default (32)"; anything non-numeric
+    or non-positive is replaced with None so a hand-edited file cannot produce
+    an invalid RenderSettings at load time.
+    """
+    if value is None:
+        return None
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError):
+        return None
+    return parsed if parsed >= 1 else None
+
+
+def _normalize_inference_backend(value: str) -> str:
+    """Coerce inference_backend to a supported value.
+
+    The Vulkan backend is opt-in; "vulkan" is kept when present so saved
+    settings round-trip faithfully. Any other value (e.g. an old or typo'd
+    entry) is silently replaced with the default "pytorch".
+    """
+    candidate = str(value).strip().lower()
+    if candidate not in _SUPPORTED_INFERENCE_BACKENDS:
+        _LOG.debug(
+            "Unsupported inference_backend %r in settings file, replacing with 'pytorch'.",
+            value,
+        )
+        return "pytorch"
+    return candidate
+
+
+def _normalize_blend_references(value: Any) -> list[str]:
+    """Coerce the hybrid second-voice reference list to a list of strings."""
+    if not isinstance(value, (list, tuple)):
+        return []
+    return [str(item) for item in value if isinstance(item, (str, Path)) and str(item)]
+
+
+def _normalize_blend_weight(value: Any) -> float:
+    """Coerce the hybrid voice-dominance weight to a 0..1 float."""
+    try:
+        parsed = float(value)
+    except (TypeError, ValueError):
+        return 0.5
+    return min(1.0, max(0.0, parsed))
+
+
+def _normalize_blend_mode(value: Any) -> str:
+    """Coerce the hybrid combine mode to a supported value (default "mix")."""
+    candidate = str(value or "").strip().lower()
+    return candidate if candidate in _SUPPORTED_BLEND_MODES else "mix"
+
+
+def _normalize_payload(payload: dict[str, Any]) -> dict[str, Any]:
+    required = {"version", "project", "speakers"}
+    missing = sorted(required - set(payload))
+    if missing:
+        raise GUISettingsError(f"GUI settings profile is missing required fields: {', '.join(missing)}")
+    if payload["version"] != GUI_SETTINGS_VERSION:
+        raise GUISettingsError(f"Unsupported GUI settings version {payload['version']}; expected {GUI_SETTINGS_VERSION}.")
+    speakers = payload["speakers"]
+    if not isinstance(speakers, dict) or not speakers:
+        raise GUISettingsError("GUI settings profile must contain at least one speaker.")
+    invalid_keys = [key for key in speakers if not re.fullmatch(r"[A-X]", str(key))]
+    if invalid_keys:
+        raise GUISettingsError(
+            "GUI settings profile contains invalid speaker keys: "
+            f"{', '.join(map(str, invalid_keys))}. Voices are A..X (up to 24)."
+        )
+    if len(speakers) > 24:
+        raise GUISettingsError("GUI settings profile can carry at most 24 speaker voices.")
+    project = dict(payload["project"])
+    normalized_project = {
+        "model_variant": str(project.get("model_variant", "standard")),
+        "correction_mode": normalize_correction_mode(str(project.get("correction_mode", "moderate"))),
+        "loudness_preset": str(project.get("loudness_preset", "light")),
+        "crossfade_ms": int(project.get("crossfade_ms", 20)),
+        "inference_backend": _normalize_inference_backend(project.get("inference_backend", "pytorch")),
+        "device_mode": _normalize_device_mode(project.get("device_mode", payload.get("device_mode", "cpu"))),
+        "cuda_device": _normalize_audio_cpp_device(project.get("cuda_device")),
+        "audio_cpp_device": _normalize_audio_cpp_device(project.get("audio_cpp_device")),
+        "audio_cpp_threads": _normalize_audio_cpp_threads(project.get("audio_cpp_threads")),
+        "audio_cpp_timeout": _normalize_audio_cpp_timeout(project.get("audio_cpp_timeout")),
+        "audio_cpp_max_batch": _normalize_audio_cpp_max_batch(project.get("audio_cpp_max_batch")),
+        "output_dir": str(project.get("output_dir", "")),
+        "output_filename": str(project.get("output_filename", "")),
+    }
+    for key, value in project.items():
+        if key not in normalized_project:
+            normalized_project[key] = value
+    normalized = {
+        "version": GUI_SETTINGS_VERSION,
+        "name": str(payload.get("name", "")),
+        "project": normalized_project,
+        # Always normalise device_mode so stale values in old settings files
+        # do not leave the app in an unverified execution state.
+        "device_mode": _normalize_device_mode(payload.get("device_mode", "cpu")),
+        # The ordered speaker cast (["A", "B", ...]). Older profiles predate
+        # the cast manager and only carry the speakers dict, so fall back to
+        # its keys in sorted order.
+        "cast": normalize_cast_keys(
+            payload.get("cast") if payload.get("cast") is not None else sorted(speakers)
+        ),
+        "cuda_device": _normalize_audio_cpp_device(payload.get("cuda_device")),
+        "speakers": {},
+    }
+    for speaker, config in speakers.items():
+        config = config if isinstance(config, dict) else {}
+        normalized["speakers"][speaker] = {
+            "reference_path": str(config.get("reference_path", "")),
+            "voice_settings": dict(config.get("voice_settings", {})),
+            "emotion_reference_paths": dict(config.get("emotion_reference_paths", {})),
+            # Optional character name shown in the cast bar / cast dialog.
+            "name": str(config.get("name", "") or ""),
+            # Hybrid (blend) voice settings: previously dropped on save/load,
+            # which silently reset every speaker's second voice, dominance
+            # weight, and combine mode to defaults.
+            "blend_references": _normalize_blend_references(config.get("blend_references")),
+            "blend_weight": _normalize_blend_weight(config.get("blend_weight", 0.5)),
+            "blend_mode": _normalize_blend_mode(config.get("blend_mode", "mix")),
+        }
+    # The cast may reference keys absent from (or pruned out of) the speakers
+    # dict; keep the two consistent and within the engine's voice capacity.
+    cast_keys = [key for key in normalized["cast"] if key in normalized["speakers"]]
+    normalized["cast"] = normalize_cast_keys(cast_keys or sorted(normalized["speakers"]))
+    return normalized
+
+
+def _safe_name(value: str) -> str:
+    safe = "".join(character if character.isalnum() or character in {"-", "_"} else "_" for character in value).strip("_")
+    return safe or "template"
+
+
+# ---------------------------------------------------------------------------
+# Settings-payload policy: the default/current payload builders and the
+# widget-state snapshot they are fed. The payload schema lives here with the
+# save/load/normalization policy, so a new project or speaker knob lands in
+# one file, not in the window.
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class WidgetSnapshot:
+    """Plain data: everything the current-payload builder needs from the UI.
+
+    The window builds this in one place (all widget reads in one method);
+    the payload builder below is pure and testable without Qt.
+    """
+
+    cast_keys: list[str]
+    speaker_names: dict[str, str]
+    model_variant: str
+    correction_mode: str
+    loudness_preset: str
+    crossfade_ms: int
+    inference_backend: str
+    device_mode: str
+    cuda_device: int | None
+    output_dir: str
+    output_filename: str
+    export_srt: bool
+    monologue: bool
+    delete_confirm_enabled: bool
+    output_filename_warning_enabled: bool
+    audio_cpp_values: dict[str, int | str | None]
+    speaker_settings: dict[str, SpeakerSettings]
+
+
+@dataclass(frozen=True)
+class PayloadDefaults:
+    """The engine defaults the payload schema is seeded from.
+
+    Supplied by the caller (the window, from the engine classes) so this
+    settings module never imports the pipeline module.
+    """
+
+    model_variant: str
+    correction_mode: str
+    loudness_preset: str
+    crossfade_ms: int
+    inference_backend: str
+    device_mode: str
+    cuda_device: int | None
+    audio_cpp_device: int | None
+    audio_cpp_threads: int | None
+    audio_cpp_timeout: int | None
+    audio_cpp_max_batch: int | None
+    default_voice_dict: dict
+
+
+def default_gui_settings_payload(default_output_dir: str, defaults: PayloadDefaults) -> dict:
+    """The default settings payload; the schema lives beside the save/load policy."""
+    return {
+        "version": 1,
+        "name": "",
+        "device_mode": defaults.device_mode,
+        # The ordered cast; the loader rebuilds the panels from it.
+        "cast": ["A", "B"],
+        "speaker_names": {},
+        "cuda_device": defaults.cuda_device,
+        "project": {
+            "model_variant": defaults.model_variant,
+            "correction_mode": defaults.correction_mode,
+            "loudness_preset": defaults.loudness_preset,
+            "crossfade_ms": defaults.crossfade_ms,
+            "inference_backend": defaults.inference_backend,
+            "device_mode": defaults.device_mode,
+            "cuda_device": defaults.cuda_device,
+            "audio_cpp_device": defaults.audio_cpp_device,
+            "audio_cpp_threads": defaults.audio_cpp_threads,
+            "audio_cpp_timeout": defaults.audio_cpp_timeout,
+            "audio_cpp_max_batch": defaults.audio_cpp_max_batch,
+            "output_dir": str(default_output_dir),
+            "output_filename": "",
+            "export_srt": False,
+            "monologue": False,
+        },
+        "speakers": {
+            speaker: {
+                "reference_path": "",
+                "voice_settings": dict(defaults.default_voice_dict),
+                "emotion_reference_paths": {},
+            }
+            for speaker in ("A", "B")
+        },
+    }
+
+
+def _audio_cpp_project_fields(snapshot: WidgetSnapshot, is_vulkan: bool) -> dict:
+    """The Vulkan-only knob persistence rule: a disabled widget left over from
+    an earlier backend selection must not be saved alongside
+    inference_backend: pytorch, so the four knobs persist only when Vulkan is
+    the selected backend."""
+    keys = ("audio_cpp_device", "audio_cpp_threads", "audio_cpp_timeout", "audio_cpp_max_batch")
+    if is_vulkan:
+        return {key: snapshot.audio_cpp_values.get(key) for key in keys}
+    return {key: None for key in keys}
+
+
+def cast_request_from_payload(payload: dict) -> list[str]:
+    """The ordered cast a payload asks for.
+
+    ``normalize_cast_keys`` never returns an empty list (it floors at the
+    single narrator ``["A"]``), so the payload's normalized cast always
+    decides. The saved-speaker-keys and A/B fallbacks the window's original
+    expression carried were unreachable and are deliberately not reproduced;
+    the property pinning that collapse lives in the test suite.
+    """
+    return normalize_cast_keys(payload.get("cast"))
+
+
+def speaker_config_from_payload(data: dict) -> dict:
+    """Decode one merged profile entry into plain speaker-config fields.
+
+    The decode/validation policy (blend clamp, mode validation, defaults)
+    lives here; the caller constructs the engine dataclass from the returned
+    fields, so this module never imports the pipeline.
+    """
+    voice = VoiceSettings.from_mapping(data.get("voice_settings") or {})
+    blend_refs = [str(ref) for ref in (data.get("blend_references") or []) if str(ref).strip()]
+    try:
+        blend_weight = float(data.get("blend_weight", 0.5))
+    except (TypeError, ValueError):
+        blend_weight = 0.5
+    blend_mode = str(data.get("blend_mode", "mix")).strip().lower()
+    if blend_mode not in _SUPPORTED_BLEND_MODES:
+        blend_mode = "mix"
+    emotions = data.get("emotion_reference_paths")
+    return {
+        "reference_path": str(data.get("reference_path", "")),
+        "voice_settings": voice,
+        "emotion_reference_paths": dict(emotions) if isinstance(emotions, dict) else {},
+        "blend_references": blend_refs,
+        "blend_weight": min(1.0, max(0.0, blend_weight)),
+        "blend_mode": blend_mode,
+    }
+
+
+def current_gui_settings_payload(snapshot: WidgetSnapshot) -> dict:
+    """The current settings payload from a plain UI snapshot (pure)."""
+    is_vulkan = snapshot.inference_backend == "vulkan"
+    return {
+        "version": 1,
+        "name": "",
+        "device_mode": snapshot.device_mode,
+        "cuda_device": snapshot.cuda_device,
+        # The ordered cast; the loader rebuilds the panels from it so a saved
+        # multi-speaker cast restores exactly, and a smaller saved cast leaves
+        # no stale panels behind.
+        "cast": list(snapshot.cast_keys),
+        "project": {
+            "model_variant": snapshot.model_variant,
+            "correction_mode": normalize_correction_mode(snapshot.correction_mode),
+            "loudness_preset": snapshot.loudness_preset,
+            "crossfade_ms": snapshot.crossfade_ms,
+            "inference_backend": snapshot.inference_backend,
+            "device_mode": snapshot.device_mode,
+            "cuda_device": snapshot.cuda_device,
+            **_audio_cpp_project_fields(snapshot, is_vulkan),
+            "output_dir": snapshot.output_dir,
+            "output_filename": normalize_output_filename(snapshot.output_filename),
+            "export_srt": snapshot.export_srt,
+            "monologue": snapshot.monologue,
+            "delete_confirm_enabled": snapshot.delete_confirm_enabled,
+            "output_filename_warning": snapshot.output_filename_warning_enabled,
+        },
+        "speakers": {
+            speaker: {
+                "reference_path": settings.reference_path,
+                "voice_settings": VoiceSettings.from_mapping(settings.voice_settings).to_dict(),
+                "emotion_reference_paths": dict(settings.emotion_reference_paths),
+                # Optional character name shown in the cast bar / dialog.
+                "name": snapshot.speaker_names.get(speaker, ""),
+                # Hybrid (blend) configuration: second reference voice, its
+                # dominance weight, and how the two are combined.
+                "blend_references": list(settings.blend_references),
+                "blend_weight": settings.blend_weight,
+                "blend_mode": settings.blend_mode,
+            }
+            for speaker, settings in snapshot.speaker_settings.items()
+        },
+    }

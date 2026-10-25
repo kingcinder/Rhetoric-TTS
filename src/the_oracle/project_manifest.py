@@ -1,0 +1,187 @@
+"""Versioned save/load support for editable Chatterbox projects."""
+
+from __future__ import annotations
+
+import json
+import re
+import shutil
+from dataclasses import asdict, dataclass
+from pathlib import Path
+from typing import Any
+
+from the_oracle.models.cache import atomic_write
+from the_oracle.models.project import RenderPlan
+from the_oracle.models.settings import RenderSettings, SpeakerSettings
+
+
+PROJECT_MANIFEST_VERSION = 1
+
+
+class ProjectManifestError(ValueError):
+    """Raised when a saved project manifest is missing required fields or is incompatible."""
+
+
+@dataclass(slots=True)
+class SavedProject:
+    manifest_version: int
+    title: str
+    artist: str
+    input_path: str
+    output_path: str
+    engine: str
+    model_variant: str
+    render_settings: RenderSettings
+    speaker_settings: dict[str, SpeakerSettings]
+    plan: RenderPlan
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "manifest_version": self.manifest_version,
+            "title": self.title,
+            "artist": self.artist,
+            "input_path": self.input_path,
+            "output_path": self.output_path,
+            "engine": self.engine,
+            "model_variant": self.model_variant,
+            "render_settings": _render_settings_to_dict(self.render_settings),
+            "speaker_settings": {speaker: _speaker_settings_to_dict(settings) for speaker, settings in self.speaker_settings.items()},
+            "utterances": [_editable_utterance_state(item) for item in self.plan.utterances],
+            "render_plan": self.plan.to_dict(),
+        }
+
+
+def _render_settings_to_dict(settings: RenderSettings) -> dict[str, Any]:
+    # dataclasses.asdict is the single-source serialization: a hand-copied
+    # field list silently drops any field added to RenderSettings later
+    # (exactly the schema drift the payload policy exists to prevent).
+    # "anchors" is runtime attribution state, not manifest state, so it is
+    # excluded to keep the historical manifest schema.
+    payload = asdict(settings)
+    payload.pop("anchors", None)
+    return payload
+
+
+def _speaker_settings_to_dict(settings: SpeakerSettings) -> dict[str, Any]:
+    return {
+        "reference_path": settings.reference_path,
+        "voice_settings": settings.voice_settings.to_dict() if hasattr(settings.voice_settings, "to_dict") else dict(settings.voice_settings),
+        "emotion_reference_paths": dict(settings.emotion_reference_paths),
+        "blend_references": list(settings.blend_references),
+        "blend_weight": settings.blend_weight,
+        "blend_mode": settings.blend_mode,
+    }
+
+
+def _editable_utterance_state(utterance) -> dict[str, Any]:
+    return {
+        "index": utterance.index,
+        "speaker": utterance.speaker,
+        "repaired_text": utterance.repaired_text,
+        "emotion": utterance.emotion,
+        "manual_speaker_override": utterance.manual_speaker_override,
+        "manual_text_override": utterance.manual_text_override,
+        "manual_emotion_override": utterance.manual_emotion_override,
+    }
+
+
+def build_saved_project(plan: RenderPlan, render_settings: RenderSettings, speaker_settings: dict[str, SpeakerSettings]) -> SavedProject:
+    return SavedProject(
+        manifest_version=PROJECT_MANIFEST_VERSION,
+        title=plan.title,
+        artist=plan.metadata.get("artist", "The Oracle"),
+        input_path=plan.source_path,
+        output_path=plan.output_dir,
+        engine="chatterbox",
+        model_variant=render_settings.model_variant,
+        render_settings=render_settings,
+        speaker_settings=speaker_settings,
+        plan=plan,
+    )
+
+
+def save_project_manifest(path: str | Path, project: SavedProject) -> Path:
+    destination = Path(path)
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    if destination.exists():
+        # Keep the previous good manifest: an interrupted or unloadable new
+        # write must never destroy the last loadable state.
+        shutil.copy2(destination, destination.with_name(destination.name + ".bak"))
+    text = json.dumps(project.to_dict(), indent=2, ensure_ascii=True)
+    return atomic_write(destination, lambda tmp: tmp.write_text(text, encoding="utf-8"))
+
+
+def load_project_manifest(path: str | Path) -> SavedProject:
+    source = Path(path)
+    payload = json.loads(source.read_text(encoding="utf-8"))
+    return saved_project_from_dict(payload)
+
+
+def saved_project_from_dict(payload: dict[str, Any]) -> SavedProject:
+    required_fields = {
+        "manifest_version",
+        "title",
+        "artist",
+        "input_path",
+        "output_path",
+        "engine",
+        "model_variant",
+        "render_settings",
+        "speaker_settings",
+        "render_plan",
+    }
+    missing = sorted(field for field in required_fields if field not in payload)
+    if missing:
+        raise ProjectManifestError(f"Project manifest is missing required fields: {', '.join(missing)}")
+    if payload["manifest_version"] != PROJECT_MANIFEST_VERSION:
+        raise ProjectManifestError(
+            f"Unsupported project manifest version {payload['manifest_version']}; expected {PROJECT_MANIFEST_VERSION}."
+        )
+    if payload["engine"] != "chatterbox":
+        raise ProjectManifestError(f"Unsupported engine '{payload['engine']}'. Only 'chatterbox' is supported.")
+
+    speakers_payload = payload["speaker_settings"]
+    if not isinstance(speakers_payload, dict) or not speakers_payload:
+        raise ProjectManifestError("Project manifest must contain speaker settings.")
+    invalid_keys = [key for key in speakers_payload if not re.fullmatch(r"[A-X]", str(key))]
+    if invalid_keys:
+        raise ProjectManifestError(
+            "Project manifest contains invalid speaker keys: "
+            f"{', '.join(map(str, invalid_keys))}. Voices are A..X (up to 24)."
+        )
+    if len(speakers_payload) > 24:
+        raise ProjectManifestError("Project manifest can carry at most 24 speaker voices.")
+
+    # Forward-compatible: unknown render-settings fields (added by newer
+    # versions) are ignored instead of crashing the load. Malformed *known*
+    # fields still raise via RenderSettings.__post_init__ validation.
+    render_settings_fields = set(RenderSettings.__dataclass_fields__)
+    render_settings_payload = payload["render_settings"]
+    if not isinstance(render_settings_payload, dict):
+        raise ProjectManifestError("Project manifest render_settings must be an object.")
+    render_settings = RenderSettings(
+        **{key: value for key, value in render_settings_payload.items() if key in render_settings_fields}
+    )
+    speaker_settings = {
+        speaker: SpeakerSettings(
+            reference_path=value["reference_path"],
+            voice_settings=value.get("voice_settings", {}),
+            emotion_reference_paths=value.get("emotion_reference_paths", {}),
+            blend_references=list(value.get("blend_references", [])),
+            blend_weight=value.get("blend_weight", 0.5),
+            blend_mode=value.get("blend_mode", "mix"),
+        )
+        for speaker, value in speakers_payload.items()
+    }
+    plan = RenderPlan.from_dict(payload["render_plan"])
+    return SavedProject(
+        manifest_version=payload["manifest_version"],
+        title=payload["title"],
+        artist=payload["artist"],
+        input_path=payload["input_path"],
+        output_path=payload["output_path"],
+        engine=payload["engine"],
+        model_variant=payload["model_variant"],
+        render_settings=render_settings,
+        speaker_settings=speaker_settings,
+        plan=plan,
+    )
