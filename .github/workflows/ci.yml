@@ -155,12 +155,15 @@ jobs:
       - name: Deterministic Smoke Render (Linux)
         if: runner.os == 'Linux'
         shell: bash
-        run: ./.venv/bin/python scripts/smoke_render.py
+        # Runs scripts/smoke_render.py unchanged under a CI license status; see
+        # scripts/ci_smoke_render.py. The production license gate is untouched.
+        run: ./.venv/bin/python scripts/ci_smoke_render.py scripts/smoke_render.py
 
       - name: Deterministic Smoke Render (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
-        run: .\.venv\Scripts\python.exe scripts/smoke_render.py
+        # Same CI-only wrapper as the Linux step; see scripts/ci_smoke_render.py.
+        run: .\.venv\Scripts\python.exe scripts\ci_smoke_render.py scripts/smoke_render.py
 
       # The suite pins contrast against a token table, section chrome through
       # a faked window, and the recording-studio and inference-tour dialogs not
