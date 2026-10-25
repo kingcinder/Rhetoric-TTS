@@ -192,13 +192,13 @@ license texts are in `THIRD_PARTY_LICENSES/`.
 - **Seashell_ fransisco.wav** — Original recording by the Owner; no third-party rights.
 - **Seashell_No_1.wav** — Original recording by the Owner; no third-party rights.
 - **Seashell_No_2.wav** — Original recording by the Owner; no third-party rights.
-
-
-
-
-
-
-
+- **certifi** — See the installed distribution metadata and bundled license text.
+- **PySide6** — See the installed distribution metadata and bundled license text.
+- **PySide6_Addons** — See the installed distribution metadata and bundled license text.
+- **PySide6_Essentials** — See the installed distribution metadata and bundled license text.
+- **shiboken6** — See the installed distribution metadata and bundled license text.
+- **soxr** — See the installed distribution metadata and bundled license text.
+- **tqdm** — See the installed distribution metadata and bundled license text.
 
 ## Standard license texts
 

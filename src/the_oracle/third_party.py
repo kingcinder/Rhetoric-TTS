@@ -602,7 +602,7 @@ def render_notices(inventory: Inventory) -> str:
     )
     notices = [_required_notice(component) for component in non_python if component.notice]
     notices.extend(
-        _required_notice(component)
+        f"- **{component.name}** — See the installed distribution metadata and bundled license text."
         for component in python_components
         if component.classification in {STRONG_COPYLEFT, WEAK_COPYLEFT, UNKNOWN}
     )

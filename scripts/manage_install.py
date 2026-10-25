@@ -165,7 +165,10 @@ def _pip_base_args(offline_bundle: Path | None) -> list[str]:
     platform_dir = "windows" if is_windows() else "linux"
     lock = offline_bundle / "locks" / f"{platform_dir}-py{sys.version_info[0]}.{sys.version_info[1]}.txt"
     args = ["--no-index", "--find-links", str(offline_wheels_dir(offline_bundle))]
-    if lock.is_file():
+    # A bundle is only usable with its hash-locked wheel set.  Keep hash mode
+    # enabled when a bundle contains a lock for another supported interpreter;
+    # the subsequent lock-path check still refuses a missing exact lock.
+    if lock.is_file() or any(lock.parent.glob(f"{platform_dir}-py*.txt")):
         args.append("--require-hashes")
     return args
 
