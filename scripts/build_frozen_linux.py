@@ -43,6 +43,10 @@ def ensure_host() -> None:
 def _require_tool(name: str) -> str:
     path = shutil.which(name)
     if path is None:
+        venv_tool = Path(sys.executable).with_name(name)
+        if venv_tool.is_file() and venv_tool.stat().st_mode & stat.S_IXUSR:
+            path = str(venv_tool)
+    if path is None:
         raise BuildError(f"required build tool is missing: {name}")
     return path
 
