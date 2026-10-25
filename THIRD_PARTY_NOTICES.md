@@ -70,97 +70,97 @@ tools are not part of the shipped environment.
 
 | Component | Version | License | Source |
 |---|---|---|---|
-| `annotated-doc` | 0.0.5 | MIT | [source](https://github.com/fastapi/annotated-doc) |
-| `antlr4-python3-runtime` | 4.9.3 | BSD-3-Clause | [source](http://www.antlr.org) |
-| `anyio` | 4.15.1 | MIT | [source](https://anyio.readthedocs.io/en/latest/) |
-| `audioread` | 3.1.0 | MIT | [source](https://github.com/beetbox/audioread/issues) |
-| `catalogue` | 2.0.10 | MIT | [source](https://github.com/explosion/catalogue) |
-| `certifi` | 2026.10.23 | MPL-2.0 | [source](https://github.com/certifi/python-certifi) |
-| `cffi` | 2.1.1 | MIT-0 | [source](https://cffi.readthedocs.io/) |
-| `cfgv` | 3.5.0 | MIT | [source](https://github.com/asottile/cfgv) |
-| `charset-normalizer` | 3.4.9 | MIT | [source](https://github.com/jawah/charset_normalizer/blob/master/CHANGELOG.md) |
-| `chatterbox-tts` | 0.1.7+oracle1 | MIT | [source](https://github.com/resemble-ai/chatterbox) |
-| `click` | 8.5.0 | BSD-3-Clause | [source](https://click.palletsprojects.com/page/changes/) |
-| `cloudpickle` | 3.1.2 | BSD-3-Clause | [source](https://github.com/cloudpipe/cloudpickle) |
-| `conformer` | 0.3.2 | MIT | [source](https://github.com/lucidrains/conformer) |
-| `decorator` | 5.3.1 | BSD-3-Clause | — |
-| `deepmultilingualpunctuation` | 1.0.1 | MIT | [source](https://github.com/oliverguhr/deepmultilingualpunctuation) |
-| `diffusers` | 0.38.0 | Apache-2.0 | [source](https://github.com/huggingface/diffusers) |
-| `distlib` | 0.4.3 | PSF-2.0 | [source](https://github.com/pypa/distlib) |
-| `editdistpy` | 0.4.0 | MIT | [source](https://github.com/mammothb/editdistpy/blob/master/CHANGELOG.md) |
-| `einops` | 0.8.2 | MIT | [source](https://github.com/arogozhnikov/einops) |
-| `filelock` | 3.32.2 | MIT | [source](https://py-filelock.readthedocs.io) |
-| `fsspec` | 2026.7.0 | BSD-3-Clause | [source](https://filesystem-spec.readthedocs.io/en/latest/changelog.html) |
-| `h11` | 0.16.0 | MIT | [source](https://github.com/python-hyper/h11) |
-| `hf-xet` | 1.6.0 | Apache-2.0 | [source](https://huggingface.co/docs/hub/xet/index) |
-| `httpcore` | 1.0.9 | BSD-3-Clause | [source](https://www.encode.io/httpcore) |
-| `httpx` | 0.28.1 | BSD-3-Clause | [source](https://github.com/encode/httpx/blob/master/CHANGELOG.md) |
-| `huggingface_hub` | 1.33.0 | Apache-2.0 | [source](https://github.com/huggingface/huggingface_hub) |
-| `identify` | 2.6.19 | MIT | [source](https://github.com/pre-commit/identify) |
-| `idna` | 3.18 | BSD-3-Clause | [source](https://github.com/kjd/idna/blob/master/HISTORY.md) |
-| `importlib_metadata` | 9.0.0 | Apache-2.0 | [source](https://github.com/python/importlib_metadata) |
-| `Jinja2` | 3.1.6 | BSD-3-Clause | [source](https://jinja.palletsprojects.com/changes/) |
-| `joblib` | 1.5.3 | BSD-3-Clause | [source](https://joblib.readthedocs.io) |
-| `lazy-loader` | 0.5 | BSD-3-Clause | [source](https://scientific-python.org/specs/spec-0001/) |
-| `librosa` | 0.11.0 | ISC | [source](https://librosa.org) |
-| `llvmlite` | 0.48.0 | BSD-2-Clause AND Apache-2.0 WITH LLVM-exception | [source](http://llvmlite.readthedocs.io) |
-| `markdown-it-py` | 3.0.0 | MIT | [source](https://markdown-it-py.readthedocs.io) |
-| `MarkupSafe` | 3.0.3 | BSD-3-Clause | [source](https://palletsprojects.com/donate) |
-| `mdurl` | 0.1.2 | MIT | [source](https://github.com/executablebooks/mdurl) |
-| `ml_dtypes` | 0.5.4 | Apache-2.0 | [source](https://github.com/jax-ml/ml_dtypes) |
-| `mpmath` | 1.3.0 | BSD-3-Clause | [source](http://mpmath.org/) |
-| `msgpack` | 1.2.1 | Apache-2.0 | [source](https://msgpack.org/) |
-| `networkx` | 3.6.1 | BSD-3-Clause | [source](https://networkx.org/) |
-| `nodeenv` | 1.10.0 | BSD-3-Clause | [source](https://github.com/ekalinin/nodeenv) |
-| `numba` | 0.66.0 | BSD-3-Clause | [source](https://numba.pydata.org) |
-| `numpy` | 1.26.4 | BSD-3-Clause | [source](https://numpy.org) |
-| `omegaconf` | 2.3.1 | BSD-3-Clause | [source](https://github.com/omry/omegaconf) |
-| `onnx` | 1.22.0 | Apache-2.0 | [source](https://onnx.ai/) |
-| `packaging` | 26.3 | Apache-2.0 OR BSD-2-Clause | [source](https://packaging.pypa.io/) |
-| `pillow` | 13.0.0 | MIT-CMU | [source](https://pillow.readthedocs.io/en/stable/releasenotes/index.html) |
-| `platformdirs` | 4.11.1 | MIT | [source](https://platformdirs.readthedocs.io/en/latest/changelog.html) |
-| `pooch` | 1.9.0 | BSD-3-Clause | [source](https://www.fatiando.org/pooch) |
-| `pre_commit` | 4.6.1 | MIT | [source](https://github.com/pre-commit/pre-commit) |
-| `protobuf` | 7.35.1 | BSD-3-Clause | [source](https://developers.google.com/protocol-buffers/) |
-| `pycparser` | 3.0 | BSD-3-Clause | [source](https://github.com/eliben/pycparser) |
-| `pydub` | 0.25.1 | MIT | [source](http://pydub.com) |
-| `Pygments` | 2.21.0 | BSD-2-Clause | [source](https://pygments.org) |
-| `pyloudnorm` | 0.2.0 | MIT | [source](https://github.com/csteinmetz1/pyloudnorm) |
-| `PySide6` | 6.8.2.1 | LGPL-3.0 | [source](https://pyside.org) |
-| `PySide6_Addons` | 6.8.2.1 | LGPL-3.0 | [source](https://pyside.org) |
-| `PySide6_Essentials` | 6.8.2.1 | LGPL-3.0 | [source](https://pyside.org) |
-| `python-discovery` | 1.6.3 | MIT | [source](https://github.com/tox-dev/python-discovery/releases) |
-| `PyYAML` | 6.0.3 | MIT | [source](https://pyyaml.org/) |
-| `regex` | 2026.7.19 | Apache-2.0 AND CNRI-Python | [source](https://github.com/mrabarnett/mrab-regex) |
-| `requests` | 2.34.2 | Apache-2.0 | [source](https://requests.readthedocs.io) |
-| `resemble-perth` | 1.1.0 | MIT | [source](https://github.com/resemble-ai/perth) |
-| `rich` | 15.0.0 | MIT | [source](https://rich.readthedocs.io/en/latest/) |
-| `s3tokenizer` | 0.3.0 | Apache-2.0 | [source](https://github.com/xingchensong/S3Tokenizer) |
-| `safetensors` | 0.8.0 | Apache-2.0 | [source](https://github.com/huggingface/safetensors) |
-| `scikit-learn` | 1.6.1 | BSD-3-Clause | [source](https://scikit-learn.org) |
-| `scipy` | 1.15.2 | BSD-3-Clause | [source](https://scipy.org/) |
-| `setuptools` | 83.0.0 | MIT | [source](https://github.com/pypa/setuptools) |
-| `shellingham` | 1.5.4 | ISC | [source](https://github.com/sarugaku/shellingham) |
-| `shiboken6` | 6.8.2.1 | LGPL-3.0 | [source](https://pyside.org) |
-| `sounddevice` | 0.5.6 | MIT | [source](https://python-sounddevice.readthedocs.io/) |
-| `soundfile` | 0.13.1 | BSD-3-Clause | [source](https://github.com/bastibe/python-soundfile) |
-| `soxr` | 1.1.0 | LGPL-2.1-or-later | [source](https://github.com/dofuuz/python-soxr) |
-| `spacy_pkuseg` | 1.0.1 | MIT | [source](https://github.com/explosion/spacy-pkuseg) |
-| `srsly` | 2.5.3 | MIT | [source](https://github.com/explosion/srsly) |
-| `sympy` | 1.13.1 | BSD-3-Clause | [source](https://sympy.org) |
-| `symspellpy` | 6.9.0 | MIT | [source](https://github.com/mammothb/symspellpy) |
-| `threadpoolctl` | 3.6.0 | BSD-3-Clause | [source](https://github.com/joblib/threadpoolctl) |
-| `tokenizers` | 0.23.3 | Apache-2.0 | [source](https://github.com/huggingface/tokenizers) |
-| `torch` | 2.6.0+cpu | BSD-3-Clause | [source](https://pytorch.org/) |
-| `torchaudio` | 2.6.0+cpu | BSD-3-Clause | [source](https://github.com/pytorch/audio) |
-| `torchvision` | 0.21.0+cpu | BSD-3-Clause | [source](https://github.com/pytorch/vision) |
-| `tqdm` | 4.70.0 | MPL-2.0 | [source](https://tqdm.github.io) |
-| `transformers` | 5.20.0 | Apache-2.0 | [source](https://github.com/huggingface/transformers) |
-| `typer` | 0.27.2 | MIT | [source](https://github.com/fastapi/typer) |
-| `typing_extensions` | 4.16.0 | PSF-2.0 | [source](https://github.com/python/typing_extensions/issues) |
-| `urllib3` | 2.8.0 | MIT | [source](https://github.com/urllib3/urllib3/blob/main/CHANGES.rst) |
-| `virtualenv` | 21.14.13 | MIT | [source](https://thanks.dev/u/gh/gaborbernat) |
-| `zipp` | 4.1.0 | MIT | [source](https://github.com/jaraco/zipp) |
+| `annotated-doc` | installed metadata | MIT | [source](https://github.com/fastapi/annotated-doc) |
+| `antlr4-python3-runtime` | installed metadata | BSD-3-Clause | [source](http://www.antlr.org) |
+| `anyio` | installed metadata | MIT | [source](https://anyio.readthedocs.io/en/latest/) |
+| `audioread` | installed metadata | MIT | [source](https://github.com/beetbox/audioread/issues) |
+| `catalogue` | installed metadata | MIT | [source](https://github.com/explosion/catalogue) |
+| `certifi` | installed metadata | MPL-2.0 | [source](https://github.com/certifi/python-certifi) |
+| `cffi` | installed metadata | MIT-0 | [source](https://cffi.readthedocs.io/) |
+| `cfgv` | installed metadata | MIT | [source](https://github.com/asottile/cfgv) |
+| `charset-normalizer` | installed metadata | MIT | [source](https://github.com/jawah/charset_normalizer/blob/master/CHANGELOG.md) |
+| `chatterbox-tts` | installed metadata | MIT | [source](https://github.com/resemble-ai/chatterbox) |
+| `click` | installed metadata | BSD-3-Clause | [source](https://click.palletsprojects.com/page/changes/) |
+| `cloudpickle` | installed metadata | BSD-3-Clause | [source](https://github.com/cloudpipe/cloudpickle) |
+| `conformer` | installed metadata | MIT | [source](https://github.com/lucidrains/conformer) |
+| `decorator` | installed metadata | BSD-3-Clause | — |
+| `deepmultilingualpunctuation` | installed metadata | MIT | [source](https://github.com/oliverguhr/deepmultilingualpunctuation) |
+| `diffusers` | installed metadata | Apache-2.0 | [source](https://github.com/huggingface/diffusers) |
+| `distlib` | installed metadata | PSF-2.0 | [source](https://github.com/pypa/distlib) |
+| `editdistpy` | installed metadata | MIT | [source](https://github.com/mammothb/editdistpy/blob/master/CHANGELOG.md) |
+| `einops` | installed metadata | MIT | [source](https://github.com/arogozhnikov/einops) |
+| `filelock` | installed metadata | MIT | [source](https://py-filelock.readthedocs.io) |
+| `fsspec` | installed metadata | BSD-3-Clause | [source](https://filesystem-spec.readthedocs.io/en/latest/changelog.html) |
+| `h11` | installed metadata | MIT | [source](https://github.com/python-hyper/h11) |
+| `hf-xet` | installed metadata | Apache-2.0 | [source](https://huggingface.co/docs/hub/xet/index) |
+| `httpcore` | installed metadata | BSD-3-Clause | [source](https://www.encode.io/httpcore) |
+| `httpx` | installed metadata | BSD-3-Clause | [source](https://github.com/encode/httpx/blob/master/CHANGELOG.md) |
+| `huggingface_hub` | installed metadata | Apache-2.0 | [source](https://github.com/huggingface/huggingface_hub) |
+| `identify` | installed metadata | MIT | [source](https://github.com/pre-commit/identify) |
+| `idna` | installed metadata | BSD-3-Clause | [source](https://github.com/kjd/idna/blob/master/HISTORY.md) |
+| `importlib_metadata` | installed metadata | Apache-2.0 | [source](https://github.com/python/importlib_metadata) |
+| `Jinja2` | installed metadata | BSD-3-Clause | [source](https://jinja.palletsprojects.com/changes/) |
+| `joblib` | installed metadata | BSD-3-Clause | [source](https://joblib.readthedocs.io) |
+| `lazy-loader` | installed metadata | BSD-3-Clause | [source](https://scientific-python.org/specs/spec-0001/) |
+| `librosa` | installed metadata | ISC | [source](https://librosa.org) |
+| `llvmlite` | installed metadata | BSD-2-Clause AND Apache-2.0 WITH LLVM-exception | [source](http://llvmlite.readthedocs.io) |
+| `markdown-it-py` | installed metadata | MIT | [source](https://markdown-it-py.readthedocs.io) |
+| `MarkupSafe` | installed metadata | BSD-3-Clause | [source](https://palletsprojects.com/donate) |
+| `mdurl` | installed metadata | MIT | [source](https://github.com/executablebooks/mdurl) |
+| `ml_dtypes` | installed metadata | Apache-2.0 | [source](https://github.com/jax-ml/ml_dtypes) |
+| `mpmath` | installed metadata | BSD-3-Clause | [source](http://mpmath.org/) |
+| `msgpack` | installed metadata | Apache-2.0 | [source](https://msgpack.org/) |
+| `networkx` | installed metadata | BSD-3-Clause | [source](https://networkx.org/) |
+| `nodeenv` | installed metadata | BSD-3-Clause | [source](https://github.com/ekalinin/nodeenv) |
+| `numba` | installed metadata | BSD-3-Clause | [source](https://numba.pydata.org) |
+| `numpy` | installed metadata | BSD-3-Clause | [source](https://numpy.org) |
+| `omegaconf` | installed metadata | BSD-3-Clause | [source](https://github.com/omry/omegaconf) |
+| `onnx` | installed metadata | Apache-2.0 | [source](https://onnx.ai/) |
+| `packaging` | installed metadata | Apache-2.0 OR BSD-2-Clause | [source](https://packaging.pypa.io/) |
+| `pillow` | installed metadata | MIT-CMU | [source](https://pillow.readthedocs.io/en/stable/releasenotes/index.html) |
+| `platformdirs` | installed metadata | MIT | [source](https://platformdirs.readthedocs.io/en/latest/changelog.html) |
+| `pooch` | installed metadata | BSD-3-Clause | [source](https://www.fatiando.org/pooch) |
+| `pre_commit` | installed metadata | MIT | [source](https://github.com/pre-commit/pre-commit) |
+| `protobuf` | installed metadata | BSD-3-Clause | [source](https://developers.google.com/protocol-buffers/) |
+| `pycparser` | installed metadata | BSD-3-Clause | [source](https://github.com/eliben/pycparser) |
+| `pydub` | installed metadata | MIT | [source](http://pydub.com) |
+| `Pygments` | installed metadata | BSD-2-Clause | [source](https://pygments.org) |
+| `pyloudnorm` | installed metadata | MIT | [source](https://github.com/csteinmetz1/pyloudnorm) |
+| `PySide6` | installed metadata | LGPL-3.0 | [source](https://pyside.org) |
+| `PySide6_Addons` | installed metadata | LGPL-3.0 | [source](https://pyside.org) |
+| `PySide6_Essentials` | installed metadata | LGPL-3.0 | [source](https://pyside.org) |
+| `python-discovery` | installed metadata | MIT | [source](https://github.com/tox-dev/python-discovery/releases) |
+| `PyYAML` | installed metadata | MIT | [source](https://pyyaml.org/) |
+| `regex` | installed metadata | Apache-2.0 AND CNRI-Python | [source](https://github.com/mrabarnett/mrab-regex) |
+| `requests` | installed metadata | Apache-2.0 | [source](https://requests.readthedocs.io) |
+| `resemble-perth` | installed metadata | MIT | [source](https://github.com/resemble-ai/perth) |
+| `rich` | installed metadata | MIT | [source](https://rich.readthedocs.io/en/latest/) |
+| `s3tokenizer` | installed metadata | Apache-2.0 | [source](https://github.com/xingchensong/S3Tokenizer) |
+| `safetensors` | installed metadata | Apache-2.0 | [source](https://github.com/huggingface/safetensors) |
+| `scikit-learn` | installed metadata | BSD-3-Clause | [source](https://scikit-learn.org) |
+| `scipy` | installed metadata | BSD-3-Clause | [source](https://scipy.org/) |
+| `setuptools` | installed metadata | MIT | [source](https://github.com/pypa/setuptools) |
+| `shellingham` | installed metadata | ISC | [source](https://github.com/sarugaku/shellingham) |
+| `shiboken6` | installed metadata | LGPL-3.0 | [source](https://pyside.org) |
+| `sounddevice` | installed metadata | MIT | [source](https://python-sounddevice.readthedocs.io/) |
+| `soundfile` | installed metadata | BSD-3-Clause | [source](https://github.com/bastibe/python-soundfile) |
+| `soxr` | installed metadata | LGPL-2.1-or-later | [source](https://github.com/dofuuz/python-soxr) |
+| `spacy_pkuseg` | installed metadata | MIT | [source](https://github.com/explosion/spacy-pkuseg) |
+| `srsly` | installed metadata | MIT | [source](https://github.com/explosion/srsly) |
+| `sympy` | installed metadata | BSD-3-Clause | [source](https://sympy.org) |
+| `symspellpy` | installed metadata | MIT | [source](https://github.com/mammothb/symspellpy) |
+| `threadpoolctl` | installed metadata | BSD-3-Clause | [source](https://github.com/joblib/threadpoolctl) |
+| `tokenizers` | installed metadata | Apache-2.0 | [source](https://github.com/huggingface/tokenizers) |
+| `torch` | installed metadata | BSD-3-Clause | [source](https://pytorch.org/) |
+| `torchaudio` | installed metadata | BSD-3-Clause | [source](https://github.com/pytorch/audio) |
+| `torchvision` | installed metadata | BSD-3-Clause | [source](https://github.com/pytorch/vision) |
+| `tqdm` | installed metadata | MPL-2.0 | [source](https://tqdm.github.io) |
+| `transformers` | installed metadata | Apache-2.0 | [source](https://github.com/huggingface/transformers) |
+| `typer` | installed metadata | MIT | [source](https://github.com/fastapi/typer) |
+| `typing_extensions` | installed metadata | PSF-2.0 | [source](https://github.com/python/typing_extensions/issues) |
+| `urllib3` | installed metadata | MIT | [source](https://github.com/urllib3/urllib3/blob/main/CHANGES.rst) |
+| `virtualenv` | installed metadata | MIT | [source](https://thanks.dev/u/gh/gaborbernat) |
+| `zipp` | installed metadata | MIT | [source](https://github.com/jaraco/zipp) |
 
 ## Required notices
 

@@ -506,7 +506,12 @@ def _table_row(component: Component) -> str:
     source = component.source or ""
     if source.startswith("http"):
         source = f"[source]({source})"
-    return f"| `{component.name}` | {component.version or '—'} | {component.license or 'UNKNOWN'} | {source or '—'} |"
+    # Unbounded resolver requirements (for example numpy/Pillow) legitimately
+    # produce different installed patch versions across supported Python and
+    # OS builders. Keep the generated notice stable while retaining the exact
+    # version in the installed wheel metadata shipped with each build.
+    version = "installed metadata" if component.kind == "python" else (component.version or "—")
+    return f"| `{component.name}` | {version} | {component.license or 'UNKNOWN'} | {source or '—'} |"
 
 
 def _required_notice(component: Component) -> str:
