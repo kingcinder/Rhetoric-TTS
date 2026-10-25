@@ -24,10 +24,10 @@ _UNLICENSED_ALLOWED_COMMANDS = frozenset({
     "doctor",
     "install",
     "uninstall",
+    "gui",
 })
 
 _SERIAL_REQUIRED_COMMANDS = frozenset({
-    "gui",
     "machine-id",
     "privacy-status",
     "privacy-opt-in",
