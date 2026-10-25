@@ -111,7 +111,9 @@ def stage_appdir(appdir: Path, frozen_dist: Path) -> Path:
     shutil.copy2(desktop, applications)
     icons = appdir / "usr" / "share" / "icons" / "hicolor" / "256x256" / "apps"
     icons.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(REPO_ROOT / "packaging" / "icons" / "oracle-tts-install.png", icons / "the-oracle.png")
+    icon = REPO_ROOT / "packaging" / "icons" / "oracle-tts-install.png"
+    shutil.copy2(icon, appdir / "the-oracle.png")
+    shutil.copy2(icon, icons / "the-oracle.png")
     apprun = appdir / "AppRun"
     apprun.write_text(
         "#!/bin/sh\n"
