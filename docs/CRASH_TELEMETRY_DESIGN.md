@@ -115,7 +115,7 @@ than passes through when it can't classify. One exported function,
 `utils/logging.py` gains rotation with the same public signature:
 `configure_logging` internally uses `RotatingFileHandler` (5 MiB, 3
 backups) instead of the unbounded `FileHandler`, and a new
-`default_log_file()` helper returns the repo-local `logs/oracle.log`
+`default_log_file()` helper returns the repo-local `logs/rhetoric.log`
 (gitignored). Old behavior (explicit `log_file=`) still works; existing
 callers change nothing. FD-clean reconfigure semantics — the part the
 current file pinns in comments — are preserved and re-tested with rotation
@@ -135,8 +135,8 @@ in play.
   upload code at all in v1** — the user attaches the report to an email or
   support ticket themselves. This is what makes the privacy policy a
   statement of architecture rather than intent.
-- **CLI:** `the-oracle privacy-status`, `the-oracle privacy-opt-in`,
-  `the-oracle privacy-opt-out [--purge]`. `--purge` deletes the crash dir
+- **CLI:** `rhetoric privacy-status`, `rhetoric privacy-opt-in`,
+  `rhetoric privacy-opt-out [--purge]`. `--purge` deletes the crash dir
   contents (and is the revocation story: opting out can immediately purge,
   defaulting to yes with a confirmation).
 - Consent is per-install, revocable anytime, and revocation takes effect on
@@ -149,7 +149,7 @@ New `crash_reports` check, same constraints as every other check
 (read-only, idempotent, history-independent — the three doctor pins):
 
 - **Consent off (the default)** → `ok=true`, informational: "local crash
-  reporting disabled — enable with `the-oracle privacy-opt-in`". Disabled
+  reporting disabled — enable with `rhetoric privacy-opt-in`". Disabled
   is a valid state; the doctor never fails for it.
 - **Consent on** → report dir stats: count, oldest, newest, total size, cap
   state ("at cap — oldest will be dropped"); each explained inline.
@@ -251,7 +251,7 @@ rollout instruction)
    review/share happens next session, never an immediate post-crash dialog.
 
 CLI adaptation recorded the same day: §6's "purge defaulting to yes with a
-confirmation" becomes an explicit `--purge` flag on `the-oracle
+confirmation" becomes an explicit `--purge` flag on `rhetoric
 privacy-opt-out`, because the CLI refuses interactive prompts on non-TTY
 (repo precedent, pinned by test) and a purge prompt that cannot render would
 hang piped invocations. The confirmation dialog belongs to the GUI slice.

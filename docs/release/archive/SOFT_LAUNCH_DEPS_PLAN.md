@@ -1,3 +1,7 @@
+> Superseded historical planning/audit document. Do not use its gates, metrics, or approval status as current release evidence.
+
+> Superseded historical planning/audit document. Do not use its gates, metrics, or approval status as current release evidence.
+
 # Removing the Strong-Copyleft Dependencies — Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use `executing-plans` to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.

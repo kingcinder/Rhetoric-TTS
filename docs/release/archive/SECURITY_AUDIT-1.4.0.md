@@ -1,3 +1,7 @@
+> Superseded historical planning/audit document. Do not use its gates, metrics, or approval status as current release evidence.
+
+> Superseded historical planning/audit document. Do not use its gates, metrics, or approval status as current release evidence.
+
 # Security audit — 1.4.0 release work
 
 Date: 2026-10-13 · Branch: `release/1.4.0` · Host: Ubuntu 24.04, Python 3.12.3

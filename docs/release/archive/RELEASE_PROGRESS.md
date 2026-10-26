@@ -1,3 +1,5 @@
+> Superseded historical release record. Its branch, metrics, commercial decisions, and CI findings do not describe Rhetoric 1.5.0. Retained as provenance; see ../FINAL_RELEASE_READINESS.md for current status.
+
 # Release Progress — 2026-10-25
 
 ## Current candidate

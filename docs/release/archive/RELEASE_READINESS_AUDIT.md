@@ -1,3 +1,5 @@
+> Superseded historical release record. Its branch, metrics, commercial decisions, and CI findings do not describe Rhetoric 1.5.0. Retained as provenance; see ../FINAL_RELEASE_READINESS.md for current status.
+
 # Release Readiness Audit — 2026-10-23
 
 Status: **in progress; not a release approval**. Evidence in this audit is tied to local HEAD `8f08151` (`1.4.1`) unless a different revision is named. The local checkout is the canonical source. The two pre-existing unstaged changes in `pyproject.toml` and `tests/conftest.py` are preserved.

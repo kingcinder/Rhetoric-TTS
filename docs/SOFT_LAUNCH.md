@@ -1,4 +1,4 @@
-# Rhetoric 1.4.2 — Commercial Release Gate
+# Rhetoric 1.5.0 — Commercial Release Gate
 
 Status: **commercial distribution is blocked; 1.4.2 is an engineering
 candidate**. Linux x86_64 is the intended qualification target but has not
@@ -38,8 +38,8 @@ activation, status, help, documentation, and quit remain available.
 ```bash
 git clone --branch main https://github.com/kingcinder/Rhetoric-TTS.git
 cd Rhetoric
-./oracle install
-./oracle start
+./rhetoric install
+./rhetoric start
 ```
 
 On Windows:
@@ -47,38 +47,30 @@ On Windows:
 ```powershell
 git clone --branch main https://github.com/kingcinder/Rhetoric-TTS.git
 cd Rhetoric
-.\oracle.ps1 install
-.\oracle.ps1 start
+.\rhetoric.ps1 install
+.\rhetoric.ps1 start
 ```
 
-`./oracle install` creates the venv, installs the pinned runtime, registers the
-launcher, and runs the doctor. `./oracle doctor` is the first stop for any
+`./rhetoric install` creates the venv, installs the pinned runtime, registers the
+launcher, and runs the doctor. `./rhetoric doctor` is the first stop for any
 problem. The doctor's `--json` report is machine-readable.
 
-## Purchase and activation
+## Serial-number licensing
 
-The soft launch is sold directly while the storefront is being set up:
+Rhetoric uses a one-time serial-number purchase. There is no subscription,
+Community edition, trial, or optional activation. Without a valid serial,
+product features remain inert except activation, status, help, documentation,
+doctor, and quit. Activation verifies the serial offline and contacts no
+server.
 
-1. Email **codysa90@gmail.com** with the subject **"Oracle alpha license"** and
-   the name you want recorded on the license (optional).
-2. You receive a single `ORACLE1.…` serial number. It is the license; there is no
-   account and no activation server.
-3. Activate offline:
+The storefront and payment workflow are deferred. Do not direct customers to
+email for a purchase or serial request. The owner mints serials after an
+authorized sale using `scripts/license_sign.py`; the production signing seed
+stays in the owner's secret manager. See [LICENSING_OPS.md](LICENSING_OPS.md)
+for custody and test-key procedures.
 
-   ```bash
-   the-oracle activate "<serial-number>"
-   the-oracle license-status
-   ```
-
-   Or use **Help → Activate Serial Number…** in the GUI.
-
-The license file contains no personal data unless you typed a licensee name.
-Activation never contacts a server. Removing the local serial-number file
-moves the seat; support can re-issue a serial number from the purchase record.
-
-The vendor mints serial numbers with `scripts/license_sign.py mint --key-id k2`. The
-signing seed never leaves the owner's secret manager. See
-[LICENSING_OPS.md](LICENSING_OPS.md) for the custody and rotation procedure.
+`ORACLE1` is the historical token prefix for 1.5.0 and remains accepted for
+compatibility. It is not the product name.
 
 ## Support
 
@@ -86,20 +78,20 @@ Compose a bug report, package it with the redacted diagnostics, and attach the
 zip to the issue or email you send:
 
 ```bash
-the-oracle bug-report new --title "..." --summary "..." --step "..."
-the-oracle bug-report show <report-id>       # read exactly what will be shared
-the-oracle bug-report package <report-id>    # Output/oracle-report-<id>.zip
-the-oracle bug-report issue <report-id>      # prefilled issue + email links
+rhetoric bug-report new --title "..." --summary "..." --step "..."
+rhetoric bug-report show <report-id>       # read exactly what will be shared
+rhetoric bug-report package <report-id>    # Output/rhetoric-report-<id>.zip
+rhetoric bug-report issue <report-id>      # prefilled issue + email links
 ```
 
 In the GUI this is **Help → Report a Problem…**. Drafts stay in
 `support_reports/` (newest 25); nothing is uploaded, and deleting one is
 explicit. The full workflow is in [SUPPORT.md](SUPPORT.md).
 
-For a bundle without a written report, `the-oracle support-bundle` still works:
+For a bundle without a written report, `rhetoric support-bundle` still works:
 
 ```bash
-the-oracle support-bundle
+rhetoric support-bundle
 ```
 
 The bundle is written under `Output/` and is never uploaded. It contains the
@@ -130,11 +122,11 @@ Updates are manual for the alpha:
 
 ```bash
 git pull
-./oracle update
-./oracle doctor
+./rhetoric update
+./rhetoric doctor
 ```
 
-`./oracle update` keeps `Input/`, `Seashells/`, `Profiles/`, `Output/`, and
+`./rhetoric update` keeps `Input/`, `Seashells/`, `Profiles/`, `Output/`, and
 your settings. The [CHANGELOG](../CHANGELOG.md) is the source of truth for what
 changed.
 

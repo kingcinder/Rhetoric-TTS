@@ -6,7 +6,7 @@ presents: start with the doctor.
 ## First stop: the doctor
 
 ```bash
-./oracle doctor                # or: python scripts/manage_install.py doctor
+./rhetoric doctor                # or: python scripts/manage_install.py doctor
 python scripts/doctor.py --json    # machine-readable report
 ```
 
@@ -18,23 +18,23 @@ read-only and idempotent: running it twice gives byte-identical reports
 (timings are measurements, not facts, and are not printed in the human
 report).
 
-## Entrypoint: "the-oracle is not installed in <old path>"
+## Entrypoint: "rhetoric is not installed in <old path>"
 
-The managed launcher at `~/.local/bin/the-oracle` (Linux) points at the
+The managed launcher at `~/.local/bin/rhetoric` (Linux), with `the-oracle` retained as a compatibility alias, points at the
 checkout it was installed from. If the repo moved, re-run the install step
 to rewrite it:
 
 ```bash
-./oracle install
+./rhetoric install
 ```
 
 On Windows the Start Menu / desktop shortcuts are rebuilt the same way.
 
 ## Render fails or the GUI can't load the engine
 
-- `./oracle doctor` says which layer is broken: venv, dependencies, engine
+- `./rhetoric doctor` says which layer is broken: venv, dependencies, engine
   import, or model init.
-- If dependencies are stale after an upgrade, `./oracle update` reinstalls
+- If dependencies are stale after an upgrade, `./rhetoric update` reinstalls
   them from `pyproject.toml`.
 - If a specific model is missing from the local Hugging Face cache, a
   networked machine fetches it on first use; an offline install must get it
@@ -55,7 +55,7 @@ than served. There is nothing to clean up by hand.
 ## "setup-vulkan" refuses on an offline install
 
 The Vulkan GGUF model is not part of the offline bundle, and an offline
-install must never attempt a network fetch. Run `the-oracle setup-vulkan`
+install must never attempt a network fetch. Run `rhetoric setup-vulkan`
 on a networked machine (deleting the `.oracle_offline` marker in the
 install root re-enables network fetches), or re-install without
 `--offline-bundle`.
@@ -66,11 +66,11 @@ As of 1.4.1 the grammar pass is entirely local: the GPL LanguageTool client
 was removed, so there is no Java server, no hundreds-of-MB download, and no
 warm-up wait. The deterministic local fixes (spacing, punctuation, repeated
 words, and the correction-mode rules) are the supported path. Unexpected
-behaviour there is worth a bug report: `the-oracle bug-report new --area ingest`.
+behaviour there is worth a bug report: `rhetoric bug-report new --area ingest`.
 
 ## Input file flagged as misformatted, or a fix regretted
 
-- `the-oracle check-input <file>` lints without changing anything;
+- `rhetoric check-input <file>` lints without changing anything;
   `--json` gives a machine-readable report, `--fix` corrects in place.
 - Every fix keeps a timestamped backup next to the file. Settings →
   *Restore most recent input-file backup* undoes the latest one from the
@@ -101,7 +101,7 @@ The GUI needs a display or the offscreen platform for tests/smokes:
 
 ## Vulkan backend reports no device
 
-`./oracle doctor` runs `audiocpp_cli` to enumerate devices. No device
+`./rhetoric doctor` runs `audiocpp_cli` to enumerate devices. No device
 usually means the driver/loader layer, not the app: `vulkaninfo` is the
 next diagnostic. The binary and model are set up by `the-oracle
 setup-vulkan`; the CI job `vulkan-smoke` shows a known-good path.
@@ -111,7 +111,7 @@ setup-vulkan`; the CI job `vulkan-smoke` shows a known-good path.
 The `.cmd`/`.ps1` launchers quote the install path (this repo's own path
 contains a space and is part of the install-boundary test suite). If a
 launcher misbehaves after moving the checkout, re-run
-`.\oracle.ps1 install` to regenerate it.
+`.\rhetoric.ps1 install` to regenerate it.
 
 ## Crash reports (if a crash was captured)
 
@@ -121,17 +121,17 @@ install's `crash_reports/` folder — the newest report names the exception
 type and where it happened. Review it, then share it only through a
 channel you choose (Rhetoric never uploads anything): the report is
 plain JSON, safe to read before sending. Delete everything with
-`the-oracle privacy-opt-out --purge`.
+`rhetoric privacy-opt-out --purge`.
 
 To fold a crash into a support case, reference it from the report
-(`the-oracle bug-report new ... --crash`) and package with
+(`rhetoric bug-report new ... --crash`) and package with
 `--include-crash-reports`. The record itself is only included when local
 crash-reporting consent is on.
 
 ## License activation problems
 
 Activation is offline: the token is verified against the public keys embedded
-in this install. `the-oracle license-status` prints the typed state
+in this install. `rhetoric license-status` prints the typed state
 (`no_token`, `unknown_key`, `bad_signature`, `expired`, `machine_mismatch`,
 `store_error`) and the remedy. A token minted under a key this build does not
 know reports `unknown_key` — update the suite or contact support; do not edit
@@ -142,28 +142,28 @@ know reports `unknown_key` — update the suite or contact support; do not edit
 For a written report with everything attached:
 
 ```bash
-the-oracle bug-report new --title "..." --summary "..." --no-doctor
-the-oracle bug-report show <report-id>
-the-oracle bug-report package <report-id>
+rhetoric bug-report new --title "..." --summary "..." --no-doctor
+rhetoric bug-report show <report-id>
+rhetoric bug-report package <report-id>
 ```
 
 For diagnostics only:
 
 ```bash
-the-oracle support-bundle
-the-oracle bug-report diagnose          # the same snapshot, printed
+rhetoric support-bundle
+rhetoric bug-report diagnose          # the same snapshot, printed
 ```
 
 Both write a redacted zip (or text) locally and never upload anything. The
 package includes the version/platform, license state (not the token),
 redacted settings, the newest logs, `diagnostics.json`, and a doctor report.
 Crash records are included only with `--include-crash-reports` and when local
-crash-reporting consent is on. `the-oracle bug-report issue <report-id>`
+crash-reporting consent is on. `rhetoric bug-report issue <report-id>`
 prints prefilled GitHub and email links; read the zip before sending it.
 
 ## Still stuck
 
 `python scripts/doctor.py --json > report.json` is the most useful single
-artifact, and `the-oracle bug-report package <id>` bundles it with the report
+artifact, and `rhetoric bug-report package <id>` bundles it with the report
 and redacted environment. `docs/SUPPORT.md` covers the full workflow,
 `docs/SOFT_LAUNCH.md` records the alpha's known limitations and support path.

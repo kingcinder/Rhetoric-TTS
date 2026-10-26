@@ -109,7 +109,7 @@ keys is "invalid", not "needs rotation".
 **Machine binding — decision point.** V1 recommendation: **not
 machine-locked** (per-seat honor system; `machine_hash` field exists but is
 unpopulated). Machine-locked tokens require the buyer to run
-`the-oracle machine-id` and include the hash at purchase, which adds
+`rhetoric machine-id` and include the hash at purchase, which adds
 support friction for negligible deterrent gain in v1. `machine.py` ships in
 v1 (the fingerprint is one stdlib call per OS: `/etc/machine-id` /
 Windows `MachineGuid` / macOS `IOPlatformUUID` — hashed, raw value never
@@ -151,7 +151,7 @@ every other check (read-only, idempotent, history-independent — pinned by
   customer entered it), key_id, expiry if any, machine-locked yes/no.
 - **Failure states** → `ok=false` with the remedy inline: malformed token
   (`re-enter the activation token`), signature invalid or unknown key_id
-  (`token is not a genuine Oracle license`), unreadable store file
+  (`token is not a genuine Rhetoric license`), unreadable store file
   (permissions fix), expired (renewal contact — **never** "go online to
   verify"; see §6).
 - Verification is a pure function of (token bytes, embedded keys, wall
@@ -209,8 +209,8 @@ this unit, not a later promise to retrofit.
    offline bundle is unchanged and `dependency_pins` gained nothing new to
    police.
 2. **`licensing/` core** — tokens, keys, policy, store + the §7 unit tests.
-3. **CLI surface** — `the-oracle activate <token>`, `the-oracle
-   license-status`, `the-oracle machine-id`; `scripts/license_sign.py`
+3. **CLI surface** — `rhetoric activate <token>`, `rhetoric
+   license-status`, `rhetoric machine-id`; `scripts/license_sign.py`
    (vendor-only) + its roundtrip test.
 4. **Doctor check** — §5 + doctor tests.
 5. **Offline-guarantee pins** — §6 tests, mutation-proven.

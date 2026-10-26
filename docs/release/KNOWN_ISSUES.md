@@ -1,4 +1,4 @@
-# Known Issues — 1.4.2 Limited-Release Candidate
+# Known Issues — Rhetoric 1.5.0
 
 This is a candidate issue list, not a claim that the release has passed all
 acceptance gates.
@@ -25,10 +25,9 @@ acceptance gates.
   isolated managed Linux installation and first CPU render passed, but cold
   model download, project save/reopen, update, rollback, and uninstall were
   not tested.
-- **Hosted CI is green for the pre-scrub candidate.** Run `40192436611` passed
-  Linux packaging, Ubuntu 3.11/3.12, Windows 3.11/3.12, the Windows
-  installer, Vulkan, and suite-count gates on pre-scrub head `682200a`.
-  Hosted CI must run again on the post-scrub head before distribution.
+- **Hosted CI for this release branch has not yet been verified. Earlier run IDs
+  and commit-specific reports belong to superseded release candidates and do
+  not qualify this head.
 
 Report a reproducible issue with the in-app **Help → Report a Problem…** flow
 or follow [Support](../SUPPORT.md). Review diagnostics before sharing them.

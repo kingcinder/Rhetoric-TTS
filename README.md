@@ -1,6 +1,6 @@
 # Rhetoric
 
-The supported command name is `rhetoric`. The legacy `the-oracle` command remains available for existing installations.
+The supported command name is `rhetoric`. The legacy `the-oracle` command and `./oracle` launcher remain available for existing installations.
 
 **Release V1.5.0 RC (engineering candidate; not approved for commercial release).**
 
@@ -40,12 +40,12 @@ package it and attach it to the issue or email you send — nothing is uploaded
 automatically:
 
 ```bash
-the-oracle bug-report new --title "..." --summary "..." --step "..."
-the-oracle bug-report package <report-id>
-the-oracle bug-report issue <report-id>      # prints prefilled links
+rhetoric bug-report new --title "..." --summary "..." --step "..."
+rhetoric bug-report package <report-id>
+rhetoric bug-report issue <report-id>      # prints prefilled links
 ```
 
-`the-oracle support-bundle` still creates a diagnostics-only zip. The full
+`rhetoric support-bundle` still creates a diagnostics-only zip. The full
 workflow — what is collected, how to review it, and how to share it — is in
 [docs/SUPPORT.md](docs/SUPPORT.md). The desktop GUI exposes the same flow as
 **Help → Report a Problem…**.
@@ -62,7 +62,7 @@ workflow — what is collected, how to review it, and how to share it — is in
 - CLI render flow with saved project manifests
 - Built-in support layer: `bug-report diagnose|new|list|show|package|issue|delete`, a GUI Report a Problem dialog, prefilled issue/email links, and a consent-gated support package — all local, nothing uploaded
 - Deterministic smoke render path for repo-local verification without live model generation
-- Managed bootstrap, install, doctor, run, and uninstall entrypoints for Linux and Windows, plus a one-stop manager (`./oracle` / `oracle.ps1`) with install, start, update, and uninstall actions
+- Managed bootstrap, install, doctor, run, and uninstall entrypoints for Linux and Windows, plus a one-stop manager (`./rhetoric` / `rhetoric.ps1`) with install, start, update, and uninstall actions
 - Opt-in CUDA inference through the existing PyTorch/Chatterbox path, with automatic NVIDIA hardware/VRAM suitability detection, CPU fallback, and selectable CUDA device index
 - Opt-in Vulkan inference backend via audio.cpp (`--inference-backend vulkan`) for AMD RDNA1-class GPUs with no CUDA/ROCm path
 - Pain-point markers: a `~` glued between two words in an input script (e.g. `syncronized~lockstep`) marks a junction where the engine used to hang up or mispronounce; the marker is stripped from synthesis automatically in every correction mode (including Verbatim) while the review table keeps your annotation — an unattached `~` (e.g. `~42`) is still read verbatim
@@ -72,26 +72,26 @@ workflow — what is collected, how to review it, and how to share it — is in
 Linux, from the repository root:
 
 ```bash
-./oracle install      # set up the venv, register launchers, verify (doctor)
-./oracle start        # launch the desktop GUI
-./oracle update       # refresh an existing install (keeps your data)
-./oracle uninstall    # remove launchers and the local venv
+./rhetoric install      # set up the venv, register launchers, verify (doctor)
+./rhetoric start        # launch the desktop GUI
+./rhetoric update       # refresh an existing install (keeps your data)
+./rhetoric uninstall    # remove launchers and the local venv
 ```
 
 Windows (PowerShell, from the repository root):
 
 ```powershell
-.\oracle.ps1 install
-.\oracle.ps1 start
-.\oracle.ps1 update
-.\oracle.ps1 uninstall
+.\rhetoric.ps1 install
+.\rhetoric.ps1 start
+.\rhetoric.ps1 update
+.\rhetoric.ps1 uninstall
 ```
 
 `update` reinstalls dependencies and rebuilds the managed launchers while
 keeping `Input/`, `Seashells/`, `Profiles/`, `Output/`, and your saved app
 settings untouched. The underlying per-action scripts
-(`install_oracle_tts.*`, `run_oracle_tts.*`, `doctor_oracle_tts.*`,
-`bootstrap_oracle_tts.*`, `uninstall_oracle_tts.*`) remain available.
+(`install_rhetoric.*`, `run_rhetoric.*`, `doctor_rhetoric.*`,
+`bootstrap_rhetoric.*`, `uninstall_rhetoric.*`) remain available.
 
 ## Platform Support
 
@@ -113,18 +113,18 @@ qualification limits in
 Install Python 3.11 or 3.12, `venv`, and `ffmpeg`, then run:
 
 ```bash
-./install_oracle_tts.sh
+./install_rhetoric.sh
 ```
 
-On Ubuntu (and other freedesktop Linux desktops) the installer registers **The
-Oracle** in the OS programs/app list (`~/.local/share/applications/the-oracle.desktop`)
+On Ubuntu (and other freedesktop Linux desktops) the installer registers
+**Rhetoric** in the OS programs/app list (`~/.local/share/applications/rhetoric.desktop`)
 and drops a launchable shortcut on your Desktop. Both are removed again by
-`./uninstall_oracle_tts.sh`.
+`./uninstall_rhetoric.sh`.
 
 For source-only bootstrap without desktop integration:
 
 ```bash
-./bootstrap_oracle_tts.sh
+./bootstrap_rhetoric.sh
 ```
 
 ### Windows
@@ -132,25 +132,25 @@ For source-only bootstrap without desktop integration:
 Install Python 3.11 or 3.12 and `ffmpeg`, then run from PowerShell:
 
 ```powershell
-.\install_oracle_tts.ps1
+.\install_rhetoric.ps1
 ```
 
 If local script execution is blocked by policy, run the same command through a one-shot bypass:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\install_oracle_tts.ps1
+powershell -ExecutionPolicy Bypass -File .\install_rhetoric.ps1
 ```
 
 For source-only bootstrap without Start Menu integration:
 
 ```powershell
-.\bootstrap_oracle_tts.ps1
+.\bootstrap_rhetoric.ps1
 ```
 
 The managed launcher is installed into:
 
-- Linux: `~/.local/bin/the-oracle`
-- Windows: `%APPDATA%\Python\Scripts\the-oracle.cmd`
+- Linux: `~/.local/bin/rhetoric`
+- Windows: `%APPDATA%\Python\Scripts\rhetoric.cmd`
 
 If that directory is not already on `PATH`, the doctor will tell you exactly what is missing.
 
@@ -159,15 +159,15 @@ If that directory is not already on `PATH`, the doctor will tell you exactly wha
 Linux:
 
 ```bash
-./doctor_oracle_tts.sh
-./run_oracle_tts.sh
+./doctor_rhetoric.sh
+./run_rhetoric.sh
 ```
 
 Windows:
 
 ```powershell
-.\doctor_oracle_tts.ps1
-.\run_oracle_tts.ps1
+.\doctor_rhetoric.ps1
+.\run_rhetoric.ps1
 ```
 
 The doctor checks:
@@ -246,7 +246,7 @@ target platform(s).
 Build the bundle on a machine **with** internet:
 
 ```bash
-python3 scripts/build_offline_bundle.py --output dist/oracle-offline-bundle
+python3 scripts/build_offline_bundle.py --output dist/rhetoric-offline-bundle
 # options: --platform linux|windows|both  --pytorch cpu|cuda  --python-version 3.12
 ```
 
@@ -278,13 +278,13 @@ repo-local `Seashells/` clips (the GUI's "Default Voices", including the
 bundled `Seashells/generic/` library), so the simplest render is just:
 
 ```bash
-the-oracle render --input Input/cli_short.txt --outdir Output
+rhetoric render --input Input/cli_short.txt --outdir Output
 ```
 
 To override the voices explicitly:
 
 ```bash
-the-oracle render \
+rhetoric render \
   --input Input/cli_short.txt \
   --outdir Output \
   --speakerA-ref Seashells/<speaker_a>.wav \
@@ -294,20 +294,20 @@ the-oracle render \
 Project save/load workflow:
 
 ```bash
-the-oracle render \
+rhetoric render \
   --input Input/cli_short.txt \
   --outdir Output \
   --speakerA-ref Seashells/<speaker_a>.wav \
   --speakerB-ref Seashells/<speaker_b>.wav \
-  --save-project Output/oracle_project.json
+  --save-project Output/rhetoric_project.json
 
-the-oracle render --project Output/oracle_project.json
+rhetoric render --project Output/rhetoric_project.json
 ```
 
 GUI launch through the managed launcher:
 
 ```bash
-the-oracle gui
+rhetoric gui
 ```
 
 Text repair uses the built-in, deterministic local grammar and punctuation
@@ -331,16 +331,16 @@ CUDA is an additional PyTorch device mode, not a second synthesis engine. The ex
 The installer probes `nvidia-smi` before installing PyTorch. Its default `auto` policy installs the CUDA 12.4 PyTorch wheels only when at least one NVIDIA card reports enough VRAM; otherwise it installs the CPU wheels. You can explicitly choose the runtime:
 
 ```bash
-./oracle install --pytorch-runtime auto   # recommended: hardware-aware
-./oracle install --pytorch-runtime cuda   # force CUDA 12.4 PyTorch wheels
-./oracle install --pytorch-runtime cpu    # force CPU wheels
-./oracle update --pytorch-runtime cuda
+./rhetoric install --pytorch-runtime auto   # recommended: hardware-aware
+./rhetoric install --pytorch-runtime cuda   # force CUDA 12.4 PyTorch wheels
+./rhetoric install --pytorch-runtime cpu    # force CPU wheels
+./rhetoric update --pytorch-runtime cuda
 ```
 
 The CLI selects a device with `--device-mode cuda` and optionally pins a card with `--cuda-device N`:
 
 ```bash
-the-oracle render --input Input/cli_short.txt --outdir Output \
+rhetoric render --input Input/cli_short.txt --outdir Output \
   --device-mode cuda --cuda-device 0
 ```
 
@@ -367,10 +367,10 @@ manual script runs: Rhetoric completes the switch by itself.
   progress into the backend status panel. The queued render/preview starts by
   itself once setup finishes, and `ORACLE_AUDIOCPP_CLI`/`ORACLE_AUDIOCPP_MODEL`
   are set for the session.
-- **CLI** — `the-oracle render --inference-backend vulkan` runs the same
+- **CLI** — `rhetoric render --inference-backend vulkan` runs the same
   automatic setup first (output streamed to stderr; a ready backend prints a
   single `Vulkan backend ready.` line). Pass `--no-audio-cpp-setup` to keep
-  the old fail-fast behavior. A one-shot `the-oracle setup-vulkan` command
+  the old fail-fast behavior. A one-shot `rhetoric setup-vulkan` command
   performs just the setup and prints the resolved binary/model paths — the
   CLI and GUI apply them automatically, so no shell exports are needed.
 
@@ -396,7 +396,7 @@ builds `audiocpp_cli` with the Vulkan backend into
 override with `AUDIOCPP_MODEL_SET=full`), and points you at
 `scripts/download_audio_cpp_model.sh` for the model. It requires GCC 13+,
 CMake, and the Vulkan SDK. You normally do not need to run this by hand —
-selecting the Vulkan backend (GUI) or `the-oracle setup-vulkan` (CLI) builds
+selecting the Vulkan backend (GUI) or `rhetoric setup-vulkan` (CLI) builds
 it automatically on first use; this manual path is for pre-installing ahead
 of time.
 
@@ -418,7 +418,7 @@ when you want to pre-install or persist the environment across sessions:
 ```bash
 ./scripts/download_audio_cpp_model.sh   # downloads Chatterbox Q8_0 GGUF; the app applies the path itself
 
-the-oracle render \
+rhetoric render \
   --input Input/cli_short.txt --outdir Output \
   --speakerA-ref "Seashells/generic/english_reader_1.wav" \
   --speakerB-ref "Seashells/generic/english_reader_2.wav" \
@@ -509,7 +509,7 @@ variables as render CLI flags and are persisted in saved project manifests
   `--inference-backend vulkan`.
 
 Explicit CLI/manifest values take precedence over the environment variables.
-`the-oracle render --help` documents all four flags, and the doctor's Vulkan
+`rhetoric render --help` documents all four flags, and the doctor's Vulkan
 check reports the same device list to pick `<n>` from.
 
 In the desktop GUI, the backend is chosen with the **Inference Backend**
@@ -600,7 +600,7 @@ and documented as reviewable artifacts in `scripts/patches/`:
   instead of silently losing it).
 - `audio_cpp_space_safe_build.patch` — quotes sentencepiece's
   `-fmacro-prefix-map` so the build works from checkout paths containing
-  spaces (required for this repo's own `the oracle tts` directory).
+  spaces (required for the repository's own directory).
 
 The patch script is idempotent and is invoked automatically by
 `scripts/build_audio_cpp.sh` before compiling. If audio.cpp still reports
@@ -625,7 +625,7 @@ silently.
 - `docs/` design specs, the [upgrade guide](docs/UPGRADING.md), and the
   [troubleshooting guide](docs/TROUBLESHOOTING.md)
 - `packaging/` Linux desktop install/uninstall assets
-- `bootstrap_oracle_tts.sh` / `.ps1` one-command setup (install, doctor,
+- `bootstrap_rhetoric.sh` / `.ps1` one-command setup (install, doctor,
   run, uninstall wrappers follow the same `*_oracle_tts` naming)
 
 ## Sample Inputs
@@ -716,15 +716,12 @@ name again replaces the entry.
 
 ## Licensing
 
-This project is publicly visible for inspection and evaluation, but it is not open-source. All rights are reserved.
-
-One-time serial numbers are issued directly while the storefront is being set up. Email
-**codysa90@gmail.com** with the subject **"Oracle alpha license"** to request a
-serial number; activation is offline and takes one paste. Without a valid
-serial number the application remains visible but functional features are
-disabled. See
-[docs/SOFT_LAUNCH.md](docs/SOFT_LAUNCH.md) for the activation and support
-procedure, and [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for the
-third-party inventory.
+Rhetoric is licensed by a one-time serial number. A valid serial unlocks the
+product; without one, the app remains visible for activation, license status,
+help, documentation, doctor, and quit. Activation is offline. The storefront
+and payment workflow are deferred, so this repository does not provide an
+email-based purchase path. The proposed terms are all sales final, subject to
+counsel and payment-processor review. See [docs/release/PRODUCT_OFFER.md](docs/release/PRODUCT_OFFER.md)
+and [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 Licensing and support inquiries: codysa90@gmail.com

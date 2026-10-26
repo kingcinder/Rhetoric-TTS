@@ -1,4 +1,6 @@
-# Performance Baseline — Representative Render
+# Historical Performance Baseline — Representative Render
+
+> Measurements are from 2026-09-28 and are not current release qualification evidence.
 
 Unit U4.3 (consumer-market-readiness campaign, 2026-09-28). Purpose: a recorded,
 reproducible baseline of one representative render so future units can compare
@@ -6,7 +8,7 @@ against numbers instead of impressions.
 
 ## Method
 
-- Command profiled: `scripts/smoke_render.py` — the real Oracle pipeline driven by
+- Command profiled: `scripts/smoke_render.py` — the Rhetoric pipeline driven by
   the deterministic engine (`_DeterministicChatterboxEngine`) and
   `_SmokeEmotionClassifier` from `src/the_oracle/smoke.py`. Two output formats
   plus a cache-reuse pass; two `OraclePipeline` constructions.

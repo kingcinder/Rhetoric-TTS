@@ -9,16 +9,16 @@ From the repository root:
 
 ```bash
 git pull            # or otherwise bring the checkout to the new version
-./oracle update     # refresh dependencies and launchers, keep your data
-./oracle doctor     # optional: verify the upgraded install end to end
+./rhetoric update     # refresh dependencies and launchers, keep your data
+./rhetoric doctor     # optional: verify the upgraded install end to end
 ```
 
 On Windows:
 
 ```powershell
 git pull
-.\oracle.ps1 update
-.\oracle.ps1 doctor
+.\rhetoric.ps1 update
+.\rhetoric.ps1 doctor
 ```
 
 `update` reinstalls the Python dependencies from `pyproject.toml` (picking
@@ -28,7 +28,7 @@ up any changes), rebuilds the managed launchers, and keeps **all user data**:
 ## What you are running
 
 - The version number lives in one place (`src/the_oracle/__init__.py`);
-  `the-oracle --version` prints it.
+  `rhetoric --version` prints it.
 - What changed between your version and the new one is in
   [`CHANGELOG.md`](../CHANGELOG.md).
 
@@ -38,13 +38,13 @@ The PyTorch runtime choice (CPU vs CUDA wheels) is an install-time decision
 that `update` can change in place:
 
 ```bash
-./oracle update --pytorch-runtime cuda   # switch an existing install to CUDA
-./oracle update --pytorch-runtime cpu    # ...and back
+./rhetoric update --pytorch-runtime cuda   # switch an existing install to CUDA
+./rhetoric update --pytorch-runtime cpu    # ...and back
 ```
 
 CUDA requires a compatible NVIDIA GPU and driver; the doctor reports what
 the machine actually supports. The Vulkan (audio.cpp) backend is separate:
-set it up once with `the-oracle setup-vulkan` on a networked machine.
+set it up once with `rhetoric setup-vulkan` on a networked machine.
 
 ## Offline installs
 
@@ -55,7 +55,7 @@ the update reinstalls from the bundled wheels without touching the network.
 
 The `.oracle_offline` marker in the install root is what forces every model
 load to resolve locally. Deleting it re-enables network model fetches (for
-example, to run `the-oracle setup-vulkan`); the offline installers and
+example, to run `rhetoric setup-vulkan`); the offline installers and
 launchers re-establish the environment on the next start.
 
 ## If `update` reports no existing install

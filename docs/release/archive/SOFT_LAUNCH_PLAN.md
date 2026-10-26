@@ -1,3 +1,7 @@
+> Superseded historical planning/audit document. Do not use its gates, metrics, or approval status as current release evidence.
+
+> Superseded historical planning/audit document. Do not use its gates, metrics, or approval status as current release evidence.
+
 # Rhetoric 1.4.0 Commercial Alpha Soft-Launch Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use `executing-plans` to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
@@ -242,7 +246,7 @@ Expected at this stage: nonzero, with blockers for the draft EULA and the three 
 **Interfaces:**
 - Produces: `SupportBundleResult(path: Path, manifest: dict[str, object], included: tuple[str, ...], skipped: tuple[str, ...])`
 - Produces: `build_support_bundle(root, out_path=None, *, include_crash_reports=False, doctor_report=None, now=None) -> SupportBundleResult`
-- Produces: CLI `the-oracle support-bundle [--out PATH] [--include-crash-reports] [--no-doctor] [--json]`.
+- Produces: CLI `rhetoric support-bundle [--out PATH] [--include-crash-reports] [--no-doctor] [--json]`.
 
 **Bundle contents:**
 - `manifest.json` — bundle version, UTC timestamp, app version, platform, Python, included/skipped, redaction statement.
@@ -286,11 +290,11 @@ Expected: PASS.
 
 **Content:**
 - Scope and status: 1.4.0 paid alpha; Linux supported; Windows experimental.
-- Install: Python 3.11/3.12, ffmpeg, Git; `./oracle install`, `./oracle start`.
+- Install: Python 3.11/3.12, ffmpeg, Git; `./rhetoric install`, `./rhetoric start`.
 - Purchase: email `codysa90@gmail.com`; the owner mints a Studio token with `scripts/license_sign.py mint --key-id k2`; delivery is the token string only.
-- Activation: `the-oracle activate <token>` or the in-app dialog; offline; `license-status`; community remains fully usable.
-- Support: `the-oracle support-bundle`; what it includes/excludes; never sends anything automatically.
-- Updates: manual, via `git pull && ./oracle update`; CHANGELOG is the source of truth.
+- Activation: `rhetoric activate <token>` or the in-app dialog; offline; `license-status`; community remains fully usable.
+- Support: `rhetoric support-bundle`; what it includes/excludes; never sends anything automatically.
+- Updates: manual, via `git pull && ./rhetoric update`; CHANGELOG is the source of truth.
 - Known limitations: Windows experimental; first model download; GPL dependency review in progress.
 - Owner go-live checklist: complete the EULA governing-law section and counsel review; record a decision for each strong-copyleft dependency; regenerate notices; run the gate; build artifacts; tag; publish.
 - The gate command and the meaning of each blocker.

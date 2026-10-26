@@ -1,32 +1,7 @@
 # Phase 3 Legal and License Progress — 1.5.0 RC
 
-## Changed
+**Current status (2026-10-25):** Commercial distribution is blocked. Current product copy specifies a one-time serial purchase. The EULA and proposed license decisions remain drafts; owner/counsel review, voice-rights confirmation, and LGPL source/replacement decisions remain outstanding.
 
-- Updated `EULA-DRAFT.md` and `src/the_oracle/EULA-DRAFT.md` to reflect the
-  owner's one-time serial-number product, no subscription, no Community/trial
-  edition, inert unlicensed state, offline activation, no telemetry, and final
-  sales policy.
-- Marked proposed seats, machine binding, version scope, and transfer terms as
-  proposals rather than approved legal terms.
-- Added `docs/legal/EULA_COUNSEL_PACKET.md` with the exact counsel questions,
-  plain-language product terms, and owner decisions.
-- Added `docs/legal/LICENSE_DECISIONS_PROPOSED.md` from installed package
-  metadata and exact pinned model-card revisions. No decisions were written to
-  `scripts/license_review.json`.
+> Historical progress below describes a previous release-candidate state. Its metrics and CI results are not current-head evidence.
 
-## Evidence
-
-- `cmp -s EULA-DRAFT.md src/the_oracle/EULA-DRAFT.md` — exit 0.
-- `/tmp/oracle-baseline-uV4W9R/bin/python -m pytest tests/test_eula_acceptance.py -q`
-  — **8 passed**.
-- Managed-environment metadata confirmed the listed package versions/licenses;
-  pinned Hugging Face model cards each reported `license: mit` at their pinned
-  commit.
-
-## Remaining / unverified
-
-- Counsel has not approved the draft, so it must remain named `EULA-DRAFT.md`.
-- `scripts/license_review.json` still intentionally has no approvals; the
-  soft-launch gate remains blocked.
-- Frozen-artifact LGPL replacement/relink testing is not complete.
-- The whole-program serial-number gate has not yet been implemented.
+Previous progress notes are retained in [`archive/PHASE3_LEGAL_PROGRESS_HISTORICAL.md`](archive/PHASE3_LEGAL_PROGRESS_HISTORICAL.md).

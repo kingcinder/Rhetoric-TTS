@@ -1,6 +1,6 @@
 # License Operations — Vendor Guide
 
-Audience: the vendor operator (you) minting and managing Oracle licenses.
+Audience: the vendor operator (you) minting and managing Rhetoric serial numbers.
 This is the operational half of `docs/LICENSING_DESIGN.md` (design §3–§8);
 everything here is grounded in the shipped tooling, not aspirations.
 
@@ -66,8 +66,8 @@ recorded. See §5 for the gated feature.
 
 ## 2. Minting a license
 
-The soft launch sells directly: the customer emails **codysa90@gmail.com**
-with the subject **"Oracle alpha license"**, and the owner mints a `k2` token
+The storefront and payment workflow are deferred. There is no email-based
+purchase path. After an authorized sale, the owner mints the serial number
 with the procedure below. Deliver only the `token` string; never include the
 signing seed or the minting environment in the reply.
 
@@ -76,17 +76,17 @@ ORACLE_LICENSE_SIGNING_KEY=<seed_hex> python scripts/license_sign.py mint \
   --licensee "customer name or email (their choice)" \
   --key-id k2 \  # required: a defaulted key id is how k1 got used
   [--expires 2027-01-31T00:00:00Z] \
-  [--machine-hash <32-hex from `the-oracle machine-id`>]
+  [--machine-hash <32-hex from `rhetoric machine-id`>]
 ```
 
 - Omit `--expires` for a **perpetual** license (`exp: null`).
 - `--machine-hash` is optional (v1 licenses are not machine-locked, D2);
   if used, take the hash from the *customer's* run of
-  `the-oracle machine-id` — the client stores and reports the hash only,
+  `rhetoric machine-id` — the client stores and reports the hash only,
   never the raw machine id.
 - The output is a JSON document with the token and its payload. **Deliver
   only the `token` string** to the customer; activation is
-  `the-oracle activate <token>` (or pipe it via stdin).
+  `rhetoric activate <token>` (or pipe it via stdin).
 - Mint with an ephemeral seed for tests, never the production seed — the
   repo's own tests do exactly that.
 
@@ -98,8 +98,8 @@ from the_oracle.licensing import tokens; \
 print(tokens.verify_token(open('token.txt').read().strip()))"
 ```
 
-(or activate it with `the-oracle activate <token>` in a scratch checkout
-and read `the-oracle license-status` there.)
+(or activate it with `rhetoric activate <token>` in a scratch checkout
+and read `rhetoric license-status` there.)
 
 A serial number must verify with state `valid` before it goes to a customer.
 Any tampering — one flipped payload byte — fails as
@@ -135,12 +135,12 @@ Revoking a leaked or abused license means **rotation plus expiry**:
 
 ## 6. What the customer experiences (so support can say it precisely)
 
-- Activation: paste the serial number (or `the-oracle activate <token>`), fully
+- Activation: paste the serial number (or `rhetoric activate <token>`), fully
   offline; a failure is a typed status with an inline remedy, and a bad
   token writes nothing.
-- `the-oracle license-status` prints the licensed state, licensee, key id, expiry
+- `rhetoric license-status` prints the licensed state, licensee, key id, expiry
   (if any), and machine-locked state as JSON.
-- `the-oracle machine-id` prints the SHA-256 hash of the machine id —
+- `rhetoric machine-id` prints the SHA-256 hash of the machine id —
   safe to share; the raw id is never stored, logged, or sent anywhere.
 - An expired or removed license makes the application unlicensed. Functional
   features refuse with an activation message; help and status remain usable.
@@ -172,7 +172,7 @@ overlap; after `k2` is removed, the old serial reports `unknown_key` while the
 Every functional workflow is gated by the serial-number policy. The report is
 read-only but follows the same gate as rendering and editing.
 
-**The gated capability:** `the-oracle render-report PROJECT_DIR` — a
+**The gated capability:** `rhetoric render-report PROJECT_DIR` — a
 machine-readable technical conformance report for a finished render
 (peak/RMS level, clipping, silence ratio, sample rate, channels, frames,
 utterance and speaker counts, and whether the plan's declared durations

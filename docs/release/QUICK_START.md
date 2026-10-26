@@ -19,8 +19,8 @@ candidate is ready for general distribution.
 From the release checkout:
 
 ```bash
-./oracle install
-./oracle doctor
+./rhetoric install
+./rhetoric doctor
 ```
 
 `doctor` reports missing dependencies, model readiness, and backend capability.
@@ -30,7 +30,7 @@ audio.cpp backend.
 
 ## 3. Render a dialogue
 
-1. Start the desktop app with `./oracle start`.
+1. Start the desktop app with `./rhetoric start`.
 2. Open a UTF-8 `.txt` or `.md` dialogue with speaker labels, such as:
 
    ```text
@@ -49,7 +49,7 @@ you need to reopen its settings and utterance review state later.
 
 ## 4. Get help
 
-Run `./oracle doctor` first. For a report, use **Help → Report a Problem…** or
+Run `./rhetoric doctor` first. For a report, use **Help → Report a Problem…** or
 follow [Support](../SUPPORT.md). Review the generated package before sharing;
 it is never uploaded by the application.
 

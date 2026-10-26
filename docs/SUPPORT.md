@@ -1,5 +1,7 @@
 # Support: diagnose, report, package, share
 
+Issue tracker: https://github.com/kingcinder/Rhetoric-TTS
+
 Rhetoric's support path is local-first, like everything else in the suite:
 the app collects the evidence, lets you read it, and then waits for you to
 send it. There is no upload code, no telemetry, and no background reporting.
@@ -8,9 +10,9 @@ Three tools cover a support case:
 
 | Tool | Answers | Writes |
 |------|---------|--------|
-| `the-oracle bug-report diagnose` | "what does this machine look like?" | nothing |
-| `the-oracle bug-report new` | "what happened, in your words?" | one local draft |
-| `the-oracle bug-report package` | "what do I attach to the ticket?" | one zip under `Output/` |
+| `rhetoric bug-report diagnose` | "what does this machine look like?" | nothing |
+| `rhetoric bug-report new` | "what happened, in your words?" | one local draft |
+| `rhetoric bug-report package` | "what do I attach to the ticket?" | one zip under `Output/` |
 
 The GUI equivalents live under **Help → Report a Problem…** (compose and save),
 **Help → Privacy & Crash Reports…** (consent and crash review), and the
@@ -19,7 +21,7 @@ existing `support-bundle` command for a bundle without a written report.
 ## 1. Start with the doctor
 
 ```bash
-./oracle doctor
+./rhetoric doctor
 python scripts/doctor.py --json     # machine-readable
 ```
 
@@ -28,13 +30,13 @@ Qt offscreen, deterministic smoke render, backend probes). If it names a
 layer, fix that first: most "the app is broken" reports are a stale venv, a
 missing `ffmpeg`, or a model that was never fetched.
 
-`the-oracle bug-report diagnose` is the next step: it produces the same kind
+`rhetoric bug-report diagnose` is the next step: it produces the same kind
 of environment snapshot a report would attach, without creating a report.
 
 ## 2. Compose a report
 
 ```bash
-the-oracle bug-report new \
+rhetoric bug-report new \
   --title "Render stops at the last line" \
   --summary "The progress bar freezes at 92 percent and never finishes." \
   --step "Open a two-speaker script" \
@@ -68,8 +70,8 @@ prompts, so `--yes` is required).
 ## 3. Package it
 
 ```bash
-the-oracle bug-report package <id>                 # -> Output/oracle-report-<id>.zip
-the-oracle bug-report package <id> --include-crash-reports
+rhetoric bug-report package <id>                 # -> Output/rhetoric-report-<id>.zip
+rhetoric bug-report package <id> --include-crash-reports
 ```
 
 The zip contains:
@@ -90,7 +92,7 @@ record without that consent; referencing is not copying.
 ## 4. Share it
 
 ```bash
-the-oracle bug-report issue <id>
+rhetoric bug-report issue <id>
 ```
 
 prints two prefilled links and opens nothing:
@@ -149,7 +151,7 @@ sharing it.
 2. Read `diagnostics.json` for the environment, then `doctor.json` for the
    capability verdict. `manifest.json` says what was deliberately omitted.
 3. Reproduce with the report's steps. If the report references a crash record,
-   `the-oracle privacy-status` on the user's machine names the file; ask for
+   `rhetoric privacy-status` on the user's machine names the file; ask for
    the package (not the raw record) if it was not attached.
 4. Ask for `render_plan.json` or the input text **only** when needed, and say
    why — the suite never collects them.

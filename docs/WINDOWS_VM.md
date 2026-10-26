@@ -49,10 +49,10 @@ comes from the `ORACLEUNATTEND` ISO, log at `C:\oracle-provision.log`):
 - Long paths enabled, high-performance power plan, no sleep/hibernate,
   Remote Desktop enabled, Defender exclusions for build/model/pip paths
 
-The repo is staged at `C:\Oracle` with a `.venv`:
+The repo is staged at `C:\Rhetoric` with a `.venv`:
 
 ```powershell
-cd C:\Oracle
+cd C:\Rhetoric
 .\.venv\Scripts\python.exe -m pytest -q
 .\.venv\Scripts\python.exe scripts\doctor.py --json
 ```
@@ -210,7 +210,7 @@ Remaining failures, all real Windows-port issues in the tests themselves:
 ## Air-gap proof (2026-10-21, PASS)
 
 Windows 11 guest booted with `-nic none` (no adapter, DNS dead), installing a
-fresh `E:\OracleOffline` from the offline bundle with an empty `E:\hfhub` cache,
+fresh `E:\RhetoricOffline` from the offline bundle with an empty `E:\hfhub` cache,
 then rendering through the managed launcher. The proof script lives outside the
 repo (`~/.oracle-win11-vm/airgap-proof.ps1`) and writes
 `E:\airgap\airgap-result.json`:
@@ -238,7 +238,7 @@ test.
 
 ## Not yet set up
 
-- `audio.cpp` (3.3 GB with build artefacts) is not copied to `C:\Oracle`; the
+- `audio.cpp` (3.3 GB with build artefacts) is not copied to `C:\Rhetoric`; the
   Vulkan backend and its tests need it plus Visual Studio Build Tools.
 - `resemble-perth` is installed from its Git URL, which needs `git` on the
   guest — fine here, but worth remembering for an air-gapped rebuild (the
@@ -254,7 +254,7 @@ test.
 
 ## Gotchas found while installing the ML stack
 
-- **`pip install -e ".[ml,chatterbox,dev]"` cannot resolve.** `the-oracle`'s `ml`
+- **`pip install -e ".[ml,chatterbox,dev]"` cannot resolve.** `rhetoric`'s `ml`
   extra pins `transformers==5.20.0` while `chatterbox-tts 0.1.7` pins
   `transformers==5.2.0`, so the resolver aborts. This is why
   `manage_install.install_dependencies` installs `.[ml,dev]`, then the engine
