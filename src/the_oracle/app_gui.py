@@ -779,13 +779,15 @@ class MainWindow(QMainWindow):
         )
         self.inference_backend_combo = QComboBox()
         self.inference_backend_combo.addItem("PyTorch", "pytorch")
-        self.inference_backend_combo.addItem("Vulkan (audio.cpp)", "vulkan")
+        self.inference_backend_combo.addItem("Vulkan (experimental audio.cpp)", "vulkan")
         self.inference_backend_combo.setCurrentIndex(0)
         self.pytorch_device_combo = QComboBox()
         self.pytorch_device_combo.addItem("CPU / system DRAM", "cpu")
         for device in self._cuda_devices:
-            self.pytorch_device_combo.addItem(device.label, f"cuda:{device.index}")
+            self.pytorch_device_combo.addItem(f"{device.label} — CUDA experimental", f"cuda:{device.index}")
             item = self.pytorch_device_combo.model().item(self.pytorch_device_combo.count() - 1)
+            if item is not None:
+                item.setToolTip("Experimental CUDA device; production rendering is not qualified. CPU remains the fallback.")
             if item is not None and (not device.torch_available or not device.suitable):
                 item.setEnabled(False)
         has_usable_cuda = any(device.torch_available and device.suitable for device in self._cuda_devices)
@@ -795,21 +797,21 @@ class MainWindow(QMainWindow):
             if item is not None:
                 item.setEnabled(False)
         self.pytorch_device_combo.setToolTip(
-            "PyTorch execution device. CPU uses system DRAM. CUDA uses a suitable "
+            "PyTorch execution device. CPU uses system DRAM. CUDA is experimental and uses a suitable "
             "NVIDIA GPU when the installed PyTorch runtime exposes it. "
             + cuda_reason()
         )
         self.inference_backend_combo.setToolTip(
-            "Inference backend for render and preview. PyTorch is the in-process "
+            "CUDA and Vulkan are experimental and not qualified for production. Inference backend for render and preview. PyTorch is the in-process "
             "Chatterbox path and uses the separate PyTorch Device picker for CPU or "
             "CUDA. Vulkan (audio.cpp) is the alternate GPU path: selecting "
             "it automatically builds audiocpp_cli and downloads the Chatterbox model "
             "if missing, then sets the env vars for the session (see README "
             "'Vulkan Backend')."
         )
-        self.test_vulkan_button = QPushButton("Test Vulkan Backend")
+        self.test_vulkan_button = QPushButton("Test Vulkan Backend (experimental)")
         self.test_vulkan_button.setToolTip(
-            "Run a quick audio.cpp preflight (binary + model + --list-devices) and "
+            "Experimental, unqualified backend. Run a quick audio.cpp preflight (binary + model + --list-devices) and "
             "report which GPU the Vulkan backend would use, before rendering."
         )
         self.test_vulkan_button.clicked.connect(self.test_vulkan_backend)
@@ -2198,8 +2200,10 @@ class MainWindow(QMainWindow):
         combo.clear()
         combo.addItem("CPU / system DRAM", "cpu")
         for device in self._cuda_devices:
-            combo.addItem(device.label, f"cuda:{device.index}")
+            combo.addItem(f"{device.label} — CUDA experimental", f"cuda:{device.index}")
             item = combo.model().item(combo.count() - 1)
+            if item is not None:
+                item.setToolTip("Experimental CUDA device; production rendering is not qualified. CPU remains the fallback.")
             if item is not None and (not device.torch_available or not device.suitable):
                 item.setEnabled(False)
                 item.setToolTip(device.reason)

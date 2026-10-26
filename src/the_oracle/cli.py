@@ -258,7 +258,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     setup_vulkan = subparsers.add_parser(
         "setup-vulkan",
-        help="One-shot automatic setup for the Vulkan (GPU) backend: build audiocpp_cli and download the Chatterbox model if missing.",
+        help="One-shot setup for the experimental, unqualified Vulkan (GPU) backend: build audiocpp_cli and download the Chatterbox model if missing.",
     )
 
     check_input = subparsers.add_parser(
@@ -400,14 +400,14 @@ def build_parser() -> argparse.ArgumentParser:
         help="Render the whole input as a single narrator voice (Speaker A), ignoring per-line attribution.",
     )
     render.add_argument("--model-variant", choices=["standard", "multilingual", "turbo"], default="standard")
-    render.add_argument("--device-mode", choices=["cpu", "cuda", "vulkan"], default="cpu", help="PyTorch device: cpu or CUDA; Vulkan is retained for compatibility and uses the audio.cpp backend.")
+    render.add_argument("--device-mode", choices=["cpu", "cuda", "vulkan"], default="cpu", help="PyTorch device: cpu or experimental CUDA; Vulkan is retained for compatibility and uses the experimental audio.cpp backend.")
     render.add_argument("--cuda-device", type=_nonnegative_int, default=None, metavar="N", help="CUDA device index for PyTorch inference (default: CUDA's default device). Requires --device-mode cuda.")
     render.add_argument("--no-audio-cpp-setup", action="store_true", help="Skip the automatic audio.cpp build/model download before a Vulkan render; fail fast instead.")
     render.add_argument("--inference-backend",
         choices=["pytorch", "vulkan"],
         default="pytorch",
         help="Inference backend: 'pytorch' (default, Chatterbox in-process) or 'vulkan' "
-        "(opt-in, shells out to audio.cpp built with the Vulkan backend). "
+        "(experimental, not production-qualified; shells out to audio.cpp built with the Vulkan backend). "
         "Ignored when --project is used (the saved manifest governs).",
     )
     render.add_argument(

@@ -158,12 +158,12 @@ class InferenceSetupWizard(QDialog):
         # backend. It must remain selectable even when torch.backends.vulkan
         # is absent: the main window's existing first-use setup can build the
         # audio.cpp runtime and model after the user chooses it.
-        self.backend_picker.addItem("Vulkan (audio.cpp; setup if needed)", "vulkan")
+        self.backend_picker.addItem("Vulkan (experimental audio.cpp; setup if needed)", "vulkan")
         vulkan_mode = next((item for item in available_device_modes() if item.key == "vulkan"), None)
         if vulkan_mode is not None:
             self.backend_picker.setItemData(
                 self.backend_picker.count() - 1,
-                "This is Rhetoric's audio.cpp Vulkan path. "
+                "Experimental and not qualified for production use. This is Rhetoric's audio.cpp Vulkan path. "
                 + vulkan_mode.reason
                 + " The main window will offer automatic setup if its binary or model is missing.",
                 Qt.ItemDataRole.ToolTipRole,
@@ -172,11 +172,15 @@ class InferenceSetupWizard(QDialog):
         self.device_picker.addItem("CPU / system DRAM", "cpu")
         current_device = getattr(getattr(main_window, "pytorch_device_combo", None), "currentData", lambda: "cpu")()
         for device in self.devices:
-            self.device_picker.addItem(device.label, f"cuda:{device.index}")
+            self.device_picker.addItem(f"{device.label} — CUDA experimental", f"cuda:{device.index}")
             item = self.device_picker.model().item(self.device_picker.count() - 1)
-            if item is not None and not (device.torch_available and device.suitable):
-                item.setEnabled(False)
-                item.setToolTip(device.reason)
+            if item is not None:
+                item.setToolTip(
+                    "Experimental CUDA device; production rendering is not qualified. "
+                    + (device.reason if not (device.torch_available and device.suitable) else "CPU remains the fallback.")
+                )
+                if not (device.torch_available and device.suitable):
+                    item.setEnabled(False)
         selected_device_index = self.device_picker.findData(current_device)
         self.device_picker.setCurrentIndex(selected_device_index if selected_device_index >= 0 else 0)
         current_backend = getattr(getattr(main_window, "inference_backend_combo", None), "currentData", lambda: "pytorch")()

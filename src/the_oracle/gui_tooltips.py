@@ -612,21 +612,21 @@ def _register_shared_help(main_window, ctrl_help, cuda_reason_fn) -> None:
         ),
         (
             main_window.inference_backend_combo,
-            "Inference backend: PyTorch runs the Chatterbox model through the "
+            "CUDA and Vulkan are experimental and not qualified for production. Inference backend: PyTorch runs the Chatterbox model through the "
             "installed PyTorch runtime, while Vulkan delegates to audio.cpp. "
             "The separate PyTorch Device picker chooses CPU/DRAM or a usable "
             "CUDA/NVIDIA card when PyTorch has CUDA support.",
         ),
         (
             main_window.pytorch_device_combo,
-            "PyTorch execution device: CPU / system DRAM, or a suitable "
+            "CUDA is experimental and not qualified for production. PyTorch execution device: CPU / system DRAM, or a suitable "
             "CUDA / NVIDIA GPU. Disabled CUDA entries are detected hardware "
             "that is missing a CUDA-enabled PyTorch runtime or does not meet "
             "the 4 GiB Chatterbox VRAM floor. " + cuda_reason_fn(),
         ),
         (
             main_window.test_vulkan_button,
-            "Run a quick audio.cpp preflight (binary + model + device "
+            "Vulkan is experimental and not qualified for production. Run a quick audio.cpp preflight (binary + model + device "
             "list) and report which GPU the Vulkan backend would use, "
             "before rendering.",
         ),

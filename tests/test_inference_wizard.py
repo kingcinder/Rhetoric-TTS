@@ -133,6 +133,27 @@ def test_vulkan_backend_tooltip_uses_combo_item_data(qt_app, monkeypatch):
         main_window.deleteLater()
 
 
+def test_unqualified_gpu_choices_are_labeled_experimental(qt_app):
+    main_window = QWidget()
+    main_window.pytorch_device_combo = QComboBox(main_window)
+    wizard = InferenceSetupWizard(
+        main_window,
+        devices=[_device(0, "NVIDIA test card", suitable=True)],
+        mode="discovery",
+    )
+    try:
+        vulkan_index = wizard.backend_picker.findData("vulkan")
+        assert vulkan_index >= 0
+        assert "experimental" in wizard.backend_picker.itemText(vulkan_index).lower()
+        cuda_index = wizard.device_picker.findData("cuda:0")
+        assert cuda_index >= 0
+        tooltip = wizard.device_picker.itemData(cuda_index, Qt.ItemDataRole.ToolTipRole)
+        assert "experimental" in str(tooltip).lower()
+    finally:
+        wizard.close()
+        main_window.deleteLater()
+
+
 def test_discovery_wizard_exposes_default_folder_preferences(qt_app):
     main_window = QWidget()
     main_window.paths = type("Paths", (), {"input_dir": "/repo/Input", "output_dir": "/repo/Output"})()

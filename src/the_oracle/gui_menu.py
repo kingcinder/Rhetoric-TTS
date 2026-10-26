@@ -164,7 +164,7 @@ def build_menu(main_window, *, themes: Mapping[str, ThemeTokens]) -> None:
     # connect), so no spurious early emission is possible.
     main_window.remember_backend_action.toggled.connect(main_window._on_remember_backend_toggled)
     settings_menu.addAction(main_window.remember_backend_action)
-    main_window.download_vulkan_model_action = QAction("Download Vulkan Model...", main_window)
+    main_window.download_vulkan_model_action = QAction("Download Vulkan Model (experimental)...", main_window)
     main_window.download_vulkan_model_action.setToolTip(
         "Run scripts/download_audio_cpp_model.sh in the background and report "
         "the resulting ORACLE_AUDIOCPP_MODEL path to use for the Vulkan backend."
