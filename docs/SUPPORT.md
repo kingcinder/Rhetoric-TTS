@@ -161,6 +161,6 @@ sharing it.
 ## 7. Related documents
 
 - [TROUBLESHOOTING.md](TROUBLESHOOTING.md) — symptom → cause → fix.
-- [SOFT_LAUNCH.md](SOFT_LAUNCH.md) — alpha scope and purchase/activation.
+- [SOFT_LAUNCH.md](SOFT_LAUNCH.md) — current release gate and activation scope.
 - [PRIVACY.md](../PRIVACY.md) — the standing data policy and its test pins.
 - [CRASH_TELEMETRY_DESIGN.md](CRASH_TELEMETRY_DESIGN.md) — crash unit design.

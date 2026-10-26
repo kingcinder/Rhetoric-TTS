@@ -1,3 +1,6 @@
+> **Historical record for Rhetoric 1.4.2.** These artifacts, measurements,
+> backends, and pending-review notes do not qualify the 1.5.0 candidate.
+
 # Real Audio Acceptance Record — 1.4.2 Candidate
 
 ## Isolated managed-install run — 2026-10-23

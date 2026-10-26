@@ -1,28 +1,48 @@
 # Phase 0 Baseline — Rhetoric 1.5.0
 
-Date: 2026-10-25
-Branch: `release/1.5.0-final`
+Date: 2026-10-25  
+Canonical checkout: `/media/cody/Data/DOCUMENTS_PROJECT_FILES/the oracle tts`  
+Branch: `release/1.5.0-final`  
 Base commit: `93a55d4` (`main`)
 
-## Environment and source state
+## Environment and initial source state
 
-- Canonical checkout was clean on `main`; branch created locally as requested.
-- Python: 3.12.3. Fresh environment `/tmp/rhetoric-phase0-venv`; editable dev install succeeded.
-- The checked-in `.venv` works through its Python binary, but generated entrypoint wrappers contain a stale absolute shebang. The fresh environment was used for tool checks.
-- Initial source size: 445 tracked files; 30,831 Python LOC under `src`; 169 `test_*.py` files. `Seashells/` was excluded from inventory and remains untouched.
+- Python 3.12.3; fresh environment `/tmp/rhetoric-phase0-venv`; editable dev
+  install succeeded.
+- The checked-in `.venv` runs through its Python binary; generated wrappers
+  have a stale absolute shebang, so verification used the interpreter directly.
+- Initial source inventory: 445 tracked files, 30,831 Python LOC under `src`,
+  and 169 `test_*.py` files. The user-excluded `Seashells/` area was not
+  inventoried or inspected.
+- Initial working tree was clean on `main`; `release/1.5.0-final` was created
+  from `93a55d4`.
 
-## Baseline commands and results
+## Baseline checks and causes
 
-| Check | Result |
+| Check | Observed result / disposition |
 |---|---|
-| `scripts/release.py --check` | Pass after adding a package/artifact version invariant and removing stale 1.1.1–1.4.2 artifacts/manifests. |
-| `scripts/certify_suite_counts.py --availability` | Pass for inherited baseline 2,124 passed / 3 skipped; this is not a fresh final-tree measurement. |
+| `scripts/release.py --check` | Initially blocked by stale release dates/banner metadata; the current version guard now passes on the candidate. |
+| `scripts/certify_suite_counts.py --availability` | Initially inherited 2,124 passed / 3 skipped from pre-migration evidence; that count was not a fresh-repository measurement. A fresh-worktree run later recorded the candidate commit separately. |
 | `scripts/generate_third_party_notices.py --check` | Pass, 117 components. |
-| `scripts/soft_launch.py --check --json` | Blocked by draft EULA and missing current checksum manifest; LGPL source/replacement warning. |
-| `pip check` | Pass, no broken requirements. |
-| `pip-audit` | No known vulnerabilities among auditable packages; local and non-PyPI dependencies were skipped. |
-| `gitleaks git --log-opts=--all --redact --no-banner` | Pass, no findings across 1,110 commits. |
-| `detect-secrets scan .` | 147 high-entropy candidates across 18 files; these require classification and are not asserted to be secrets or clean. |
-| `test_every_commit_hash_cited_in_the_records_resolves` | Pass at baseline. |
+| `scripts/soft_launch.py --check --json` | Blocked by the draft EULA; LGPL notice/source/replacement obligations were a warning. It was not rerun after final doc changes because its automated asset check is outside the authorized scope. |
+| `pip check` | Pass; no broken requirements. |
+| `pip-audit` | No known vulnerabilities in the auditable installed packages; local/non-PyPI dependencies were skipped. |
+| `gitleaks git --log-opts='--all' --redact --no-banner` | Pass; no findings across 1,110 commits. |
+| `detect-secrets scan .` | 147 candidates across 18 files: 144 high-entropy hex, 1 keyword, 2 Base64. Candidates were not promoted to findings or claimed clean; values were not reproduced. |
+| `test_every_commit_hash_cited_in_the_records_resolves` | Initially failed because historical release records cited commits absent from this repository. The records now identify preserved identifiers as pre-migration provenance; the current test passes. |
 
-The first full-suite run overlapped edits and is not valid evidence. After all changes stopped, `./.venv/bin/python -m pytest -q` completed with **2,136 passed, 6 warnings, 0 failed** in 384.87 seconds.
+Initial failures had three separate causes: old-repository commit citations
+were treated as current evidence; the 1.5.0 release date/banner invariant
+was inconsistent; and the suite-count baseline was inherited rather than
+measured from a fresh checkout. No test or gate was disabled to resolve them.
+
+## Current committed-candidate suite evidence
+
+On source commit `bb0c9846fb44`, the canonical release command completed with
+**2,142 passed, 6 warnings, 0 failed in 380.29 seconds**. A separate fresh
+worktree count recorded **2,139 passed, 3 skipped, 0 failed/errors**. The
+Vulkan device smoke was the identified environment skip; the test skip ledger
+does not retain every skip ID because its audit test clears that ledger.
+
+These measurements describe `bb0c9846fb44`. Later release-record commits must
+have their own fresh-worktree count and final canonical build.

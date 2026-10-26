@@ -1,6 +1,6 @@
 # Phase 6 Windows and GPU Progress — 1.5.0 RC
 
-**Current status (2026-10-25):** Windows is unsupported; CUDA and Vulkan are experimental. Current-head Windows CI, Windows 11 acceptance, and matching-hardware GPU production rendering remain unverified.
+**Current status (2026-10-25):** Windows is unsupported and excluded from the proposed paid offer; CUDA and Vulkan are experimental. Current-head hosted Windows CI, ten consecutive six-theme certifications, Windows 11 installer acceptance, and matching-hardware GPU production rendering remain unverified. The GUI wizard, backend/device pickers, tooltips, menu action, CLI help, documentation, and both EULA copies now label the GPU paths experimental. The canonical full test suite passed; that Linux/offscreen run is not Windows or GPU qualification.
 
 > Historical progress below describes a previous release-candidate state. Its metrics and CI results are not current-head evidence.
 

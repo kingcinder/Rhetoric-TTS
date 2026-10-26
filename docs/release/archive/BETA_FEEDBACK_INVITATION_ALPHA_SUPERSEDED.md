@@ -1,3 +1,6 @@
+> **Superseded historical feedback form.** This invitation-only alpha plan is
+> not the current candidate's release process or product offer.
+
 # Invitation-Only Alpha Feedback
 
 Use this form for each tester. Initial cohort recommendation: 5–10 people who
@@ -53,5 +56,4 @@ failure.
 - **Medium:** usability or reliability issue with an acceptable workaround.
 - **Low:** cosmetic issue or minor inconvenience.
 
-Resolve critical and high issues before widening distribution. Cosmetic reports
-can be prioritized without blocking the entire alpha.
+The original cohort guidance applied only to the superseded alpha plan.

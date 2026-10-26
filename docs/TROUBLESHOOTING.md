@@ -166,4 +166,4 @@ prints prefilled GitHub and email links; read the zip before sending it.
 `python scripts/doctor.py --json > report.json` is the most useful single
 artifact, and `rhetoric bug-report package <id>` bundles it with the report
 and redacted environment. `docs/SUPPORT.md` covers the full workflow,
-`docs/SOFT_LAUNCH.md` records the alpha's known limitations and support path.
+`docs/SOFT_LAUNCH.md` records the candidate's known limitations and support path.

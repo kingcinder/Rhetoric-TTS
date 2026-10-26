@@ -1,6 +1,6 @@
-# Phase 5 History Audit — completed scrub and push
+# Phase 5 History Audit — current repository check
 
-**Current status (2026-10-25):** `gitleaks` scanned 1,110 commits with no findings. Live `git ls-remote` baseline showed only `main`; local remote-tracking refs for older PR/release branches remain. Old CI/run identifiers below are historical and do not qualify this release head. No frozen artifact or installed acceptance was completed.
+**Current status (2026-10-25):** `gitleaks` scanned 1,110 commits with no findings. Live `git ls-remote` baseline before this release branch push showed only `main`; local remote-tracking refs for older PR/release branches remain. The local branch was not pushed at the time of this note. Old CI/run identifiers below are historical and do not qualify this release head. No frozen artifact or installed acceptance was completed.
 
 > Historical progress below describes a previous release-candidate state. Its metrics and CI results are not current-head evidence.
 
