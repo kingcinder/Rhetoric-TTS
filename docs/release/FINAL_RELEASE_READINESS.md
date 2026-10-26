@@ -46,20 +46,30 @@ outside the authorized scope.
   auditable installed packages; local/non-PyPI dependencies were skipped.
 - A local CycloneDX run emitted a valid CycloneDX SBOM with 168 components and
   no known vulnerabilities. The frozen Linux CI builder now emits its own
-  SBOM from the build environment and checksums it; the hosted artifact is not
-  yet available.
+  SBOM from the build environment and checksums it. Hosted run
+  [40290354035](https://github.com/kingcinder/Rhetoric-TTS/actions/runs/40290354035)
+  built and uploaded the frozen Linux artifacts and SBOM; the artifact has not
+  yet been installed in a clean container.
 - `gitleaks git --log-opts='--all' --redact --no-banner`: no findings across
   1,110 commits. `detect-secrets` reported 147 candidates across 18 files
   (144 high-entropy hex, 1 keyword, 2 Base64); these are not asserted to be
   findings or clean. Values are not reproduced here.
-- Current-release hosted CI is pending until the final branch head is pushed.
-  Historical run IDs and old-repository results do not qualify this head.
+- Exact-head hosted CI ran on `079b5745e33d80adeffdb36dbdc8f56adbd696cd`.
+  Linux Python 3.11/3.12 suites, Linux smoke/theme checks, Vulkan no-skip suite,
+  Linux frozen AppImage/deb build, Windows installer E2E, Windows GUI event
+  filter diagnostic, and ten consecutive Windows theme certification runs
+  passed. Both Windows full-suite matrix jobs failed; their causes remain
+  undetermined because the hosted job logs were unavailable through the
+  connected GitHub interface. Their uploaded 10-run certification logs were
+  downloaded and inspected: all six themes passed the contrast, section/layout,
+  studio, and inference-tour checks on each run for both Python versions. The
+  manual Windows certifier fault-capture job was skipped because this was a
+  push-triggered run.
 
 ## Acceptance still open
 
-1. Current-head CI: Linux frozen artifacts and SBOM, Vulkan smoke,
-   Windows installer smoke, and ten consecutive Windows GUI certification
-   runs; also run the manual Windows certifier fault-capture workflow.
+1. Diagnose the failed Windows full-suite jobs and run the manual Windows
+   certifier fault-capture workflow.
 2. Install the frozen Linux AppImage and deb in fresh Ubuntu 24.04 containers
    with only documented prerequisites. Exercise activation using a throwaway
    test key, cold download/resume/offline/low-disk behavior, doctor, first
