@@ -1,6 +1,6 @@
 # Phase 1 Distribution Progress — 1.5.0 RC
 
-**Current status (2026-10-25):** Partial; no release artifacts are approved. Old 1.3.0–1.4.2 checksum manifests and generated archives were removed. `MANIFEST.in` and `.gitignore` now agree on release exclusions; `tests/test_distribution_manifest.py` verifies tests and `scripts/ci_smoke_render.py` do not ship. The canonical release command built the Rhetoric 1.5.0 sdist and wheel and their checksums. Both archive checksums verified. This build predates the final release-record edits and must be rebuilt from the final head. The final filtered package inventory is still to be regenerated.
+**Current status (2026-10-26):** Source package rehearsal complete; customer distribution is not approved. `MANIFEST.in` and `.gitignore` agree on release exclusions. On `92c55b86ff86`, `scripts/release.py` built the 1.5.0 sdist and wheel; both SHA-256 checks passed. The filtered inventory contained 153 sdist and 118 wheel entries outside the excluded owner-data area. Required release docs are present; tests, `scripts/ci_smoke_render.py`, and the test-only license-status shim are absent. The tracked checksums are in `release_checksums/checksums-1.5.0.sha256`. Frozen AppImage/deb builds and their CycloneDX SBOM, hosted artifacts, and clean-machine acceptance remain pending.
 
 > Historical progress below describes a previous release-candidate state. Its metrics and CI results are not current-head evidence.
 

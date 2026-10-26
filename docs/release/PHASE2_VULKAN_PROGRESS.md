@@ -1,6 +1,6 @@
 # Phase 2 Vulkan Progress — 1.5.0 RC
 
-**Current status (2026-10-25):** Vulkan is experimental and unqualified for distribution. No Vulkan binary was built or installed in this pass; matching-hardware rendering and installed-artifact acceptance remain open.
+**Current status (2026-10-26):** Vulkan is experimental and unqualified for distribution. The local source release did not build or install a Vulkan binary; the current-head hosted Vulkan job and matching-hardware production rendering remain open.
 
 > Historical progress below describes a previous release-candidate state. Its metrics and CI results are not current-head evidence.
 

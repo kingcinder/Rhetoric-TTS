@@ -38,11 +38,11 @@ measured from a fresh checkout. No test or gate was disabled to resolve them.
 
 ## Current committed-candidate suite evidence
 
-On source commit `bb0c9846fb44`, the canonical release command completed with
-**2,142 passed, 6 warnings, 0 failed in 380.29 seconds**. A separate fresh
-worktree count recorded **2,139 passed, 3 skipped, 0 failed/errors**. The
-Vulkan device smoke was the identified environment skip; the test skip ledger
-does not retain every skip ID because its audit test clears that ledger.
-
-These measurements describe `bb0c9846fb44`. Later release-record commits must
-have their own fresh-worktree count and final canonical build.
+On source commit `92c55b86ff86`, the canonical release command completed with
+**2,144 passed, 6 warnings, 0 failed in 395.90 seconds**. A fresh-worktree
+count recorded on `d39a94573d35` **2,141 passed, 3 skipped, 0 failed/errors**.
+The Vulkan device smoke was the identified environment skip; the test skip
+ledger does not retain every skip ID because its audit test clears that ledger.
+The checksum and baseline-record commits do not change the shipped package
+contents; a final fresh-worktree count is recorded for the checksum-bearing
+head and the following baseline-only head inherits it.
