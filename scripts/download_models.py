@@ -45,7 +45,7 @@ def warm_chatterbox(variant: str, device: str) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Download optional model artifacts for Chatterbox-only The Oracle.")
+    parser = argparse.ArgumentParser(description="Download optional model artifacts for Chatterbox-only Rhetoric.")
     parser.add_argument("--cache-dir", type=Path, default=Path(".model_cache"))
     parser.add_argument("--variant", choices=["standard", "multilingual", "turbo", "all"], default="all")
     parser.add_argument("--device", default="cpu")

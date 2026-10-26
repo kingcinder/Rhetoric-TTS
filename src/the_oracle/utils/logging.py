@@ -29,7 +29,7 @@ def default_log_file() -> Path:
     The repo root is resolved the way cli.py resolves it; one level deeper here
     because this module lives in utils/.
     """
-    log_path = Path(__file__).resolve().parents[3] / "logs" / "oracle.log"
+    log_path = Path(__file__).resolve().parents[3] / "logs" / "rhetoric.log"
     log_path.parent.mkdir(parents=True, exist_ok=True)
     return log_path
 

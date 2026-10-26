@@ -1,4 +1,4 @@
-"""Shared GUI widgets for The Oracle desktop app.
+"""Shared GUI widgets for Rhetoric desktop app.
 
 ``PerceptualSlider`` presents an engine knob (CFG weight, temperature, pause, ...)
 as a slider whose scale and copy say what the change *sounds* like: an internal

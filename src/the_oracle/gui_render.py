@@ -51,7 +51,7 @@ from the_oracle.pipeline import OraclePipeline, RenderProgress
 def _render_child_environment(repo_root: Path) -> dict[str, str]:
     """Build the exact runtime environment for an isolated render child.
 
-    The GUI may be launched through the managed ``the-oracle`` entry point,
+    The GUI may be launched through the managed ``rhetoric`` entry point,
     while the render child is started from a Qt worker thread.  Do not rely on
     either process's current directory or ambient ``PYTHONPATH``: explicitly
     expose this checkout's source tree and keep the managed venv's site-packages

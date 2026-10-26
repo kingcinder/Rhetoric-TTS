@@ -120,7 +120,7 @@ def build_parser() -> argparse.ArgumentParser:
     # key id their client registry actually carries.
     mint_parser.add_argument("--key-id", required=True, help="Key id the client registry carries (see the_oracle/licensing/keys.py).")
     mint_parser.add_argument("--expires", default=None, help="ISO-8601 timestamp; omit for a perpetual license.")
-    mint_parser.add_argument("--machine-hash", default=None, help="32-hex SHA-256 prefix from `the-oracle machine-id`.")
+    mint_parser.add_argument("--machine-hash", default=None, help="32-hex SHA-256 prefix from `rhetoric machine-id`.")
     return parser
 
 

@@ -67,7 +67,7 @@ def _capture(
 
 
 def _sys_excepthook(exc_type, exc_value, exc_tb) -> None:  # noqa: ANN001
-    """Chain to the previous hook first: Oracle capture must never suppress
+    """Chain to the previous hook first: Rhetoric capture must never suppress
     the interpreter's own reporting."""
     previous = _STATE.get("previous_sys_hook")
     if callable(previous):

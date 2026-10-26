@@ -3,9 +3,9 @@
 A support bundle is the one artifact an alpha user can hand to support without
 also handing over their manuscript, audio, recordings, serial number, or home
 directory. Everything is collected locally, redacted before it is written, and
-placed in a zip the user chooses to send; The Oracle never uploads it.
+placed in a zip the user chooses to send; Rhetoric never uploads it.
 
-Import discipline: stdlib plus the Oracle's own small modules. No Qt, no torch,
+Import discipline: stdlib plus Rhetoric's own small modules. No Qt, no torch,
 no network, and nothing runs at import time.
 """
 
@@ -292,7 +292,7 @@ def _doctor_entry(
 
 def _readme_text() -> str:
     return (
-        "The Oracle support bundle\n"
+        "Rhetoric support bundle\n"
         "========================\n\n"
         "This archive is created only when you ask for it. It is not uploaded\n"
         "anywhere. Review it before sharing it with support.\n\n"
@@ -356,7 +356,7 @@ def build_support_bundle(
     stamp = moment.astimezone(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
 
     if out_path is None:
-        output = root / "Output" / f"oracle-support-{__version__}-{stamp}.zip"
+        output = root / "Output" / f"rhetoric-support-{__version__}-{stamp}.zip"
     else:
         output = Path(out_path).resolve()
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -419,7 +419,7 @@ def build_support_bundle(
     manifest_bytes = json.dumps(manifest, indent=2, ensure_ascii=False).encode("utf-8")
     entries["manifest.json"] = manifest_bytes
 
-    handle, temporary = tempfile.mkstemp(prefix=".oracle-support-", suffix=".zip", dir=str(output.parent))
+    handle, temporary = tempfile.mkstemp(prefix=".rhetoric-support-", suffix=".zip", dir=str(output.parent))
     os.close(handle)
     try:
         with zipfile.ZipFile(temporary, "w", compression=zipfile.ZIP_DEFLATED) as archive:

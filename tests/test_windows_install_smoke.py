@@ -97,9 +97,9 @@ def test_environment_keeps_the_base_environment(smoke, layout) -> None:
 
 def test_layout_uses_the_installers_own_launcher_paths(smoke, layout, tmp_path: Path) -> None:
     appdata = layout.profile / "AppData" / "Roaming"
-    assert layout.managed_launcher == appdata / "Python" / "Scripts" / "the-oracle.cmd"
+    assert layout.managed_launcher == appdata / "Python" / "Scripts" / "rhetoric.cmd"
     assert layout.start_menu_entry == (
-        appdata / "Microsoft" / "Windows" / "Start Menu" / "Programs" / "The Oracle.cmd"
+        appdata / "Microsoft" / "Windows" / "Start Menu" / "Programs" / "Rhetoric.cmd"
     )
     # Both directories must exist before the launchers are written.
     assert layout.managed_launcher.parent.is_dir()

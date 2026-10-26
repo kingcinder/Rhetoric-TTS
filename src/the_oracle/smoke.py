@@ -26,7 +26,7 @@ from the_oracle.utils.hashing import hash_payload
 #: as the pass that produced it has been read.
 REUSE_PROBE_FILENAME = "cache_reuse_probe.flac"
 
-SMOKE_DIALOGUE = """Speaker A: The Oracle is online.
+SMOKE_DIALOGUE = """Speaker A: Rhetoric is online.
 Speaker B: Confirm the signal path.
 Speaker A: Chatterbox is the only backend now.
 Speaker B: Render complete.
@@ -34,7 +34,7 @@ Speaker B: Render complete.
 
 SMOKE_DIALOGUE_MARKDOWN = """# Smoke Dialogue
 
-Speaker A: The Oracle is online.
+Speaker A: Rhetoric is online.
 Speaker B: Confirm the signal path.
 Speaker A: Chatterbox is the only backend now.
 Speaker B: Render complete.

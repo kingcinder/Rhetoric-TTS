@@ -10,8 +10,8 @@ set -euo pipefail
 
 ACTION="${1:?usage: _launcher.sh <install|uninstall>}"
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-APP_SLUG="oracle-tts"
-DEFAULT_PREFIX="/opt/oracle-tts"
+APP_SLUG="rhetoric"
+DEFAULT_PREFIX="/opt/rhetoric"
 
 register_user_assets() {
   local icon_dir="$HOME/.local/share/icons/hicolor/256x256/apps"

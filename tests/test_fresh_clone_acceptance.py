@@ -236,7 +236,7 @@ def test_the_readme_documents_commands_this_test_can_see() -> None:
     """Guards the guard: a regex that matched nothing would pass everything."""
     documented = _readme_direct_commands()
 
-    assert "oracle" in documented
+    assert "rhetoric" in documented
     assert any(name.endswith(".sh") for name in documented)
 
 
@@ -294,7 +294,7 @@ def test_the_dispatch_matrix_covers_every_root_wrapper(acceptance) -> None:
     covered = {script.lstrip("./") for script, _, _ in acceptance.WRAPPER_MATRIX}
 
     assert root_wrappers <= covered
-    assert "oracle" in covered
+    assert "rhetoric" in covered
 
 
 def test_the_matrix_checks_an_alias_rather_than_only_identities(acceptance) -> None:
@@ -302,7 +302,7 @@ def test_the_matrix_checks_an_alias_rather_than_only_identities(acceptance) -> N
     rows = {(script, args, expected) for script, args, expected in acceptance.WRAPPER_MATRIX}
     aliases = [row for row in rows if row[1] and row[1][0] != row[2]]
 
-    assert any(script == "./oracle" and args == ("start", "--help") and expected == "run"
+    assert any(script == "./rhetoric" and args == ("start", "--help") and expected == "run"
                for script, args, expected in aliases)
 
 

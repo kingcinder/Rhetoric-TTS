@@ -1268,14 +1268,14 @@ class OraclePipeline:
 
         metadata = {
             "title": document.title,
-            "artist": "The Oracle",
+            "artist": "Rhetoric",
             "comment": (
                 f"Rendered with Chatterbox ({variant}) via audio.cpp Vulkan"
                 if settings.inference_backend == "vulkan"
                 else f"Rendered with Chatterbox ({variant})"
             ),
             "date": date.today().isoformat(),
-            "software": f"The Oracle {__version__}",
+            "software": f"Rhetoric {__version__}",
             "engine": "chatterbox",
             "chatterbox_version": chatterbox_version(),
             "model_variant": variant,

@@ -1,9 +1,9 @@
-"""The Oracle crash unit (docs/CRASH_TELEMETRY_DESIGN.md).
+"""Rhetoric crash unit (docs/CRASH_TELEMETRY_DESIGN.md).
 
 Local-first by construction: capture writes to the repo's crash_reports/
 directory, transport does not exist, and consent is fail-closed — an
 unreadable consent file means opted out. Import discipline mirrors the
-licensing package: stdlib plus Oracle's own small modules, never a
+licensing package: stdlib plus Rhetoric's own small modules, never a
 heavyweight dependency, nothing runs at import time.
 """
 

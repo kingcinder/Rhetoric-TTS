@@ -39,7 +39,7 @@ def run_activation_dialog(parent: QWidget, root: RootPath, *, dialog_cls: type, 
     doctor use, so support can ask for exactly this line.
     """
     dialog = dialog_cls(parent)
-    dialog.setWindowTitle("Activate The Oracle")
+    dialog.setWindowTitle("Activate Rhetoric")
     dialog.setModal(True)
     dialog.resize(560, 320)
     layout = QVBoxLayout(dialog)
@@ -112,7 +112,7 @@ def run_eula_acceptance(parent: QWidget, root: RootPath, *, dialog_cls: type) ->
     text, _digest = current
 
     dialog = dialog_cls(parent)
-    dialog.setWindowTitle("The Oracle — License Agreement")
+    dialog.setWindowTitle("Rhetoric — License Agreement")
     dialog.setModal(True)
     dialog.resize(640, 560)
     layout = QVBoxLayout(dialog)
@@ -149,7 +149,7 @@ def run_about_panel(parent: QWidget, *, dialog_cls: type) -> None:
     and the doctor read — one source of truth, no GUI-specific parsing.
     """
     status = current_license()
-    lines = ["The Oracle — all-in-one TTS rendering."]
+    lines = ["Rhetoric — all-in-one TTS rendering."]
     if status.ok and status.state == "valid":
         licensee_line = "Licensed"
         if status.licensee:
@@ -168,7 +168,7 @@ def run_about_panel(parent: QWidget, *, dialog_cls: type) -> None:
     lines.append("your disk and are shared only by you. See PRIVACY.md.")
 
     dialog = dialog_cls(parent)
-    dialog.setWindowTitle("About The Oracle")
+    dialog.setWindowTitle("About Rhetoric")
     dialog.setModal(True)
     layout = QVBoxLayout(dialog)
     label = QLabel("\n".join(lines))

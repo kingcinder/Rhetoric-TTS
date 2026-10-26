@@ -383,7 +383,7 @@ def _crash_reports_status(repo_root: Path) -> dict[str, Any]:
     if write_problem:
         detail = write_problem
     elif not consent_on:
-        detail = "local crash reporting disabled — enable with `the-oracle privacy-opt-in` (reports stay local; nothing is ever uploaded)"
+        detail = "local crash reporting disabled — enable with `rhetoric privacy-opt-in` (reports stay local; nothing is ever uploaded)"
     elif at_cap:
         detail = f"capture enabled; {len(records)} report(s) on disk — at cap, the oldest will be dropped as new ones arrive"
     else:
@@ -816,11 +816,11 @@ def _ffmpeg_status() -> dict[str, Any]:
 
 
 def _entrypoint_status(repo_root: Path) -> dict[str, Any]:
-    venv_entrypoint = venv_entrypoint_path(repo_root, "the-oracle")
-    wrapper_path = managed_launcher_path("the-oracle")
-    path_entrypoint = shutil.which("the-oracle")
+    venv_entrypoint = venv_entrypoint_path(repo_root, "rhetoric")
+    wrapper_path = managed_launcher_path("rhetoric")
+    path_entrypoint = shutil.which("rhetoric")
     if is_windows() and not path_entrypoint:
-        path_entrypoint = shutil.which("the-oracle.cmd")
+        path_entrypoint = shutil.which("rhetoric.cmd")
     managed_wrapper = False
     if wrapper_path.exists():
         try:
@@ -840,13 +840,13 @@ def _entrypoint_status(repo_root: Path) -> dict[str, Any]:
 
     if is_windows():
         fresh_shell = _run_command(
-            ["cmd", "/d", "/c", "where the-oracle >nul 2>nul && the-oracle --help >nul 2>nul"],
+            ["cmd", "/d", "/c", "where rhetoric >nul 2>nul && rhetoric --help >nul 2>nul"],
             cwd=repo_root,
             timeout=30,
         )
     elif shutil.which("bash"):
         fresh_shell = _run_command(
-            ["bash", "-lc", "command -v the-oracle && the-oracle --help >/dev/null"],
+            ["bash", "-lc", "command -v rhetoric && rhetoric --help >/dev/null"],
             cwd=repo_root,
             timeout=30,
         )
@@ -868,7 +868,7 @@ def _entrypoint_status(repo_root: Path) -> dict[str, Any]:
         "help_error": help_result["stderr"] or help_result["stdout"],
         "fresh_shell_help_ok": fresh_shell["ok"],
         "fresh_shell_path": fresh_shell["stdout"].strip(),
-        "fresh_shell_error": fresh_shell["stderr"].strip() or ("the-oracle is not available in a fresh shell PATH" if not fresh_shell["ok"] else ""),
+        "fresh_shell_error": fresh_shell["stderr"].strip() or ("rhetoric is not available in a fresh shell PATH" if not fresh_shell["ok"] else ""),
         "path_has_local_bin": path_has_local_bin,
     }
 
@@ -1459,7 +1459,7 @@ def _build_next_steps(report: dict[str, Any], *, ci_mode: bool) -> list[str]:
         else:
             steps.append(
                 "Vulkan backend: the Chatterbox model is not downloaded; run "
-                "`the-oracle setup-vulkan` (or select the Vulkan backend in the GUI) "
+                "`rhetoric setup-vulkan` (or select the Vulkan backend in the GUI) "
                 "to fetch it automatically, or scripts/download_audio_cpp_model.sh "
                 "(scripts/build_audio_cpp.sh --with-model builds and fetches in one)."
             )
@@ -1646,7 +1646,7 @@ def _print_human_report(report: dict[str, Any]) -> None:
         suffix = f" ({'; '.join(extras)})" if extras else ""
         print(f"{_status(True)} Crash reports: enabled{suffix}")
     else:
-        print(f"{_status(True)} Crash reports: disabled — local capture off (opt in: the-oracle privacy-opt-in)")
+        print(f"{_status(True)} Crash reports: disabled — local capture off (opt in: rhetoric privacy-opt-in)")
 
     ffmpeg_detail = report["ffmpeg"]["path"] or "ffmpeg not found on PATH"
     ffmpeg_label = _status(report["ffmpeg"]["ok"]) if report["ffmpeg"]["ok"] or not report.get("ci_mode") else optional_status
@@ -1655,11 +1655,11 @@ def _print_human_report(report: dict[str, Any]) -> None:
     entrypoint = report["entrypoint"]
     entrypoint_detail = entrypoint["fresh_shell_path"] or entrypoint["path_entrypoint"] or entrypoint["venv_entrypoint"]
     if entrypoint["ok"]:
-        print(f"{_status(True)} the-oracle entrypoint: {entrypoint_detail}")
+        print(f"{_status(True)} rhetoric entrypoint: {entrypoint_detail}")
     else:
-        detail = entrypoint["fresh_shell_error"] or entrypoint["help_error"] or "the-oracle --help failed"
+        detail = entrypoint["fresh_shell_error"] or entrypoint["help_error"] or "rhetoric --help failed"
         label = _status(False) if not report.get("ci_mode") else optional_status
-        print(f"{label} the-oracle entrypoint: {detail}")
+        print(f"{label} rhetoric entrypoint: {detail}")
 
     chatterbox_import = report["chatterbox_import"]
     if chatterbox_import["ok"]:
@@ -1905,7 +1905,7 @@ def main(argv: list[str] | None = None) -> int:
     from the_oracle.crash import handlers as crash_handlers
 
     crash_handlers.install()
-    parser = argparse.ArgumentParser(description="Install and launch diagnostics for The Oracle.")
+    parser = argparse.ArgumentParser(description="Install and launch diagnostics for Rhetoric.")
     parser.add_argument("--json", action="store_true", dest="as_json")
     parser.add_argument("--repo-root", type=Path, default=REPO_ROOT_DEFAULT)
     parser.add_argument("--model-timeout", type=float, default=1800.0)

@@ -21,8 +21,8 @@ def test_desktop_install_chain_scripts_are_executable(name: str) -> None:
 @pytest.mark.parametrize(
     ("wrapper", "target"),
     [
-        ("install.sh", "install_oracle_tts.sh"),
-        ("uninstall.sh", "uninstall_oracle_tts.sh"),
+        ("install.sh", "install_rhetoric.sh"),
+        ("uninstall.sh", "uninstall_rhetoric.sh"),
     ],
 )
 def test_packaging_wrappers_resolve_root_script_independent_of_cwd(

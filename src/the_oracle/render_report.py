@@ -1,7 +1,6 @@
 """Serial-number-gated render report — a machine-readable conformance summary.
 
-This is the first **real** Studio-gated capability, added in 1.4.0 and
-deliberately read-only: it measures an existing render and requires a valid
+This is a read-only capability introduced in 1.4.0: it measures an existing render and requires a valid
 serial number in ``cli.main()``.
 
 The report is derived entirely from artifacts the render already produced: the

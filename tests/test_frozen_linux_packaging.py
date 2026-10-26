@@ -12,6 +12,17 @@ import pytest
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
+def test_packaging_uses_rhetoric_distribution_filenames() -> None:
+    for path in (
+        "packaging/linux/rhetoric.desktop",
+        "packaging/linux/rhetoric.spec",
+        "packaging/windows/Rhetoric.iss",
+        "packaging/icons/rhetoric-install.png",
+        "packaging/icons/rhetoric-uninstall.png",
+    ):
+        assert (REPO_ROOT / path).is_file(), f"missing customer-visible packaging name {path}"
+
+
 def _load_builder():
     path = REPO_ROOT / "scripts" / "build_frozen_linux.py"
     spec = importlib.util.spec_from_file_location("oracle_frozen_linux_builder", path)
@@ -23,7 +34,7 @@ def _load_builder():
 
 
 def test_frozen_spec_has_no_model_or_secret_inputs() -> None:
-    spec = (REPO_ROOT / "packaging" / "linux" / "the-oracle.spec").read_text(encoding="utf-8")
+    spec = (REPO_ROOT / "packaging" / "linux" / "rhetoric.spec").read_text(encoding="utf-8")
     assert "MODEL_PATH" not in spec
     assert "hf_cache" not in spec
     assert "HF_HOME" not in spec
@@ -33,7 +44,7 @@ def test_frozen_spec_has_no_model_or_secret_inputs() -> None:
 
 def test_update_manifest_and_checksums_are_deterministic(tmp_path: Path) -> None:
     builder = _load_builder()
-    artifact = tmp_path / "the-oracle.AppImage"
+    artifact = tmp_path / "rhetoric.AppImage"
     artifact.write_bytes(b"rehearsal")
 
     checksums = builder.write_checksums(tmp_path, [artifact], "1.5.0")
@@ -54,18 +65,18 @@ def test_update_manifest_and_checksums_are_deterministic(tmp_path: Path) -> None
 def test_stage_appdir_uses_replaceable_runtime_and_keeps_user_data(tmp_path: Path) -> None:
     builder = _load_builder()
     frozen = tmp_path / "frozen"
-    (frozen / "the-oracle").mkdir(parents=True)
-    (frozen / "the-oracle" / "the-oracle").write_bytes(b"binary")
+    (frozen / "rhetoric").mkdir(parents=True)
+    (frozen / "rhetoric" / "rhetoric").write_bytes(b"binary")
     appdir = builder.stage_appdir(tmp_path / "AppDir", frozen)
 
     assert (appdir / "AppRun").is_file()
-    assert (appdir / "the-oracle.desktop").is_file()
-    assert (appdir / "the-oracle.png").is_file()
-    assert (appdir / "usr" / "bin" / "the-oracle").is_file()
-    desktop = (appdir / "usr" / "share" / "applications" / "the-oracle.desktop").read_text(
+    assert (appdir / "rhetoric.desktop").is_file()
+    assert (appdir / "rhetoric.png").is_file()
+    assert (appdir / "usr" / "bin" / "rhetoric").is_file()
+    desktop = (appdir / "usr" / "share" / "applications" / "rhetoric.desktop").read_text(
         encoding="utf-8"
     )
-    assert "Exec=the-oracle" in desktop
+    assert "Exec=rhetoric" in desktop
     assert "models" not in desktop.lower()
     assert "~/.config/the-oracle" in (appdir / "AppRun").read_text(encoding="utf-8")
 

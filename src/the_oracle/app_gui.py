@@ -1,4 +1,4 @@
-"""PySide6 desktop GUI for the Chatterbox-only The Oracle app."""
+"""PySide6 desktop GUI for the Chatterbox-only Rhetoric app."""
 
 from __future__ import annotations
 
@@ -353,7 +353,7 @@ class MainWindow(QMainWindow):
         # mediaStatusChanged emission (QtMultimedia use-after-free); defer the
         # stop out of the handler so the backend finishes delivering first.
         self.player.mediaStatusChanged.connect(self._on_preview_playback_status)
-        self.setWindowTitle("The Oracle")
+        self.setWindowTitle("Rhetoric")
         self.resize(1320, 1060)
         self.setMinimumSize(1160, 760)
         self._mark_startup("mainwindow_init_begin")
@@ -1770,7 +1770,7 @@ class MainWindow(QMainWindow):
                 return False
             if not finished:
                 self.error_panel.append(
-                    f"{label} is still running. Finish or cancel it before closing The Oracle."
+                    f"{label} is still running. Finish or cancel it before closing Rhetoric."
                 )
                 return False
             return True
@@ -2186,7 +2186,7 @@ class MainWindow(QMainWindow):
     def _refresh_pytorch_device_options(self) -> None:
         """Re-probe and rebuild the PyTorch device picker for wizard replay.
 
-        A GPU can be installed or enabled while The Oracle is still open. A
+        A GPU can be installed or enabled while Rhetoric is still open. A
         replayed discovery stage must therefore use fresh hardware facts,
         rather than the snapshot captured during MainWindow construction.
         """

@@ -1,4 +1,4 @@
-"""Qt-free helpers for the Oracle desktop GUI.
+"""Qt-free helpers for Rhetoric desktop GUI.
 
 Everything in this module is importable without PySide6 so it stays
 unit-testable in headless CI. The Qt widgets live in ``app_gui.py`` and

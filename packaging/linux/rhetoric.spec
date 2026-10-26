@@ -31,7 +31,7 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,
-    name="the-oracle",
+    name="rhetoric",
     console=True,
 )
-coll = COLLECT(exe, a.binaries, a.datas, name="the-oracle")
+coll = COLLECT(exe, a.binaries, a.datas, name="rhetoric")

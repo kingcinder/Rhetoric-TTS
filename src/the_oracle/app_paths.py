@@ -1,4 +1,4 @@
-"""Repo-local directory and filename helpers for The Oracle GUI."""
+"""Repo-local directory and filename helpers for Rhetoric GUI."""
 
 from __future__ import annotations
 

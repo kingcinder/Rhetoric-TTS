@@ -74,7 +74,7 @@ def _format_turbo_error(exc: Exception, *, cached_only: bool = False) -> str:
     if isinstance(exc, LocalTokenNotFoundError) or "Token is required (`token=True`)" in str(exc):
         return (
             f"{prefix} chatterbox-tts 0.1.7 forces HF auth for the public turbo checkpoint. "
-            "The Oracle bypasses that broken loader, but this environment still does not have a usable turbo checkpoint. "
+            "Rhetoric bypasses that broken loader, but this environment still does not have a usable turbo checkpoint. "
             f"Connect to the internet and run {download_command} "
             "or set HF_TOKEN if your HF environment requires auth. "
             f"Original error: {type(exc).__name__}: {exc}"

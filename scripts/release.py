@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Release tooling for The Oracle.
+"""Release tooling for Rhetoric.
 
 Version metadata lives in exactly one place: ``__version__`` in
 ``src/the_oracle/__init__.py``. ``pyproject.toml`` declares it dynamically
@@ -506,10 +506,44 @@ def check_report(repo_root: Path, *, today: date | None = None) -> CheckReport:
     report.problems.extend(pyproject_problems(repo_root))
     if version:
         report.problems.extend(banner_problems(repo_root, version))
+        report.problems.extend(packaging_version_problems(repo_root, version))
         changelog = changelog_report(repo_root, version, today)
         report.problems.extend(changelog.problems)
         report.post_cut.extend(changelog.post_cut)
     return report
+
+
+def packaging_version_problems(repo_root: Path, version: str) -> list[str]:
+    """Reject customer package instructions or built artifact names that drift."""
+    problems: list[str] = []
+    linux_readme = repo_root / "packaging" / "linux" / "README.md"
+    if linux_readme.is_file():
+        text = linux_readme.read_text(encoding="utf-8")
+        values = re.findall(r"--current-version\s+(\d+\.\d+\.\d+)", text)
+        if values != [version]:
+            problems.append(
+                f"packaging/linux/README.md: --current-version must name {version}, found {values!r}"
+            )
+
+    windows_iss = repo_root / "packaging" / "windows" / "Rhetoric.iss"
+    if windows_iss.is_file():
+        text = windows_iss.read_text(encoding="utf-8")
+        values = re.findall(r'^\s*#define\s+ProductVersion\s+"([^"]+)"', text, re.MULTILINE)
+        if values != [version]:
+            problems.append(
+                f"packaging/windows/Rhetoric.iss: ProductVersion must name {version}, found {values!r}"
+            )
+
+    artifacts_dir = repo_root / "release_artifacts"
+    if artifacts_dir.is_dir():
+        for path in sorted(item for item in artifacts_dir.rglob("*") if item.is_file()):
+            if path.name == ".gitkeep":
+                continue
+            match = re.search(r"(?<!\d)(\d+\.\d+\.\d+)(?!\d)", path.name)
+            if match and match.group(1) != version:
+                rel = path.relative_to(repo_root).as_posix()
+                problems.append(f"{rel}: artifact version {match.group(1)} does not match package version {version}")
+    return problems
 
 
 def check(repo_root: Path, *, today: date | None = None) -> list[str]:
@@ -720,7 +754,8 @@ def _release(repo: Path, outdir_arg: str, *, skip_tests: bool) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Build verified release artifacts for The Oracle.")
+    parser = argparse.ArgumentParser(description="Build verified release artifacts for Rhetoric.")
+    parser.add_argument("--check-packaging", action="store_true", help="verify packaging instructions and existing artifact filenames match the source version")
     parser.add_argument("--check", action="store_true", help="verify the version invariant: pyproject/banners/CHANGELOG heading match __version__; a shipped version's older section date reports as the by-design post-cut note, not drift")
     parser.add_argument("--sync-banners", action="store_true", help="rewrite README/STATE release banners from __version__")
     parser.add_argument("--sync-changelog", action="store_true", help="stamp/insert the CHANGELOG.md section for the current version, dated today")
@@ -731,6 +766,17 @@ def main(argv: list[str] | None = None) -> int:
     repo = args.repo_root if args.repo_root is not None else Path(__file__).resolve().parents[1]
 
     try:
+        if args.check_packaging:
+            version = read_version(repo)
+            problems = (["src/the_oracle/__init__.py: no __version__ string literal found"] if not version else [])
+            if version:
+                problems.extend(packaging_version_problems(repo, version))
+            if problems:
+                for problem in problems:
+                    print(f"MISMATCH: {problem}")
+                return 1
+            print(f"packaging and artifact versions match {version}")
+            return 0
         if args.check:
             return _report(check_report(repo))
         if args.sync_changelog:

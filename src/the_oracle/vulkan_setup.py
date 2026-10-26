@@ -1,4 +1,4 @@
-"""Automatic CPU→GPU (Vulkan backend) setup for The Oracle.
+"""Automatic CPU→GPU (Vulkan backend) setup for Rhetoric.
 
 Selecting the Vulkan inference backend (the GPU path) used to be a manual
 two-step process: build ``audiocpp_cli`` from audio.cpp
@@ -141,7 +141,7 @@ def _terminate_group(proc: subprocess.Popen) -> None:
     """SIGTERM the script's process group, tolerating a race with exit.
 
     The script runs in its own session (``start_new_session=True``) so this
-    never touches The Oracle itself. ``ProcessLookupError`` means the child
+    never touches Rhetoric itself. ``ProcessLookupError`` means the child
     already exited between the cancel check and the kill, which is fine.
     """
     try:
@@ -161,7 +161,7 @@ def _run_script_streaming(
     script is running, the script's process group is SIGTERM'd and
     :class:`VulkanSetupCancelled` is raised (the caller converts it into a
     cancelled result). ``start_new_session`` gives the script its own process
-    group so the kill never hits The Oracle itself; the audio.cpp path is
+    group so the kill never hits Rhetoric itself; the audio.cpp path is
     Linux-only, matching the GUI's existing model-download thread.
     """
     if cancel is not None and cancel.is_set():

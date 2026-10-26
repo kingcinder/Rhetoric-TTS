@@ -1,4 +1,4 @@
-"""Theme system for The Oracle desktop GUI.
+"""Theme system for Rhetoric desktop GUI.
 
 Each theme is a complete, self-contained design token set rendered into a
 single application-wide Qt stylesheet. Themes are stylized (typography, weight,
@@ -7,7 +7,7 @@ is machine-contrast-checked at import time: all text/background pairs pass
 WCAG AA (>= 4.5:1) or WCAG large-text AA (>= 3.0:1 for big/bold UI elements),
 so switching themes can never make the GUI illegible.
 
-Default theme is ``oracle_light`` (a refined version of the classic Oracle
+Default theme is ``oracle_light`` (a refined version of the classic Rhetoric
 look), so existing installs keep their familiar identity.
 """
 
@@ -78,12 +78,12 @@ class ThemeTokens:
 
 
 THEMES: dict[str, ThemeTokens] = {
-    # 1. Classic Oracle light, refined: cool paper, ink navy, the original
+    # 1. Classic Rhetoric light, refined: cool paper, ink navy, the original
     #    #19466D accent carried forward as the identity color.
     "oracle_light": ThemeTokens(
         key="oracle_light",
         name="Studio Light",
-        description="The classic Oracle look, refined: cool paper, ink navy, "
+        description="The classic Rhetoric look, refined: cool paper, ink navy, "
         "serif section titles. The original #19466D accent, kept on purpose.",
         bg="#F2F5F8",
         panel="#FFFFFF",

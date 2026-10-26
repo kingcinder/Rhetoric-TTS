@@ -1,6 +1,6 @@
 """Pinned Hugging Face model revisions.
 
-Every model The Oracle downloads is pinned to an exact commit SHA so installs
+Every model Rhetoric downloads is pinned to an exact commit SHA so installs
 are reproducible: upstream model updates can never silently change voice,
 emotion, or punctuation behavior between machines, and the offline bundle
 builder / offline installer seed exactly these revisions.

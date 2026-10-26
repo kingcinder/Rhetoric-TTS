@@ -1,4 +1,4 @@
-"""Window chrome for the Oracle desktop GUI: the Live sidebar column.
+"""Window chrome for Rhetoric desktop GUI: the Live sidebar column.
 
 Owns the persistent right-side progress sidebar (2026-09-21 extraction slice).
 :class:`LivePanel` mirrors the render progress dialog so the user always sees

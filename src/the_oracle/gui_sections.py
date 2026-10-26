@@ -1,4 +1,4 @@
-"""Section chrome for The Oracle desktop GUI.
+"""Section chrome for Rhetoric desktop GUI.
 
 ``QHSectionGroup`` is a QGroupBox with two affordances in its title row:
 

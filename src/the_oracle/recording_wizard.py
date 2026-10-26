@@ -73,7 +73,7 @@ STAGES: tuple[RecordingGuideStage, ...] = (
     RecordingGuideStage(
         "naming",
         "4. Confirm the naming policy",
-        "A generated Seashell_No_N.wav name is a safe boilerplate name, but it does not tell you who, when, or under which conditions the take was recorded. The first time you record with a generic name, The Oracle shows a caution and lets you disable that caution. For a production library, close the warning, replace the name with something descriptive such as close_mic_warm.wav, and then record. The warning preference is independent of the recording itself and can be restored in Settings.",
+        "A generated Seashell_No_N.wav name is a safe boilerplate name, but it does not tell you who, when, or under which conditions the take was recorded. The first time you record with a generic name, Rhetoric shows a caution and lets you disable that caution. For a production library, close the warning, replace the name with something descriptive such as close_mic_warm.wav, and then record. The warning preference is independent of the recording itself and can be restored in Settings.",
         "name_edit",
     ),
     RecordingGuideStage(
@@ -85,7 +85,7 @@ STAGES: tuple[RecordingGuideStage, ...] = (
     RecordingGuideStage(
         "finish",
         "6. Review, audition, and assign",
-        "After recording, The Oracle saves a mono PCM WAV, offers Listen again, and lets you assign the take to Speaker A or B. Use the audition to check that the beginning and ending are clean, speech is intelligible, and the voice is natural rather than overdone. A Seashell is a reference input for the selected speaker; it does not itself render a dialogue. You can record more takes at any time and reopen this guide from Settings → Replay Recording Studio Setup & Guide.",
+        "After recording, Rhetoric saves a mono PCM WAV, offers Listen again, and lets you assign the take to Speaker A or B. Use the audition to check that the beginning and ending are clean, speech is intelligible, and the voice is natural rather than overdone. A Seashell is a reference input for the selected speaker; it does not itself render a dialogue. You can record more takes at any time and reopen this guide from Settings → Replay Recording Studio Setup & Guide.",
         "play_button",
     ),
 )
@@ -117,7 +117,7 @@ class RecordingStudioSetupWizard(QDialog):
         self._stages = list(STAGES) if self.mode == "full" else [
             s for s in STAGES if s.key == "help" or s.key not in _SETUP_KEYS
         ]
-        self.setWindowTitle("The Oracle - Recording Studio Setup & Guide")
+        self.setWindowTitle("Rhetoric - Recording Studio Setup & Guide")
         self.setWindowFlag(Qt.WindowType.Tool, True)
         self.setModal(False)
         self.setMinimumSize(600, 470)

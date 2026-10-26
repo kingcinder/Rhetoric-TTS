@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build a fully offline install bundle for The Oracle.
+"""Build a fully offline install bundle for Rhetoric.
 
 The bundle contains EVERYTHING needed to install and launch the program with
 no network access, on Linux or Windows:
@@ -506,7 +506,7 @@ def download_wheels(wheels_dir: Path, *, platform: str, python_version: str, pyt
 def write_launchers(bundle_dir: Path) -> None:
     (bundle_dir / "install.sh").write_text(
         "#!/usr/bin/env bash\n"
-        "# Offline install of The Oracle from this bundle. No network needed.\n"
+        "# Offline install of Rhetoric from this bundle. No network needed.\n"
         "set -Eeuo pipefail\n"
         'BUNDLE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"\n'
         'INSTALL_ROOT="${1:-$HOME/The_Oracle_TTS}"\n'
@@ -517,7 +517,7 @@ def write_launchers(bundle_dir: Path) -> None:
     )
     (bundle_dir / "install.bat").write_text(
         "@echo off\r\n"
-        "REM Offline install of The Oracle from this bundle. No network needed.\r\n"
+        "REM Offline install of Rhetoric from this bundle. No network needed.\r\n"
         'set "BUNDLE_DIR=%~dp0"\r\n'
         # %~dp0 always ends with a backslash; strip it so the quoted
         # --offline-bundle argument does not end in a backslash-quote, which
@@ -533,7 +533,7 @@ def write_launchers(bundle_dir: Path) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Build a fully offline install bundle for The Oracle.")
+    parser = argparse.ArgumentParser(description="Build a fully offline install bundle for Rhetoric.")
     parser.add_argument("--output", type=Path, required=True, help="Bundle directory to create.")
     parser.add_argument("--platform", choices=["linux", "windows", "both"], default="both",
                         help="Which platform wheel sets to download (default: both).")

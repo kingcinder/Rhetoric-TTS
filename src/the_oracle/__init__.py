@@ -1,4 +1,4 @@
-"""The Oracle package."""
+"""Rhetoric package."""
 
 __all__ = ["__version__"]
 

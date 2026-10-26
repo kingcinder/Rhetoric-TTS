@@ -73,7 +73,7 @@ def run_first_run_consent(
     layout = QVBoxLayout(dialog)
 
     summary = QLabel(
-        "Help improve The Oracle by keeping a record of crashes on this\n"
+        "Help improve Rhetoric by keeping a record of crashes on this\n"
         "machine?\n\n"
         "Reports stay in this install's crash_reports/ folder — sanitized,\n"
         "capped at 20 small files, and never uploaded. There is no upload\n"

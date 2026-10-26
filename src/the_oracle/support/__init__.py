@@ -11,7 +11,7 @@ Three pieces sit on top of the existing doctor and crash unit:
   diagnostics, and the existing redacted support bundle; plus prefilled
   issue/email links from :mod:`the_oracle.support.channels`.
 
-Import discipline matches the rest of the suite: stdlib plus Oracle's own
+Import discipline matches the rest of the suite: stdlib plus Rhetoric's own
 small modules, nothing runs at import time, and there is no transport code.
 """
 

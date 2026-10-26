@@ -214,7 +214,7 @@ def test_crash_channel_stays_in_the_throwaway() -> None:
 def test_no_repo_log_entry_points() -> None:
     """The two writers behind the repo's ``logs/`` and ``Output/logs/`` log
     families must never be reachable from this script: ``configure_logging``
-    appends to the repo-local ``logs/oracle.log``, and ``launch_gui`` writes
+    appends to the repo-local ``logs/rhetoric.log``, and ``launch_gui`` writes
     ``Output/logs/gui_launch_timing.json`` unconditionally."""
     source = _source()
     for forbidden in ("configure_logging(", "launch_gui(", "gui_launch_timing"):

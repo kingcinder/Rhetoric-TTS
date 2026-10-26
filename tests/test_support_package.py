@@ -21,7 +21,7 @@ from the_oracle import support_bundle
 def _root(tmp_path: Path) -> Path:
     tmp_path.mkdir(parents=True, exist_ok=True)
     (tmp_path / "logs").mkdir()
-    (tmp_path / "logs" / "oracle.log").write_text("hello\n", encoding="utf-8")
+    (tmp_path / "logs" / "rhetoric.log").write_text("hello\n", encoding="utf-8")
     return tmp_path
 
 

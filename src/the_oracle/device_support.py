@@ -1,4 +1,4 @@
-"""Runtime hardware capability helpers for The Oracle inference choices.
+"""Runtime hardware capability helpers for Rhetoric inference choices.
 
 CUDA is intentionally modeled as a PyTorch *device mode*, not as a separate
 inference backend. This keeps model loading, conditioning, caching, previews,

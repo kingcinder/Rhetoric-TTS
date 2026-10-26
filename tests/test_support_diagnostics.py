@@ -16,7 +16,7 @@ from the_oracle.support import collect_diagnostics, compact_diagnostics
 
 def _root(tmp_path: Path) -> Path:
     (tmp_path / "logs").mkdir()
-    (tmp_path / "logs" / "oracle.log").write_text(
+    (tmp_path / "logs" / "rhetoric.log").write_text(
         "started\nlicense ORACLE1.aaa.bbb\n", encoding="utf-8"
     )
     settings = tmp_path / "user_settings"
@@ -82,11 +82,11 @@ def test_settings_summary_is_a_whitelist(tmp_path: Path) -> None:
 
 def test_log_summary_has_names_and_sizes_only(tmp_path: Path) -> None:
     root = _root(tmp_path)
-    log_path = root / "logs" / "oracle.log"
+    log_path = root / "logs" / "rhetoric.log"
     content = b"started\r\nlicense ORACLE1.aaa.bbb\r\n"
     log_path.write_bytes(content)
     logs = collect_diagnostics(root, run_doctor=False)["logs"]
-    assert logs["files"] == [{"name": "oracle.log", "bytes": len(content)}]
+    assert logs["files"] == [{"name": "rhetoric.log", "bytes": len(content)}]
     assert "content" not in json.dumps(logs)
 
 

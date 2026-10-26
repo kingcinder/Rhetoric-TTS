@@ -86,8 +86,8 @@ class TestDefaultLogFile:
     def test_default_log_file_is_repo_local(self):
         path = default_log_file()
 
-        assert path.name == "oracle.log"
+        assert path.name == "rhetoric.log"
         assert path.parent.name == "logs"
         assert path.parent.is_dir(), "the logs/ directory is created on demand"
         repo_root = Path(oracle_logging.__file__).resolve().parents[3]
-        assert path == repo_root / "logs" / "oracle.log"
+        assert path == repo_root / "logs" / "rhetoric.log"

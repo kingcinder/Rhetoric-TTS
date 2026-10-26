@@ -1,4 +1,4 @@
-"""The Oracle licensing: offline token verification (docs/LICENSING_DESIGN.md).
+"""Rhetoric licensing: offline token verification (docs/LICENSING_DESIGN.md).
 
 Public surface. Import discipline: this package imports stdlib plus the
 vendored ``the_oracle._ed25519`` only — never huggingface_hub, torch, or any

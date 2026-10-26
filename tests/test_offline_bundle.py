@@ -683,7 +683,7 @@ def _make_fake_run_capture():
 
 def _prepare_run_repo(manage_install, tmp_path: Path, monkeypatch, *, offline: bool) -> None:
     repo = tmp_path / "repo with space"
-    entrypoint = manage_install.venv_entrypoint_path(repo, "the-oracle")
+    entrypoint = manage_install.venv_entrypoint_path(repo, "rhetoric")
     entrypoint.parent.mkdir(parents=True, exist_ok=True)
     entrypoint.write_text("#!/bin/sh\n", encoding="utf-8")
     if offline:

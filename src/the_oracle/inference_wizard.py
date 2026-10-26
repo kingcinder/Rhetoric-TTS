@@ -55,7 +55,7 @@ STAGES: tuple[TutorialStage, ...] = (
     TutorialStage(
         "discovery",
         "1. Discover your inference hardware",
-        "The Oracle checks the devices visible to this installation before it asks you to choose. CPU / system DRAM is always available. A CUDA choice is offered only when PyTorch can see an NVIDIA card and that card meets the Chatterbox memory floor. Cards that are detected but unsuitable remain visible with the reason, so an old or 1 GiB NVIDIA card is not mistaken for an AI-capable option. Vulkan is a separate audio.cpp path and may require its runtime/model setup.",
+        "Rhetoric checks the devices visible to this installation before it asks you to choose. CPU / system DRAM is always available. A CUDA choice is offered only when PyTorch can see an NVIDIA card and that card meets the Chatterbox memory floor. Cards that are detected but unsuitable remain visible with the reason, so an old or 1 GiB NVIDIA card is not mistaken for an AI-capable option. Vulkan is a separate audio.cpp path and may require its runtime/model setup.",
         "pytorch_device_combo",
         True,
     ),
@@ -134,7 +134,7 @@ class InferenceSetupWizard(QDialog):
         self._stages = self._select_stages(self.mode)
         self._highlighted: QWidget | None = None
         self._finished_once = False
-        self.setWindowTitle("The Oracle - Inference Setup & Tour")
+        self.setWindowTitle("Rhetoric - Inference Setup & Tour")
         self.setWindowFlag(Qt.WindowType.Tool, True)
         self.setModal(False)
         self.setMinimumSize(560, 390)
@@ -163,7 +163,7 @@ class InferenceSetupWizard(QDialog):
         if vulkan_mode is not None:
             self.backend_picker.setItemData(
                 self.backend_picker.count() - 1,
-                "This is The Oracle's audio.cpp Vulkan path. "
+                "This is Rhetoric's audio.cpp Vulkan path. "
                 + vulkan_mode.reason
                 + " The main window will offer automatic setup if its binary or model is missing.",
                 Qt.ItemDataRole.ToolTipRole,

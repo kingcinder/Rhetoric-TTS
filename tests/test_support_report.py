@@ -121,6 +121,9 @@ def test_issue_url_targets_the_tracked_repo_and_fits_url_limits(tmp_path: Path) 
     assert url.startswith(f"https://github.com/{channels.ISSUE_REPO}/issues/new?")
     assert "title=" in url and "labels=bug" in url
     assert len(url) <= channels.MAX_ISSUE_URL_CHARS
+    assert channels.ISSUE_REPO == "kingcinder/Rhetoric-TTS"
+    assert "Rhetoric" in channels.issue_title(report)
+    assert "The Oracle" not in channels.issue_title(report)
 
 
 def test_pathological_report_still_yields_a_bounded_url(
@@ -145,6 +148,13 @@ def test_mailto_has_subject_report_id_and_support_address(tmp_path: Path) -> Non
     assert "subject=" in url
     assert "Report%20ID" in url
     assert len(url) <= channels.MAX_MAILTO_URL_CHARS
+    assert "Rhetoric" in channels.issue_title(report)
+    assert "The%20Oracle" not in url
+
+
+def test_issue_repo_matches_support_documentation() -> None:
+    support_doc = Path(__file__).parents[1] / "docs" / "SUPPORT.md"
+    assert f"github.com/{channels.ISSUE_REPO}" in support_doc.read_text(encoding="utf-8")
 
 
 def test_share_note_warns_that_nothing_was_sent(tmp_path: Path) -> None:

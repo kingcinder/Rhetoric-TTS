@@ -238,6 +238,7 @@ def _build_fake_repo(tmp_path: Path) -> tuple[Path, Path, Path]:
     fakerepo = tmp_path / "fakerepo"
     (fakerepo / "scripts").mkdir(parents=True)
     shutil.copy2(REPO_ROOT / "oracle", fakerepo / "oracle")
+    shutil.copy2(REPO_ROOT / "rhetoric", fakerepo / "rhetoric")
     recorded = tmp_path / "recorded_args.txt"
     bindir = tmp_path / "bin"
     bindir.mkdir()
@@ -364,7 +365,7 @@ def test_oracle_ps1_has_no_invoke_expression() -> None:
 
 
 def test_oracle_ps1_forwards_remaining_arguments() -> None:
-    text = (REPO_ROOT / "oracle.ps1").read_text(encoding="utf-8")
+    text = (REPO_ROOT / "rhetoric.ps1").read_text(encoding="utf-8")
     assert "ValueFromRemainingArguments" in text
     assert "RemainingArgs" in text
     # The final dispatch must use the call operator, not string evaluation.

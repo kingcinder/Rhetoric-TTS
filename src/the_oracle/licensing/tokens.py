@@ -134,7 +134,7 @@ def verify_token(
 
     body = canonical_payload_bytes(payload_dict)
     if not keys.verify_signature(key_id, body, signature):
-        return LicenseStatus(ok=False, state="bad_signature", detail="The serial number is not a genuine Oracle license. Check for truncation; if it matches what you received, contact support.")
+        return LicenseStatus(ok=False, state="bad_signature", detail="The serial number is not a genuine Rhetoric license. Check for truncation; if it matches what you received, contact support.")
 
     try:
         payload = TokenPayload(

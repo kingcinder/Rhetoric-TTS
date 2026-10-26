@@ -426,7 +426,7 @@ _EXTERNAL_COMPONENTS: tuple[Component, ...] = (
         license="Apache-2.0",
         kind="external",
         source="https://github.com/0xShug0/audio.cpp",
-        notice="Copyright 2026 ShugoAI LLC. Apache-2.0. Modified by The Oracle's vendored patches; see scripts/patches/.",
+        notice="Copyright 2026 ShugoAI LLC. Apache-2.0. Modified by Rhetoric's vendored patches; see scripts/patches/.",
     ),
     Component(
         name="ggml",

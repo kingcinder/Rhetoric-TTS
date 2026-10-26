@@ -77,12 +77,12 @@ def load_token(repo_root: str | Path) -> LoadResult:
     except ValueError:
         return LoadResult(
             state="corrupted_content",
-            detail=f"{path} is not valid JSON. Re-run `the-oracle activate` with your serial number to restore it.",
+            detail=f"{path} is not valid JSON. Re-run `rhetoric activate` with your serial number to restore it.",
         )
     if not isinstance(data, dict) or not isinstance(data.get("token"), str) or not data["token"]:
         return LoadResult(
             state="corrupted_content",
-            detail=f"{path} does not contain a serial number. Re-run `the-oracle activate`.",
+            detail=f"{path} does not contain a serial number. Re-run `rhetoric activate`.",
         )
     return LoadResult(state="loaded", stored=StoredToken(token=data["token"]))
 

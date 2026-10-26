@@ -287,7 +287,7 @@ def test_real_engine_smoke_entry_point_enables_offline_mode(
 def test_manage_install_run_path_uses_the_shared_owner(offline_install, monkeypatch, script_module, offline_module) -> None:
     """The installer's run action resolves the marker through the one owner."""
     manage = script_module("oracle_manage_install_offline_guarantee", "manage_install.py")
-    entrypoint = manage.venv_entrypoint_path(offline_install, "the-oracle")
+    entrypoint = manage.venv_entrypoint_path(offline_install, "rhetoric")
     entrypoint.parent.mkdir(parents=True, exist_ok=True)
     entrypoint.write_text("#!/bin/sh\n", encoding="utf-8")
     monkeypatch.setattr(manage, "REPO_ROOT", offline_install)

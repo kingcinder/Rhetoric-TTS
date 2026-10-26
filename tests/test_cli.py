@@ -234,7 +234,13 @@ def test_version_flag_prints_version_and_exits(capsys: pytest.CaptureFixture[str
 
     assert excinfo.value.code == 0
     out = capsys.readouterr().out.strip()
-    assert out == f"the-oracle {__version__}"
+    assert out == f"rhetoric {__version__}"
+
+
+def test_cli_help_uses_customer_product_name() -> None:
+    parser = build_parser()
+    assert parser.prog == "rhetoric"
+    assert "Rhetoric" in parser.description
 
 
 def test_monologue_flag_wires_into_render_settings(tmp_path: Path, monkeypatch) -> None:

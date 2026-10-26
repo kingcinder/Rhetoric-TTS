@@ -30,7 +30,7 @@ def package(binary: Path, outdir: Path, *, version: str) -> PackageResult:
     if not binary.is_file() or not binary.stat().st_mode & 0o111:
         raise ValueError(f"Vulkan binary is missing or not executable: {binary}")
     outdir.mkdir(parents=True, exist_ok=True)
-    archive = outdir / f"the-oracle-audiocpp-vulkan-{version}-linux-x86_64.tar.gz"
+    archive = outdir / f"rhetoric-audiocpp-vulkan-{version}-linux-x86_64.tar.gz"
     with tarfile.open(archive, "w:gz") as handle:
         handle.add(binary, arcname="usr/libexec/audiocpp_cli")
     manifest = outdir / "audiocpp-vulkan-manifest.json"

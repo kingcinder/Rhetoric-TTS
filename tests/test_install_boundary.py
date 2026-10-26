@@ -23,8 +23,10 @@ import pytest
 
 from tests.install_recorder import install_boundary, load_manage_install
 
-DESKTOP_ENTRY_LABEL = "home/.local/share/applications/the-oracle.desktop"
-DESKTOP_SHORTCUT_LABEL = "home/Desktop/the-oracle.desktop"
+DESKTOP_ENTRY_LABEL = "home/.local/share/applications/rhetoric.desktop"
+LEGACY_DESKTOP_ENTRY_LABEL = "home/.local/share/applications/the-oracle.desktop"
+DESKTOP_SHORTCUT_LABEL = "home/Desktop/rhetoric.desktop"
+LEGACY_DESKTOP_SHORTCUT_LABEL = "home/Desktop/the-oracle.desktop"
 
 
 @pytest.fixture()
@@ -60,6 +62,7 @@ def _desktop_commands(boundary) -> list[tuple[str, ...]]:
     """The best-effort desktop integration calls, in order."""
     return [
         ("update-desktop-database", str(boundary.home / ".local" / "share" / "applications")),
+        ("gio", "set", str(boundary.home / "Desktop" / "rhetoric.desktop"), "metadata::trusted", "true"),
         ("gio", "set", str(boundary.home / "Desktop" / "the-oracle.desktop"), "metadata::trusted", "true"),
     ]
 
@@ -115,12 +118,15 @@ def test_online_install_writes_exactly_these_files(manage_install, install_bound
     boundary.install(pytorch_runtime="cpu")
 
     assert boundary.created_labels() == [
+        "home/.local/bin/rhetoric",
         "home/.local/bin/the-oracle",
         DESKTOP_ENTRY_LABEL,
+        LEGACY_DESKTOP_ENTRY_LABEL,
         DESKTOP_SHORTCUT_LABEL,
+        LEGACY_DESKTOP_SHORTCUT_LABEL,
     ]
 
-    wrapper = boundary.created_file("home/.local/bin/the-oracle")
+    wrapper = boundary.created_file("home/.local/bin/rhetoric")
     assert wrapper.executable, "the managed launcher must be executable"
     assert wrapper.text == manage_install.managed_wrapper_contents()
     assert wrapper.text.startswith("#!/usr/bin/env bash\n")
@@ -178,9 +184,12 @@ def _expected_offline_labels(boundary) -> list[str]:
     from the_oracle.models.pins import MODEL_PINS
 
     labels = {
+        "home/.local/bin/rhetoric",
         "home/.local/bin/the-oracle",
         DESKTOP_ENTRY_LABEL,
+        LEGACY_DESKTOP_ENTRY_LABEL,
         DESKTOP_SHORTCUT_LABEL,
+        LEGACY_DESKTOP_SHORTCUT_LABEL,
         "repo/.oracle_offline",
     }
     for repo_id, sha in MODEL_PINS.items():
@@ -229,7 +238,7 @@ def test_offline_install_seeds_the_pinned_models_and_writes_the_marker(
     marker = boundary.created_file("repo/.oracle_offline").text
     assert json.loads(marker) == {"offline_bundle_manifest": '{"app": "the-oracle"}'}
     # The launcher is what makes the promise true at run time.
-    assert "HF_HUB_OFFLINE=1" in boundary.created_file("home/.local/bin/the-oracle").text
+    assert "HF_HUB_OFFLINE=1" in boundary.created_file("home/.local/bin/rhetoric").text
 
 
 # --- fresh repo, missing tools, Windows ---------------------------------------
@@ -274,11 +283,13 @@ def test_windows_install_registers_a_start_menu_launcher(manage_install, install
     expected = _online_pip_commands(boundary.venv_python) + [_doctor_command(boundary)]
     assert [command.args for command in boundary.commands] == expected, "\n".join(boundary.command_lines())
     assert boundary.created_labels() == [
+        "home/AppData/Roaming/Microsoft/Windows/Start Menu/Programs/Rhetoric.cmd",
         "home/AppData/Roaming/Microsoft/Windows/Start Menu/Programs/The Oracle.cmd",
+        "home/AppData/Roaming/Python/Scripts/rhetoric.cmd",
         "home/AppData/Roaming/Python/Scripts/the-oracle.cmd",
     ]
 
-    wrapper = boundary.created_file("home/AppData/Roaming/Python/Scripts/the-oracle.cmd")
+    wrapper = boundary.created_file("home/AppData/Roaming/Python/Scripts/rhetoric.cmd")
     assert "\r\n" in wrapper.text, "a .cmd launcher needs CRLF line endings"
     assert 'set "REPO_ROOT=' in wrapper.text
     assert "HF_HUB_OFFLINE=1" in wrapper.text

@@ -85,7 +85,7 @@ def managed_launcher_dir() -> Path:
     return Path(xdg_bin) if xdg_bin else Path.home() / ".local" / "bin"
 
 
-def managed_launcher_path(name: str = "the-oracle") -> Path:
+def managed_launcher_path(name: str = "rhetoric") -> Path:
     suffix = ".cmd" if is_windows() else ""
     return managed_launcher_dir() / f"{name}{suffix}"
 

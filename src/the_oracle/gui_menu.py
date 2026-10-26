@@ -208,7 +208,7 @@ def build_menu(main_window, *, themes: Mapping[str, ThemeTokens]) -> None:
     )
     main_window.activate_license_action.triggered.connect(main_window._open_license_activation)
     help_menu.addAction(main_window.activate_license_action)
-    main_window.about_action = QAction("About The Oracle…", main_window)
+    main_window.about_action = QAction("About Rhetoric…", main_window)
     main_window.about_action.setToolTip("Whether this install is licensed, and the privacy posture in one glance.")
     main_window.about_action.triggered.connect(main_window._open_about_panel)
     help_menu.addAction(main_window.about_action)

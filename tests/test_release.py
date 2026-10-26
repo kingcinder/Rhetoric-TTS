@@ -121,7 +121,7 @@ def _write_fake_repo(
         manifest = tmp_path / release.RELEASE_CHECKSUMS_DIR / release.checksums_filename(version)
         manifest.parent.mkdir(parents=True, exist_ok=True)
         manifest.write_text(
-            f"{'0' * 64}  the_oracle-{version}-py3-none-any.whl\n", encoding="utf-8"
+            f"{'0' * 64}  rhetoric-{version}-py3-none-any.whl\n", encoding="utf-8"
         )
     return tmp_path
 
@@ -270,7 +270,7 @@ def test_the_exemption_is_per_version_not_per_repository(tmp_path: Path) -> None
     repo = _write_fake_repo(tmp_path, changelog_date=yesterday, shipped=False)
     older = repo / release.RELEASE_CHECKSUMS_DIR / "checksums-9.9.8.sha256"
     older.parent.mkdir(parents=True, exist_ok=True)
-    older.write_text(f"{'0' * 64}  the_oracle-9.9.8-py3-none-any.whl\n", encoding="utf-8")
+    older.write_text(f"{'0' * 64}  rhetoric-9.9.8-py3-none-any.whl\n", encoding="utf-8")
 
     verdict = release.check_report(repo)
 
@@ -333,6 +333,24 @@ def test_check_flags_missing_changelog_file(tmp_path: Path) -> None:
     repo = _write_fake_repo(tmp_path, changelog_text="")
     problems = release.check(repo)
     assert any("CHANGELOG.md: missing" in problem for problem in problems)
+
+
+def test_release_check_flags_packaging_and_artifact_version_drift(tmp_path: Path) -> None:
+    repo = _write_fake_repo(tmp_path)
+    linux = repo / "packaging" / "linux"
+    windows = repo / "packaging" / "windows"
+    linux.mkdir(parents=True)
+    windows.mkdir(parents=True)
+    (linux / "README.md").write_text("--current-version 9.9.8\n", encoding="utf-8")
+    (windows / "Rhetoric.iss").write_text('#define ProductVersion "9.9.8"\n', encoding="utf-8")
+    artifacts = repo / "release_artifacts"
+    artifacts.mkdir()
+    (artifacts / "rhetoric-9.9.8-x86_64.AppImage").write_bytes(b"artifact")
+
+    problems = release.check_report(repo).problems
+    assert any("packaging/linux/README.md" in item for item in problems)
+    assert any("packaging/windows/Rhetoric.iss" in item for item in problems)
+    assert any("release_artifacts/rhetoric-9.9.8-x86_64.AppImage" in item for item in problems)
 
 
 def test_check_flags_invalid_changelog_date(tmp_path: Path) -> None:
@@ -599,14 +617,14 @@ def test_sync_banners_skips_a_missing_optional_state_file(tmp_path: Path) -> Non
 
 
 def test_write_checksums_manifest_is_sha256sum_compatible(tmp_path: Path) -> None:
-    (tmp_path / "the_oracle-9.9.9.tar.gz").write_bytes(b"sdist bytes")
-    (tmp_path / "the_oracle-9.9.9-py3-none-any.whl").write_bytes(b"wheel bytes")
+    (tmp_path / "rhetoric-9.9.9.tar.gz").write_bytes(b"sdist bytes")
+    (tmp_path / "rhetoric-9.9.9-py3-none-any.whl").write_bytes(b"wheel bytes")
     # A previous release run left its manifest (and an unrelated file) behind:
     (tmp_path / "checksums-9.9.9.sha256").write_text("stale\n", encoding="utf-8")
     (tmp_path / "unrelated-notes.txt").write_text("not an artifact\n", encoding="utf-8")
     artifacts = [
-        tmp_path / "the_oracle-9.9.9-py3-none-any.whl",
-        tmp_path / "the_oracle-9.9.9.tar.gz",
+        tmp_path / "rhetoric-9.9.9-py3-none-any.whl",
+        tmp_path / "rhetoric-9.9.9.tar.gz",
     ]
 
     manifest = release.write_checksums(tmp_path, "9.9.9", artifacts)
@@ -621,8 +639,8 @@ def test_write_checksums_manifest_is_sha256sum_compatible(tmp_path: Path) -> Non
     assert raw.endswith(b"\n")
     lines = manifest.read_text(encoding="utf-8").splitlines()
     assert lines == [
-        f"{hashlib.sha256(b'wheel bytes').hexdigest()}  the_oracle-9.9.9-py3-none-any.whl",
-        f"{hashlib.sha256(b'sdist bytes').hexdigest()}  the_oracle-9.9.9.tar.gz",
+        f"{hashlib.sha256(b'wheel bytes').hexdigest()}  rhetoric-9.9.9-py3-none-any.whl",
+        f"{hashlib.sha256(b'sdist bytes').hexdigest()}  rhetoric-9.9.9.tar.gz",
     ]
     # The manifest must never list itself or unrelated files, or `sha256sum -c`
     # could never pass on a rebuilt release directory.
@@ -666,7 +684,7 @@ def test_build_snippet_binds_outdir_before_setuptools_mutates_argv(tmp_path: Pat
 
 def test_build_artifacts_rejects_unversioned_names(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     class _FakeResult:
-        stdout = "ARTIFACT:the_oracle-py3-none-any.whl\nARTIFACT:the_oracle.tar.gz\n"
+        stdout = "ARTIFACT:rhetoric-py3-none-any.whl\nARTIFACT:rhetoric.tar.gz\n"
 
     calls: list[tuple[list[str], str]] = []
 
@@ -688,15 +706,15 @@ def test_build_artifacts_rejects_unversioned_names(tmp_path: Path, monkeypatch: 
 def test_build_artifacts_returns_existing_versioned_files(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     outdir = tmp_path / "out"
     outdir.mkdir()
-    (outdir / "the_oracle-9.9.9.tar.gz").write_bytes(b"s")
-    (outdir / "the_oracle-9.9.9-py3-none-any.whl").write_bytes(b"w")
+    (outdir / "rhetoric-9.9.9.tar.gz").write_bytes(b"s")
+    (outdir / "rhetoric-9.9.9-py3-none-any.whl").write_bytes(b"w")
 
     class _FakeResult:
-        stdout = "ARTIFACT:the_oracle-9.9.9.tar.gz\nARTIFACT:the_oracle-9.9.9-py3-none-any.whl\n"
+        stdout = "ARTIFACT:rhetoric-9.9.9.tar.gz\nARTIFACT:rhetoric-9.9.9-py3-none-any.whl\n"
 
     monkeypatch.setattr(release.subprocess, "run", lambda cmd, **kwargs: _FakeResult())
     artifacts = release.build_artifacts(tmp_path, outdir, "9.9.9")
-    assert [path.name for path in artifacts] == ["the_oracle-9.9.9.tar.gz", "the_oracle-9.9.9-py3-none-any.whl"]
+    assert [path.name for path in artifacts] == ["rhetoric-9.9.9.tar.gz", "rhetoric-9.9.9-py3-none-any.whl"]
 
 
 def test_main_refuses_dirty_tree_before_building_or_testing(
@@ -721,9 +739,9 @@ def test_store_release_checksums_records_a_copy_verifiable_from_a_clone(tmp_path
     repo = _write_fake_repo(tmp_path / "repo")
     outdir = repo / "release_artifacts"
     outdir.mkdir()
-    (outdir / "the_oracle-9.9.9.tar.gz").write_bytes(b"sdist bytes")
-    (outdir / "the_oracle-9.9.9-py3-none-any.whl").write_bytes(b"wheel bytes")
-    artifacts = [outdir / "the_oracle-9.9.9.tar.gz", outdir / "the_oracle-9.9.9-py3-none-any.whl"]
+    (outdir / "rhetoric-9.9.9.tar.gz").write_bytes(b"sdist bytes")
+    (outdir / "rhetoric-9.9.9-py3-none-any.whl").write_bytes(b"wheel bytes")
+    artifacts = [outdir / "rhetoric-9.9.9.tar.gz", outdir / "rhetoric-9.9.9-py3-none-any.whl"]
     manifest = release.write_checksums(outdir, "9.9.9", artifacts)
 
     tracked = release.store_release_checksums(repo, "9.9.9", manifest)
@@ -747,7 +765,7 @@ def test_store_release_checksums_is_idempotent_for_identical_content(tmp_path: P
     repo = _write_fake_repo(tmp_path)
     outdir = tmp_path / "release_artifacts"
     outdir.mkdir()
-    artifact = outdir / "the_oracle-9.9.9.tar.gz"
+    artifact = outdir / "rhetoric-9.9.9.tar.gz"
     artifact.write_bytes(b"same bytes")
     manifest = release.write_checksums(outdir, "9.9.9", [artifact])
 
@@ -766,11 +784,11 @@ def test_store_release_checksums_refuses_to_rewrite_a_recorded_manifest(tmp_path
     tracked_dir = repo / "release_checksums"
     tracked_dir.mkdir()
     published = tracked_dir / "checksums-9.9.9.sha256"
-    published.write_text("deadbeef  the_oracle-9.9.9.tar.gz\n", encoding="utf-8")
+    published.write_text("deadbeef  rhetoric-9.9.9.tar.gz\n", encoding="utf-8")
 
     outdir = tmp_path / "release_artifacts"
     outdir.mkdir()
-    artifact = outdir / "the_oracle-9.9.9.tar.gz"
+    artifact = outdir / "rhetoric-9.9.9.tar.gz"
     artifact.write_bytes(b"rebuilt from different inputs")
     manifest = release.write_checksums(outdir, "9.9.9", [artifact])
     assert manifest.read_bytes() != published.read_bytes()
@@ -779,7 +797,7 @@ def test_store_release_checksums_refuses_to_rewrite_a_recorded_manifest(tmp_path
         release.store_release_checksums(repo, "9.9.9", manifest)
 
     # The refusal leaves the recorded manifest exactly as it was.
-    assert published.read_text(encoding="utf-8") == "deadbeef  the_oracle-9.9.9.tar.gz\n"
+    assert published.read_text(encoding="utf-8") == "deadbeef  rhetoric-9.9.9.tar.gz\n"
 
 
 def test_the_tracked_checksums_path_is_not_gitignored() -> None:
@@ -819,8 +837,8 @@ def test_release_mode_records_the_tracked_manifest(
         out.mkdir(parents=True, exist_ok=True)
         written = []
         for name, payload in (
-            (f"the_oracle-{version}.tar.gz", b"sdist"),
-            (f"the_oracle-{version}-py3-none-any.whl", b"wheel"),
+            (f"rhetoric-{version}.tar.gz", b"sdist"),
+            (f"rhetoric-{version}-py3-none-any.whl", b"wheel"),
         ):
             path = out / name
             path.write_bytes(payload)
@@ -912,3 +930,32 @@ def test_release_mode_refuses_an_unconfigured_registry(tmp_path: Path, monkeypat
     assert not (repo / release.RELEASE_CHECKSUMS_DIR).exists(), (
         "a blocked release must not record a checksum manifest"
     )
+
+
+def test_check_packaging_cli_fails_when_packaging_versions_drift(tmp_path: Path, capsys) -> None:
+    repo = _write_fake_repo(tmp_path)
+    linux = repo / "packaging" / "linux"
+    windows = repo / "packaging" / "windows"
+    linux.mkdir(parents=True)
+    windows.mkdir(parents=True)
+    (linux / "README.md").write_text("--current-version 9.9.8\n", encoding="utf-8")
+    (windows / "Rhetoric.iss").write_text('#define ProductVersion "9.9.8"\\n', encoding="utf-8")
+
+    result = release.main(["--check-packaging", "--repo-root", str(repo)])
+
+    assert result == 1
+    output = capsys.readouterr().out
+    assert "packaging/linux/README.md" in output
+    assert "packaging/windows/Rhetoric.iss" in output
+
+
+def test_ci_runs_packaging_version_gate_on_both_matrix_platforms() -> None:
+    import yaml
+
+    workflow = yaml.safe_load(
+        (REPO_ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+    )
+    steps = workflow["jobs"]["test"]["steps"]
+    gate = [step for step in steps if "scripts/release.py --check-packaging" in step.get("run", "")]
+    assert len(gate) == 1
+    assert gate[0]["name"] == "Verify Rhetoric Packaging And Artifact Versions"

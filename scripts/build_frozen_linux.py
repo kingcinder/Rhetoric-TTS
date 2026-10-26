@@ -20,7 +20,7 @@ import sys
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-SPEC = REPO_ROOT / "packaging" / "linux" / "the-oracle.spec"
+SPEC = REPO_ROOT / "packaging" / "linux" / "rhetoric.spec"
 
 
 class BuildError(RuntimeError):
@@ -85,35 +85,35 @@ def _copy_tree_contents(source: Path, destination: Path) -> None:
 
 def stage_appdir(appdir: Path, frozen_dist: Path) -> Path:
     """Stage an AppDir from PyInstaller's one-folder output."""
-    frozen = frozen_dist / "the-oracle"
+    frozen = frozen_dist / "rhetoric"
     if not frozen.is_dir():
         raise BuildError(f"PyInstaller output is missing: {frozen}")
     if appdir.exists():
         shutil.rmtree(appdir)
-    runtime = appdir / "usr" / "lib" / "the-oracle"
+    runtime = appdir / "usr" / "lib" / "rhetoric"
     _copy_tree_contents(frozen, runtime)
     (appdir / "usr" / "bin").mkdir(parents=True, exist_ok=True)
-    launcher = appdir / "usr" / "bin" / "the-oracle"
+    launcher = appdir / "usr" / "bin" / "rhetoric"
     launcher.write_text(
         "#!/bin/sh\n"
         "set -eu\n"
-        'exec "$(dirname "$0")/../lib/the-oracle/the-oracle" "$@"\n',
+        'exec "$(dirname "$0")/../lib/rhetoric/rhetoric" "$@"\n',
         encoding="utf-8",
         newline="\n",
     )
     launcher.chmod(launcher.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
     applications = appdir / "usr" / "share" / "applications"
     applications.mkdir(parents=True, exist_ok=True)
-    desktop = REPO_ROOT / "packaging" / "linux" / "the-oracle.desktop"
+    desktop = REPO_ROOT / "packaging" / "linux" / "rhetoric.desktop"
     # AppImage tooling discovers the entry from the AppDir root; keep the
     # freedesktop installation copy as well for installed .deb consumers.
     shutil.copy2(desktop, appdir / desktop.name)
     shutil.copy2(desktop, applications)
     icons = appdir / "usr" / "share" / "icons" / "hicolor" / "256x256" / "apps"
     icons.mkdir(parents=True, exist_ok=True)
-    icon = REPO_ROOT / "packaging" / "icons" / "oracle-tts-install.png"
-    shutil.copy2(icon, appdir / "the-oracle.png")
-    shutil.copy2(icon, icons / "the-oracle.png")
+    icon = REPO_ROOT / "packaging" / "icons" / "rhetoric-install.png"
+    shutil.copy2(icon, appdir / "rhetoric.png")
+    shutil.copy2(icon, icons / "rhetoric.png")
     apprun = appdir / "AppRun"
     apprun.write_text(
         "#!/bin/sh\n"
@@ -121,7 +121,7 @@ def stage_appdir(appdir: Path, frozen_dist: Path) -> Path:
         "# Per-user settings and models stay in ~/.config/the-oracle and ~/.cache;\n"
         "# uninstall removes this application tree only.\n"
         'HERE="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"\n'
-        'exec "$HERE/usr/bin/the-oracle" "$@"\n',
+        'exec "$HERE/usr/bin/rhetoric" "$@"\n',
         encoding="utf-8",
         newline="\n",
     )
@@ -133,28 +133,28 @@ def _build_deb(appdir: Path, outdir: Path, version: str) -> Path:
     root = outdir / "deb-root"
     if root.exists():
         shutil.rmtree(root)
-    _copy_tree_contents(appdir, root / "opt" / "the-oracle")
+    _copy_tree_contents(appdir, root / "opt" / "rhetoric")
     (root / "usr" / "bin").mkdir(parents=True, exist_ok=True)
     (root / "usr" / "share" / "applications").mkdir(parents=True, exist_ok=True)
-    link = root / "usr" / "bin" / "the-oracle"
-    link.symlink_to("/opt/the-oracle/usr/bin/the-oracle")
+    link = root / "usr" / "bin" / "rhetoric"
+    link.symlink_to("/opt/rhetoric/usr/bin/rhetoric")
     shutil.copy2(
-        appdir / "usr" / "share" / "applications" / "the-oracle.desktop",
+        appdir / "usr" / "share" / "applications" / "rhetoric.desktop",
         root / "usr" / "share" / "applications",
     )
     control = root / "DEBIAN"
     control.mkdir(parents=True, exist_ok=True)
     (control / "control").write_text(
-        "Package: the-oracle\n"
+        "Package: rhetoric\n"
         f"Version: {version}\n"
         "Section: sound\nPriority: optional\nArchitecture: amd64\n"
-        "Maintainer: The Oracle\n"
-        "Description: The Oracle local text-to-speech application\n"
+        "Maintainer: Rhetoric\n"
+        "Description: Rhetoric local text-to-speech application\n"
         " Frozen application; models are downloaded after activation.\n",
         encoding="utf-8",
         newline="\n",
     )
-    deb = outdir / f"the-oracle_{version}_amd64.deb"
+    deb = outdir / f"rhetoric_{version}_amd64.deb"
     subprocess.run([_require_tool("dpkg-deb"), "--build", "--root-owner-group", str(root), str(deb)], check=True)
     return deb
 
@@ -175,7 +175,7 @@ def build(repo: Path, outdir: Path, *, version: str, formats: tuple[str, ...] = 
     appdir = stage_appdir(outdir / "AppDir", frozen_dist)
     artifacts: list[Path] = []
     if "appimage" in formats:
-        appimage = outdir / f"the-oracle-{version}-x86_64.AppImage"
+        appimage = outdir / f"rhetoric-{version}-x86_64.AppImage"
         subprocess.run([_require_tool("appimagetool"), str(appdir), str(appimage)], cwd=repo, check=True)
         artifacts.append(appimage)
     if "deb" in formats:

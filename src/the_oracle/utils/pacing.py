@@ -1,7 +1,7 @@
 """Punctuation-aware pause shaping for utterance pacing.
 
 Chatterbox's *internal* prosody at punctuation is canonical model behavior (identical
-on both backends). What The Oracle controls is the silence inserted between
+on both backends). What Rhetoric controls is the silence inserted between
 synthesized stems. These helpers shape that silence so pacing reflects how the line
 actually ends instead of applying one flat gap to everything.
 

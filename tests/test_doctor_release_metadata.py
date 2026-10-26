@@ -73,7 +73,7 @@ def _write_consistent_repo(
         f'__version__ = "{version}"\n', encoding="utf-8"
     )
     (tmp_path / "pyproject.toml").write_text(
-        '[project]\nname = "the-oracle"\ndynamic = ["version"]\n'
+        '[project]\nname = "rhetoric"\ndynamic = ["version"]\n'
         '[tool.setuptools.dynamic]\nversion = { attr = "the_oracle.__version__" }\n',
         encoding="utf-8",
     )
@@ -94,7 +94,7 @@ def _write_consistent_repo(
     if shipped:
         manifest = tmp_path / RELEASE.RELEASE_CHECKSUMS_DIR / f"checksums-{version}.sha256"
         manifest.parent.mkdir(parents=True, exist_ok=True)
-        manifest.write_text(f"{'0' * 64}  the_oracle-{version}-py3-none-any.whl\n", encoding="utf-8")
+        manifest.write_text(f"{'0' * 64}  rhetoric-{version}-py3-none-any.whl\n", encoding="utf-8")
     return tmp_path
 
 

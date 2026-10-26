@@ -158,7 +158,7 @@ def test_package_writes_a_zip_under_output(parent, tmp_path: Path) -> None:
     )
     assert outcome == "packaged"
     report = support.list_reports(tmp_path)[0]
-    package = tmp_path / "Output" / f"oracle-report-{report.report_id}.zip"
+    package = tmp_path / "Output" / f"rhetoric-report-{report.report_id}.zip"
     assert package.is_file()
     assert opened == [str(package.parent)]
     assert "Support Package Created" in _MessageBox.instances[-1].title

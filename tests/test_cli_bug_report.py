@@ -82,7 +82,7 @@ def test_list_and_show(root: Path, capsys) -> None:
 
     assert cli.main(["bug-report", "show", report["report_id"]]) == 0
     shown = capsys.readouterr().out
-    assert f"# [The Oracle" in shown
+    assert f"# [Rhetoric" in shown
     assert "## Steps to reproduce" in shown
     assert "Open a project" in shown
 
@@ -110,7 +110,7 @@ def test_issue_prints_both_links_without_opening_anything(root: Path, capsys) ->
     capsys.readouterr()
     assert cli.main(["bug-report", "issue", report["report_id"], "--json"]) == 0
     payload = json.loads(capsys.readouterr().out)
-    assert payload["issue_url"].startswith("https://github.com/kingcinder/The_Oracle_TTS/")
+    assert payload["issue_url"].startswith("https://github.com/kingcinder/Rhetoric-TTS/")
     assert payload["mailto_url"].startswith("mailto:")
     assert "github.com" in payload["issue_url"]
 

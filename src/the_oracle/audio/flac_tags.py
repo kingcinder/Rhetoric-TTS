@@ -31,7 +31,7 @@ _MAGIC = b"fLaC"
 _STREAMINFO = 0
 _VORBIS_COMMENT = 4
 _MAX_BLOCK_TYPE = 126
-_VENDOR = "The Oracle"
+_VENDOR = "Rhetoric"
 
 
 def _read_blocks(data: bytes) -> tuple[list[tuple[int, bytes]], bytes]:

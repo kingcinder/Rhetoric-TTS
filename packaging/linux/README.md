@@ -16,8 +16,8 @@ To inspect or verify a downloaded artifact without replacing the installation:
 
 ```sh
 python scripts/check_update_manifest.py update-manifest.json \
-  --current-version 1.4.2 \
-  --artifact-dir . --artifact the-oracle-1.5.0-x86_64.AppImage
+  --current-version 1.5.0 \
+  --artifact-dir . --artifact rhetoric-1.5.0-x86_64.AppImage
 ```
 
 The PyInstaller output contains the application runtime and CPU dependencies.

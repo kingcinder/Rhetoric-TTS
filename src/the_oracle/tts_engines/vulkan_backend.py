@@ -114,7 +114,7 @@ class RDNA1VulkanError(RuntimeError):
 
     This is a hardware/driver limitation (RDNA1's SDMA transfer queue rejects
     ``vkCmdFillBuffer`` inside ``ggml_vk_buffer_memset`` -- see
-    ggml-org/whisper.cpp#3611), not a bug in The Oracle, so it must be surfaced
+    ggml-org/whisper.cpp#3611), not a bug in Rhetoric, so it must be surfaced
     visibly with a clear fallback rather than retried silently.
     """
 
@@ -948,7 +948,7 @@ class AudioCppVulkanEngine:
                 "(VK_ERROR_DEVICE_LOST during buffer init: the RDNA1 SDMA transfer queue "
                 "rejects vkCmdFillBuffer in ggml_vk_buffer_memset -- see "
                 "ggml-org/whisper.cpp#3611). This is a hardware/driver limitation, not a "
-                "bug in The Oracle. Re-run with --inference-backend pytorch "
+                "bug in Rhetoric. Re-run with --inference-backend pytorch "
                 "(inference_backend: pytorch) for this session."
             )
         raise RuntimeError(

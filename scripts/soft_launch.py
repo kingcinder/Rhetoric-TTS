@@ -237,8 +237,8 @@ def _artifact_finding(root: Path, version: str) -> Finding:
     either), but the report must name the half that is missing.
     """
     outdir = root / "release_artifacts"
-    sdist = outdir / f"the_oracle-{version}.tar.gz"
-    wheels = sorted(outdir.glob(f"the_oracle-{version}-*.whl"))
+    sdist = outdir / f"rhetoric-{version}.tar.gz"
+    wheels = sorted(outdir.glob(f"rhetoric-{version}-*.whl"))
     if sdist.is_file() and wheels:
         return Finding(
             "artifacts",
@@ -250,7 +250,7 @@ def _artifact_finding(root: Path, version: str) -> Finding:
     if not sdist.is_file():
         missing.append(sdist.name)
     if not wheels:
-        missing.append(f"the_oracle-{version}-*.whl")
+        missing.append(f"rhetoric-{version}-*.whl")
     return Finding(
         "artifacts",
         True,
@@ -446,7 +446,7 @@ def report_text(findings: list[Finding]) -> str:
     warnings = [finding for finding in findings if finding.severity == WARNING]
     passed = [finding for finding in findings if finding.ok]
     lines = [
-        "The Oracle — commercial alpha soft-launch gate",
+        "Rhetoric — commercial alpha soft-launch gate",
         "=" * 48,
         f"STATUS: {'READY' if not blockers else 'BLOCKED'}"
         f" ({len(blockers)} blocker(s), {len(warnings)} warning(s), {len(passed)} passed)",

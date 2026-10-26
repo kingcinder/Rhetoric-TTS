@@ -35,6 +35,10 @@ jobs:
           python-version: ${{ matrix.python-version }}
           cache: pip
 
+      - name: Verify Rhetoric Packaging And Artifact Versions
+        shell: bash
+        run: python scripts/release.py --check-packaging
+
       - name: Install Linux GUI Runtime Dependencies
         if: runner.os == 'Linux'
         shell: bash
@@ -117,12 +121,12 @@ jobs:
       - name: Doctor Wrapper (Linux)
         if: runner.os == 'Linux'
         shell: bash
-        run: ./doctor_oracle_tts.sh --skip-model-init --ci
+        run: ./doctor_rhetoric.sh --skip-model-init --ci
 
       - name: Doctor Wrapper (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
-        run: powershell -ExecutionPolicy Bypass -File .\doctor_oracle_tts.ps1 --skip-model-init --ci
+        run: powershell -ExecutionPolicy Bypass -File .\doctor_rhetoric.ps1 --skip-model-init --ci
 
       - name: Run Test Suite (Linux)
         if: runner.os == 'Linux'
@@ -449,7 +453,7 @@ jobs:
       - name: Upload Unsigned Vulkan Binary And Manifest
         uses: actions/upload-artifact@v4
         with:
-          name: the-oracle-vulkan-${{ github.sha }}
+          name: rhetoric-vulkan-${{ github.sha }}
           path: release_artifacts/vulkan/
           if-no-files-found: error
           retention-days: 14
@@ -560,7 +564,7 @@ jobs:
       - name: Upload unsigned frozen artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: the-oracle-linux-frozen-${{ github.sha }}
+          name: rhetoric-linux-frozen-${{ github.sha }}
           path: release_artifacts/linux-frozen/
           if-no-files-found: error
           retention-days: 14

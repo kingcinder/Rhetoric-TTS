@@ -90,7 +90,7 @@ def ensure_supported_python() -> None:
         return
     raise SystemExit(
         fail(
-            "The Oracle requires Python 3.11 or 3.12. "
+            "Rhetoric requires Python 3.11 or 3.12. "
             f"Current interpreter: {sys.executable} ({sys.version.split()[0]})."
         )
     )
@@ -204,7 +204,7 @@ def install_dependencies(
                 env=env,
             )
             run_command([str(venv_python), str(REPO_ROOT / "scripts" / "patch_chatterbox_metadata.py")], env=env)
-            passed("Installed The Oracle runtime bundle into the project venv")
+            passed("Installed Rhetoric runtime bundle into the project venv")
             return
     run_command([str(venv_python), "-m", "pip", "install", *pip_base, "--upgrade", *BOOTSTRAP_PACKAGES], env=env)
 
@@ -223,11 +223,11 @@ def install_dependencies(
     )
     run_command([str(venv_python), "-m", "pip", "install", *pip_base, "--no-deps", CHATTERBOX_TTS_PACKAGE], env=env)
     run_command([str(venv_python), str(REPO_ROOT / "scripts" / "patch_chatterbox_metadata.py")], env=env)
-    passed("Installed The Oracle runtime bundle into the project venv")
+    passed("Installed Rhetoric runtime bundle into the project venv")
 
 
 def managed_wrapper_contents() -> str:
-    entrypoint = venv_entrypoint_path(REPO_ROOT, "the-oracle")
+    entrypoint = venv_entrypoint_path(REPO_ROOT, "rhetoric")
     if is_windows():
         return (
             "@echo off\r\n"
@@ -236,7 +236,7 @@ def managed_wrapper_contents() -> str:
             f"set \"VENV_ENTRYPOINT={entrypoint}\"\r\n"
             f"if exist \"%REPO_ROOT%\\{OFFLINE_MARKER_FILENAME}\" set \"HF_HUB_OFFLINE=1\"\r\n"
             "if not exist \"%VENV_ENTRYPOINT%\" (\r\n"
-            "  echo the-oracle is not installed in %REPO_ROOT%\\.venv\r\n"
+            "  echo Rhetoric is not installed in %REPO_ROOT%\\.venv\r\n"
             f"  echo Run {repo_bootstrap_display()} first.\r\n"
             "  exit /b 1\r\n"
             ")\r\n"
@@ -253,7 +253,7 @@ def managed_wrapper_contents() -> str:
         f"VENV_ENTRYPOINT={shlex.quote(str(entrypoint))}\n"
         f'if [[ -f "$REPO_ROOT/{OFFLINE_MARKER_FILENAME}" ]]; then export HF_HUB_OFFLINE=1; fi\n\n'
         'if [[ ! -x "$VENV_ENTRYPOINT" ]]; then\n'
-        '  printf \'the-oracle is not installed in %s\\n\' "$REPO_ROOT/.venv" >&2\n'
+        '  printf \'Rhetoric is not installed in %s\\n\' "$REPO_ROOT/.venv" >&2\n'
         f'  printf \'Run {repo_bootstrap_display()} first.\\n\' >&2\n'
         "  exit 1\n"
         "fi\n\n"
@@ -327,16 +327,22 @@ def write_offline_marker(offline_bundle: Path) -> None:
 def install_managed_wrapper() -> Path:
     wrapper_path = managed_launcher_path()
     wrapper_path.parent.mkdir(parents=True, exist_ok=True)
-    wrapper_path.write_text(managed_wrapper_contents(), encoding="utf-8", newline="" if is_windows() else "\n")
-    if not is_windows():
-        wrapper_path.chmod(0o755)
+    contents = managed_wrapper_contents()
+    for path in (wrapper_path, managed_launcher_path("the-oracle")):
+        path.write_text(contents, encoding="utf-8", newline="" if is_windows() else "\n")
+        if not is_windows():
+            path.chmod(0o755)
     passed(f"Installed managed wrapper at {wrapper_path}")
     return wrapper_path
 
 
 def desktop_file_path() -> Path:
     base = Path(os.environ.get("XDG_DATA_HOME", Path.home() / ".local" / "share"))
-    return base / "applications" / "the-oracle.desktop"
+    return base / "applications" / "rhetoric.desktop"
+
+
+def legacy_desktop_file_path() -> Path:
+    return desktop_file_path().with_name("the-oracle.desktop")
 
 
 def desktop_dir() -> Path:
@@ -362,18 +368,25 @@ def desktop_dir() -> Path:
 
 
 def desktop_shortcut_path() -> Path:
-    """Where the desktop launcher shortcut lives (same filename as the
-    applications-menu entry so both are clearly The Oracle's)."""
+    """Where the Rhetoric desktop shortcut lives."""
+    return desktop_dir() / "rhetoric.desktop"
+
+
+def legacy_desktop_shortcut_path() -> Path:
     return desktop_dir() / "the-oracle.desktop"
 
 
 def start_menu_launcher_path() -> Path:
     appdata = os.environ.get("APPDATA")
     root = Path(appdata) if appdata else Path.home() / "AppData" / "Roaming"
-    return root / "Microsoft" / "Windows" / "Start Menu" / "Programs" / "The Oracle.cmd"
+    return root / "Microsoft" / "Windows" / "Start Menu" / "Programs" / "Rhetoric.cmd"
 
 
-def desktop_entry_contents(*, trusted: bool = False) -> str:
+def legacy_start_menu_launcher_path() -> Path:
+    return start_menu_launcher_path().with_name("The Oracle.cmd")
+
+
+def desktop_entry_contents(*, trusted: bool = False, legacy: bool = False) -> str:
     """The [Desktop Entry] body shared by the applications-menu entry and the
     desktop shortcut, so the two can never drift apart.
 
@@ -387,7 +400,7 @@ def desktop_entry_contents(*, trusted: bool = False) -> str:
     exec_line = f'Exec="{managed_launcher_path()}" gui'
     lines = [
         "[Desktop Entry]",
-        "Name=The Oracle",
+        "Name=Rhetoric" if not legacy else "Name=Rhetoric (legacy launcher)",
         "Comment=Chatterbox-based two-speaker TTS",
         exec_line,
         "Terminal=false",
@@ -465,6 +478,13 @@ def install_desktop_launcher() -> None:
             encoding="utf-8",
             newline="",
         )
+        legacy_start_menu_launcher_path().write_text(
+            "@echo off\r\n"
+            f"REM {WINDOWS_START_MENU_MARKER} legacy launcher\r\n"
+            f"call \"{managed_launcher_path()}\" gui %*\r\n",
+            encoding="utf-8",
+            newline="",
+        )
         passed(f"Installed Start Menu launcher at {launcher_path}")
         return
     if not is_linux():
@@ -472,9 +492,15 @@ def install_desktop_launcher() -> None:
     launcher_path = desktop_file_path()
     launcher_path.parent.mkdir(parents=True, exist_ok=True)
     launcher_path.write_text(desktop_entry_contents(), encoding="utf-8")
+    legacy_desktop_file_path().write_text(desktop_entry_contents(legacy=True), encoding="utf-8")
     passed(f"Installed desktop entry at {launcher_path}")
     refresh_desktop_database(launcher_path.parent)
     install_desktop_shortcut()
+    legacy_shortcut = legacy_desktop_shortcut_path()
+    legacy_shortcut.parent.mkdir(parents=True, exist_ok=True)
+    legacy_shortcut.write_text(desktop_entry_contents(trusted=True, legacy=True), encoding="utf-8")
+    legacy_shortcut.chmod(0o755)
+    mark_desktop_shortcut_trusted(legacy_shortcut)
 
 
 def remove_if_managed(path: Path, marker: str) -> None:
@@ -493,7 +519,7 @@ def remove_if_managed(path: Path, marker: str) -> None:
 def run_doctor(skip_model_init: bool = False, ci_mode: bool = False) -> int:
     venv_python = venv_python_path(REPO_ROOT)
     if not venv_python.exists():
-        return fail(f"Oracle TTS venv is missing at {REPO_ROOT / '.venv'}")
+        return fail(f"Rhetoric venv is missing at {REPO_ROOT / '.venv'}")
     args = [str(venv_python), str(REPO_ROOT / "scripts" / "doctor.py"), "--repo-root", str(REPO_ROOT)]
     if skip_model_init:
         args.append("--skip-model-init")
@@ -504,9 +530,9 @@ def run_doctor(skip_model_init: bool = False, ci_mode: bool = False) -> int:
 
 
 def run_gui() -> int:
-    entrypoint = venv_entrypoint_path(REPO_ROOT, "the-oracle")
+    entrypoint = venv_entrypoint_path(REPO_ROOT, "rhetoric")
     if not entrypoint.exists():
-        return fail(f"The Oracle is not bootstrapped yet. Run {repo_bootstrap_display()} first.")
+        return fail(f"Rhetoric is not bootstrapped yet. Run {repo_bootstrap_display()} first.")
     env = build_env()
     # Mirror the managed launcher and the desktop entries: on an offline install
     # the marker drives offline model resolution, so launching through this path
@@ -607,11 +633,15 @@ def update(skip_doctor: bool = False, *, pytorch_runtime: str = "auto", offline_
 
 def uninstall() -> int:
     remove_if_managed(managed_launcher_path(), MANAGED_WRAPPER_MARKER)
+    remove_if_managed(managed_launcher_path("the-oracle"), MANAGED_WRAPPER_MARKER)
     if is_windows():
         remove_if_managed(start_menu_launcher_path(), WINDOWS_START_MENU_MARKER)
+        remove_if_managed(legacy_start_menu_launcher_path(), WINDOWS_START_MENU_MARKER)
     elif is_linux():
         remove_if_managed(desktop_file_path(), LINUX_DESKTOP_MARKER)
+        remove_if_managed(legacy_desktop_file_path(), LINUX_DESKTOP_MARKER)
         remove_if_managed(desktop_shortcut_path(), LINUX_DESKTOP_MARKER)
+        remove_if_managed(legacy_desktop_shortcut_path(), LINUX_DESKTOP_MARKER)
     venv_dir = REPO_ROOT / ".venv"
     if venv_dir.exists():
         shutil.rmtree(venv_dir)
@@ -621,7 +651,7 @@ def uninstall() -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Cross-platform install manager for The Oracle.")
+    parser = argparse.ArgumentParser(description="Cross-platform install manager for Rhetoric.")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     bootstrap_parser = subparsers.add_parser("bootstrap", help="Create the venv and install runtime dependencies.")

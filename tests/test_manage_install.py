@@ -40,7 +40,14 @@ def manage(tmp_path: Path, monkeypatch):
 
 def test_desktop_file_path_uses_xdg_data_home(manage, tmp_path, monkeypatch) -> None:
     monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path / "xdg"))
-    assert manage.desktop_file_path() == tmp_path / "xdg" / "applications" / "the-oracle.desktop"
+    assert manage.desktop_file_path() == tmp_path / "xdg" / "applications" / "rhetoric.desktop"
+
+
+def test_installed_product_entrypoint_uses_rhetoric_names(manage, tmp_path, monkeypatch) -> None:
+    monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path / "xdg"))
+    assert manage.managed_launcher_path().name == "rhetoric"
+    assert manage.desktop_file_path().name == "rhetoric.desktop"
+    assert "Name=Rhetoric" in manage.desktop_entry_contents()
 
 
 def test_desktop_dir_honors_user_dirs(manage, tmp_path, monkeypatch) -> None:
@@ -55,7 +62,7 @@ def test_desktop_dir_falls_back_to_home_desktop(manage, tmp_path) -> None:
 
 
 def test_desktop_shortcut_path_sits_on_desktop(manage, tmp_path) -> None:
-    assert manage.desktop_shortcut_path() == tmp_path / "Desktop" / "the-oracle.desktop"
+    assert manage.desktop_shortcut_path() == tmp_path / "Desktop" / "rhetoric.desktop"
 
 
 def test_desktop_entry_contents_uses_absolute_launcher(manage) -> None:
@@ -79,11 +86,13 @@ def test_install_desktop_launcher_writes_entry_and_shortcut(manage, tmp_path, mo
 
     manage.install_desktop_launcher()
 
-    entry = tmp_path / "xdg" / "applications" / "the-oracle.desktop"
-    shortcut = tmp_path / "Desktop" / "the-oracle.desktop"
+    entry = tmp_path / "xdg" / "applications" / "rhetoric.desktop"
+    shortcut = tmp_path / "Desktop" / "rhetoric.desktop"
     assert entry.exists()
     assert shortcut.exists()
     assert manage.LINUX_DESKTOP_MARKER in entry.read_text(encoding="utf-8")
+    assert (tmp_path / "xdg" / "applications" / "the-oracle.desktop").is_file()
+    assert (tmp_path / "Desktop" / "the-oracle.desktop").is_file()
     shortcut_text = shortcut.read_text(encoding="utf-8")
     assert "Trusted=true" in shortcut_text
     assert manage.LINUX_DESKTOP_MARKER in shortcut_text
@@ -96,7 +105,7 @@ def test_install_desktop_launcher_writes_entry_and_shortcut(manage, tmp_path, mo
 def test_mark_desktop_shortcut_trusted_runs_gio_when_available(manage, tmp_path, monkeypatch) -> None:
     """GNOME trust is granted via gio metadata::trusted when gio exists; a
     missing gio is a silent no-op, never a failure."""
-    shortcut = tmp_path / "Desktop" / "the-oracle.desktop"
+    shortcut = tmp_path / "Desktop" / "rhetoric.desktop"
     shortcut.parent.mkdir(parents=True, exist_ok=True)
     shortcut.write_text(manage.desktop_entry_contents(trusted=True), encoding="utf-8")
     calls: list[list[str]] = []
@@ -123,9 +132,10 @@ def test_install_desktop_launcher_is_windows_only_start_menu(manage, tmp_path, m
 
     manage.install_desktop_launcher()
 
-    launcher = tmp_path / "appdata" / "Microsoft" / "Windows" / "Start Menu" / "Programs" / "The Oracle.cmd"
+    launcher = tmp_path / "appdata" / "Microsoft" / "Windows" / "Start Menu" / "Programs" / "Rhetoric.cmd"
     assert launcher.exists()
-    assert "the-oracle" in launcher.read_text(encoding="utf-8")
+    assert (launcher.parent / "The Oracle.cmd").is_file()
+    assert "rhetoric" in launcher.read_text(encoding="utf-8")
     assert not (tmp_path / "Desktop").exists()  # no desktop shortcut on Windows
 
 
@@ -152,8 +162,8 @@ def test_uninstall_removes_managed_desktop_files(manage, tmp_path, monkeypatch) 
     monkeypatch.setattr(manage.shutil, "rmtree", lambda _path: None)  # never delete the real venv
 
     # Create the managed files plus an unrelated desktop file that must stay.
-    entry = tmp_path / "xdg" / "applications" / "the-oracle.desktop"
-    shortcut = tmp_path / "Desktop" / "the-oracle.desktop"
+    entry = tmp_path / "xdg" / "applications" / "rhetoric.desktop"
+    shortcut = tmp_path / "Desktop" / "rhetoric.desktop"
     entry.parent.mkdir(parents=True, exist_ok=True)
     shortcut.parent.mkdir(parents=True, exist_ok=True)
     entry.write_text(manage.desktop_entry_contents(), encoding="utf-8")
@@ -165,6 +175,8 @@ def test_uninstall_removes_managed_desktop_files(manage, tmp_path, monkeypatch) 
 
     assert not entry.exists()
     assert not shortcut.exists()
+    assert not (tmp_path / "xdg" / "applications" / "the-oracle.desktop").exists()
+    assert not (tmp_path / "Desktop" / "the-oracle.desktop").exists()
     assert unrelated.exists()  # unmanaged files are left alone
 
 

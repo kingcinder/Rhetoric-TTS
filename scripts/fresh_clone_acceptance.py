@@ -163,10 +163,19 @@ EXPECTED_DELTAS: dict[str, str] = {
 #: because it is an alias the manager translates to ``run`` -- a row that only
 #: proves an identity mapping would not catch the translation breaking.
 WRAPPER_MATRIX: tuple[tuple[str, tuple[str, ...], str], ...] = (
+    ("./rhetoric", ("doctor", "--help"), "doctor"),
+    ("./rhetoric", ("start", "--help"), "run"),
+    ("./rhetoric", ("install", "--help"), "install"),
+    ("./rhetoric", ("uninstall", "--help"), "uninstall"),
     ("./oracle", ("doctor", "--help"), "doctor"),
     ("./oracle", ("start", "--help"), "run"),
     ("./oracle", ("install", "--help"), "install"),
     ("./oracle", ("uninstall", "--help"), "uninstall"),
+    ("./bootstrap_rhetoric.sh", ("--help",), "bootstrap"),
+    ("./install_rhetoric.sh", ("--help",), "install"),
+    ("./doctor_rhetoric.sh", ("--help",), "doctor"),
+    ("./run_rhetoric.sh", ("--help",), "run"),
+    ("./uninstall_rhetoric.sh", ("--help",), "uninstall"),
     ("./bootstrap_oracle_tts.sh", ("--help",), "bootstrap"),
     ("./install_oracle_tts.sh", ("--help",), "install"),
     ("./doctor_oracle_tts.sh", ("--help",), "doctor"),

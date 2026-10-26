@@ -72,7 +72,7 @@ def build_report_package(
     report.updated_utc = moment.astimezone(timezone.utc).isoformat()
 
     if out_path is None:
-        output = root / "Output" / f"oracle-report-{report.report_id}.zip"
+        output = root / "Output" / f"rhetoric-report-{report.report_id}.zip"
     else:
         output = Path(out_path).resolve()
     report.bundle_path = output.name

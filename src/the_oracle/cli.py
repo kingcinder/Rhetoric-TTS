@@ -1,4 +1,4 @@
-"""Command line interface for the Chatterbox-only The Oracle app."""
+"""Command line interface for the Chatterbox-only Rhetoric app."""
 
 from __future__ import annotations
 
@@ -76,8 +76,8 @@ def _positive_int(value: str) -> int:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        prog="the-oracle",
-        description="The Oracle renders two-speaker dialogue into FLAC with Chatterbox.",
+        prog="rhetoric",
+        description="Rhetoric renders two-speaker dialogue into FLAC with Chatterbox.",
     )
     parser.add_argument(
         "--version",
@@ -134,7 +134,7 @@ def build_parser() -> argparse.ArgumentParser:
     support_bundle.add_argument(
         "--out",
         default=None,
-        help="Where to write the zip (default: Output/oracle-support-<version>-<UTC stamp>.zip).",
+        help="Where to write the zip (default: Output/rhetoric-support-<version>-<UTC stamp>.zip).",
     )
     support_bundle.add_argument(
         "--include-crash-reports",
@@ -359,7 +359,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     render_report = subparsers.add_parser(
         "render-report",
-        help="Studio: measure a finished render and report its technical conformance "
+        help="Measure a finished render and report its technical conformance "
         "(level, clipping, silence, sample rate, utterance and speaker counts).",
     )
     render_report.add_argument(
@@ -1508,7 +1508,7 @@ def handle_privacy_opt_in() -> int:
     crash_handlers.enable_faulthandler_catch(root)  # arms native-crash capture
     print("Local crash reporting enabled.")
     print("Reports stay in this install's crash_reports/ folder and never leave this machine.")
-    print("Revoke anytime with the-oracle privacy-opt-out (--purge also deletes stored reports).")
+    print("Revoke anytime with rhetoric privacy-opt-out (--purge also deletes stored reports).")
     return 0
 
 
@@ -1530,7 +1530,7 @@ def handle_privacy_opt_out(args: argparse.Namespace) -> int:
         print(f"Opted out of local crash reporting. Deleted {removed} stored report(s).")
     else:
         print(f"Opted out of local crash reporting. {kept} existing report(s) kept on disk.")
-        print("Delete them too with: the-oracle privacy-opt-out --purge")
+        print("Delete them too with: rhetoric privacy-opt-out --purge")
     return 0
 
 
@@ -1566,7 +1566,7 @@ def _resolve_crash_record(root: Path, requested: str | None) -> str | None:
         return None
     records = crash.list_records(root)
     if not records:
-        raise ValueError("no local crash records exist; run `the-oracle privacy-status`")
+        raise ValueError("no local crash records exist; run `rhetoric privacy-status`")
     if requested == "newest":
         return records[0].name
     name = Path(requested).name
@@ -1651,14 +1651,14 @@ def _handle_bug_report_list(args: argparse.Namespace) -> int:
         return 0
     if not reports:
         print("No bug reports yet.")
-        print('Create one with: the-oracle bug-report new --title "..." --summary "..."')
+        print('Create one with: rhetoric bug-report new --title "..." --summary "..."')
         return 0
     for report in reports:
         print(
             f"{report.report_id}  {report.created_utc[:10]}  "
             f"{report.severity:<8}  {report.area:<11}  {report.title}"
         )
-    print(f"\n{len(reports)} report(s). Show one with: the-oracle bug-report show <id>")
+    print(f"\n{len(reports)} report(s). Show one with: rhetoric bug-report show <id>")
     return 0
 
 
@@ -1719,7 +1719,7 @@ def _handle_bug_report_package(args: argparse.Namespace) -> int:
     if result.bundle.skipped:
         print("Skipped: " + "; ".join(result.bundle.skipped), file=sys.stderr)
     print("Review the archive before sharing it; nothing was uploaded.")
-    print("Bug report link: run `the-oracle bug-report issue " + report.report_id + "`")
+    print("Bug report link: run `rhetoric bug-report issue " + report.report_id + "`")
     return 0
 
 
@@ -1743,7 +1743,7 @@ def _handle_bug_report_issue(args: argparse.Namespace) -> int:
     print("Prefilled support email:")
     print(mail)
     print()
-    print("Attach the package from `the-oracle bug-report package " + report.report_id + "`.")
+    print("Attach the package from `rhetoric bug-report package " + report.report_id + "`.")
     return 0
 
 
@@ -1754,7 +1754,7 @@ def _handle_bug_report_delete(args: argparse.Namespace) -> int:
     if not args.yes:
         print(
             "error: deleting a report needs --yes (the CLI never prompts). "
-            f"Re-run: the-oracle bug-report delete {args.report_id} --yes",
+            f"Re-run: rhetoric bug-report delete {args.report_id} --yes",
             file=sys.stderr,
         )
         return 2
@@ -1775,7 +1775,7 @@ def _handle_bug_report_diagnose(args: argparse.Namespace) -> int:
         return 0
     compact = compact_diagnostics(diagnostics)
     system = compact.get("system", {})
-    print(f"The Oracle {compact.get('app_version')} diagnostics (redacted)")
+    print(f"Rhetoric {compact.get('app_version')} diagnostics (redacted)")
     print(f"  system:   {system.get('system')} {system.get('release')} ({system.get('machine')})")
     print(f"  python:   {system.get('python')} ({system.get('python_bits')}-bit)")
     print(f"  cpu:      {system.get('cpu_count')} core(s), {system.get('processor') or 'unknown'}")
@@ -1873,7 +1873,7 @@ def handle_setup_vulkan() -> int:
             file=sys.stderr,
         )
         print(
-            "To enable Vulkan, re-run `the-oracle setup-vulkan` on a networked machine"
+            "To enable Vulkan, re-run `rhetoric setup-vulkan` on a networked machine"
             " after deleting the .oracle_offline marker in the install root (deleting the"
             " marker re-enables network model fetches), or re-install without"
             " --offline-bundle.",
@@ -1897,7 +1897,7 @@ def handle_setup_vulkan() -> int:
     if result.model:
         print(f"    model:  {result.model}")
     print()
-    print("The Oracle applies these automatically for --inference-backend vulkan")
+    print("Rhetoric applies these automatically for --inference-backend vulkan")
     print("renders and in the GUI -- no shell exports are required.")
     return 0
 
@@ -1905,7 +1905,7 @@ def handle_setup_vulkan() -> int:
 def main(argv: list[str] | None = None) -> int:
     # Before any model work: an offline install must resolve every model from the
     # seeded cache. Done here (not in the render/gui handlers) so every console
-    # entry point inherits it, including `the-oracle render` invoked directly
+    # entry point inherits it, including `rhetoric render` invoked directly
     # rather than through the managed launcher.
     from the_oracle.offline import apply_offline_environment
 
