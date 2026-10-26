@@ -540,6 +540,10 @@ jobs:
           python scripts/manage_install.py bootstrap --skip-doctor
           ./.venv/bin/pip install "pyinstaller==6.16.0"
 
+      - name: Install pinned CycloneDX SBOM generator
+        shell: bash
+        run: ./.venv/bin/pip install "pip-audit==2.10.1"
+
       # appimagetool is an unsigned build utility, not a product artifact. The
       # URL is kept in one step so the owner can replace the floating upstream
       # rehearsal download with a checksummed internal copy before release.

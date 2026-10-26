@@ -62,6 +62,55 @@ def test_update_manifest_and_checksums_are_deterministic(tmp_path: Path) -> None
     }
 
 
+def test_cyclonedx_sbom_uses_the_frozen_build_environment(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    builder = _load_builder()
+    captured: dict[str, object] = {}
+
+    def fake_run(command, *, cwd, check):
+        captured.update(command=command, cwd=cwd, check=check)
+        output = Path(command[command.index("--output") + 1])
+        output.write_text('{"bomFormat":"CycloneDX"}\n', encoding="utf-8")
+
+    monkeypatch.setattr(builder, "_require_tool", lambda name: f"/venv/bin/{name}")
+    monkeypatch.setattr(builder.subprocess, "run", fake_run)
+    output = builder.write_cyclonedx_sbom(tmp_path, tmp_path / "sbom.json")
+
+    assert output.is_file()
+    assert captured["command"] == [
+        "/venv/bin/pip-audit",
+        "--format",
+        "cyclonedx-json",
+        "--output",
+        str(output),
+    ]
+    assert captured["cwd"] == tmp_path
+    assert captured["check"] is True
+
+
+def test_frozen_build_checksums_sbom_but_keeps_it_out_of_update_targets(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    builder = _load_builder()
+    monkeypatch.setattr(builder, "ensure_host", lambda: None)
+    monkeypatch.setattr(builder, "_require_tool", lambda name: name)
+    monkeypatch.setattr(builder.subprocess, "run", lambda *args, **kwargs: None)
+    monkeypatch.setattr(builder, "stage_appdir", lambda appdir, frozen_dist: appdir)
+
+    def write_sbom(repo: Path, output: Path) -> Path:
+        output.write_text('{"bomFormat":"CycloneDX"}\n', encoding="utf-8")
+        return output
+
+    monkeypatch.setattr(builder, "write_cyclonedx_sbom", write_sbom)
+    built = builder.build(REPO_ROOT, tmp_path, version="1.5.0", formats=())
+
+    sbom = tmp_path / "sbom.json"
+    assert sbom in built
+    checksums = (tmp_path / "checksums-1.5.0.sha256").read_text(encoding="utf-8")
+    assert f"{hashlib.sha256(sbom.read_bytes()).hexdigest()}  sbom.json" in checksums
+    update = json.loads((tmp_path / "update-manifest.json").read_text(encoding="utf-8"))
+    assert update["artifacts"] == []
+
+
 def test_stage_appdir_uses_replaceable_runtime_and_keeps_user_data(tmp_path: Path) -> None:
     builder = _load_builder()
     frozen = tmp_path / "frozen"

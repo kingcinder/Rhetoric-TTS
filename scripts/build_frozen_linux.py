@@ -4,7 +4,7 @@ The frozen application contains the Python runtime, Qt runtime, and CPU
 runtime installed in the build environment. Models are deliberately excluded;
 the application acquires them only after EULA acceptance and serial activation.
 The owner supplies signing keys later, so this script emits unsigned artifacts
-plus SHA-256 and static update manifests.
+plus a CycloneDX SBOM, SHA-256 checksums, and a static update manifest.
 """
 
 from __future__ import annotations
@@ -71,6 +71,25 @@ def write_update_manifest(outdir: Path, artifacts: list[Path], version: str) -> 
     }
     manifest.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8", newline="\n")
     return manifest
+
+
+def write_cyclonedx_sbom(repo: Path, output: Path) -> Path:
+    """Write a CycloneDX SBOM from the exact frozen-artifact build environment."""
+    output.parent.mkdir(parents=True, exist_ok=True)
+    subprocess.run(
+        [
+            _require_tool("pip-audit"),
+            "--format",
+            "cyclonedx-json",
+            "--output",
+            str(output),
+        ],
+        cwd=repo,
+        check=True,
+    )
+    if not output.is_file():
+        raise BuildError(f"SBOM generator did not create the expected file: {output}")
+    return output
 
 
 def _copy_tree_contents(source: Path, destination: Path) -> None:
@@ -180,9 +199,10 @@ def build(repo: Path, outdir: Path, *, version: str, formats: tuple[str, ...] = 
         artifacts.append(appimage)
     if "deb" in formats:
         artifacts.append(_build_deb(appdir, outdir, version))
-    checksums = write_checksums(outdir, artifacts, version)
+    sbom = write_cyclonedx_sbom(repo, outdir / "sbom.json")
+    checksums = write_checksums(outdir, [*artifacts, sbom], version)
     update_manifest = write_update_manifest(outdir, artifacts, version)
-    return [*artifacts, checksums, update_manifest]
+    return [*artifacts, sbom, checksums, update_manifest]
 
 
 def main(argv: list[str] | None = None) -> int:
