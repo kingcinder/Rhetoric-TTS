@@ -2,12 +2,13 @@
 
 The supported command name is `rhetoric`. The legacy `the-oracle` command and `./oracle` launcher remain available for existing installations.
 
-**Release V1.5.0 RC (engineering candidate; not approved for commercial release).**
+**Release V1.5.0 — Rhetoric engineering candidate; not approved for commercial release.**
 
-An isolated Linux managed install, doctor check, and real CPU render succeeded;
-the complete first-user/project/upgrade workflow, human audio review, hosted
-CI, and commercial acceptance remain open. Start with the
-[Quick Start](docs/release/QUICK_START.md), check
+This engineering candidate is not approved for commercial distribution. The
+current release evidence, hosted CI status, and outstanding verification are
+recorded in the [release readiness report](docs/release/FINAL_RELEASE_READINESS.md).
+Predecessor runs and package artifacts do not qualify this release head. Start
+with the [Quick Start](docs/release/QUICK_START.md), check
 [System Requirements](docs/release/SYSTEM_REQUIREMENTS.md) and
 [Known Issues](docs/release/KNOWN_ISSUES.md), and review
 [Release Readiness](docs/release/FINAL_RELEASE_READINESS.md) before evaluating
@@ -21,7 +22,7 @@ workflow in [docs/SUPPORT.md](docs/SUPPORT.md). Data and privacy:
 [PRIVACY.md](PRIVACY.md) — what is collected (nothing automatically), what
 stays on your disk, and what sharing a crash report means.
 
-Rhetoric is a local PySide6 desktop app and CLI for turning a `.txt` or `.md` two-person dialogue into a single FLAC render with Chatterbox. The repository includes Linux and Windows installer scripts; Windows is not supported for the current alpha.
+Rhetoric is a local PySide6 desktop app and CLI for turning a `.txt` or `.md` two-person dialogue into a single FLAC render with Chatterbox. The repository includes Linux and Windows installer scripts; Windows is unsupported.
 
 Chatterbox outputs include built-in Perth watermarking by design. This project does not remove or hide that.
 
@@ -32,7 +33,7 @@ customer distribution. Windows is **unsupported**; GUI certification and the
 native-crash investigation remain open. Read [docs/SOFT_LAUNCH.md](docs/SOFT_LAUNCH.md)
 for the existing install and offline activation details. The commercial gate
 still blocks on the draft EULA. First-user/project and upgrade qualification,
-candidate CI, artifact provenance, and human audio review remain open. See the
+current-head hosted CI, artifact provenance, and human audio review status are in the
 [final readiness report](docs/release/FINAL_RELEASE_READINESS.md) for status.
 
 For support, compose a bug report with a redacted diagnostics snapshot, then
@@ -63,8 +64,8 @@ workflow — what is collected, how to review it, and how to share it — is in
 - Built-in support layer: `bug-report diagnose|new|list|show|package|issue|delete`, a GUI Report a Problem dialog, prefilled issue/email links, and a consent-gated support package — all local, nothing uploaded
 - Deterministic smoke render path for repo-local verification without live model generation
 - Managed bootstrap, install, doctor, run, and uninstall entrypoints for Linux and Windows, plus a one-stop manager (`./rhetoric` / `rhetoric.ps1`) with install, start, update, and uninstall actions
-- Opt-in CUDA inference through the existing PyTorch/Chatterbox path, with automatic NVIDIA hardware/VRAM suitability detection, CPU fallback, and selectable CUDA device index
-- Opt-in Vulkan inference backend via audio.cpp (`--inference-backend vulkan`) for AMD RDNA1-class GPUs with no CUDA/ROCm path
+- Experimental CUDA inference through the PyTorch/Chatterbox path, with NVIDIA hardware/VRAM checks and CPU fallback
+- Experimental Vulkan inference through audio.cpp (`--inference-backend vulkan`); production rendering is not qualified
 - Pain-point markers: a `~` glued between two words in an input script (e.g. `syncronized~lockstep`) marks a junction where the engine used to hang up or mispronounce; the marker is stripped from synthesis automatically in every correction mode (including Verbatim) while the review table keeps your annotation — an unattached `~` (e.g. `~42`) is still read verbatim
 
 ## One-Stop Manager (Install / Start / Update / Uninstall)
@@ -96,10 +97,10 @@ settings untouched. The underlying per-action scripts
 ## Platform Support
 
 - Supported Python: `3.11` or `3.12`
-- Alpha qualification target: Linux x86_64; clean-install and real-render qualification for the current candidate is in progress
-- Windows installer scripts are present, but Windows is **unsupported** for this alpha; see [docs/SOFT_LAUNCH.md](docs/SOFT_LAUNCH.md)
-- Default execution path: CPU (PyTorch Chatterbox in-process); CUDA is available when a CUDA-enabled PyTorch wheel and a suitable NVIDIA GPU are detected
-- Vulkan is available as an opt-in inference backend via audio.cpp (`--inference-backend vulkan`); see "Vulkan Backend (audio.cpp)" below
+- Intended qualification target: Linux x86_64; clean installed-artifact acceptance remains open
+- Windows is **unsupported** and excluded from the proposed paid offer; see [docs/SOFT_LAUNCH.md](docs/SOFT_LAUNCH.md)
+- Default inference path: CPU (PyTorch Chatterbox in-process); CUDA is experimental
+- Vulkan through audio.cpp is experimental; see "Vulkan Backend (audio.cpp)" below
 
 ## Quick Start
 

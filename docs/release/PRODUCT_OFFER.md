@@ -18,11 +18,11 @@ approval.
 ## Distribution and qualification status
 
 The candidate is not approved for commercial distribution. Linux x86_64 is the
-primary qualification target. Windows and GPU paths remain experimental or
-unsupported until the acceptance evidence in `FINAL_RELEASE_READINESS.md` is
-complete. Frozen artifacts, clean-machine installation, offline activation,
-model download/resume, rollback, uninstall, and human audio review remain
-open unless that readiness report records direct evidence.
+intended qualification target. Windows is unsupported and excluded from the
+proposed paid offer until its GUI and installer qualification passes. CUDA and
+Vulkan are experimental. Frozen artifacts, clean-machine installation,
+offline activation, model download/resume, rollback, uninstall, and human audio
+review remain open unless `FINAL_RELEASE_READINESS.md` records direct evidence.
 
 The EULA remains a draft. Pricing, payment processing, support commitments,
 refund language, permitted voice use, export controls, and third-party license

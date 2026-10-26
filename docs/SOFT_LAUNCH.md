@@ -1,31 +1,30 @@
 # Rhetoric 1.5.0 — Commercial Release Gate
 
-Status: **commercial distribution is blocked; 1.4.2 is an engineering
-candidate**. Linux x86_64 is the intended qualification target but has not
-completed current clean-install and real-audio acceptance. Windows is
-**unsupported** for this alpha. The commercial gate (`python scripts/soft_launch.py --check`)
-is the authority on whether a tree may be distributed. A red gate means the
-tree is not approved for commercial distribution, even if the app installs and
-runs.
+Status: **commercial distribution is blocked; this is the Rhetoric 1.5.0
+engineering candidate**. Linux x86_64 is the intended qualification target, but
+clean installed-artifact and real-audio acceptance are still open. Windows is
+**unsupported**. `python scripts/soft_launch.py --check` is the authority for
+distribution readiness; the current run has one blocker (draft EULA) and one
+warning (LGPL notice and replacement/source obligations).
 
-## Intended alpha scope (not an approved offer)
+## Product model
 
-The product is intended as a narrow, early-access release for users who want
-local dialogue rendering and are willing to report problems. No purchase offer
-or terms are approved. This is not a general-availability release: Windows GUI
-crash certification remains open, and the EULA is awaiting the owner's
-governing-law decision and counsel review. The three strong-copyleft runtime
-dependencies from the 1.4.0 candidate are gone.
+Rhetoric is offered as a one-time serial-number license. There is no
+subscription, community edition, trial, or optional activation. Without a
+valid serial, the application remains visible but functional features are
+inert except activation, status, help, documentation, doctor, and quit.
+Activation verifies the serial offline.
 
-The product uses one-time serial numbers. A missing, malformed, or expired
-serial number leaves the application visible but disables functional features;
-activation, status, help, documentation, and quit remain available.
+The storefront and payment workflow are deferred, so this repository does not
+provide a purchase or serial-request path. Pricing and final commercial terms
+require owner approval; the EULA and proposed third-party license decisions
+require qualified-counsel review. The application must not be distributed
+while the release gate is blocked.
 
 ## System requirements
 
-- Linux x86_64 is the alpha qualification target. Current-candidate clean-install
-  and real-render evidence is still being completed. Windows x86_64 is
-  unsupported for this alpha.
+- Linux x86_64 is the intended qualification target and is not yet qualified.
+  Windows x86_64 is unsupported.
 - Python 3.11 or 3.12.
 - `ffmpeg` on `PATH`.
 - Git, to fetch the release branch and updates.
@@ -36,8 +35,8 @@ activation, status, help, documentation, and quit remain available.
 ## Install
 
 ```bash
-git clone --branch main https://github.com/kingcinder/Rhetoric-TTS.git
-cd Rhetoric
+git clone --branch release/1.5.0-final https://github.com/kingcinder/Rhetoric-TTS.git
+cd Rhetoric-TTS
 ./rhetoric install
 ./rhetoric start
 ```
@@ -45,8 +44,8 @@ cd Rhetoric
 On Windows:
 
 ```powershell
-git clone --branch main https://github.com/kingcinder/Rhetoric-TTS.git
-cd Rhetoric
+git clone --branch release/1.5.0-final https://github.com/kingcinder/Rhetoric-TTS.git
+cd Rhetoric-TTS
 .\rhetoric.ps1 install
 .\rhetoric.ps1 start
 ```
@@ -118,7 +117,7 @@ import no network module at all.
 
 ## Updates
 
-Updates are manual for the alpha:
+Updates are manual for an engineering checkout:
 
 ```bash
 git pull
@@ -132,21 +131,16 @@ changed.
 
 ## Known limitations
 
-- **Windows is unsupported in this alpha.** The six-theme GUI certification and the Windows
-  certifier crash investigation (native exception 0xC0000005) are not closed.
-  Windows support is outside this alpha's qualified platform scope.
+- **Windows is unsupported.** Current-head hosted Windows evidence and clean
+  Windows 11 installer acceptance are not verified; see the readiness report.
 - **First run downloads models.** The first render may need a multi-GB model
   download; the doctor announces it before it starts. Offline installs use the
   bundle instead.
-- **Strong-copyleft dependencies are removed.** FLAC tagging is native,
-  grammar repair uses the local fixes only, and Japanese token conversion is
-  skipped by `chatterbox-tts` when `pykakasi` is absent. English and
-  non-Japanese multilingual rendering are unchanged. There is no
-  strong-copyleft review item left in
-  [`scripts/license_review.json`](../scripts/license_review.json).
-- **The EULA is a draft.** `EULA-DRAFT.md` still needs a governing-law/venue
-  section and counsel review. The gate refuses distribution until it is
-  renamed to `EULA.md` and finalized.
+- **Third-party obligations remain.** The soft-launch gate reports LGPL
+  notice and replacement/source obligations for Qt and other weak-copyleft
+  components. They require a documented fulfillment path before distribution.
+- **The EULA is a draft.** Owner and counsel must approve it before the draft
+  marker is removed or the release gate can pass.
 - **A serial number gates functional features.** `render-report` and every
   other render or editing workflow require activation; help and status remain
   available without one.
@@ -163,10 +157,9 @@ Run the gate, then clear each blocker:
 |---|---|
 | `eula` | Complete the governing-law/venue section, rename `EULA-DRAFT.md` to `EULA.md`, remove the DRAFT marker, and have counsel review it. |
 | `third_party_notices` | Regenerate with `python scripts/generate_third_party_notices.py --check` and commit the diff. |
-| `voice_assets` | Keep `Seashells/ASSETS.md` truthful; every shipped `.wav` needs a source and license. |
 | `version` | Keep `__version__`, the README banner, and `CHANGELOG.md` in agreement (`scripts/release.py --check`). |
-| `checksums` | Build with `scripts/release.py` on a clean tree and commit `release_checksums/checksums-<version>.sha256`. |
-| `windows_scope` | Keep this runbook's Linux-supported / Windows-experimental statement. |
+| `checksums` | The 1.5.0 manifest is generated locally and must be committed with the release record; rebuilds must not silently replace it. |
+| `windows_scope` | Keep Windows explicitly unsupported until current-head qualification passes. |
 | `support_bundle` | Keep `the_oracle.support_bundle` importable. |
 
 Warnings (weak-copyleft LGPL/MPL packages such as PySide6, certifi, `orjson`,

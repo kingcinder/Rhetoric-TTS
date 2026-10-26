@@ -7,8 +7,11 @@ candidate is ready for general distribution.
 
 ## 1. Check the prerequisites
 
-- Linux x86_64 is the alpha qualification target. Windows is unsupported for
-  the alpha.
+- Linux x86_64 is the intended qualification target; clean installed-artifact
+  acceptance remains open. Windows is unsupported and excluded from the
+  proposed paid offer.
+- CPU is the default inference path. CUDA and Vulkan are experimental and are
+  not qualified for customer production use.
 - Python 3.11 or 3.12 and `ffmpeg` on `PATH` are required.
 - The first render needs an internet connection to fetch the pinned Chatterbox
   model, unless you install from a prepared offline bundle. Model files and

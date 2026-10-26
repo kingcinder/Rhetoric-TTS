@@ -68,6 +68,8 @@ The Software’s data practices are described in `PRIVACY.md`. The Software is d
 
 Updates, fixes, model downloads, and support may be offered at the Licensor’s discretion and may change features, compatibility, model behavior, or system requirements. A serial number does not promise updates, support, cloud access, or compatibility beyond the version scope stated in the order. The Licensor does not promise that a model, voice, GPU, operating system, or third-party service will remain available.
 
+**Draft qualification status for review:** Linux x86_64 is the intended qualification target and has not completed clean installed-artifact acceptance. Windows is unsupported and excluded from the proposed paid offer until qualification is complete. CUDA and Vulkan backends are experimental and are not qualified for production use. These statements describe the current engineering candidate and do not create a warranty or qualification claim. Counsel review is required before this draft is adopted.
+
 ## 9. Open-source and third-party terms
 
 The Software includes components under licenses different from this Agreement. Those licenses control the relevant components. Required notices, source offers, replacement instructions, and attribution are provided with the Software where applicable. If a third-party term conflicts with this Agreement for that component, the third-party term controls.
