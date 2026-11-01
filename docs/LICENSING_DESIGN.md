@@ -1,8 +1,8 @@
 # Licensing & Anti-Piracy — Feature Scope
 
-Status: **serial-number product gate adopted** (2026-10-23). This document
-describes the offline verification contract and the licensed/unlicensed
-behavior.
+Status: **serial-number product gate adopted** (2026-10-23), **verification
+core compiled** (2026-10-29, §10). This document describes the offline
+verification contract and the licensed/unlicensed behavior.
 
 ---
 
@@ -41,10 +41,11 @@ src/the_oracle/licensing/
 └── policy.py       # licensed/unlicensed gate; single source
 ```
 
-Release-side (repo-only; `scripts/` is not packaged into the wheel):
+Vendor-only tooling lives in `../oracle-license-generator/`, a sibling
+directory outside the Git repository:
 
 ```
-scripts/license_sign.py   # vendor-only minting CLI; private key NEVER in the repo
+license_sign.py   # vendor-only minting CLI; not uploaded with the product repo
 ```
 
 The signing key enters the release process through an environment variable
@@ -210,8 +211,8 @@ this unit, not a later promise to retrofit.
    police.
 2. **`licensing/` core** — tokens, keys, policy, store + the §7 unit tests.
 3. **CLI surface** — `rhetoric activate <token>`, `rhetoric
-   license-status`, `rhetoric machine-id`; `scripts/license_sign.py`
-   (vendor-only) + its roundtrip test.
+   license-status`, `rhetoric machine-id`; the vendor-only signer in the
+   sibling `oracle-license-generator/` directory.
 4. **Doctor check** — §5 + doctor tests.
 5. **Offline-guarantee pins** — §6 tests, mutation-proven.
 6. **GUI slice** — `gui_license.py` (activation dialog + About panel),
@@ -230,3 +231,83 @@ this unit, not a later promise to retrofit.
 4. Only one-time serial numbers exist; subscriptions are not supported.
    Perpetual serial numbers are the default; an expiry is used only when the
    owner deliberately mints one.
+
+## 10. Compiled verification core (2026-10-29)
+
+Status: **implemented**. §1's non-goal list said "no obfuscation, no
+tamper-resistance"; this section deliberately narrows that, and says exactly by
+how much.
+
+### 10.1 What changed
+
+`verify_token` now delegates to `rhetoric_native`, a Rust extension
+(`crates/rhetoric_native`, built by `scripts/build_native_license.py`) loaded
+through `the_oracle._native`. The pure-Python verifier remains as the reference
+and the fallback for a checkout without the build. Both paths are pinned to
+identical `LicenseStatus` values across the full case matrix in
+`tests/test_native_core.py`, so the compiled core can never *change* a verdict —
+it only moves where the verdict is computed.
+
+The production registry (`k2`) is compiled into the binary. `production_keys()`
+exposes those bytes for a test-time pin against `keys.py`, because no test holds
+the signing seed.
+
+### 10.2 Why this raises the cost — and where it stops
+
+Be precise about the guarantee, because the honest answer is that **no local
+scheme is uncrackable**:
+
+- What is now expensive: a bypass is no longer a one-line edit to readable
+  Python. The decoder, the canonicalisation, the signature check, the expiry and
+  machine-binding rules, and the key registry all live in compiled code that is
+  rebuilt (new addresses, new inlining) on every release.
+- What is still cheap for an attacker: patching the *call site* — replacing the
+  import of `_native` or short-circuiting `verify_token` in Python. No amount of
+  crypto fixes that, because the attacker owns the process. The defence is
+  economic, not cryptographic: make each bypass path non-obvious, multiply
+  independent call sites, and change the binary every release.
+- What was explicitly rejected: phone-home validation (breaks the offline
+  guarantee in §6 and the privacy posture), and anti-debugging tricks
+  (`ptrace` checks, timing checksums). Those are theatre — they annoy paying
+  users and cost a competent reverser minutes.
+
+### 10.3 Build kinds
+
+| Command | Feature | Trust anchors | Use |
+| --- | --- | --- | --- |
+| `scripts/build_native_license.py` | `test-keys` | `k2` + the published RFC 8032 test key | local dev, CI, the suite |
+| `scripts/build_native_license.py --release` | none | `k2` only | shipped artifacts |
+
+A release build ignores any caller-supplied key table: the parameter exists in
+the signature so the Python side has one call shape, but the non-test build path
+never reads it. `cargo build` with no features is the release build, so a
+forgotten flag fails closed (unknown key, never "trusts anything").
+
+`scripts/build_native_license.py --check` reports whether the installed artifact
+is present and newer than the crate sources; source checkouts without Rust keep
+working through the Python fallback.
+
+### 10.4 Not done yet (ranked by value per unit of work)
+
+1. **Integrity attestation** — embed a build-time manifest of SHA-256 digests of
+   the protected Python modules in the native core, have it re-hash them at the
+   license gate, and refuse `valid` on a mismatch. This is the single largest
+   step: patching `policy.py` or a gate would break activation, and the manifest
+   is inside the binary. It requires the frozen-packaging slice (§2 rollout 8)
+   because the digest set must be generated at freeze time, not from the source
+   tree the developer is editing.
+2. **Multiple independent gates** — the doctor, the CLI and the pipeline already
+   call `current_license()`; adding the export and render paths to that set
+   makes a single patched call site insufficient without duplicating effort.
+3. **License-derived asset key** — encrypt one asset the pipeline genuinely
+   needs (a prompt pack or a model config) under a key derived from the serial.
+   A cracker must then reverse *what* the key unlocks, not just flip a boolean.
+   Largest architectural change; only worth it if piracy is measured.
+4. **Stripped release binaries** — `strip = "symbols"`, LTO and
+   `panic = "abort"` in the release profile. Cheap, mild, do it with the
+   packaging slice.
+
+None of these make the software uncrackable; together they make a crack a
+per-release maintenance burden rather than a one-afternoon edit. That is the
+realistic ceiling for offline software, and the pricing/licensing strategy
+should assume it.

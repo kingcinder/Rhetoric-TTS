@@ -77,7 +77,7 @@ def _b64url_decode(text: str) -> bytes:
 
 
 def mint(payload: dict[str, object], signing_seed: bytes) -> str:
-    """Produce a signed token. Vendor-side (scripts/license_sign.py) — the
+    """Produce a signed token. Vendor-side (external license_sign.py) — the
     client package can mint only in tests, against test seeds."""
     from the_oracle import _ed25519
 
@@ -108,6 +108,63 @@ def parse(token: str) -> tuple[dict[str, object], bytes] | None:
     return payload, signature
 
 
+def _status_from_native(
+    token: str,
+    *,
+    now: float | None,
+    machine_hash: str | None,
+) -> LicenseStatus | None:
+    """Verify through the compiled core, or None to use the Python reference.
+
+    Delegation is total when the core is built: a release artifact ships it, so
+    the verdict no longer comes from editable Python source. A checkout without
+    the build, and any unexpected native failure, falls back to
+    :func:`_verify_token_python` so verification never breaks a working install.
+    """
+    if not isinstance(token, str):
+        return None
+    from the_oracle import _native
+
+    core = _native.load()
+    if core is None:
+        return None
+    table = (
+        {entry.key_id: entry.public_key for entry in keys.KEYS}
+        if _native.accepts_test_keys()
+        else None
+    )
+    try:
+        result = core.verify_serial(
+            token,
+            machine_hash or "",
+            time.time() if now is None else now,
+            table,
+        )
+        payload_dict = result.get("payload")
+        return LicenseStatus(
+            ok=bool(result["ok"]),
+            state=str(result["state"]),
+            licensee=result.get("licensee"),
+            lic_id=result.get("lic_id"),
+            key_id=result.get("key_id"),
+            exp=result.get("exp"),
+            machine_locked=bool(result.get("machine_locked", False)),
+            detail=str(result.get("detail", "")),
+            payload=TokenPayload(
+                key_id=payload_dict["key_id"],
+                lic_id=payload_dict["lic_id"],
+                licensee=payload_dict["licensee"],
+                machine_hash=payload_dict["machine_hash"],
+                iat=payload_dict["iat"],
+                exp=payload_dict["exp"],
+            )
+            if payload_dict
+            else None,
+        )
+    except (KeyError, TypeError, ValueError):
+        return None
+
+
 def verify_token(
     token: str,
     *,
@@ -116,7 +173,25 @@ def verify_token(
 ) -> LicenseStatus:
     """Full verification in the documented order. Pure function of its inputs
     and the embedded key registry — the doctor's history-independence pin
-    depends on exactly that."""
+    depends on exactly that.
+
+    Delegates to the compiled core when it is built (``_native``), and falls
+    back to the pure-Python reference below otherwise. Both paths are pinned to
+    identical outcomes by tests/test_native_core.py.
+    """
+    native = _status_from_native(token, now=now, machine_hash=machine_hash)
+    if native is not None:
+        return native
+    return _verify_token_python(token, now=now, machine_hash=machine_hash)
+
+
+def _verify_token_python(
+    token: str,
+    *,
+    now: float | None = None,
+    machine_hash: str | None = None,
+) -> LicenseStatus:
+    """Reference implementation — the documented order, in Python."""
     parsed = parse(token)
     if parsed is None:
         return LicenseStatus(ok=False, state="malformed", detail="The serial number is malformed. Re-enter it exactly as issued.")

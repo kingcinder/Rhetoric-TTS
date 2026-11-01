@@ -121,3 +121,10 @@ RELEASE-CHECKLIST-*.md
 docs/superpowers/
 docs/DEBUG_SWEEP-*
 docs/CONSUMER_CHANGELOG_DRAFT-*
+
+# Compiled license core (scripts/build_native_license.py) and Rust build output.
+crates/*/target/
+src/the_oracle/_native/*.so
+src/the_oracle/_native/*.pyd
+src/the_oracle/_native/*.dll
+src/the_oracle/_native/*.dylib

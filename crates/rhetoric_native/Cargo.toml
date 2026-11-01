@@ -1,0 +1,20 @@
+[package]
+name = "rhetoric_native"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+crate-type = ["cdylib"]
+
+[features]
+# Development builds mirror the Python key registry so the suite can inject
+# its published RFC 8032 test key. Release builds are compiled without it and
+# trust only the compiled-in production registry.
+default = []
+test-keys = []
+
+[dependencies]
+base64 = "0.23.1"
+ed25519-dalek = "3.0.0"
+pyo3 = { version = "0.30.1", features = ["extension-module", "abi3-py311"] }
+serde_json = "1.0.154"
