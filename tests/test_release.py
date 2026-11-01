@@ -692,6 +692,7 @@ def test_build_artifacts_rejects_unversioned_names(tmp_path: Path, monkeypatch: 
         calls.append((cmd, kwargs.get("cwd")))
         return _FakeResult()
 
+    monkeypatch.setattr(release, "build_native_core", lambda _repo: None)
     monkeypatch.setattr(release.subprocess, "run", _fake_run)
     with pytest.raises(release.ReleaseError, match="not versioned"):
         release.build_artifacts(tmp_path, tmp_path / "out", "9.9.9")
@@ -712,9 +713,46 @@ def test_build_artifacts_returns_existing_versioned_files(tmp_path: Path, monkey
     class _FakeResult:
         stdout = "ARTIFACT:rhetoric-9.9.9.tar.gz\nARTIFACT:rhetoric-9.9.9-py3-none-any.whl\n"
 
+    monkeypatch.setattr(release, "build_native_core", lambda _repo: None)
     monkeypatch.setattr(release.subprocess, "run", lambda cmd, **kwargs: _FakeResult())
     artifacts = release.build_artifacts(tmp_path, outdir, "9.9.9")
     assert [path.name for path in artifacts] == ["rhetoric-9.9.9.tar.gz", "rhetoric-9.9.9-py3-none-any.whl"]
+
+
+def test_release_refuses_a_wheel_without_the_compiled_core(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A core that will not build must stop the release, not ship a fallback."""
+
+    class _Failed:
+        returncode = 1
+
+    monkeypatch.setattr(release.subprocess, "run", lambda cmd, **kwargs: _Failed())
+    with pytest.raises(release.ReleaseError, match="license core did not build"):
+        release.build_native_core(tmp_path)
+
+
+def test_build_artifacts_builds_the_core_first(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    order: list[str] = []
+    outdir = tmp_path / "out"
+    outdir.mkdir()
+    (outdir / "rhetoric-9.9.9.tar.gz").write_bytes(b"s")
+    (outdir / "rhetoric-9.9.9-py3-none-any.whl").write_bytes(b"w")
+
+    class _FakeResult:
+        stdout = "ARTIFACT:rhetoric-9.9.9.tar.gz\nARTIFACT:rhetoric-9.9.9-py3-none-any.whl\n"
+
+    monkeypatch.setattr(release, "build_native_core", lambda repo: order.append("core"))
+
+    def _fake_run(cmd, **kwargs):
+        order.append("wheel")
+        return _FakeResult()
+
+    monkeypatch.setattr(release.subprocess, "run", _fake_run)
+    release.build_artifacts(tmp_path, outdir, "9.9.9")
+    assert order == ["core", "wheel"]
 
 
 def test_main_refuses_dirty_tree_before_building_or_testing(

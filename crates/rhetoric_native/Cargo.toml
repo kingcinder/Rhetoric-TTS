@@ -13,6 +13,14 @@ crate-type = ["cdylib"]
 default = []
 test-keys = []
 
+[profile.release]
+# Thin LTO and one codegen unit make the shipped core harder to read without
+# the multi-minute cost of fat LTO. `panic = "abort"` is deliberately NOT set:
+# a Rust panic must surface as a Python exception, not kill the desktop app.
+lto = "thin"
+codegen-units = 1
+strip = "symbols"
+
 [dependencies]
 base64 = "0.23.1"
 ed25519-dalek = "3.0.0"

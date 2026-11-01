@@ -52,6 +52,31 @@ def test_export_writes_when_the_serial_is_valid(
     assert target.is_file()
 
 
+def test_export_stamps_the_license_id_without_touching_caller_metadata(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Leaked renders are attributable by licence id, not by customer name."""
+    from the_oracle.audio import export_flac
+    from the_oracle.audio.flac_tags import read_vorbis_comments
+
+    licensed = LicenseStatus(
+        ok=True,
+        state="valid",
+        licensee="Tester",
+        lic_id="22222222-2222-4222-8222-222222222222",
+    )
+    monkeypatch.setattr("the_oracle.licensing.current_license", lambda *_a, **_k: licensed)
+    metadata = {"TITLE": "Scene"}
+    target = tmp_path / "tagged.flac"
+
+    export_flac.write_flac(target, np.zeros(2205, dtype=np.float32), 22050, metadata)
+
+    comments = read_vorbis_comments(target)
+    assert comments["RHETORIC_LICENSE"] == [licensed.lic_id]
+    assert comments["TITLE"] == ["Scene"]
+    assert metadata == {"TITLE": "Scene"}
+
+
 def test_render_child_refuses_without_a_serial(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

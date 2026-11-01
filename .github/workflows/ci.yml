@@ -642,3 +642,46 @@ jobs:
           path: certifier-fault.txt
           if-no-files-found: warn
           retention-days: 14
+
+  # The compiled core is the shipped verifier, but nothing built it in CI, so
+  # the parity and attestation tests skipped there: a broken manifest or a
+  # registry drift could reach a release green. This job builds the core, runs
+  # exactly the tests that need it, then proves an attested build is enforced.
+  native-license-core:
+    name: Compiled license core (build, parity, attestation)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Bootstrap Runtime And Test Dependencies
+        shell: bash
+        run: python scripts/manage_install.py bootstrap --skip-doctor --include-dev
+
+      - name: Build The Development Core
+        shell: bash
+        run: ./.venv/bin/python scripts/build_native_license.py
+
+      - name: Native Parity, Attestation And Gate Tests
+        shell: bash
+        run: >-
+          ./.venv/bin/python -m pytest -q
+          tests/test_native_core.py
+          tests/test_native_attestation.py
+          tests/test_serial_gate_depth.py
+          tests/test_licensing_tokens.py
+
+      - name: Prove The Compiled Manifest Is Enforced
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ./.venv/bin/python scripts/build_native_license.py --attest
+          ./.venv/bin/python scripts/build_native_license.py --check | tee core-check.txt
+          grep -q "attestation: enforced" core-check.txt

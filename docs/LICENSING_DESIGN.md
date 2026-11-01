@@ -301,9 +301,10 @@ working through the Python fallback.
    needs (a prompt pack or a model config) under a key derived from the serial.
    A cracker must then reverse *what* the key unlocks, not just flip a boolean.
    Largest architectural change; only worth it if piracy is measured.
-4. **Stripped release binaries** — `strip = "symbols"`, LTO and
-   `panic = "abort"` in the release profile. Cheap, mild, do it with the
-   packaging slice.
+4. ~~**Stripped release binaries** — `strip = "symbols"` and LTO in the release
+   profile.~~ **DONE 2026-11-01**: thin LTO, one codegen unit, stripped symbols.
+   `panic = "abort"` is deliberately NOT set — a Rust panic must surface as a
+   Python exception instead of killing the desktop process.
 
 None of these make the software uncrackable; together they make a crack a
 per-release maintenance burden rather than a one-afternoon edit. That is the
@@ -354,12 +355,34 @@ process must pass its own gate in addition to the parent's.
   a source checkout. It is never evidence that files are clean, and
   `tests/test_native_attestation.py` pins that reading.
 - The **PyInstaller rehearsal build** (`packaging/linux/rhetoric.spec`) archives
-  modules into `PYZ-00.pyz`, so there are no loose `.py` files to hash. The
-  attested distribution path is the wheel / offline-bundle install, where modules
-  are real files. A frozen-archive manifest would need a separate digest of the
-  archive itself; it is not implemented.
+  modules into `PYZ-00.pyz`, so there are no loose `.py` files to hash, and the
+  spec does not bundle the extension. The attested distribution path is the
+  wheel / offline-bundle install, where modules are real files. If a frozen
+  bundle ever did carry an attested core, every entry would read as missing and
+  the install would report `integrity` — fail-closed, not silent. A
+  frozen-archive manifest would need a separate digest of the archive itself;
+  it is not implemented.
 - The compiled extension must ship in the wheel
   (`[tool.setuptools.package-data] the_oracle._native`). Without it an install
   falls back to the Python verifier and no attestation runs.
 - A patched `licensing/__init__.py` can skip the check entirely. That is the
   same economic argument as §10.2: it raises cost, it is not a boundary.
+
+### 11.5 Forensic licence tag in exported audio
+
+`write_flac` stamps the verified `lic_id` into the FLAC Vorbis comments as
+`RHETORIC_LICENSE`. It is the opaque licence UUID — never the licensee's name
+or email — and it changes nothing the customer can do, so it costs no
+usability. It makes a leaked render attributable to the licence it came from,
+which deters sharing and supports takedowns. `metadata` is copied before the
+tag is added; callers' dictionaries are never mutated.
+
+### 11.6 Release pipelines carry the core
+
+`scripts/release.py` builds the attested release core before it packs the
+wheel and fails the release when cargo cannot produce it. A wheel without the
+extension would silently fall back to the pure-Python verifier — the opposite
+of what a release artifact is for — so the build refuses instead. CI has a
+dedicated `native-license-core` job that builds the core, runs the parity,
+attestation and gate tests, then proves `--attest` yields
+`attestation: enforced`.

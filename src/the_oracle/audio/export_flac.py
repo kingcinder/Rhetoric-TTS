@@ -15,6 +15,12 @@ from the_oracle.audio.flac_tags import write_vorbis_comments
 
 LOGGER = logging.getLogger(__name__)
 
+#: Vorbis-comment field carrying the licensee's opaque serial id into exported
+#: audio. It is forensic attribution for leaked renders, not a lock: it never
+#: changes what the customer can do, and it holds the licence UUID (never the
+#: licensee's name or email).
+FORENSIC_LICENSE_FIELD = "RHETORIC_LICENSE"
+
 
 def next_available_output_path(path: str | Path) -> Path:
     destination = Path(path)
@@ -61,16 +67,17 @@ def _ffmpeg_write(path: Path, audio: np.ndarray, sample_rate: int, metadata: dic
         temp_wav.unlink(missing_ok=True)
 
 
-def _require_serial() -> None:
+def _require_serial() -> _licensing.LicenseStatus:
     """Refuse to write an audio file from an unlicensed install.
 
     Deliberately independent of ``the_oracle.licensing.policy.require``: every
     rendered or exported file passes through here, so patching the pipeline's
-    entry gate does not make this module produce output.
+    entry gate does not make this module produce output. Returns the verified
+    status so the writer can stamp the licensee's id into the file.
     """
     status = _licensing.current_license()
     if status.ok and status.state == "valid":
-        return
+        return status
     detail = f"{status.detail} " if status.detail else ""
     raise _licensing.LicenseRequired(
         f"Enter a serial number to export audio. {detail}"
@@ -79,7 +86,12 @@ def _require_serial() -> None:
 
 
 def write_flac(path: str | Path, audio: np.ndarray, sample_rate: int, metadata: dict[str, str]) -> Path:
-    _require_serial()
+    status = _require_serial()
+    if status.lic_id:
+        # Copy: the caller's metadata is shared state and must not gain a tag
+        # the caller did not ask for.
+        metadata = dict(metadata)
+        metadata[FORENSIC_LICENSE_FIELD] = status.lic_id
     destination = next_available_output_path(path)
     destination.parent.mkdir(parents=True, exist_ok=True)
     try:

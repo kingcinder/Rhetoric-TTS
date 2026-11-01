@@ -600,8 +600,28 @@ def run_tests(repo_root: Path) -> None:
     subprocess.run([sys.executable, "-m", "pytest"], cwd=str(repo_root), env=env, check=True)
 
 
+def build_native_core(repo_root: Path) -> None:
+    """Compile the attested license core before the wheel is packed.
+
+    The wheel's package-data carries the extension; building it here is what
+    makes a release artifact enforce attestation at all. Failing hard when the
+    build fails is deliberate: a wheel without the core silently falls back to
+    the pure-Python verifier, which is the opposite of what a release is for.
+    """
+    script = repo_root / "scripts" / "build_native_license.py"
+    result = subprocess.run(
+        [sys.executable, str(script), "--release"], cwd=str(repo_root), check=False
+    )
+    if result.returncode != 0:
+        raise ReleaseError(
+            "the compiled license core did not build; refusing to produce a "
+            "wheel that would fall back to the pure-Python verifier"
+        )
+
+
 def build_artifacts(repo_root: Path, outdir: Path, version: str) -> list[Path]:
     """Build sdist + wheel via the PEP 517 hooks; return versioned artifact paths."""
+    build_native_core(repo_root)
     outdir.mkdir(parents=True, exist_ok=True)
     result = subprocess.run(
         [sys.executable, "-c", _BUILD_SNIPPET, str(outdir)],

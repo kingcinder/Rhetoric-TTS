@@ -16,20 +16,23 @@ The signing seed is the **only secret** in the whole system. It never
 touches the repo, the wheel, or any shipped artifact. The vendor generator
 also lives outside the product repository.
 
-Generate the signing seed and its matching verify key:
+Generate the signing seed and its matching verify key. Prefer `--seal`: it
+writes an AES-256 gpg-symmetric file and prints **only** the verify key, so
+the seed never appears in a terminal, a log, or shell history.
 
 ```bash
-python ../oracle-license-generator/license_sign.py keygen
+python ../oracle-license-generator/license_sign.py keygen \
+  --seal ~/secrets/oracle-seed.gpg
 ```
 
-- Store the printed `signing_seed_hex` in a secret manager (or offline
-  media). **Never commit it, never put it in a shell dotfile.** Run
-  `keygen` on your own machine: its output is the only copy of the seed,
-  and a seed that passes through a chat transcript, an issue tracker, or
-  a CI log is compromised.
-- `ORACLE_LICENSE_SIGNING_KEY` (64-hex, 32 bytes) is how the seed enters
-  the minting environment at mint time — export it from the secret
-  manager per-session, per-command.
+- A plain `keygen` still prints `signing_seed_hex` for a secret manager; if
+  you use it, treat the printed value as the only copy and never let it
+  reach a chat transcript, an issue tracker, or a CI log.
+- `ORACLE_LICENSE_SIGNING_KEY_FILE` (a sealed file) or
+  `ORACLE_LICENSE_SIGNING_KEY` (64-hex, 32 bytes) is how the seed enters
+  the minting environment at mint time. `ORACLE_SEED_PASSPHRASE` supplies
+  the passphrase to gpg for unattended minting; omit it and gpg prompts.
+  Export per-command, never from a shell dotfile.
 - Record ONLY `verify_key_hex` in `src/the_oracle/licensing/keys.py` under
   a key id — the two steps above this one are the whole procedure:
 
@@ -49,8 +52,8 @@ tests — any reader could mint a licence every shipped install accepted.
 It is gone. The production key **`k2` was registered on 2026-10-19**; its
 signing seed was generated on the owner's machine and lives only in the
 owner's secret manager (the provisioning run wrote it to
-`~/.config/the-oracle/license-signing-seed`, mode `0600`; move it to your
-secret manager and delete the local copy). Only the public verify key is
+`~/.config/the-oracle/license-signing-seed`, mode `0600`; seal it with
+`gpg --symmetric`, store the sealed file, and delete the plaintext copy). Only the public verify key is
 in `keys.py`. Two nets keep a forgeable key out:
 
 - `tests/test_licensing_registry_hygiene.py` fails if any registered key
