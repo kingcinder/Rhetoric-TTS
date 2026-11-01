@@ -289,16 +289,14 @@ working through the Python fallback.
 
 ### 10.4 Not done yet (ranked by value per unit of work)
 
-1. **Integrity attestation** — embed a build-time manifest of SHA-256 digests of
-   the protected Python modules in the native core, have it re-hash them at the
-   license gate, and refuse `valid` on a mismatch. This is the single largest
-   step: patching `policy.py` or a gate would break activation, and the manifest
-   is inside the binary. It requires the frozen-packaging slice (§2 rollout 8)
-   because the digest set must be generated at freeze time, not from the source
-   tree the developer is editing.
-2. **Multiple independent gates** — the doctor, the CLI and the pipeline already
-   call `current_license()`; adding the export and render paths to that set
-   makes a single patched call site insufficient without duplicating effort.
+1. ~~**Integrity attestation** — embed a build-time manifest of SHA-256 digests
+   of the protected Python modules in the native core, have it re-hash them at
+   the license gate, and refuse `valid` on a mismatch.~~ **DONE 2026-11-01** — see
+   §11.
+2. ~~**Multiple independent gates** — the doctor, the CLI and the pipeline
+   already call `current_license()`; adding the export and render paths to that
+   set makes a single patched call site insufficient.~~ **DONE 2026-11-01** — see
+   §11.3.
 3. **License-derived asset key** — encrypt one asset the pipeline genuinely
    needs (a prompt pack or a model config) under a key derived from the serial.
    A cracker must then reverse *what* the key unlocks, not just flip a boolean.
@@ -311,3 +309,57 @@ None of these make the software uncrackable; together they make a crack a
 per-release maintenance burden rather than a one-afternoon edit. That is the
 realistic ceiling for offline software, and the pricing/licensing strategy
 should assume it.
+
+## 11. Integrity attestation and gate depth (2026-11-01)
+
+Status: **implemented**.
+
+### 11.1 The manifest
+
+`scripts/build_native_license.py --attest` hashes `PROTECTED_MODULES` — the
+modules that carry the gates: `licensing/*.py`, `pipeline.py`,
+`render_subprocess.py`, `audio/export_flac.py`, `cli.py` — into a sha256sum-style
+file, points `RHETORIC_ATTEST_MANIFEST` at it, and cargo rebuilds. `build.rs`
+turns that file into a Rust static (`MANIFEST`), so the expected digests are
+compiled into the binary rather than shipped next to it.
+
+At runtime the core **reads and hashes the files itself**; Python supplies only
+the package directory. A patched install therefore cannot pass the digests it
+would prefer — it would have to patch the check as well.
+
+`--release` attests by default. `--no-attest` exists for a diagnostic build and
+prints a warning; `--check` reports `attestation: enforced` or `not enforced (development build)`.
+
+### 11.2 Enforcement
+
+`licensing.current_license()` runs the check before reading the token store and
+returns `state="integrity"` (with the reinstall remedy) on any mismatch. It is
+memoised once per process, so a render does not re-hash the package per gate.
+The check lives there rather than in `policy` because every gate resolves
+`current_license` — a gate patched to skip the policy helper still receives an
+`integrity` status.
+
+### 11.3 Gate depth
+
+`audio/export_flac.write_flac` and `render_subprocess.run_job` /
+`run_preview_job` call `current_license()` directly. They deliberately do **not**
+call `policy.require`: one shared helper is one place to patch, and these sites
+are in different modules from the pipeline's entry check. Producing a file now
+requires passing the pipeline gate *and* the output gate; the GUI's child
+process must pass its own gate in addition to the parent's.
+
+### 11.4 Limits (read before claiming more than this)
+
+- `enforced: false` means *no manifest was compiled in* — a development build or
+  a source checkout. It is never evidence that files are clean, and
+  `tests/test_native_attestation.py` pins that reading.
+- The **PyInstaller rehearsal build** (`packaging/linux/rhetoric.spec`) archives
+  modules into `PYZ-00.pyz`, so there are no loose `.py` files to hash. The
+  attested distribution path is the wheel / offline-bundle install, where modules
+  are real files. A frozen-archive manifest would need a separate digest of the
+  archive itself; it is not implemented.
+- The compiled extension must ship in the wheel
+  (`[tool.setuptools.package-data] the_oracle._native`). Without it an install
+  falls back to the Python verifier and no attestation runs.
+- A patched `licensing/__init__.py` can skip the check entirely. That is the
+  same economic argument as §10.2: it raises cost, it is not a boundary.

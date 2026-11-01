@@ -48,6 +48,47 @@ __all__ = [
 ]
 
 
+#: Process-wide attestation memo: ``{package_root: detail_or_None}``. Hashing
+#: the protected modules once per process is enough; a per-gate hash would put
+#: a disk read in front of every render.
+_attestation_memo: dict[str, str | None] = {}
+
+_ATTESTATION_DETAIL = (
+    "This installation's licensing code no longer matches the build it came "
+    "from, so the serial number cannot be trusted. Reinstall Rhetoric from the "
+    "official download; if it still fails, contact support."
+)
+
+
+def _attestation_failure() -> str | None:
+    """A detail string when protected modules were modified after the build.
+
+    Only an artifact built with ``scripts/build_native_license.py --attest``
+    carries a manifest, so a development checkout — and any install without the
+    compiled core — is unaffected. The check lives here rather than in
+    ``policy`` because every gate resolves ``current_license``: a patched gate
+    that skips it is exactly what the compiled manifest is there to notice.
+    """
+    from the_oracle import _native
+
+    core = _native.load()
+    if core is None:
+        return None
+    try:
+        import the_oracle
+
+        package_root = str(Path(the_oracle.__file__).resolve().parent)
+        if package_root not in _attestation_memo:
+            verdict = core.attest(package_root)
+            clean = bool(verdict.get("ok", True)) if isinstance(verdict, dict) else True
+            _attestation_memo[package_root] = None if clean else _ATTESTATION_DETAIL
+        return _attestation_memo[package_root]
+    except Exception:
+        # A core that cannot answer is not evidence of tampering; failing
+        # closed here would brick an install whose files cannot be read.
+        return None
+
+
 def current_license(repo_root: str | Path | None = None) -> LicenseStatus:
     """The install's license status — the one call every consumer makes.
 
@@ -57,6 +98,10 @@ def current_license(repo_root: str | Path | None = None) -> LicenseStatus:
     """
     from the_oracle.licensing import machine
     from the_oracle.offline import repo_root as resolve_repo_root
+
+    tampered = _attestation_failure()
+    if tampered is not None:
+        return LicenseStatus(ok=False, state="integrity", detail=tampered)
 
     root = repo_root if repo_root is not None else resolve_repo_root()
     result = load_token(root)

@@ -50,6 +50,8 @@ def _licensed_gui_operations_for_functional_tests(request, monkeypatch):
         "test_licensing_store",
         "test_doctor_licensing",
         "test_render_report",
+        "test_native_attestation",
+        "test_serial_gate_depth",
         "test_serial_gate_product",
         "test_serial_vendor_workflow",
     }

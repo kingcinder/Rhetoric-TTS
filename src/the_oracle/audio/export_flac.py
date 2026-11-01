@@ -10,6 +10,7 @@ from pathlib import Path
 import numpy as np
 import soundfile as sf
 
+from the_oracle import licensing as _licensing
 from the_oracle.audio.flac_tags import write_vorbis_comments
 
 LOGGER = logging.getLogger(__name__)
@@ -60,7 +61,25 @@ def _ffmpeg_write(path: Path, audio: np.ndarray, sample_rate: int, metadata: dic
         temp_wav.unlink(missing_ok=True)
 
 
+def _require_serial() -> None:
+    """Refuse to write an audio file from an unlicensed install.
+
+    Deliberately independent of ``the_oracle.licensing.policy.require``: every
+    rendered or exported file passes through here, so patching the pipeline's
+    entry gate does not make this module produce output.
+    """
+    status = _licensing.current_license()
+    if status.ok and status.state == "valid":
+        return
+    detail = f"{status.detail} " if status.detail else ""
+    raise _licensing.LicenseRequired(
+        f"Enter a serial number to export audio. {detail}"
+        "Activation is offline and takes one paste."
+    )
+
+
 def write_flac(path: str | Path, audio: np.ndarray, sample_rate: int, metadata: dict[str, str]) -> Path:
+    _require_serial()
     destination = next_available_output_path(path)
     destination.parent.mkdir(parents=True, exist_ok=True)
     try:

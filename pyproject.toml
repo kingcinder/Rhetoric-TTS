@@ -75,6 +75,9 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 the_oracle = ["text_repair/data/*.txt", "EULA-DRAFT.md"]
+# The compiled license core. Built by scripts/build_native_license.py; without
+# it a wheel installs and falls back to the pure-Python verifier.
+"the_oracle._native" = ["*.so", "*.pyd", "*.dylib", "*.dll"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

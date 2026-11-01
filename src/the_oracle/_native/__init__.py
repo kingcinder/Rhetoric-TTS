@@ -16,6 +16,7 @@ release build.
 from __future__ import annotations
 
 import importlib
+from pathlib import Path
 from types import ModuleType
 
 #: The extension's import path. Kept as a module (not a bare import) so a
@@ -52,3 +53,23 @@ def accepts_test_keys() -> bool:
     """
     core = load()
     return bool(core is not None and getattr(core, "TEST_KEYS_ACCEPTED", False))
+
+
+def attest(package_root: str | Path) -> dict[str, object] | None:
+    """Check the installed modules against the manifest compiled into the core.
+
+    Returns ``None`` when no core is built, otherwise the native verdict:
+    ``{"enforced", "ok", "checked", "mismatched"}``. ``enforced=False`` means
+    this artifact carries no manifest (a development build); it is never
+    evidence that the files are clean.
+    """
+    core = load()
+    if core is None:
+        return None
+    return core.attest(str(package_root))
+
+
+def attestation_enforced() -> bool:
+    """True when this artifact was built with an integrity manifest."""
+    core = load()
+    return bool(core is not None and getattr(core, "ATTESTATION_ENFORCED", False))

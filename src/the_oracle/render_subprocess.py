@@ -13,10 +13,28 @@ import sys
 from dataclasses import asdict
 from pathlib import Path
 
+from the_oracle import licensing as _licensing
 from the_oracle.models.project import RenderPlan, Utterance, VoiceProfile
 from the_oracle.models.settings import RenderSettings
 from the_oracle.pipeline import OraclePipeline, RenderProgress
 from the_oracle.utils.logging import configure_logging
+
+
+def _require_serial(entitlement: str) -> None:
+    """Gate this child process independently of the launching parent.
+
+    The GUI delegates every render here, so a patched parent check must not
+    leave a working render path behind. This does not call
+    ``licensing.policy.require``: a single shared helper is a single patch site.
+    """
+    status = _licensing.current_license()
+    if status.ok and status.state == "valid":
+        return
+    detail = f"{status.detail} " if status.detail else ""
+    raise _licensing.LicenseRequired(
+        f"Enter a serial number to {entitlement}. {detail}"
+        "Activation is offline and takes one paste."
+    )
 
 
 def _read_job(path: Path) -> tuple[RenderPlan, RenderSettings, float | None]:
@@ -43,6 +61,7 @@ def run_preview_job(job_path: Path, result_path: Path) -> int:
     Chatterbox/PyTorch itself (the same native SIGSEGV the render child avoids).
     """
     try:
+        _require_serial("preview audio")
         payload = _read_preview_job(job_path)
         utterance = Utterance.from_dict(payload["utterance"])
         profile = VoiceProfile.from_dict(payload["profile"])
@@ -90,6 +109,7 @@ def run_preview_job(job_path: Path, result_path: Path) -> int:
 def run_job(job_path: Path, result_path: Path) -> int:
     plan: RenderPlan | None = None
     try:
+        _require_serial("render")
         plan, settings, render_click_wall = _read_job(job_path)
         configure_logging(Path(plan.output_dir) / "logs" / "render_child.log")
         pipeline = OraclePipeline(
