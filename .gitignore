@@ -122,6 +122,11 @@ docs/superpowers/
 docs/DEBUG_SWEEP-*
 docs/CONSUMER_CHANGELOG_DRAFT-*
 
+# The activated serial number is repo-local by design (licensing/store.py).
+# Never commit it: it is the customer's licence, and this repository is public.
+oracle_license.json
+oracle_license.json.tmp
+
 # Compiled license core (scripts/build_native_license.py) and Rust build output.
 crates/*/target/
 src/the_oracle/_native/*.so
