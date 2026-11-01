@@ -2,7 +2,7 @@
 
 Anti-piracy model (docs/LICENSING_DESIGN.md §3): the client embeds *public*
 verify keys; signatures can only be minted with the private seed, which never
-ships (the vendor mints with scripts/license_sign.py). Extracting these keys
+ships (the vendor mints with the external license_sign.py). Extracting these keys
 buys an attacker nothing — that is the whole reason the scheme is asymmetric.
 
 Production key custody

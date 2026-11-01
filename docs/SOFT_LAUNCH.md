@@ -64,8 +64,9 @@ server.
 
 The storefront and payment workflow are deferred. Do not direct customers to
 email for a purchase or serial request. The owner mints serials after an
-authorized sale using `scripts/license_sign.py`; the production signing seed
-stays in the owner's secret manager. See [LICENSING_OPS.md](LICENSING_OPS.md)
+authorized sale using the sibling `oracle-license-generator/license_sign.py`;
+the production signing seed stays in the owner's secret manager. See
+[LICENSING_OPS.md](LICENSING_OPS.md)
 for custody and test-key procedures.
 
 `ORACLE1` is the historical token prefix for 1.5.0 and remains accepted for

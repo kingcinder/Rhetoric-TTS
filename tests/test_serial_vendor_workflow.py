@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-import json
+import time
+import uuid
 from pathlib import Path
 
 import pytest
 
-from scripts import license_sign
 from the_oracle import cli, offline
 from the_oracle.licensing import clear_token, current_license, keys, tokens
 from the_oracle.licensing.keys import VerifyKey
@@ -15,10 +15,18 @@ from tests.licensing_fixtures import TEST_SEED
 from the_oracle import _ed25519
 
 
-def _mint(monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str], key_id: str, seed: bytes) -> str:
-    monkeypatch.setenv(license_sign.ENV_VAR, seed.hex())
-    assert license_sign.main(["mint", "--key-id", key_id, "--licensee", "Test owner"]) == 0
-    return json.loads(capsys.readouterr().out)["token"]
+def _mint(_monkeypatch: pytest.MonkeyPatch, _capsys: pytest.CaptureFixture[str], key_id: str, seed: bytes) -> str:
+    """Build a test-only signed token without importing the vendor tool."""
+    payload = {
+        "v": 2,
+        "key_id": key_id,
+        "lic_id": str(uuid.uuid4()),
+        "licensee": "Test owner",
+        "machine_hash": "",
+        "iat": int(time.time()),
+        "exp": None,
+    }
+    return tokens.mint(payload, seed)
 
 
 def _activate(root: Path, token: str) -> None:

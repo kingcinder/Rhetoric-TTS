@@ -10,8 +10,8 @@ model and the residual-risk record.
 
 The client embeds **public verify keys only** and verifies a signed token
 locally. The signing seed exists solely on the vendor's machine, read from
-`ORACLE_LICENSE_SIGNING_KEY` by `scripts/license_sign.py`, which is not packaged
-into the wheel. Verification is a pure function of (token bytes, embedded key
+`ORACLE_LICENSE_SIGNING_KEY` by the sibling `oracle-license-generator/license_sign.py`,
+which is outside the product repository. Verification is a pure function of (token bytes, embedded key
 registry, wall clock) — no network, ever.
 
 Token: `ORACLE1.<base64url(canonical-json payload)>.<base64url(signature)>`,
@@ -77,7 +77,7 @@ on is a **vendor-side token field**, with no client release.
 
 ## 6. Integrity of the receipt side
 
-- `scripts/license_sign.py` refuses to mint without an explicit `--key-id` (a
+- The external `license_sign.py` refuses to mint without an explicit `--key-id` (a
   defaulted id is how every token once got signed under the compromised key) and
   refuses without a seed in the environment.
 - Rotation: register the new key, keep the old entry for one release cycle,

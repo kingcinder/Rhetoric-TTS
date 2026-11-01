@@ -229,7 +229,7 @@ def licensing_key_problems(repo_root: Path) -> list[str]:
         problems.append(
             "licensing: no production verify key is registered in "
             f"{_LICENSING_KEYS_REL.as_posix()}, so no licence can ever be minted "
-            "for this build. Run `python scripts/license_sign.py keygen` on your "
+            "for this build. Run `python ../oracle-license-generator/license_sign.py keygen` on your "
             "own machine, store signing_seed_hex in your secret manager, and "
             "register ONLY verify_key_hex as a new key id."
         )

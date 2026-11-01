@@ -2,7 +2,8 @@
 
 Audience: the vendor operator (you) minting and managing Rhetoric serial numbers.
 This is the operational half of `docs/LICENSING_DESIGN.md` (design §3–§8);
-everything here is grounded in the shipped tooling, not aspirations.
+the generator kept in the sibling `../oracle-license-generator/` directory,
+outside the product repository.
 
 The client never contacts a server: activation, verification, and status
 are pure functions of the stored token and the embedded verify keys. That
@@ -12,13 +13,13 @@ works fully offline on the vendor side too.
 ## 1. Key custody (do this once, guard it forever)
 
 The signing seed is the **only secret** in the whole system. It never
-touches the repo, the wheel, or any shipped artifact (`scripts/` is not
-packaged; `tests/test_license_sign.py` pins the wheel exclusion).
+touches the repo, the wheel, or any shipped artifact. The vendor generator
+also lives outside the product repository.
 
 Generate the signing seed and its matching verify key:
 
 ```bash
-python scripts/license_sign.py keygen
+python ../oracle-license-generator/license_sign.py keygen
 ```
 
 - Store the printed `signing_seed_hex` in a secret manager (or offline
@@ -72,7 +73,7 @@ with the procedure below. Deliver only the `token` string; never include the
 signing seed or the minting environment in the reply.
 
 ```bash
-ORACLE_LICENSE_SIGNING_KEY=<seed_hex> python scripts/license_sign.py mint \
+ORACLE_LICENSE_SIGNING_KEY=<seed_hex> python ../oracle-license-generator/license_sign.py mint \
   --licensee "customer name or email (their choice)" \
   --key-id k2 \  # required: a defaulted key id is how k1 got used
   [--expires 2027-01-31T00:00:00Z] \
