@@ -22,14 +22,14 @@ workflow in [docs/SUPPORT.md](docs/SUPPORT.md). Data and privacy:
 [PRIVACY.md](PRIVACY.md) — what is collected (nothing automatically), what
 stays on your disk, and what sharing a crash report means.
 
-Rhetoric is a local PySide6 desktop app and CLI for turning a `.txt` or `.md` two-person dialogue into a single FLAC render with Chatterbox. The repository includes Linux and Windows installer scripts; Windows is unsupported.
+Rhetoric is a local PySide6 desktop app and CLI for turning a `.txt` or `.md` two-person dialogue into a single FLAC render with Chatterbox. The repository includes Linux and Windows installer scripts; Windows is experimental.
 
 Chatterbox outputs include built-in Perth watermarking by design. This project does not remove or hide that.
 
 ## Release Candidate (1.5.0)
 
 Linux x86_64 is the intended qualification target but is not yet qualified for
-customer distribution. Windows is **unsupported**; GUI certification and the
+customer distribution. Windows is **experimental**; GUI certification and the
 native-crash investigation remain open. Read [docs/SOFT_LAUNCH.md](docs/SOFT_LAUNCH.md)
 for the existing install and offline activation details. The commercial gate
 still blocks on the draft EULA. First-user/project and upgrade qualification,
@@ -98,7 +98,7 @@ settings untouched. The underlying per-action scripts
 
 - Supported Python: `3.11` or `3.12`
 - Intended qualification target: Linux x86_64; clean installed-artifact acceptance remains open
-- Windows is **unsupported** and excluded from the proposed paid offer; see [docs/SOFT_LAUNCH.md](docs/SOFT_LAUNCH.md)
+- Windows is **experimental** and excluded from the proposed paid offer; see [docs/SOFT_LAUNCH.md](docs/SOFT_LAUNCH.md)
 - Default inference path: CPU (PyTorch Chatterbox in-process); CUDA is experimental
 - Vulkan through audio.cpp is experimental; see "Vulkan Backend (audio.cpp)" below
 

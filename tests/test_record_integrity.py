@@ -415,7 +415,7 @@ def test_every_resolved_entry_form_by_form() -> None:
     "RESOLVED block" phrasing must NOT open an entry; a backticked citation
     inside the entry counts; the marker itself is not a citation."""
     prose_text = (
-        "# The Oracle state\n\n"
+        "# Rhetoric state\n\n"
         "an entry gets its RESOLVED block (with the repro facts) — doctrine prose,\n"
         "no date anchor, never opens an entry\n\n"
         "- **RESOLVED 2026-09-28** — real entry citing `(commit 5d26f1a)`\n\n"

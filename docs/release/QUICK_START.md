@@ -8,7 +8,7 @@ candidate is ready for general distribution.
 ## 1. Check the prerequisites
 
 - Linux x86_64 is the intended qualification target; clean installed-artifact
-  acceptance remains open. Windows is unsupported and excluded from the
+  acceptance remains open. Windows is experimental and excluded from the
   proposed paid offer.
 - CPU is the default inference path. CUDA and Vulkan are experimental and are
   not qualified for customer production use.

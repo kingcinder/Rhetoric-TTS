@@ -127,6 +127,11 @@ docs/CONSUMER_CHANGELOG_DRAFT-*
 oracle_license.json
 oracle_license.json.tmp
 
+# EULA acceptance is repo-local runtime state (eula_acceptance.py writes it
+# into the checkout root on first run); never commit a user acceptance record.
+eula_acceptance.json
+eula_acceptance.json.tmp
+
 # Compiled license core (scripts/build_native_license.py) and Rust build output.
 crates/*/target/
 src/the_oracle/_native/*.so

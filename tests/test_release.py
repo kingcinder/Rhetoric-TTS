@@ -98,7 +98,7 @@ def _write_fake_repo(
         dynamic = '[tool.setuptools.dynamic]\nversion = { attr = "the_oracle.__version__" }\n'
     (tmp_path / "pyproject.toml").write_text(project + "\n" + dynamic, encoding="utf-8")
     (tmp_path / "README.md").write_text(
-        "# The Oracle\n\n"
+        "# Rhetoric\n\n"
         f"**Release V{readme_version or version}** — some release description.\n\n"
         "Body text that must never be touched.\n",
         encoding="utf-8",

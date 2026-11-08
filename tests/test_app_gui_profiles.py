@@ -1703,7 +1703,7 @@ def test_parse_oracle_model_path_extracts_export_line() -> None:
 
     sample = (
         "Chatterbox model installed: /tmp/audio.cpp/models/Chatterbox-GGUF/chatterbox-q8_0.gguf\n\n"
-        "Point The Oracle at it and render on the Vulkan backend:\n\n"
+        "Point Rhetoric at it and render on the Vulkan backend:\n\n"
         '    export ORACLE_AUDIOCPP_MODEL="/tmp/audio.cpp/models/Chatterbox-GGUF/chatterbox-q8_0.gguf"\n'
         '    export ORACLE_AUDIOCPP_CLI="..."\n'
     )

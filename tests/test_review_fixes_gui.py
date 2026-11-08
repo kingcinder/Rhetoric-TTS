@@ -1,4 +1,4 @@
-"""Review-fix regression tests for the Oracle desktop GUI.
+"""Review-fix regression tests for the Rhetoric desktop GUI.
 
 Covers the GUI defects fixed in the 2026-09-10 review cycle that don't need
 Qt, so they run headless:

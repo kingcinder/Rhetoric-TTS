@@ -39,7 +39,7 @@ for arg in "$@"; do
     -h | --help)
       echo "Usage: $0 [--with-model]"
       echo
-      echo "Builds the audio.cpp Vulkan CLI (audiocpp_cli) used by the Oracle's"
+      echo "Builds the audio.cpp Vulkan CLI (audiocpp_cli) used by Rhetoric's"
       echo "opt-in Vulkan backend, applying Rhetoric's vendored ggml fixes."
       echo
       echo "Options:"

@@ -402,7 +402,7 @@ def test_check_journal_accepts_the_house_formats_life() -> None:
     skip, empty fields, and broken commit citations."""
     tool = _load_tool()
     lines = [
-        "# JUNO_FIXES.log — Oracle TTS launch-readiness",
+        "# JUNO_FIXES.log — Rhetoric TTS launch-readiness",
         "",
         "Format: `<date> | <file> | <what was wrong> | <what you changed> | <test results>`",
         "2026-09-17 | Noticed, not actioned | stale launcher note (two fields — fine)",

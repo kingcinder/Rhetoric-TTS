@@ -5,7 +5,7 @@ release has passed every acceptance gate.
 
 - **Human audio review is outstanding.** Automated CPU synthesis produced a
   valid FLAC, but intelligibility and audible quality have not been reviewed.
-- **Windows is unsupported and excluded from the proposed paid offer** until
+- **Windows is experimental and excluded from the proposed paid offer** until
   GUI certification and native installer acceptance pass.
 - **CUDA and Vulkan are experimental.** Matching-hardware production rendering
   and resource measurements are not qualified.

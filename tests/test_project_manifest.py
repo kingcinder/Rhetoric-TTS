@@ -13,7 +13,7 @@ from the_oracle.models.project import RenderPlan, VoiceSettings
 def _sample_project(tmp_path: Path):
     source = tmp_path / "dialogue.txt"
     source.write_text(
-        "Speaker A: The Oracle is online.\n"
+        "Speaker A: Rhetoric is online.\n"
         "Speaker B: Confirm the signal path.\n",
         encoding="utf-8",
     )

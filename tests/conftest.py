@@ -1,4 +1,4 @@
-"""Shared pytest fixtures for The Oracle's test suite.
+"""Shared pytest fixtures for Rhetoric's test suite.
 
 Two jobs live here. :func:`_restore_oracle_env` is an autouse fixture that makes
 ``ORACLE_*`` environment variables a per-test sandbox: without it, a test that (or

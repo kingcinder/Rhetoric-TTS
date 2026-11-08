@@ -78,7 +78,7 @@ def _write_consistent_repo(
         encoding="utf-8",
     )
     (tmp_path / "README.md").write_text(
-        f"# The Oracle\n\n**Release V{readme_version or version}** — notes.\n",
+        f"# Rhetoric\n\n**Release V{readme_version or version}** — notes.\n",
         encoding="utf-8",
     )
     (tmp_path / "STATE.md").write_text(

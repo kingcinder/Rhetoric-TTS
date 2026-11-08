@@ -18,7 +18,7 @@ approval.
 ## Distribution and qualification status
 
 The candidate is not approved for commercial distribution. Linux x86_64 is the
-intended qualification target. Windows is unsupported and excluded from the
+intended qualification target. Windows is experimental and excluded from the
 proposed paid offer until its GUI and installer qualification passes. CUDA and
 Vulkan are experimental. Frozen artifacts, clean-machine installation,
 offline activation, model download/resume, rollback, uninstall, and human audio

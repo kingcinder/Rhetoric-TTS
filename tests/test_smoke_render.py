@@ -97,7 +97,7 @@ def test_deterministic_markdown_smoke_render_runs_end_to_end(tmp_path: Path) -> 
 def test_render_progress_reports_stage_updates(tmp_path: Path) -> None:
     dialogue = tmp_path / "dialogue.txt"
     dialogue.write_text(
-        "Speaker A: The Oracle is online.\n"
+        "Speaker A: Rhetoric is online.\n"
         "Speaker B: Confirm the signal path.\n",
         encoding="utf-8",
     )
