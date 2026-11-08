@@ -1421,7 +1421,7 @@ def _build_next_steps(report: dict[str, Any], *, ci_mode: bool) -> list[str]:
         detail = pins["error"] or "the installed venv does not match the pyproject pins"
         steps.append(
             "Dependency drift detected: " + detail
-            + f" Re-run {repo_bootstrap_display()} (or the oracle update) to restore the declared dependency set."
+            + f" Re-run {repo_bootstrap_display()} (or the rhetoric update) to restore the declared dependency set."
         )
 
     lic = report.get("licensing") or {"ok": True, "state": "no_token"}
@@ -1498,7 +1498,7 @@ def _build_next_steps(report: dict[str, Any], *, ci_mode: bool) -> list[str]:
         )
     cuda = report.get("cuda_backend", {"devices": [], "runtime_available": True, "reason": "CUDA probe not requested."})
     if cuda.get("devices") and not cuda.get("runtime_available"):
-        cuda_update_command = "oracle.ps1 update --pytorch-runtime cuda" if is_windows() else "./oracle update --pytorch-runtime cuda"
+        cuda_update_command = "rhetoric.ps1 update --pytorch-runtime cuda" if is_windows() else "./rhetoric update --pytorch-runtime cuda"
         steps.append(
             "CUDA is not currently usable: " + cuda.get("reason", "unknown reason") +
             " Choose CPU, install the CUDA PyTorch runtime with " +

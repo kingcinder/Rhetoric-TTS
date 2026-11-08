@@ -607,7 +607,8 @@ def install(*, pytorch_runtime: str = "auto", offline_bundle: Path | None = None
 
 def update(skip_doctor: bool = False, *, pytorch_runtime: str = "auto", offline_bundle: Path | None = None) -> int:
     """Refresh an existing install in place: reinstall dependencies (picking up
-    pyproject changes) and rebuild the managed launchers. User data (Input/,
+    pyproject changes) and rebuild the managed launchers, including the
+    desktop/start-menu entries, so a product rename reaches the desktop. User data (Input/,
     Seashells/, Profiles/, Output/, and the app settings file) is untouched."""
     if not (REPO_ROOT / ".venv").exists():
         print("No existing install found; running a full install instead.")
@@ -623,6 +624,7 @@ def update(skip_doctor: bool = False, *, pytorch_runtime: str = "auto", offline_
         seed_offline_models(offline_bundle)
         write_offline_marker(offline_bundle)
     install_managed_wrapper()
+    install_desktop_launcher()
     if not skip_doctor:
         doctor_status = run_doctor()
         if doctor_status != 0:

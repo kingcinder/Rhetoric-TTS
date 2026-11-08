@@ -180,6 +180,29 @@ def test_uninstall_removes_managed_desktop_files(manage, tmp_path, monkeypatch) 
     assert unrelated.exists()  # unmanaged files are left alone
 
 
+def test_update_rebuilds_desktop_launchers(manage, tmp_path, monkeypatch) -> None:
+    """Update must refresh the desktop/start-menu entries, not just the CLI
+    wrappers: an install made under the old product name otherwise keeps its
+    stale desktop entries forever, because update was the documented refresh
+    path and it never called install_desktop_launcher()."""
+    monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path / "xdg"))
+    repo = tmp_path / "repo"
+    (repo / ".venv").mkdir(parents=True)
+    monkeypatch.setattr(manage, "REPO_ROOT", repo)
+    monkeypatch.setattr(manage, "ensure_venv", lambda: repo / ".venv" / "bin" / "python")
+    monkeypatch.setattr(manage, "install_dependencies", lambda *a, **k: None)
+    monkeypatch.setattr(manage, "install_managed_wrapper", lambda: repo / ".venv" / "bin" / "rhetoric")
+
+    assert manage.update(skip_doctor=True) == 0
+
+    entry = tmp_path / "xdg" / "applications" / "rhetoric.desktop"
+    assert entry.is_file()
+    assert "Name=Rhetoric" in entry.read_text(encoding="utf-8")
+    assert (tmp_path / "xdg" / "applications" / "the-oracle.desktop").is_file()
+    assert (tmp_path / "Desktop" / "rhetoric.desktop").is_file()
+    assert (tmp_path / "Desktop" / "the-oracle.desktop").is_file()
+
+
 def test_update_forwards_offline_bundle_to_full_install(manage, tmp_path, monkeypatch) -> None:
     """A no-venv `update --offline-bundle X` must fall back to a full install
     that still uses the bundle.
