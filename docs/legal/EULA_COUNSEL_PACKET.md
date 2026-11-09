@@ -1,5 +1,7 @@
 # EULA Counsel Packet — 1.5.0 RC
 
+**Addendum (2026-11-08, second pass):** the EULA has since been finalized as EULA.md (version 1.5.0-final) and revised in a second research pass covering Washington Article 2 applicability, payment-channel refund law, and the My Health My Data Act, with an adversarial comb-through. The finalized text and the packaged copy are byte-identical and are not drafts; the commercial defaults are adopted terms, not proposals. The current record is docs/release/EULA_WA_VALIDATION.md, which supersedes the draft-era summary below. Counsel review remains outstanding; no legal approval is claimed.
+
 Status: owner-finalized 2026-11-08 by owner order. Counsel review remains outstanding; no legal approval is claimed.
 
 ## Documents
