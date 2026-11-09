@@ -132,6 +132,12 @@ def _normalize_app_settings(payload: dict[str, Any] | None) -> dict[str, Any]:
         "audio_cpp_max_batch": _normalize_audio_cpp_max_batch(data.get("audio_cpp_max_batch")),
         "audio_cpp_cli": _normalize_path_string(data.get("audio_cpp_cli")),
         "audio_cpp_model": _normalize_path_string(data.get("audio_cpp_model")),
+        # Automated-updates opt-out (Settings -> Advanced). Default on;
+        # same string-tolerant bool coercion as remember_backend, so a
+        # hand-edited "false"/"off" really does turn updates off.
+        "automatic_updates_enabled": _normalize_remember_backend(
+            data.get("automatic_updates_enabled", True)
+        ),
     }
     # Workspace-persistence keys (theme, remembered input file, splitter
     # sizes, section shares/collapses, window geometry). Pass-through with
@@ -229,7 +235,7 @@ def load_app_settings() -> dict[str, Any]:
         return _normalize_app_settings({})
     try:
         payload = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError):
         return _normalize_app_settings({})
     return _normalize_app_settings(payload)
 

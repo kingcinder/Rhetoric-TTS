@@ -950,6 +950,58 @@ class MainWindow(QMainWindow):
             self.input_path.setText(str(self._default_input_path))
         self.outdir_path.setText(str(self._default_output_dir))
         self._refresh_cast_bar()
+        self._build_update_settings(layout)
+
+    def _build_update_settings(self, layout) -> None:  # noqa: ANN001
+        """Advanced (low-prominence) update controls at the very bottom of
+        the Shared Render Settings section: the automated-updates opt-out.
+        Deliberately not on any main screen, and the app never nags about it."""
+        group = QGroupBox("Advanced")
+        group.setObjectName("advanced_settings")
+        box = QVBoxLayout(group)
+        self.automated_updates_check = QCheckBox("Turn off automated updates")
+        self.automated_updates_check.setObjectName("automated_updates_opt_out")
+        current = load_app_settings()
+        self.automated_updates_check.setChecked(
+            not bool(current.get("automatic_updates_enabled", True))
+        )
+        self.automated_updates_check.setToolTip(
+            "Rhetoric checks for updates automatically and installs verified "
+            "updates for managed installs. Turn this off only if you manage "
+            "updates yourself."
+        )
+        box.addWidget(self.automated_updates_check)
+        warning = QLabel(
+            "Warning: if you turn automated updates off, you will not be able "
+            "to submit bug tickets or receive any other form of customer "
+            "support until you re-enable automated updates, have fully "
+            "updated the program to the current version, and have re-checked "
+            "your issue with the automatic bug catcher on the fully updated "
+            "program."
+        )
+        warning.setObjectName("automated_updates_warning")
+        warning.setWordWrap(True)
+        box.addWidget(warning)
+        self.automated_updates_check.toggled.connect(self._on_automated_updates_toggled)
+        layout.addWidget(group)
+
+    def _on_automated_updates_toggled(self, checked: bool) -> None:
+        """Persist the opt-out (checked means updates are OFF). When updates
+        are switched back on, refresh the session update state in the
+        background so the support gate sees this session's fresh check."""
+        settings = load_app_settings()
+        settings["automatic_updates_enabled"] = not bool(checked)
+        save_app_settings(settings)
+        if not checked:
+            import threading
+
+            from the_oracle import update_service
+
+            threading.Thread(
+                target=update_service.run_automated_update,
+                args=(load_app_settings(),),
+                daemon=True,
+            ).start()
 
     def _build_review_content(self, section: QHSectionGroup) -> None:
         """The review table (Review section)."""
@@ -1623,6 +1675,23 @@ class MainWindow(QMainWindow):
             message_box_cls=QMessageBox,
             open_path_fn=self._open_path_with_viewer,
         )
+        self._start_automated_update_check()
+
+    def _start_automated_update_check(self) -> None:
+        """Automated update check at startup: a background thread, fully
+        non-blocking and silent when offline. The result is recorded on
+        the update service session, where the support gate reads it."""
+        import threading
+
+        from the_oracle import update_service
+
+        def _run() -> None:
+            try:
+                update_service.run_automated_update(load_app_settings())
+            except Exception:  # noqa: BLE001 - updates must never break startup
+                return
+
+        threading.Thread(target=_run, daemon=True).start()
 
     def _open_crash_privacy_dialog(self) -> None:
         from the_oracle.crash import consent as crash_consent

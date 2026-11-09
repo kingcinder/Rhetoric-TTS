@@ -33,6 +33,21 @@ def root(tmp_path: Path, monkeypatch) -> Path:
     return install
 
 
+@pytest.fixture(autouse=True)
+def _support_gate_session_current(monkeypatch):
+    """The share actions are support-gated now: they need a session whose
+    automated update check already found the install current. Seed that
+    session state so these tests exercise the share flow itself."""
+    from the_oracle import update_service
+
+    session = update_service.UpdateSession()
+    session.record(
+        update_service.UpdateCheckResult(status="current", current_version="1.5.0")
+    )
+    monkeypatch.setattr(update_service, "SESSION", session)
+
+
+
 def _new(root: Path, *extra: str) -> dict:
     code = cli.main(
         [

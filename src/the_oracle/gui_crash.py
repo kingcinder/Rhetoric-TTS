@@ -483,6 +483,19 @@ def run_problem_report_dialog(
             save_report(root, report)
         return report
 
+    def _support_blocked() -> bool:
+        """The support gate: sharing a report IS a support submission, so
+        it requires automated updates on and a session-verified current
+        install (the_oracle.support.gate). Saving a draft and building a
+        local package stay available; only sharing is gated."""
+        from the_oracle.support.gate import support_submission_block
+
+        verdict = support_submission_block()
+        if verdict.allowed:
+            return False
+        _inform(message_box_cls, dialog, "Support Unavailable", verdict.message)
+        return True
+
     def on_preview() -> None:
         build(save=False)
 
@@ -538,6 +551,8 @@ def run_problem_report_dialog(
         dialog.done(0)
 
     def on_issue() -> None:
+        if _support_blocked():
+            return
         report = build(save=True)
         if report is None:
             return
@@ -564,6 +579,8 @@ def run_problem_report_dialog(
         dialog.done(0)
 
     def on_email() -> None:
+        if _support_blocked():
+            return
         report = build(save=True)
         if report is None:
             return

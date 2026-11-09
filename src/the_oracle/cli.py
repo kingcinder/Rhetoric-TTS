@@ -1575,6 +1575,14 @@ def _resolve_crash_record(root: Path, requested: str | None) -> str | None:
     raise ValueError(f"no crash record named {name!r}")
 
 
+def _support_gate_message() -> str | None:
+    """The support-gate message when a submission is blocked, else None."""
+    from the_oracle.support.gate import support_submission_block
+
+    verdict = support_submission_block()
+    return None if verdict.allowed else verdict.message
+
+
 def _handle_bug_report_new(args: argparse.Namespace) -> int:
     from the_oracle.offline import repo_root
     from the_oracle.support import issue_url, mailto_url, new_report, save_report, share_note
@@ -1732,6 +1740,10 @@ def _handle_bug_report_issue(args: argparse.Namespace) -> int:
     except (FileNotFoundError, ValueError) as error:
         print(f"error: {error}", file=sys.stderr)
         return 1
+    block = _support_gate_message()
+    if block is not None:
+        print(block, file=sys.stderr)
+        return 3
     issue = issue_url(report)
     mail = mailto_url(report)
     if args.json:
