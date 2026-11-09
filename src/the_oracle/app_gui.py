@@ -347,13 +347,15 @@ class MainWindow(QMainWindow):
         self._preflight_queued_after_setup = False
         self.progress_dialog: RenderProgressDialog | None = None
         self.preview_dialog: RenderProgressDialog | None = None
-        self.player = QMediaPlayer(self)
-        self.audio_output = QAudioOutput(self)
-        self.player.setAudioOutput(self.audio_output)
-        # EndOfMedia must never stop/delete the player from inside its own
-        # mediaStatusChanged emission (QtMultimedia use-after-free); defer the
-        # stop out of the handler so the backend finishes delivering first.
-        self.player.mediaStatusChanged.connect(self._on_preview_playback_status)
+        # The preview player is created lazily on first use (see the
+        # ``player`` property): constructing QMediaPlayer/QAudioOutput at
+        # window-construction time initializes the QtMultimedia backend even
+        # for sessions that never play a preview, and on machines without a
+        # working audio stack (CI runners, VMs with no sound device) that
+        # initialization itself is the fragile step. The Recording Studio
+        # dialog's audition player already follows the same lazy pattern.
+        self._player: QMediaPlayer | None = None
+        self._audio_output: QAudioOutput | None = None
         self.setWindowTitle("Rhetoric")
         self.resize(1320, 1060)
         self.setMinimumSize(1160, 760)
@@ -4203,12 +4205,49 @@ class MainWindow(QMainWindow):
             # semantics.
             QTimer.singleShot(0, self, self._stop_preview_player)
 
+    def _ensure_preview_player(self) -> QMediaPlayer:
+        """Create the persistent preview player on first use.
+
+        One player for the window's lifetime: creating and deleting a player
+        per preview races the QtMultimedia backend teardown (the same
+        use-after-free discipline as the Recording Studio audition player).
+        """
+        if self._player is None:
+            self._audio_output = QAudioOutput(self)
+            self._player = QMediaPlayer(self)
+            self._player.setAudioOutput(self._audio_output)
+            # EndOfMedia must never stop/delete the player from inside its
+            # own mediaStatusChanged emission (QtMultimedia use-after-free);
+            # defer the stop out of the handler so the backend finishes
+            # delivering first (_on_preview_playback_status does that).
+            self._player.mediaStatusChanged.connect(
+                self._on_preview_playback_status
+            )
+        return self._player
+
+    @property
+    def player(self) -> QMediaPlayer:
+        """The persistent preview player, created on first access."""
+        return self._ensure_preview_player()
+
+    @property
+    def audio_output(self) -> QAudioOutput:
+        """The preview player's audio output, created with the player."""
+        self._ensure_preview_player()
+        assert self._audio_output is not None
+        return self._audio_output
+
     def _stop_preview_player(self) -> None:
         # GUI-thread contexts only (EndOfMedia deferral, window close) — the
         # persistent player is stopped, never deleted, so it can be reused for
-        # the next preview without backend teardown churn.
+        # the next preview without backend teardown churn. Reads the backing
+        # field directly: a window that never played a preview has no player
+        # to stop, and closing it must not create one.
+        player = self._player
+        if player is None:
+            return
         try:
-            self.player.stop()
+            player.stop()
         except Exception:
             pass
 

@@ -311,13 +311,24 @@ def _run_in_scratch(
     about whatever happens to be sitting in the shared ``/tmp``.
     """
     scratch.mkdir(parents=True, exist_ok=True)
+    # A controlled XDG_RUNTIME_DIR beside (not inside) the scratch: with no
+    # runtime dir in the environment, libpulse falls back to a
+    # ``pulse-<hash>`` directory under TMPDIR that is never removed, which
+    # would land in the scratch and read as the certifier leaving litter.
+    runtime = scratch.with_name(scratch.name + "-runtime")
+    runtime.mkdir(parents=True, exist_ok=True)
+    runtime.chmod(0o700)
     proc = subprocess.run(
         [sys.executable, str(SCRIPT), *args],
         cwd=REPO_ROOT,
         capture_output=True,
         text=True,
         timeout=300,
-        env={**os.environ, "TMPDIR": str(scratch)},
+        env={
+            **os.environ,
+            "TMPDIR": str(scratch),
+            "XDG_RUNTIME_DIR": str(runtime),
+        },
     )
     return proc, sorted(path.name for path in scratch.iterdir())
 

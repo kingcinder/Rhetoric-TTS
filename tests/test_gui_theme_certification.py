@@ -61,13 +61,25 @@ def _run_certifier_in_scratch(
     be graded against other runs' litter as much as its own.
     """
     scratch.mkdir(parents=True, exist_ok=True)
+    # A controlled XDG_RUNTIME_DIR beside (not inside) the scratch: with no
+    # runtime dir in the environment, libpulse falls back to a
+    # ``pulse-<hash>`` directory under TMPDIR that is never removed, which
+    # would land in the scratch and read as the certifier leaving litter.
+    runtime = scratch.with_name(scratch.name + "-runtime")
+    runtime.mkdir(parents=True, exist_ok=True)
+    runtime.chmod(0o700)
     proc = subprocess.run(
         [sys.executable, str(CERTIFIER), *args],
         cwd=REPO_ROOT,
         capture_output=True,
         text=True,
         timeout=300,
-        env={**os.environ, "QT_QPA_PLATFORM": "offscreen", "TMPDIR": str(scratch)},
+        env={
+            **os.environ,
+            "QT_QPA_PLATFORM": "offscreen",
+            "TMPDIR": str(scratch),
+            "XDG_RUNTIME_DIR": str(runtime),
+        },
     )
     return proc, sorted(path.name for path in scratch.iterdir())
 
