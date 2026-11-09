@@ -73,6 +73,7 @@ def _good(certifier, **overrides):
         "switch_open_gate_events": 18506,
         "switch_rounds": 4,
         "filter_installed": True,
+        "instrumented": True,
         "filter_window_scoped": True,
         "filter_app_scope_installs": 0,
         "filter_calls_ungated": 2920,
@@ -96,6 +97,7 @@ def test_windows_safe_polling_mode_needs_no_native_filter_events(certifier) -> N
     measured = _good(
         certifier,
         safe_polling_mode=True,
+        instrumented=False,
         storm_change_events=0,
         storm_all_events=0,
         storm_after_events=0,

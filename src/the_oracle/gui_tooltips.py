@@ -10,7 +10,12 @@ Implementation notes
 - A :class:`CtrlHoverHelp` is owned by its *main window*. No event filter is
   installed on the QApplication. On Windows it uses timer polling without
   native event filters because Qt delivered an invalid event wrapper during
-  window layout on the 2026-10-16 CI runner. On other platforms the filter
+  window layout on the 2026-10-16 CI runner. Headless Qt platforms
+  (``offscreen``/``minimal``) take the same polling mode: the hosted Linux
+  certifier faulted at the same ``event.type()`` call, on a wrapper shiboken
+  still reported valid, deterministically on the runners and never on a
+  desktop stack (2026-11-09) — and a headless session has no hovering user
+  for the filters to serve. On desktop platforms the filter
   rides the window and tooltip owners. An application-wide Python filter receives
   every event of every object in
   the process, including objects that are mid-destruction; that is the frame
@@ -86,6 +91,31 @@ _RESWEEP_MIN_INTERVAL_MS = 250
 _INSTANCE: CtrlHoverHelp | None = None  # type: ignore[valid-type]
 
 
+def _use_event_filters() -> bool:
+    """Whether Ctrl-hover help may ride QEvent filters on this platform.
+
+    Two platform families say no, for one underlying reason: PySide event
+    dispatch can hand the filter a QEvent wrapper whose C++ object is
+    already gone, and the first ``event.type()`` on it faults natively —
+    the ``shiboken6.isValid`` guard in ``eventFilter`` does not catch the
+    variant where the wrapper outlives its object in shiboken's registry.
+
+    * Windows, where wrappers are invalidated during layout churn (the
+      1.4.0 certifier fault; polling has been the Windows mode since).
+    * Headless Qt platforms (``offscreen``/``minimal``), where the hosted
+      Linux certifier faulted identically and deterministically while
+      every desktop-stack run passed (2026-11-09).
+
+    Everywhere else — real X11/Wayland/macOS desktops — the filters run.
+    """
+    if is_windows():
+        return False
+    app = QApplication.instance()
+    if app is None:
+        return True
+    return app.platformName() not in ("offscreen", "minimal")
+
+
 class CtrlHoverHelp(QObject):
     """Ctrl+hover description tooltips, scoped to the window that binds them.
 
@@ -134,12 +164,13 @@ class CtrlHoverHelp(QObject):
         if self.parent() is not window:
             self.setParent(window)
         self._window = window
-        if not is_windows():
+        if _use_event_filters():
             window.installEventFilter(self)
         else:
-            # Native Windows QEvent wrappers can be invalidated during Qt
-            # layout churn before PySide calls eventFilter. Use the existing
-            # cursor poller and a bounded tooltip sweep there, with no native
+            # QEvent wrappers can be invalidated during Qt layout churn
+            # before PySide calls eventFilter on the platforms
+            # _use_event_filters() excludes. Use the existing cursor
+            # poller and a bounded tooltip sweep there, with no native
             # event-filter callbacks in the path.
             self._sweep_timer.start()
         # PySide emits `destroyed` with no argument (the C++ signature's
@@ -159,6 +190,7 @@ class CtrlHoverHelp(QObject):
         """
         if not isinstance(root, QWidget) or not _shiboken_is_valid(root):
             return
+        use_filters = _use_event_filters()
         for widget in (root, *root.findChildren(QWidget)):
             # A destroyed signal normally prunes the registry immediately,
             # but Windows can dispatch this timer while Qt is tearing down a
@@ -168,7 +200,7 @@ class CtrlHoverHelp(QObject):
             if widget is self._window:
                 continue
             if widget in self._swept:
-                if is_windows() and widget.toolTip():
+                if not use_filters and widget.toolTip():
                     tip = widget.toolTip()
                     self._original_tooltips.setdefault(widget, tip)
                     self._descriptions.setdefault(widget, tip)
@@ -176,7 +208,7 @@ class CtrlHoverHelp(QObject):
                 continue
             if not widget.toolTip():
                 continue
-            if is_windows():
+            if not use_filters:
                 tip = widget.toolTip()
                 self._original_tooltips.setdefault(widget, tip)
                 self._descriptions.setdefault(widget, tip)
@@ -214,7 +246,7 @@ class CtrlHoverHelp(QObject):
         for widget in (window, *self._swept):
             if widget is None:
                 continue
-            if not is_windows():
+            if _use_event_filters():
                 try:
                     widget.removeEventFilter(self)
                 except RuntimeError:

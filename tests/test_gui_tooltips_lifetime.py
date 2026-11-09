@@ -4,7 +4,11 @@ The 1.4.0 CI certifier faulted inside ``CtrlHoverHelp.eventFilter`` ->
 ``event.type()`` on the *second* window build, after an earlier window had
 been torn down and deleted. These tests pin the lifecycle mitigation: each
 window owns its helper, and no product filter is installed on QApplication.
-The original native fault remains unconfirmed on Linux.
+The fault stayed unconfirmed on Linux desktops, then reproduced
+deterministically on the hosted headless Linux runners (2026-11-09:
+faulthandler stack into ``eventFilter`` from the certifier's persistence
+rebuild), which is why headless platforms now take the polling mode too —
+see ``gui_tooltips._use_event_filters``.
 
 These tests pin the mitigation, not the crash (a segfault cannot be asserted —
 it takes the test process with it):
@@ -106,12 +110,13 @@ def test_release_detaches_everything_it_installed(qt_app):
 
     try:
         helper = install_ctrl_hover_help(window)
-        # Windows stores and suppresses native tips without installing a Qt
-        # event filter; other platforms filter tooltip owners individually.
+        # Polling platforms store and suppress native tips without
+        # installing a Qt event filter; filter platforms filter tooltip
+        # owners individually. _use_event_filters() decides which.
         assert button in helper._swept
         assert field in helper._swept
         assert window not in helper._swept
-        if gui_tooltips.is_windows():
+        if not gui_tooltips._use_event_filters():
             assert not removed
             assert button.toolTip() == ""
             assert field.toolTip() == ""
@@ -120,7 +125,7 @@ def test_release_detaches_everything_it_installed(qt_app):
 
         with _mock.patch.object(QWidget, "removeEventFilter", spy):
             helper.release()
-        if gui_tooltips.is_windows():
+        if not gui_tooltips._use_event_filters():
             assert not removed
             assert button.toolTip() == "native text"
             assert field.toolTip() == "another native text"
@@ -305,7 +310,7 @@ def test_real_main_window_churn_leaves_no_filters_behind(qt_app, app_install_spy
                 for widget in window.findChildren(QWidget)
                 if widget.toolTip()
             ]
-            if gui_tooltips.is_windows():
+            if not gui_tooltips._use_event_filters():
                 assert helper._original_tooltips
                 assert helper._sweep_timer.isActive()
                 assert not installed
@@ -343,3 +348,61 @@ def test_real_main_window_churn_leaves_no_filters_behind(qt_app, app_install_spy
             QApplication.processEvents()
         assert app_install_spy == [], "MainWindow must never filter the QApplication"
     _release_singleton(qt_app)
+
+
+def test_use_event_filters_decision_matrix(qt_app, monkeypatch):
+    """The mode decision: desktops filter; Windows and headless poll.
+
+    Pins gui_tooltips._use_event_filters — the single seam the install,
+    sweep, and release paths all consult.
+    """
+    from PySide6.QtGui import QGuiApplication
+
+    def platform(name):
+        monkeypatch.setattr(QGuiApplication, "platformName", lambda self: name)
+
+    monkeypatch.setattr(gui_tooltips, "is_windows", lambda: False)
+    platform("xcb")
+    assert gui_tooltips._use_event_filters() is True
+    platform("wayland")
+    assert gui_tooltips._use_event_filters() is True
+    platform("offscreen")
+    assert gui_tooltips._use_event_filters() is False
+    platform("minimal")
+    assert gui_tooltips._use_event_filters() is False
+    monkeypatch.setattr(gui_tooltips, "is_windows", lambda: True)
+    platform("xcb")
+    assert gui_tooltips._use_event_filters() is False
+
+
+def test_headless_attach_polls_and_harvests_native_tips(qt_app, monkeypatch):
+    """On a headless platform, attach takes polling mode: no event filter
+    anywhere, the sweep timer runs, and native tips are harvested into
+    the registry (and restored on release) instead of being filtered —
+    the behavior the hosted certifier depends on (2026-11-09)."""
+    if gui_tooltips._use_event_filters():
+        pytest.skip("pins the headless polling mode; this platform filters")
+    installs: list[QObject] = []
+    original_install = QWidget.installEventFilter
+
+    def spy(self, obj):  # noqa: ANN001 - Qt signature
+        installs.append(obj)
+        return original_install(self, obj)
+
+    monkeypatch.setattr(QWidget, "installEventFilter", spy)
+    window = QWidget()
+    button = QPushButton("Render", window)
+    button.setToolTip("native text")
+    helper = CtrlHoverHelp(qt_app)
+    try:
+        helper.attach(window)
+        assert installs == [], "polling mode must not install any event filter"
+        assert helper._sweep_timer.isActive()
+        assert button in helper._swept
+        assert button.toolTip() == ""
+        assert helper.description_for(button) == "native text"
+    finally:
+        helper.release()
+        assert button.toolTip() == "native text"
+        window.close()
+        window.deleteLater()
