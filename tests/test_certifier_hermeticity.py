@@ -116,7 +116,12 @@ def test_sweep_never_touches_the_real_repo_or_config() -> None:
     detail = (
         f"rc={proc.returncode}\n"
         f"stdout tail:\n{proc.stdout[-2000:]}\n"
-        f"stderr tail:\n{proc.stderr[-2000:]}"
+        # stderr keeps 40k, not 2k: on a native fault the certifier's
+        # faulthandler dump lands in this stream, and the crash stack sits
+        # a whole extension-module list (~15k) before the end of it — a 2k
+        # tail shows only the module list's tail (hosted-runner SIGSEGV,
+        # 2026-11-09).
+        f"stderr tail:\n{proc.stderr[-40000:]}"
     )
     assert proc.returncode == 0, f"the sweep itself failed\n{detail}"
 
