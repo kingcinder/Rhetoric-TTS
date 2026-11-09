@@ -109,6 +109,26 @@ code.
 Attach the zip from step 3 to whichever channel you chose. The issue link
 cannot carry attachments, so the package is always attached separately.
 
+## 4a. Support conditions — updates must be on, and the app must be current
+
+Support is provided only for installations that keep automated updates
+enabled and are fully updated to the current version. This is enforced
+by the app, not just written here:
+
+- Automated updates are on by default. The opt-out lives in **Settings →
+  Advanced → "Turn off automated updates"**, next to a warning that
+  spells out this condition.
+- **Copy Issue Link**, **Email Support**, and `rhetoric bug-report issue`
+  check the condition before producing anything shareable. If automated
+  updates are off, or this session's update check found a newer version,
+  or no conclusive check has run yet (one is attempted on the spot),
+  the share action stops and explains what to do: re-enable automated
+  updates, fully update the program, re-check the issue with the
+  automatic bug catcher on the fully updated program, then submit.
+- Nothing else is gated: you can always write a draft, build a support
+  package, and read everything locally. Only *submitting* — getting the
+  ticket/email links — requires the conditions above.
+
 ## 5. What is collected — and what never is
 
 Collected (redacted):
@@ -164,3 +184,7 @@ sharing it.
 - [SOFT_LAUNCH.md](SOFT_LAUNCH.md) — current release gate and activation scope.
 - [PRIVACY.md](../PRIVACY.md) — the standing data policy and its test pins.
 - [CRASH_TELEMETRY_DESIGN.md](CRASH_TELEMETRY_DESIGN.md) — crash unit design.
+
+## Voice recordings do not belong in support submissions
+
+Support bundles contain diagnostic logs and settings only. Never attach voice recordings, voice models, or generated audio to a support submission or to a public issue: a voice recording is biometric data and is treated as consumer health data under Washington law (chapter 19.373 RCW). If your problem is about how a specific voice sounds, contact the Licensor at codysa90@gmail.com instead of posting a public issue, and you will be told exactly what to send. Refunds are governed by Section 7.2 of the EULA (EULA.md).
