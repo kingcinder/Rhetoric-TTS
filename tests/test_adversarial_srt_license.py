@@ -61,7 +61,12 @@ def test_many_cues_parse_completely():
     "ORACLE1..",
     "ORACLE2.aaaa.bbbb",
     "ORACLE1.!!!.???",
-    "ORACLE1." + "A" * 100000 + ".BBBB",
+    # Length-capped at 16k: pytest puts the node id (parameter included)
+    # in the PYTEST_CURRENT_TEST environment variable, and Windows rejects
+    # environment values longer than 32767 characters — a 100k token errors
+    # at setup/teardown there before the parser is ever called (hosted
+    # windows suite, 2026-11-09). 16k is still ~500x a real serial.
+    "ORACLE1." + "A" * 16384 + ".BBBB",
     "ORACLE1.ééé.ééé",
     "not-a-token",
     "ORACLE1.AAAA.BBBB.extra",

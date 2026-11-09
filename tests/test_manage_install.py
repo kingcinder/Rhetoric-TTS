@@ -32,6 +32,16 @@ def manage(tmp_path: Path, monkeypatch):
     # which reads the environment rather than Path.home().
     monkeypatch.setattr(module, "is_linux", lambda: True)
     monkeypatch.setattr(module, "is_windows", lambda: False)
+    # managed_launcher_path() lives in the_oracle.platform_support and reads
+    # is_windows() in ITS OWN namespace, so forcing the platform only on the
+    # manage_install module left the launcher following the real platform —
+    # on Windows this "Linux" fixture still produced rhetoric.cmd (hosted
+    # windows suite, 2026-11-09). Patch the predicates where the launcher
+    # decision is made as well (the test_platform_support.py pattern).
+    from the_oracle import platform_support
+
+    monkeypatch.setattr(platform_support, "is_linux", lambda: True)
+    monkeypatch.setattr(platform_support, "is_windows", lambda: False)
     monkeypatch.setenv("HOME", str(tmp_path))
     monkeypatch.setattr(Path, "home", staticmethod(lambda: tmp_path))
     monkeypatch.setattr(module.shutil, "which", lambda _name: None)  # no update-desktop-database
