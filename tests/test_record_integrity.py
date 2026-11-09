@@ -60,6 +60,8 @@ _NON_HASH_TOKENS = frozenset(
         "749d1c1a46eb10492095d68fbcf55691ccf137cd",  # external model revision
         "d75048347613a25d77de8cf6412eaae9fa7b26be",  # external model revision
         "748c5e28f6a7228b8f38ad7142ca97d29584544b",  # external audio.cpp revision
+        "4365833",  # Westlaw citation fragment (2010 WL 4365833, Attachmate v. Health Net) in the EULA validation memo — not a commit
+        "17734646",  # Product Hunt help-article id inside a URL in the market strategy doc — not a commit
     }
 )
 

@@ -901,6 +901,7 @@ class MainWindow(QMainWindow):
         form.addRow("Crossfade (ms)", self.crossfade_spin)
         form.addRow("", self.export_srt_check)
         form.addRow("", self.monologue_check)
+        self._build_update_settings(form)
 
     def _build_paths_content(self, section: QHSectionGroup) -> None:
         """The path rows + cast bar (Script & Cast section)."""
@@ -951,7 +952,6 @@ class MainWindow(QMainWindow):
             self.input_path.setText(str(self._default_input_path))
         self.outdir_path.setText(str(self._default_output_dir))
         self._refresh_cast_bar()
-        self._build_update_settings(self._project_settings_form)
 
     def _build_update_settings(self, layout) -> None:  # noqa: ANN001
         """Advanced (low-prominence) update controls at the very bottom of
