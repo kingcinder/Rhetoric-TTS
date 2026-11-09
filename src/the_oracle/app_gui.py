@@ -36,6 +36,7 @@ from PySide6.QtWidgets import (
     QTextEdit,
     QPushButton,
     QScrollArea,
+    QSizePolicy,
     QSplitter,
     QSpinBox,
     QTableWidget,
@@ -950,7 +951,7 @@ class MainWindow(QMainWindow):
             self.input_path.setText(str(self._default_input_path))
         self.outdir_path.setText(str(self._default_output_dir))
         self._refresh_cast_bar()
-        self._build_update_settings(layout)
+        self._build_update_settings(self._project_settings_form)
 
     def _build_update_settings(self, layout) -> None:  # noqa: ANN001
         """Advanced (low-prominence) update controls at the very bottom of
@@ -981,9 +982,16 @@ class MainWindow(QMainWindow):
         )
         warning.setObjectName("automated_updates_warning")
         warning.setWordWrap(True)
+        # The settings sections live in splitter panes with a narrow floor;
+        # a long word-wrapped label must never widen the pane's minimum.
+        warning.setMinimumWidth(0)
+        warning.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
         box.addWidget(warning)
         self.automated_updates_check.toggled.connect(self._on_automated_updates_toggled)
-        layout.addWidget(group)
+        # Inside the section's scrollable form: the group is the last row
+        # of Shared Render Settings, and living in the scroll area keeps
+        # it from raising the splitter pane's minimum width.
+        layout.addRow(group)
 
     def _on_automated_updates_toggled(self, checked: bool) -> None:
         """Persist the opt-out (checked means updates are OFF). When updates

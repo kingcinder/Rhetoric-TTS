@@ -489,3 +489,14 @@ def pytest_collection_modifyitems(items) -> None:
     for item in items:
         if item.path.name in _REAL_REPO_MODULES:
             item.add_marker(pytest.mark.xdist_group("real_repo_tree"))
+
+
+def pytest_itemcollected(item) -> None:
+    # xdist decides loadgroup placement from the marks present when ITS
+    # collection hooks run; marks added in pytest_collection_modifyitems
+    # land too late and the grouping silently never happened (proven by
+    # worker spread: group members ran on gw0..gw3 simultaneously and
+    # raced through the shared repo tree / settings store). Applying the
+    # same mark at item-collected time puts it in front of xdist.
+    if item.path.name in _REAL_REPO_MODULES:
+        item.add_marker(pytest.mark.xdist_group("real_repo_tree"))
