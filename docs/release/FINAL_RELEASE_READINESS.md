@@ -1,6 +1,6 @@
 # Final Release Readiness — Rhetoric 1.5.0
 
-- **Assessment date:** 2026-10-26
+- **Assessment date:** 2026-11-08
 - **Branch:** `release/1.5.0-final`
 **Distribution:** Not authorized or performed.
 
@@ -12,6 +12,18 @@ guards, package-content rules, and experimental GPU labels are implemented.
 The canonical release command passed the full suite and rebuilt the source
 archive and wheel. Exact-head hosted CI, Linux frozen-artifact installation,
 first-user lifecycle acceptance, and current-corpus audio review remain open.
+A 2026-11-08 hardening pass (commits 7706ef8..43381db) closed the test suite
+at 43381db: 2,240 passed / 0 failed locally under `-n 4`, with the
+suite-counts baseline recorded for that head from a fresh worktree
+(2,205 passed / 35 environment skips / 0 failed). The same pass reconciled
+the Seashells inventory and third-party notices with the shipped clip set,
+fixed the real-repo xdist isolation defect behind the theme/doctor
+certification races, landed the automated-update channel with its settings
+opt-out and enforced support gate (docs/release/UPDATE_CHANNEL.md), and
+added adversarial coverage for settings, subtitles, license tokens, and the
+update manifest. The gates that remain open are unchanged: human audio
+review, installed-lifecycle acceptance, Windows qualification, exact-head
+hosted CI, and independent counsel review.
 
 **COMMERCIAL STATUS: BLOCKED.** The EULA was finalized by the owner on 2026-11-08 (EULA.md; validation: docs/release/EULA_WA_VALIDATION.md), but qualified-counsel approval has not been obtained. The last observed soft-launch check reported the
 draft EULA blocker and an LGPL notice/source/replacement obligation warning.
