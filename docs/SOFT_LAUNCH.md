@@ -140,8 +140,7 @@ changed.
 - **Third-party obligations remain.** The soft-launch gate reports LGPL
   notice and replacement/source obligations for Qt and other weak-copyleft
   components. They require a documented fulfillment path before distribution.
-- **The EULA is a draft.** Owner and counsel must approve it before the draft
-  marker is removed or the release gate can pass.
+- **The EULA was finalized by the owner on 2026-11-08.** It is adopted as EULA.md and validated against Washington primary sources (docs/release/EULA_WA_VALIDATION.md); independent counsel review remains outstanding and is still required before the release gate can be treated as commercially cleared.
 - **A serial number gates functional features.** `render-report` and every
   other render or editing workflow require activation; help and status remain
   available without one.

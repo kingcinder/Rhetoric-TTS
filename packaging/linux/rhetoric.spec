@@ -11,7 +11,7 @@ datas.extend(
     [
         (str(repo / "LICENSE"), "."),
         (str(repo / "PRIVACY.md"), "."),
-        (str(repo / "EULA-DRAFT.md"), "."),
+        (str(repo / "EULA.md"), "."),
         (str(repo / "THIRD_PARTY_NOTICES.md"), "."),
     ]
 )

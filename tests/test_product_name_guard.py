@@ -15,7 +15,7 @@ def _customer_text_files() -> list[Path]:
         for relative in (
             "README.md",
             "PRIVACY.md",
-            "EULA-DRAFT.md",
+            "EULA.md",
             "THIRD_PARTY_NOTICES.md",
             "docs/SUPPORT.md",
             "docs/UPGRADING.md",

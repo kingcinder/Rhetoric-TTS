@@ -14,7 +14,7 @@ import os
 from pathlib import Path
 
 ACCEPTANCE_FILENAME = "eula_acceptance.json"
-EULA_FILENAME = "EULA-DRAFT.md"
+EULA_FILENAME = "EULA.md"
 
 
 def eula_path(root: str | Path) -> Path:

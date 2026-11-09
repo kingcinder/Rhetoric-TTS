@@ -13,8 +13,7 @@ The canonical release command passed the full suite and rebuilt the source
 archive and wheel. Exact-head hosted CI, Linux frozen-artifact installation,
 first-user lifecycle acceptance, and current-corpus audio review remain open.
 
-**COMMERCIAL STATUS: BLOCKED.** The EULA is a draft awaiting owner and
-qualified-counsel approval. The last observed soft-launch check reported the
+**COMMERCIAL STATUS: BLOCKED.** The EULA was finalized by the owner on 2026-11-08 (EULA.md; validation: docs/release/EULA_WA_VALIDATION.md), but qualified-counsel approval has not been obtained. The last observed soft-launch check reported the
 draft EULA blocker and an LGPL notice/source/replacement obligation warning.
 The check was not rerun after final edits because its automated asset review is
 outside the authorized scope.

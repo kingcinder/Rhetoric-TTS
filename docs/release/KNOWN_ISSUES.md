@@ -13,8 +13,7 @@ release has passed every acceptance gate.
   offline bundle is used. The provider receives ordinary connection metadata.
 - **Japanese conversion is not included in the managed installation.** Text
   normalization and multilingual paths have not been exhaustively qualified.
-- **The EULA is a draft.** Commercial distribution remains blocked pending
-  owner and counsel review; pricing and purchase terms are not approved.
+- **The EULA was finalized by the owner on 2026-11-08** and validated against Washington primary sources (docs/release/EULA_WA_VALIDATION.md); independent counsel review has not been obtained, and pricing and purchase terms are not approved.
 - **Dependency review is scoped.** `pip-audit` found no known vulnerabilities
   in its auditable installed dependency set. Locally sourced or non-PyPI
   packages were skipped and are not thereby proven free of vulnerabilities.

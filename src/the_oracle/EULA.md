@@ -1,21 +1,19 @@
-# Rhetoric End User License Agreement (DRAFT)
+# Rhetoric End User License Agreement
 
-**Draft for owner and qualified-counsel review — not approved for distribution.**
-
-**Last updated:** 2026-10-25
-**Proposed governing law:** Washington, United States
+**Last updated:** 2026-11-08
+**Governing law:** Washington, United States
 **Licensor contact:** codysa90@gmail.com
 
-This End User License Agreement (the **“Agreement”**) is a proposed contract between the person or legal entity accepting it (the **“Licensee”**) and the owner or licensor of Rhetoric (the **“Licensor”**). It applies to the Rhetoric desktop application, command-line tools, documentation, updates, and any bundled proprietary materials (collectively, the **“Software”**). Components distributed under separate open-source licenses are governed by those licenses as stated in the notices supplied with the Software.
+This End User License Agreement (the **“Agreement”**) is a contract between the person or legal entity accepting it (the **“Licensee”**) and the owner or licensor of Rhetoric (the **“Licensor”**). It applies to the Rhetoric desktop application, command-line tools, documentation, updates, and any bundled proprietary materials (collectively, the **“Software”**). Components distributed under separate open-source licenses are governed by those licenses as stated in the notices supplied with the Software.
 
-This document is a draft. It is not approved for customer distribution until the owner and qualified counsel approve the open terms, confirm the seller identity and address, confirm the sales channel and refund disclosures, and authorize removal of the DRAFT designation.
+This is the final text of the Agreement adopted by the Licensor. The seller identity and address for a purchase are stated in the applicable order or invoice; the Licensor contact above is the notice address for this Agreement.
 
 ## 1. Product and license grant
 
 1. The Software is licensed, not sold. The commercial product is a one-time purchase of a **serial number**. There is no subscription, recurring fee, Community edition, or trial edition.
 2. A valid serial number is required for functional use. Before activation, the Software may open so a person can view the application, activation controls, license status, help, and documentation; functional features remain unavailable. Activation may be completed offline using the supported activation process.
 3. Subject to payment, this Agreement, and the applicable order or invoice, the Licensor grants the Licensee a limited, personal, non-exclusive, non-transferable, non-sublicensable license to install and use the Software for the Licensee’s own internal purposes during the applicable license term and version scope.
-4. **Proposed commercial defaults for approval:** one named Licensee; use on that Licensee’s own machines; no machine binding unless the order expressly says otherwise; coverage for releases in the current major version; and no transfer except with the Licensor’s written approval. The order or invoice controls if it states different terms.
+4. **Commercial defaults.** Unless the applicable order or invoice expressly states different terms: the license is issued to one named Licensee; the Licensee may use the Software on that Licensee’s own machines; there is no machine binding; the license covers releases in the current major version; and the license may not be transferred except with the Licensor’s written approval. The order or invoice controls if it states different terms.
 5. The Software may include third-party models, libraries, and tools. Their separate terms, attribution, source offers, and restrictions are stated in `THIRD_PARTY_NOTICES.md` and the accompanying package files. This Agreement does not reduce rights granted by those licenses.
 
 ## 2. Eligibility and authority
@@ -41,7 +39,7 @@ Nothing here restricts rights that cannot lawfully be restricted, including righ
 ## 4. Voice, likeness, input, and output responsibility
 
 1. The Licensee is solely responsible for all text, recordings, voices, likenesses, prompts, models, personal data, and other material supplied to or generated through the Software (**“Licensee Content”**). The Licensee represents that it has every permission, consent, authorization, and lawful basis needed for its use.
-2. The Licensee must obtain informed, specific permission before cloning, synthesizing, or imitating an identifiable person’s voice or likeness. The Licensee must not impersonate a person, deceive a listener about whether audio is synthetic, commit fraud, create non-consensual sexual or abusive material, or make a statement falsely attributed to a real person.
+2. The Licensee must obtain informed, specific permission before cloning, synthesizing, or imitating an identifiable person’s voice or likeness. The Licensee must not impersonate a person, deceive a listener about whether audio is synthetic, commit fraud, create non-consensual sexual or abusive material, or make a statement falsely attributed to a real person. Under chapter 63.60 RCW, a person’s name, voice, signature, photograph, and likeness are that person’s property right, and using them without the right owner’s consent can be an infringement (RCW 63.60.010, RCW 63.60.050); consent under this section is a condition of the license whether or not a particular use falls within that chapter.
 3. The Licensee must comply with disclosure, labeling, recordkeeping, privacy, biometric, publicity, consumer-protection, and employment rules that apply to its use. The Software is not legal, medical, financial, identity, safety, or emergency advice.
 4. As between the Licensor and Licensee, the Licensee owns its Output, subject to third-party rights in Licensee Content, models, and components. The Licensor does not claim ownership of the Licensee’s Output. The Licensee bears responsibility for clearance, accuracy, disclosure, and lawful publication of Output.
 5. The Licensor represents, for the proprietary voice recordings shipped with the Software, that the Licensor owns or controls the rights it claims to provide. The authoritative shipped-recording inventory is `Seashells/ASSETS.md`; that inventory does not grant rights in third-party material identified there.
@@ -61,14 +59,14 @@ The Software’s data practices are described in `PRIVACY.md`. The Software is d
 ## 7. Fees, taxes, and refunds
 
 1. The Licensee must pay the price stated at checkout or in the applicable order. Taxes, duties, and payment-processor charges are handled as shown at checkout or required by law.
-2. **Proposed policy:** all sales are final and the Licensor does not voluntarily offer refunds after issuance of a serial number. This does not waive, limit, or override a refund, cancellation, chargeback, replacement, warranty, or other remedy that applicable law or the payment processor’s mandatory rules require. Counsel must confirm the policy for each intended sales jurisdiction and payment channel before publication.
+2. **Refund policy.** All sales are final and the Licensor does not voluntarily offer refunds after issuance of a serial number. This policy is disclosed before purchase at the point of sale and in the applicable order terms, so the Licensee can review it before a serial number is issued. This policy does not waive, limit, or override a refund, cancellation, chargeback, replacement, warranty, or other remedy that applicable law or the payment processor’s mandatory rules require.
 3. A chargeback or payment reversal may suspend the associated serial number while the transaction is investigated, subject to applicable law and processor rules.
 
 ## 8. Updates, support, and compatibility
 
 Updates, fixes, model downloads, and support may be offered at the Licensor’s discretion and may change features, compatibility, model behavior, or system requirements. A serial number does not promise updates, support, cloud access, or compatibility beyond the version scope stated in the order. The Licensor does not promise that a model, voice, GPU, operating system, or third-party service will remain available.
 
-**Draft qualification status for review:** Linux x86_64 is the intended qualification target and has not completed clean installed-artifact acceptance. Windows is unsupported and excluded from the proposed paid offer until qualification is complete. CUDA and Vulkan backends are experimental and are not qualified for production use. These statements describe the current engineering candidate and do not create a warranty or qualification claim. Counsel review is required before this draft is adopted.
+**Qualification status.** Linux x86_64 is the intended qualification target and has not completed clean installed-artifact acceptance. Windows is unsupported and excluded from the paid offer until qualification is complete. CUDA and Vulkan backends are experimental and are not qualified for production use. These statements describe the current release and do not create a warranty or qualification claim.
 
 ## 9. Open-source and third-party terms
 
@@ -80,19 +78,21 @@ The Licensor and its licensors retain all rights in the Software, documentation,
 
 ## 11. Limited warranty and disclaimer
 
-Except for an express warranty written in the applicable order, the Software is provided **“AS IS”** and **“AS AVAILABLE.”** To the maximum extent permitted by law, the Licensor disclaims implied warranties, including merchantability, fitness for a particular purpose, title, non-infringement, accuracy, quiet enjoyment, and uninterrupted or error-free operation. The Licensor does not warrant that Output is accurate, lawful, unique, secure, fit for a particular purpose, or suitable for a person’s voice or likeness.
+Except for an express warranty written in the applicable order, the Software is provided **“AS IS”** and **“AS AVAILABLE.”** TO THE MAXIMUM EXTENT PERMITTED BY LAW, THE LICENSOR DISCLAIMS ALL IMPLIED WARRANTIES, INCLUDING THE IMPLIED WARRANTY OF MERCHANTABILITY, THE IMPLIED WARRANTY OF FITNESS FOR A PARTICULAR PURPOSE, AND ANY IMPLIED WARRANTY OF TITLE, NON-INFRINGEMENT, ACCURACY, QUIET ENJOYMENT, OR UNINTERRUPTED OR ERROR-FREE OPERATION. THE LICENSOR DOES NOT WARRANT THAT OUTPUT IS ACCURATE, LAWFUL, UNIQUE, SECURE, FIT FOR A PARTICULAR PURPOSE, OR SUITABLE FOR A PERSON’S VOICE OR LIKENESS.
 
 Nothing in this Agreement excludes an express warranty that cannot lawfully be excluded or disclaims a warranty or remedy that applicable law makes mandatory. Any disclaimer of merchantability or fitness must be read subject to the conspicuousness and other requirements applicable to the transaction.
+
+**Washington consumer notice.** If the Licensee purchases the Software primarily for personal, family, or household use, then, as provided by RCW 62A.2-316(4), the disclaimers in this section do not limit the Licensor’s liability as a merchant seller except as to the following qualities and characteristics, which are not warranted: (a) accuracy, uniqueness, or legal clearance of Output; (b) suitability of Output for a particular voice, likeness, or purpose; (c) uninterrupted or error-free operation; (d) compatibility with any particular hardware, GPU, operating system, model, or third-party service; and (e) continued availability of any model, voice, update, or support service.
 
 ## 12. Limitation of liability
 
 To the maximum extent permitted by law, the Licensor will not be liable for indirect, incidental, special, consequential, exemplary, or punitive damages, or for lost profits, revenue, business opportunity, goodwill, privacy, data, or anticipated savings, arising from or related to the Software, Output, Licensee Content, or this Agreement. To the maximum extent permitted by law, the Licensor’s total aggregate liability for all claims arising from this Agreement will not exceed the amount the Licensee paid for the Software during the twelve months before the event giving rise to the claim.
 
-These limits do not apply to liability that applicable law prohibits the parties from limiting, including liability that cannot lawfully be excluded for personal injury, fraud, willful misconduct, or other non-waivable claims. If a limitation is unenforceable in a jurisdiction, it will be narrowed to the maximum enforceable scope and the remainder will continue.
+These limits do not apply to liability that applicable law prohibits the parties from limiting, including liability that cannot lawfully be excluded for personal injury, fraud, willful misconduct, a claim under the Washington Consumer Protection Act (chapter 19.86 RCW) to the extent a limitation is prohibited by that chapter, or other non-waivable claims. If a limitation is unenforceable in a jurisdiction, it will be narrowed to the maximum enforceable scope and the remainder will continue.
 
 ## 13. Indemnity
 
-To the maximum extent permitted by law, the Licensee will defend and indemnify the Licensor and its officers, agents, and licensors against third-party claims, losses, liabilities, costs, and reasonable attorneys’ fees arising from the Licensee’s Licensee Content, Output, unlawful use, breach of this Agreement, or violation of a person’s rights. The Licensor will give reasonably prompt notice and may participate with counsel of its choice. Counsel must confirm whether this provision is appropriate for consumer sales and how it should be limited for individual Licensees.
+To the maximum extent permitted by law, the Licensee will defend and indemnify the Licensor and its officers, agents, and licensors against third-party claims, losses, liabilities, costs, and reasonable attorneys’ fees arising from the Licensee’s Licensee Content, Output, unlawful use, breach of this Agreement, or violation of a person’s rights. The Licensor will give reasonably prompt notice and may participate with counsel of its choice. If the Licensee is an individual who accepted this Agreement for personal, family, or household purposes, this section applies only to third-party claims arising from that Licensee’s own Licensee Content, Output, unlawful use, or breach, and only to the maximum extent permitted by applicable law.
 
 ## 14. Term and termination
 
@@ -108,24 +108,16 @@ The Licensee must comply with applicable United States and local export-control,
 
 This Agreement is governed by the laws of the State of Washington, United States, without regard to conflict-of-law rules, except to the extent mandatory law of the Licensee’s residence applies. Before filing a claim, each party should send written notice describing the dispute and allow thirty days for good-faith resolution at the Licensor contact above.
 
-Subject to mandatory consumer remedies, small-claims jurisdiction, and any non-waivable venue rule, the parties consent to exclusive jurisdiction and venue in the state and federal courts located in Washington State. Nothing here prevents a party from seeking temporary or emergency relief where available, exercising a non-waivable statutory right, or bringing a claim in a court that applicable law requires. Counsel must confirm the appropriate Washington county, seller identity, consumer venue language, and whether arbitration or a class-action waiver is lawful and advisable before approval. **No arbitration or class-action waiver is proposed in this draft.**
+Subject to mandatory consumer remedies, small-claims jurisdiction, and any non-waivable venue rule, the parties consent to exclusive jurisdiction and venue in the state courts located in Whatcom County, Washington, and the United States District Court for the Western District of Washington. Nothing here prevents a party from seeking temporary or emergency relief where available, exercising a non-waivable statutory right, or bringing a claim in a court that applicable law requires. **This Agreement contains no arbitration clause and no class-action waiver.**
 
 ## 17. Electronic acceptance and records
 
-The Licensee accepts this Agreement by selecting “I Accept” after being shown the complete text in the Software or an authorized order flow. The acceptance record may include the Agreement version or hash, timestamp, and serial-number status. The parties agree to conduct this transaction electronically where their conduct and the order flow show that agreement. The Licensee may request a copy of the accepted text from the Licensor. If the Licensee does not accept, it must not use the Software and must delete its copies.
+The Licensee accepts this Agreement by selecting “I Accept” after being shown the complete text in the Software or an authorized order flow. The acceptance record may include the Agreement version or hash, timestamp, and serial-number status. The parties agree to conduct this transaction electronically where their conduct and the order flow show that agreement, as contemplated by the Washington Uniform Electronic Transactions Act (chapter 1.80 RCW), including RCW 1.80.060 (legal recognition of electronic records, signatures, and contracts) and RCW 1.80.080 (attribution of electronic records and signatures). The Licensee may request a copy of the accepted text from the Licensor. If the Licensee does not accept, it must not use the Software and must delete its copies.
 
 ## 18. General terms
 
 This Agreement and the applicable order or invoice are the entire agreement concerning the Software and supersede prior statements on that subject. If there is a conflict, the order controls commercial terms and this Agreement controls general license terms unless the order expressly says otherwise. A waiver must be written and applies only to the stated instance. The Licensee may not assign this Agreement without written approval, except where applicable law gives a non-waivable right. The Licensor may assign it in connection with a merger, sale, or transfer of the Software business, subject to applicable law. Notices must be sent to the contact in the order or to codysa90@gmail.com. Headings are for convenience. No partnership, agency, or employment relationship is created.
 
-## 19. Counsel and owner approval checklist
+## 19. Adoption and version
 
-Before this draft is renamed `EULA.md` or distributed, the owner and qualified counsel must confirm:
-
-- the legal Licensor name, address, support contact, and seller/payment-processor terms;
-- the named-licensee, machine, transfer, current-major-version, and recovery defaults;
-- the all-sales-final policy and every mandatory refund, cancellation, chargeback, tax, and consumer disclosure;
-- Washington governing-law and venue language, the chosen county, small-claims treatment, and whether arbitration or a class waiver should be added;
-- warranty, liability, indemnity, voice-consent, watermark, privacy, export, and open-source language;
-- jurisdiction-specific sales, privacy, biometric, publicity, accessibility, AI/deepfake, and model-license requirements; and
-- the final acceptance text, stored acceptance evidence, source offers, relinking instructions, and release artifacts.
+This is version 1.5.0-final of the Agreement, adopted by the Licensor on 2026-11-08. It was checked against Washington primary legal sources as recorded in `docs/release/EULA_WA_VALIDATION.md`. Independent review by qualified legal counsel has not been obtained and is not claimed; the Licensor recommends obtaining it before large-scale commercial distribution.

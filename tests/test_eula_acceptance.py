@@ -61,7 +61,7 @@ def test_packaged_eula_matches_root_copy() -> None:
     """The copy shipped inside the package must equal the repo-root EULA."""
     packaged = eula_acceptance.eula_path(REPO_ROOT / "nonexistent")
     assert packaged.parent == REPO_ROOT / "src" / "the_oracle"
-    assert packaged.read_bytes() == (REPO_ROOT / "EULA-DRAFT.md").read_bytes()
+    assert packaged.read_bytes() == (REPO_ROOT / "EULA.md").read_bytes()
 
 
 def test_record_stores_digest_of_current_text(root: Path) -> None:

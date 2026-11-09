@@ -1,10 +1,9 @@
 Copyright (c) 2026 Rhetoric contributors. All rights reserved.
 
 The source code is publicly visible. Use of the software is governed by the
-End User License Agreement in EULA-DRAFT.md, which applies to every copy in any
+End User License Agreement in EULA.md, which applies to every copy in any
 form. The commercial product is offered through a one-time serial-number
-license. The EULA remains a draft and requires owner and qualified-counsel
-approval before distribution. Except as the EULA or applicable component
+license. The EULA was finalized by the owner on 2026-11-08 and validated against Washington primary sources (see docs/release/EULA_WA_VALIDATION.md); independent qualified-counsel review has not been obtained and is recommended before large-scale commercial distribution. Except as the EULA or applicable component
 licenses expressly permit, no permission is granted to copy, modify, merge,
 publish, distribute, sublicense, sell, lease, or otherwise commercially
 exploit this software or any derivative work.

@@ -1,11 +1,11 @@
 # EULA Counsel Packet — 1.5.0 RC
 
-Status: draft for owner and qualified counsel. No legal approval is claimed.
+Status: owner-finalized 2026-11-08 by owner order. Counsel review remains outstanding; no legal approval is claimed.
 
 ## Documents
 
-- Draft agreement: [`EULA-DRAFT.md`](../../EULA-DRAFT.md).
-- Packaged copy: [`src/the_oracle/EULA-DRAFT.md`](../../src/the_oracle/EULA-DRAFT.md).
+- Draft agreement: [`EULA.md`](../../EULA.md).
+- Packaged copy: [`src/the_oracle/EULA.md`](../../src/the_oracle/EULA.md).
 - The two copies are byte-identical and remain named `DRAFT` until counsel and
   the owner approve them.
 
@@ -70,7 +70,7 @@ locations:
 ## Owner decisions still required
 
 - Approve or revise the proposed commercial defaults.
-- Provide counsel's written approval before renaming the draft to `EULA.md`.
+- Owner renamed the finalized text to EULA.md on 2026-11-08; counsel written review remains outstanding.
 - Approve each component decision in `docs/legal/LICENSE_DECISIONS_PROPOSED.md`.
 - Confirm final payment, refund, and support language before publication.
 - Confirm the legal seller identity, address, selected venue county, and

@@ -62,7 +62,7 @@ include-package-data = true
 license-files = [
   "LICENSE",
   "PRIVACY.md",
-  "EULA-DRAFT.md",
+  "EULA.md",
   "THIRD_PARTY_NOTICES.md",
   "THIRD_PARTY_LICENSES/*",
 ]
@@ -74,7 +74,7 @@ version = { attr = "the_oracle.__version__" }
 where = ["src"]
 
 [tool.setuptools.package-data]
-the_oracle = ["text_repair/data/*.txt", "EULA-DRAFT.md"]
+the_oracle = ["text_repair/data/*.txt", "EULA.md"]
 # The compiled license core. Built by scripts/build_native_license.py; without
 # it a wheel installs and falls back to the pure-Python verifier.
 "the_oracle._native" = ["*.so", "*.pyd", "*.dylib", "*.dll"]
