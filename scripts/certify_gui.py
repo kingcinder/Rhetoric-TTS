@@ -149,6 +149,15 @@ from certifier_isolation import isolated_config_root, reap_isolated_root  # noqa
 
 _CONFIG_ROOT = isolated_config_root("oracle_gui_cert_cfg_")
 
+# Native-fault capture: if the sweep dies on a signal (the hosted Linux
+# runners killed this process with SIGSEGV while every local run passed —
+# 2026-11-09), faulthandler leaves the Python stack of the crashing thread
+# on stderr, where the calling test's failure detail captures it. Enabled
+# here, above the Qt imports, so an import-time fault is covered too.
+import faulthandler  # noqa: E402
+
+faulthandler.enable()
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
