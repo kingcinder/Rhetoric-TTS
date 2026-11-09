@@ -10,20 +10,32 @@
 rename, distribution names, compatibility shims, support routing, version
 guards, package-content rules, and experimental GPU labels are implemented.
 The canonical release command passed the full suite and rebuilt the source
-archive and wheel. Exact-head hosted CI, Linux frozen-artifact installation,
+archive and wheel. Linux frozen-artifact installation,
 first-user lifecycle acceptance, and current-corpus audio review remain open.
-A 2026-11-08 hardening pass (commits 7706ef8..43381db) closed the test suite
-at 43381db: 2,240 passed / 0 failed locally under `-n 4`, with the
-suite-counts baseline recorded for that head from a fresh worktree
-(2,205 passed / 35 environment skips / 0 failed). The same pass reconciled
+A 2026-11-08 hardening pass (commits 7706ef8..5446d39) closed the test
+suite at 43381db (2,240 passed / 0 failed locally under `-n 4`;
+suite-counts baseline recorded from a fresh worktree: 2,205 passed /
+35 environment skips / 0 failed) and then closed the hosted matrix.
+Windows full suites pass on hosted runners after fixture and test
+fixes (82ea4ac). The hosted Ubuntu suites had failed at every earlier
+head on exactly two GUI certifier tests; an in-subprocess faulthandler
+dump isolated the crash to the tooltip hover-help event filter
+dereferencing a stale QEvent wrapper in headless sessions, and tooltip
+help now uses its timer-polling mode on headless platforms as it
+already did on Windows (5446d39). Final local suite at 5446d39:
+2,241 passed / 1 skipped (the Vulkan device test; the workstation GPU
+is assigned to another task) / 0 failed. Hosted run 42576825781 at
+5446d39 passed every functional job; the suite-counts job is green
+only at a head whose counts are recorded, and its recording commit
+follows this one. The same pass reconciled
 the Seashells inventory and third-party notices with the shipped clip set,
 fixed the real-repo xdist isolation defect behind the theme/doctor
 certification races, landed the automated-update channel with its settings
 opt-out and enforced support gate (docs/release/UPDATE_CHANNEL.md), and
 added adversarial coverage for settings, subtitles, license tokens, and the
-update manifest. The gates that remain open are unchanged: human audio
-review, installed-lifecycle acceptance, Windows qualification, exact-head
-hosted CI, and independent counsel review.
+update manifest. The gates that remain open are: human audio
+review, installed-lifecycle acceptance, Windows qualification and
+independent counsel review.
 
 **COMMERCIAL STATUS: BLOCKED.** The EULA was finalized by the owner on 2026-11-08 (EULA.md; validation: docs/release/EULA_WA_VALIDATION.md), but qualified-counsel approval has not been obtained. The last observed soft-launch check reported the
 draft EULA blocker and an LGPL notice/source/replacement obligation warning.
@@ -76,11 +88,20 @@ outside the authorized scope.
   studio, and inference-tour checks on each run for both Python versions. The
   manual Windows certifier fault-capture job was skipped because this was a
   push-triggered run.
+- Exact-head hosted CI also ran on `5446d39` (run
+  [42576825781](https://github.com/kingcinder/Rhetoric-TTS/actions/runs/42576825781)):
+  Ubuntu and Windows full suites on Python 3.11 and 3.12, the Vulkan
+  no-skip suite, Linux frozen AppImage/deb build, the compiled license
+  core, and the Windows installer end-to-end job all passed. The only
+  failing job was suite-counts, which is green only at a head whose
+  counts are recorded in scripts/suite_counts_baseline.json.
 
 ## Acceptance still open
 
-1. Diagnose the failed Windows full-suite jobs and run the manual Windows
-   certifier fault-capture workflow.
+1. Windows and Ubuntu hosted full-suite failures are diagnosed and fixed
+   (82ea4ac, 5446d39; run 42576825781 green across all functional jobs).
+   Windows guest qualification remains open under item 6; hosted suite
+   success is not installed-product qualification.
 2. Install the frozen Linux AppImage and deb in fresh Ubuntu 24.04 containers
    with only documented prerequisites. Exercise activation using a throwaway
    test key, cold download/resume/offline/low-disk behavior, doctor, first

@@ -26,6 +26,11 @@ release has passed every acceptance gate.
   and uninstall need direct acceptance evidence.
 - **Hosted CI for this release branch must be checked at its pushed commit.**
   Earlier run IDs and commit-specific reports belong to superseded candidates.
+  At 5446d39 (run 42576825781) every functional job passed: Ubuntu and
+  Windows suites on both Pythons, the Vulkan no-skip suite, frozen
+  packaging, the license core, and the Windows installer end-to-end.
+  The suite-counts job passes only at a head whose counts are recorded
+  in scripts/suite_counts_baseline.json.
 - **The automated update channel has not carried a release yet.** The
   channel, opt-out, and support gate are implemented and tested
   (docs/release/UPDATE_CHANNEL.md), but no 1.5.x GitHub release with an
