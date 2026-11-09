@@ -475,7 +475,7 @@ def _generic_voice_components(root: Path) -> list[Component]:
         return []
     components: list[Component] = []
     for path in sorted(directory.glob("*.wav")):
-        if path.name.startswith(("english_male", "chinese_")):
+        if path.name.startswith(("english_male", "chinese_", "confidant_", "exuberant_")):
             license_name, notice = _GENERIC_VOICE_LICENSES["audio_cpp"]
         else:
             license_name, notice = _GENERIC_VOICE_LICENSES["librispeech"]

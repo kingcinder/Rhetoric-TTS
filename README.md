@@ -421,8 +421,8 @@ when you want to pre-install or persist the environment across sessions:
 
 rhetoric render \
   --input Input/cli_short.txt --outdir Output \
-  --speakerA-ref "Seashells/generic/english_reader_1.wav" \
-  --speakerB-ref "Seashells/generic/english_reader_2.wav" \
+  --speakerA-ref "Seashells/generic/english_male_1.wav" \
+  --speakerB-ref "Seashells/generic/chinese_female_1.wav" \
   --inference-backend vulkan
 ```
 

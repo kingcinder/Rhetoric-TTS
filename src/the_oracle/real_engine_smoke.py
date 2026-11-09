@@ -83,7 +83,7 @@ def ensure_real_engine_inputs(output_root: str | Path) -> dict[str, Path]:
         paths["dialogue"].write_text(dialogue_text, encoding="utf-8")
     bundled_references = {
         "speaker_a_reference": REPOSITORY_ROOT / "Seashells" / "generic" / "english_male_1.wav",
-        "speaker_b_reference": REPOSITORY_ROOT / "Seashells" / "generic" / "english_reader_1.wav",
+        "speaker_b_reference": REPOSITORY_ROOT / "Seashells" / "generic" / "chinese_female_1.wav",
     }
     for key, source in bundled_references.items():
         destination = paths[key]

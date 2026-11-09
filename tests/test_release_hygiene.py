@@ -31,8 +31,7 @@ def test_stock_voice_references_are_tracked() -> None:
         "Seashells/Cody's Seashell1.wav",
         "Seashells/Fransisco_MONSTER.wav",
         "Seashells/Seashell_ fransisco.wav",
-        "Seashells/Seashell_No_1.wav",
-        "Seashells/Seashell_No_2.wav",
+        "Seashells/Fransisco_MONSTER_Edited.wav",
         "Seashells/seashell fransisco.wav",
         "Seashells/seashell fransisco_TTS_clean_v5_aggressive_targeted_cleanup.wav",
     }

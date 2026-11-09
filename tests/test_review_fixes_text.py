@@ -302,7 +302,7 @@ def test_real_smoke_inputs_use_bundled_speech_references(tmp_path: Path) -> None
         repository / "Seashells" / "generic" / "english_male_1.wav"
     ).read_bytes()
     assert paths["speaker_b_reference"].read_bytes() == (
-        repository / "Seashells" / "generic" / "english_reader_1.wav"
+        repository / "Seashells" / "generic" / "chinese_female_1.wav"
     ).read_bytes()
 
 

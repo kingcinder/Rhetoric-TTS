@@ -7,7 +7,7 @@ commercial launch gate (`python scripts/soft_launch.py --check`), so a
 dependency that is missing here is a release blocker, not a documentation
 omission.
 
-Release version: **1.4.2**
+Release version: **1.5.0**
 
 ## Distribution obligations at a glance
 
@@ -40,22 +40,17 @@ Release version: **1.4.2**
 | `ResembleAI/chatterbox-turbo` | pinned (models/pins.py) | MIT | [source](https://huggingface.co/ResembleAI/chatterbox-turbo) |
 | `SamLowe/roberta-base-go_emotions` | pinned (models/pins.py) | MIT | [source](https://huggingface.co/SamLowe/roberta-base-go_emotions) |
 | `chinese_female_1.wav` | — | Apache-2.0 | Seashells/generic/ATTRIBUTION.md |
-| `chinese_male_1.wav` | — | Apache-2.0 | Seashells/generic/ATTRIBUTION.md |
 | `chinese_male_2.wav` | — | Apache-2.0 | Seashells/generic/ATTRIBUTION.md |
-| `chinese_speaker_1.wav` | — | Apache-2.0 | Seashells/generic/ATTRIBUTION.md |
 | `Cody's Seashell.wav` | — | Owner-owned; all rights reserved | Seashells/ASSETS.md |
 | `Cody's Seashell1.wav` | — | Owner-owned; all rights reserved | Seashells/ASSETS.md |
+| `confidant_chinese_male_1.wav` | — | Apache-2.0 | Seashells/generic/ATTRIBUTION.md |
 | `english_male_1.wav` | — | Apache-2.0 | Seashells/generic/ATTRIBUTION.md |
-| `english_reader_1.wav` | — | CC BY 4.0 | Seashells/generic/ATTRIBUTION.md |
-| `english_reader_2.wav` | — | CC BY 4.0 | Seashells/generic/ATTRIBUTION.md |
-| `english_reader_3.wav` | — | CC BY 4.0 | Seashells/generic/ATTRIBUTION.md |
-| `english_reader_4.wav` | — | CC BY 4.0 | Seashells/generic/ATTRIBUTION.md |
+| `exuberant_chinese_female.wav` | — | Apache-2.0 | Seashells/generic/ATTRIBUTION.md |
 | `Fransisco_MONSTER.wav` | — | Owner-owned; all rights reserved | Seashells/ASSETS.md |
+| `Fransisco_MONSTER_Edited.wav` | — | Owner-owned; all rights reserved | Seashells/ASSETS.md |
 | `seashell fransisco.wav` | — | Owner-owned; all rights reserved | Seashells/ASSETS.md |
 | `seashell fransisco_TTS_clean_v5_aggressive_targeted_cleanup.wav` | — | Owner-owned; all rights reserved | Seashells/ASSETS.md |
 | `Seashell_ fransisco.wav` | — | Owner-owned; all rights reserved | Seashells/ASSETS.md |
-| `Seashell_No_1.wav` | — | Owner-owned; all rights reserved | Seashells/ASSETS.md |
-| `Seashell_No_2.wav` | — | Owner-owned; all rights reserved | Seashells/ASSETS.md |
 
 Model revisions are pinned in `src/the_oracle/models/pins.py`; this
 table names each model and its license without duplicating the
@@ -177,22 +172,17 @@ license texts are in `THIRD_PARTY_LICENSES/`.
 - **ResembleAI/chatterbox-turbo** — MIT license; commercial use permitted.
 - **SamLowe/roberta-base-go_emotions** — Copyright (c) 2023 SamLowe. MIT license.
 - **chinese_female_1.wav** — audio.cpp demo voice, Copyright 2026 ShugoAI LLC
-- **chinese_male_1.wav** — audio.cpp demo voice, Copyright 2026 ShugoAI LLC
 - **chinese_male_2.wav** — audio.cpp demo voice, Copyright 2026 ShugoAI LLC
-- **chinese_speaker_1.wav** — audio.cpp demo voice, Copyright 2026 ShugoAI LLC
 - **Cody's Seashell.wav** — Original recording by the Owner; no third-party rights.
 - **Cody's Seashell1.wav** — Original recording by the Owner; no third-party rights.
+- **confidant_chinese_male_1.wav** — audio.cpp demo voice, Copyright 2026 ShugoAI LLC
 - **english_male_1.wav** — audio.cpp demo voice, Copyright 2026 ShugoAI LLC
-- **english_reader_1.wav** — LibriSpeech clip; attribution in Seashells/generic/ATTRIBUTION.md
-- **english_reader_2.wav** — LibriSpeech clip; attribution in Seashells/generic/ATTRIBUTION.md
-- **english_reader_3.wav** — LibriSpeech clip; attribution in Seashells/generic/ATTRIBUTION.md
-- **english_reader_4.wav** — LibriSpeech clip; attribution in Seashells/generic/ATTRIBUTION.md
+- **exuberant_chinese_female.wav** — audio.cpp demo voice, Copyright 2026 ShugoAI LLC
 - **Fransisco_MONSTER.wav** — Original recording by the Owner; no third-party rights.
+- **Fransisco_MONSTER_Edited.wav** — Original recording by the Owner; no third-party rights.
 - **seashell fransisco.wav** — Original recording by the Owner; no third-party rights.
 - **seashell fransisco_TTS_clean_v5_aggressive_targeted_cleanup.wav** — Original recording by the Owner; no third-party rights.
 - **Seashell_ fransisco.wav** — Original recording by the Owner; no third-party rights.
-- **Seashell_No_1.wav** — Original recording by the Owner; no third-party rights.
-- **Seashell_No_2.wav** — Original recording by the Owner; no third-party rights.
 - **certifi** — See the installed distribution metadata and bundled license text.
 - **PySide6** — See the installed distribution metadata and bundled license text.
 - **PySide6_Addons** — See the installed distribution metadata and bundled license text.

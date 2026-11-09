@@ -11,8 +11,8 @@
 #
 # Usage:
 #   scripts/benchmark_vulkan_batching.sh --input Input/cli_short.txt \
-#     --speakerA-ref "Seashells/generic/english_reader_1.wav" \
-#     --speakerB-ref "Seashells/generic/english_reader_2.wav"
+#     --speakerA-ref "Seashells/generic/english_male_1.wav" \
+#     --speakerB-ref "Seashells/generic/chinese_female_1.wav"
 #
 # Options:
 #   --input FILE       dialogue to render (required in render mode)
