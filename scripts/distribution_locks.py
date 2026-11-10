@@ -2,9 +2,10 @@
 
 import hashlib
 import json
+from collections.abc import Collection
 from pathlib import Path
 
-from packaging.utils import parse_wheel_filename
+from packaging.utils import canonicalize_name, parse_wheel_filename
 
 
 def _sha256(path: Path) -> str:
@@ -22,7 +23,16 @@ def build_lock(
     *,
     platform: str,
     python_version: str,
+    lock_exclude: Collection[str] = (),
 ) -> None:
+    """Write the hash lock + manifest for one platform's wheel set.
+
+    ``lock_exclude`` names distributions that ship in the bundle (and stay
+    in the manifest) but must NOT appear as lock requirements: their
+    published pins contradict the audited stack, so the installer brings
+    them in separately with --no-deps (manage_install's two-phase install,
+    the same shape as the online path). A single ``-r`` resolution over a
+    lock that contains them can never succeed."""
     wheels = sorted(wheels_dir.glob("*.whl"), key=lambda path: path.name)
     if not wheels:
         raise ValueError(f"no wheels found in {wheels_dir}")
@@ -46,10 +56,15 @@ def build_lock(
         "--no-index",
         f"--find-links wheels/{platform}",
     ]
-    lines.extend(
-        f"{record['name']}=={record['version']} --hash=sha256:{record['sha256']}"
-        for record in records
-    )
+    excluded = {canonicalize_name(name) for name in lock_exclude}
+    for record in records:
+        if canonicalize_name(record["name"]) in excluded:
+            lines.append(
+                f"# excluded from this lock: {record['name']}=={record['version']}"
+                " (installed separately with --no-deps; see manage_install)"
+            )
+        else:
+            lines.append(f"{record['name']}=={record['version']} --hash=sha256:{record['sha256']}")
     lock_path.write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
 
     manifest_path.parent.mkdir(parents=True, exist_ok=True)

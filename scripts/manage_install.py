@@ -8,6 +8,7 @@ import shlex
 import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 
@@ -179,6 +180,46 @@ def _offline_lock_path(offline_bundle: Path) -> Path | None:
     return lock if lock.is_file() else None
 
 
+def _install_offline_chatterbox(
+    venv_python: Path,
+    offline_bundle: Path,
+    pip_base: list[str],
+    env: dict[str, str],
+) -> None:
+    """Install chatterbox-tts from the bundle the way the online path does:
+    --no-deps, after the main set, before the metadata patch. The lock omits
+    it on purpose — its published pins (transformers==5.2.0,
+    diffusers==0.29.0) contradict the audited stack the lock carries, so a
+    single -r resolution over a lock containing it can never succeed (the
+    2026-11-09 airgap proof's ResolutionImpossible). The wheel's hash comes
+    from the bundle manifest, keeping the install hash-verified."""
+    manifest_path = offline_bundle / "locks" / "manifest.json"
+    platform_dir = "windows" if is_windows() else "linux"
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        wheels = manifest["platforms"][platform_dir]["wheels"]
+        record = next(
+            r for r in wheels if r["name"].lower().replace("_", "-") == "chatterbox-tts"
+        )
+    except (OSError, ValueError, KeyError, StopIteration) as exc:
+        raise SystemExit(
+            fail(f"Offline bundle manifest has no chatterbox-tts wheel record: {manifest_path}")
+        ) from exc
+    requirement = f"chatterbox-tts=={record['version']} --hash=sha256:{record['sha256']}\n"
+    handle = tempfile.NamedTemporaryFile(
+        "w", suffix=".txt", prefix="chatterbox-requirement-", delete=False, encoding="utf-8"
+    )
+    try:
+        handle.write(requirement)
+        handle.close()
+        run_command(
+            [str(venv_python), "-m", "pip", "install", *pip_base, "--no-deps", "-r", handle.name],
+            env=env,
+        )
+    finally:
+        Path(handle.name).unlink(missing_ok=True)
+
+
 def install_dependencies(
     venv_python: Path,
     *,
@@ -199,6 +240,7 @@ def install_dependencies(
                 [str(venv_python), "-m", "pip", "install", *pip_base, "-r", str(lock)],
                 env=env,
             )
+            _install_offline_chatterbox(venv_python, offline_bundle, pip_base, env)
             run_command(
                 [str(venv_python), "-m", "pip", "install", "--no-deps", "-e", "."],
                 env=env,

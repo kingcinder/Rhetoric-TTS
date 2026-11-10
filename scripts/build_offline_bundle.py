@@ -587,6 +587,7 @@ def main(argv: list[str] | None = None) -> int:
                 lock_manifest,
                 platform=platform,
                 python_version=args.python_version,
+                lock_exclude=CLOSURE_IGNORED_DISTRIBUTIONS,
             )
 
     write_launchers(bundle_dir)
