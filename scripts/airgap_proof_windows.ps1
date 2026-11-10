@@ -24,6 +24,7 @@ param(
 # The logon task can fire before the volume enumerates, so poll for up to six
 # minutes: the one-shot lookup used to race the mount, FAIL leaving no log or
 # result anywhere, and power the guest off (2026-11-09).
+Set-Content -Path 'C:\airgap-gate.txt' -Value ("gate start " + (Get-Date).ToString('o')) -ErrorAction SilentlyContinue
 $volume = $null
 for ($attempt = 0; $attempt -lt 72; $attempt++) {
     $volume = Get-Volume -FileSystemLabel $VolumeLabel -ErrorAction SilentlyContinue | Select-Object -First 1
@@ -36,6 +37,19 @@ for ($attempt = 0; $attempt -lt 72; $attempt++) {
         $ld = Get-CimInstance Win32_LogicalDisk -ErrorAction SilentlyContinue | Where-Object { $_.VolumeName -eq $VolumeLabel } | Select-Object -First 1
         if ($ld) { $volume = [pscustomobject]@{ DriveLetter = $ld.DeviceID.TrimEnd(':') } }
     }
+    if (-not ($volume -and $volume.DriveLetter)) {
+        # Third view: DriveInfo reads the label through the file system,
+        # independent of both the Storage service and the CIM provider,
+        # either of which can stay silent for the whole poll window in
+        # the logon-task context on this guest.
+        foreach ($drive in [System.IO.DriveInfo]::GetDrives()) {
+            if ($drive.IsReady -and $drive.VolumeLabel -eq $VolumeLabel) {
+                $volume = [pscustomobject]@{ DriveLetter = $drive.Name.TrimEnd(':\') }
+                break
+            }
+        }
+    }
+    Add-Content -Path 'C:\airgap-gate.txt' -Value ("attempt $attempt found=" + [bool]($volume -and $volume.DriveLetter)) -ErrorAction SilentlyContinue
     if ($volume -and $volume.DriveLetter) { break }
     Start-Sleep -Seconds 5
 }
