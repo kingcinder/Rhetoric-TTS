@@ -90,16 +90,25 @@ def _package_source(name: str) -> str:
 
 
 def test_sweep_never_touches_the_real_repo_or_config() -> None:
-    """Run the real script as CI does; the repo and the real config root must
-    come out byte-identical (see the module docstring for the measured
-    pre-fix writes and the honest limits)."""
-    from the_oracle.platform_support import user_config_root
+    """Run the real script as CI does; the repo, the real config root and the
+    real data root must come out byte-identical (see the module docstring for
+    the measured pre-fix writes and the honest limits).
+
+    The data root joined the watched set on 2026-11-09: with certify_gui's
+    paths patch removed (mutation M1), MainWindow's paths fall back to
+    app_paths' installed-root diversion, which lands in
+    ``user_data_root()/the_oracle`` — a third tree this test did not watch,
+    so the leak (a real gui_startup_timing.json write) was invisible and M1
+    scored SURVIVED. Watching only where a leak was expected is not a net."""
+    from the_oracle.platform_support import user_config_root, user_data_root
 
     from tests.helpers import repo_tree_snapshot, snapshot_differences
 
     config_root = user_config_root() / "the_oracle"
+    data_root = user_data_root() / "the_oracle"
     before_repo = repo_tree_snapshot(REPO_ROOT)
     before_config = repo_tree_snapshot(config_root) if config_root.exists() else {}
+    before_data = repo_tree_snapshot(data_root) if data_root.exists() else {}
 
     proc = subprocess.run(
         [sys.executable, "scripts/certify_gui.py"],
@@ -112,6 +121,7 @@ def test_sweep_never_touches_the_real_repo_or_config() -> None:
 
     after_repo = repo_tree_snapshot(REPO_ROOT)
     after_config = repo_tree_snapshot(config_root) if config_root.exists() else {}
+    after_data = repo_tree_snapshot(data_root) if data_root.exists() else {}
 
     detail = (
         f"rc={proc.returncode}\n"
@@ -128,6 +138,7 @@ def test_sweep_never_touches_the_real_repo_or_config() -> None:
     for label, before, after in (
         ("real repo tree", before_repo, after_repo),
         ("real app-config root", before_config, after_config),
+        ("real app-data root", before_data, after_data),
     ):
         created, changed, removed = snapshot_differences(before, after)
         assert not (created or changed or removed), (

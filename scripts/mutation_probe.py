@@ -332,6 +332,12 @@ _HERMETIC_PATHS_NEW = (
     "pass  # mutation-probe M1: the paths seam is no longer redirected, so "
     "MainWindow's Output/logs timing writes land in the real repo\n"
 )
+# M1's target history (2026-11-09): the preset mutates certify_gui's
+# _hermetic_paths patch — the layer that actually roots the sweep's paths in
+# the throwaway. app_paths' installed-root diversion is only a backup: with
+# the patch gone, MainWindow's Output/logs writes land in the real DATA root
+# (user_data_root()/the_oracle), which the hermeticity test did not snapshot,
+# so the mutation scored SURVIVED until the test learned to watch that tree.
 _HERMETIC_CONFIG_OLD = 'THROWAWAY_ENV_VARS = ("XDG_CONFIG_HOME", "APPDATA")\n'
 _HERMETIC_CONFIG_NEW = (
     "THROWAWAY_ENV_VARS = ()  # mutation-probe M2: neither config variable is redirected\n"
@@ -371,7 +377,10 @@ _PRESETS: tuple[Preset, ...] = (
         name="certifier-hermeticity-paths-redirect",
         what="M1: stop repointing app_gui.ensure_repo_default_paths at the "
         "throwaway, so the sweep's MainWindow writes its Output/logs timing "
-        "files into the real repo — the behavioral half must catch it by name",
+        "files under the real app-data root (via app_paths' installed-root "
+        "diversion) — the behavioral half must catch it by name; since "
+        "2026-11-09 the net watches the data root as well as the repo and "
+        "the config root",
         mutations=(
             Mutation(
                 path=Path("scripts/certify_gui.py"),
@@ -395,7 +404,11 @@ _PRESETS: tuple[Preset, ...] = (
         require_stdout="gui_startup_timing.json",
         evidence="M1 of tests/test_certifier_hermeticity.py's mutation contract; "
         "replayed 2026-10-13 on this tree — exit 1, repo-tree half naming "
-        "Output/logs/gui_startup_timing.json, source restored by the probe",
+        "Output/logs/gui_startup_timing.json, source restored by the probe. "
+        "Re-verified 2026-11-09 on the release tree: the mutation had scored "
+        "SURVIVED because the leak lands in the real app-data root, which the "
+        "test did not snapshot; the test now watches that tree and the replay "
+        "exits 1 naming gui_startup_timing.json there",
     ),
     Preset(
         name="certifier-hermeticity-config-redirect",
