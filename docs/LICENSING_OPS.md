@@ -50,10 +50,14 @@ commissioning key `k1` *was* the RFC 8032 §7.1 TEST 1 public key, whose
 seed is printed in the spec and was hard-coded in this repository's own
 tests — any reader could mint a licence every shipped install accepted.
 It is gone. The production key **`k2` was registered on 2026-10-19**; its
-signing seed was generated on the owner's machine and lives only in the
-owner's secret manager (the provisioning run wrote it to
-`~/.config/the-oracle/license-signing-seed`, mode `0600`; seal it with
-`gpg --symmetric`, store the sealed file, and delete the plaintext copy). Only the public verify key is
+signing seed was generated on the owner's machine on 2026-11-01 (the
+provisioning run wrote it to `~/.config/the-oracle/license-signing-seed`,
+mode `0600`). Custody as of 2026-11-09: the plaintext copy has been deleted
+and the seed exists only as the sealed file `~/secrets/oracle-seed.gpg`
+(PGP symmetric, AES-256, mode `0600`, sealed 2026-11-01 07:16 PT). A
+production serial minted 2026-11-01 (licensee "Cody", lic_id
+b0a7fe4c-8ab2-4629-8d2b-6eb06cccbc14, no expiry, not machine-bound) is
+activated in the vendor checkout root (`oracle_license.json`). Only the public verify key is
 in `keys.py`. Two nets keep a forgeable key out:
 
 - `tests/test_licensing_registry_hygiene.py` fails if any registered key
