@@ -21,7 +21,15 @@ param(
 
 # The data volume's letter is not stable (the answer ISO takes D:), so resolve
 # it by label: everything below lives on that data volume, never on C:.
-$volume = Get-Volume -FileSystemLabel $VolumeLabel -ErrorAction SilentlyContinue | Select-Object -First 1
+# The logon task can fire before the volume enumerates, so poll for up to two
+# minutes: the one-shot lookup used to race the mount, FAIL leaving no log or
+# result anywhere, and power the guest off (2026-11-09).
+$volume = $null
+for ($attempt = 0; $attempt -lt 24; $attempt++) {
+    $volume = Get-Volume -FileSystemLabel $VolumeLabel -ErrorAction SilentlyContinue | Select-Object -First 1
+    if ($volume -and $volume.DriveLetter) { break }
+    Start-Sleep -Seconds 5
+}
 if (-not $volume -or -not $volume.DriveLetter) {
     Write-Host "FAIL: no volume labelled $VolumeLabel is mounted"
     shutdown.exe /s /t 5 /c "air-gap proof aborted: data volume missing"
@@ -33,18 +41,20 @@ if (-not $InstallRoot) { $InstallRoot = Join-Path $VolumeRoot "OracleOffline" }
 if (-not $ProofDir) { $ProofDir = Join-Path $VolumeRoot "airgap" }
 if (-not $HubCache) { $HubCache = Join-Path $VolumeRoot "hfhub" }
 
+$ErrorActionPreference = "Continue"
+New-Item -ItemType Directory -Force -Path $ProofDir | Out-Null
+$log = Join-Path $ProofDir "airgap.log"
+Start-Transcript -Path $log -Append | Out-Null
+
 # One shot: a completed (or attempted-then-finished) proof must never replay on
-# a later networked boot and clobber its own evidence.
+# a later networked boot and clobber its own evidence. (Checked after the
+# transcript starts, so even this exit leaves its line in airgap.log; it used
+# to run before Start-Transcript and vanish without evidence.)
 if (Test-Path (Join-Path $ProofDir "done.flag")) {
     Write-Host "air-gap proof already completed ($ProofDir\done.flag); nothing to do"
     shutdown.exe /s /t 5 /c "air-gap proof already completed"
     exit 0
 }
-
-$ErrorActionPreference = "Continue"
-New-Item -ItemType Directory -Force -Path $ProofDir | Out-Null
-$log = Join-Path $ProofDir "airgap.log"
-Start-Transcript -Path $log -Append | Out-Null
 
 $script:failures = New-Object System.Collections.Generic.List[string]
 function Step([string]$message) {
