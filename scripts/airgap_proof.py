@@ -140,14 +140,17 @@ class Runner:
         ]
 
     def command(self, argv: list[str], *, timeout: float = 600, env: dict[str, str] | None = None) -> str:
-        completed = subprocess.run(
-            argv,
-            capture_output=True,
-            text=True,
-            timeout=timeout,
-            env={**os.environ, **env} if env else None,
-            check=False,
-        )
+        try:
+            completed = subprocess.run(
+                argv,
+                capture_output=True,
+                text=True,
+                timeout=timeout,
+                env={**os.environ, **env} if env else None,
+                check=False,
+            )
+        except subprocess.TimeoutExpired:
+            raise ProofError(f"{argv[0]} timed out after {timeout:.0f}s") from None
         if completed.returncode != 0:
             detail = (completed.stderr or completed.stdout).strip().splitlines()
             raise ProofError(f"{argv[0]} exited {completed.returncode}: {detail[-1] if detail else 'no output'}")
@@ -163,6 +166,11 @@ class Runner:
         """Copy bundle files over with one ssh connection (guest has tar.exe)."""
         if not relative_paths:
             return
+        # The extract dies if the target directory does not exist yet (a
+        # fresh data volume has no stage dir); create it up front instead of
+        # discovering its absence through a masked tar error.
+        quoted = remote_dir.replace("'", "''")
+        self.ssh(f"New-Item -ItemType Directory -Force -Path '{quoted}' | Out-Null", timeout=120)
         tar = subprocess.Popen(
             ["tar", "-C", str(source), "-cf", "-", *relative_paths],
             stdout=subprocess.PIPE,
@@ -184,10 +192,15 @@ class Runner:
             raise ProofError(f"staging timed out after {timeout:.0f}s") from None
         tar_error = tar.stderr.read() if tar.stderr else b""
         tar.wait()
-        if tar.returncode != 0:
-            raise ProofError(f"tar failed: {tar_error.decode('utf-8', 'replace').strip()[-300:]}")
+        # The guest side is checked first: its failure (missing dir, full
+        # disk) is the cause; the local tar's complaint is usually fallout
+        # (broken pipe) and used to mask it behind an empty message.
         if extract.returncode != 0:
-            raise ProofError(f"guest tar failed: {extract_error.decode('utf-8', 'replace').strip()[-300:]}")
+            detail = extract_error.decode("utf-8", "replace").strip()[-300:] or "(guest tar printed nothing)"
+            raise ProofError(f"guest tar failed extracting into {remote_dir}: {detail}")
+        if tar.returncode != 0:
+            detail = tar_error.decode("utf-8", "replace").strip()[-300:] or "(tar printed nothing)"
+            raise ProofError(f"tar failed: {detail}")
 
 
 # --- 1. the bundle -----------------------------------------------------------
