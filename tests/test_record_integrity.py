@@ -62,6 +62,8 @@ _NON_HASH_TOKENS = frozenset(
         "748c5e28f6a7228b8f38ad7142ca97d29584544b",  # external audio.cpp revision
         "4365833",  # Westlaw citation fragment (2010 WL 4365833, Attachmate v. Health Net) in the EULA validation memo — not a commit
         "17734646",  # Product Hunt help-article id inside a URL in the market strategy doc — not a commit
+        "b0a7fe4c",  # first segment of the production licence's lic_id UUID (LICENSING_OPS, FINAL_RELEASE_READINESS) — not a commit
+        "6eb06cccbc14",  # second segment of that same lic_id UUID — not a commit
     }
 )
 
