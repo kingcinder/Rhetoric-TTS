@@ -290,6 +290,15 @@ def auto_dismiss_modals() -> None:
     app_gui.QMessageBox.information = staticmethod(answer("information", ok))
     app_gui.QMessageBox.warning = staticmethod(answer("warning", ok))
     QMessageBox.exec = lambda self, *a, **k: (print("[modal] exec auto-dismissed", flush=True), ok)[1]
+    # The startup crash-review is a QDialog, not a QMessageBox — it slipped
+    # this net and hung the driver on its modal exec() in the Windows guest
+    # on 2026-11-09 (py-spy: MainThread parked in run_next_session_review).
+    # This driver exists to create crash records, so the review fires on
+    # every window it builds. Returning Rejected leaves the review's verdict
+    # at its 'dismissed' default.
+    from PySide6.QtWidgets import QDialog
+
+    QDialog.exec = lambda self, *a, **k: (print("[modal] dialog exec auto-dismissed", flush=True), 0)[1]
 
 
 def main() -> int:
