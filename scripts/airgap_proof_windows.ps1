@@ -21,12 +21,21 @@ param(
 
 # The data volume's letter is not stable (the answer ISO takes D:), so resolve
 # it by label: everything below lives on that data volume, never on C:.
-# The logon task can fire before the volume enumerates, so poll for up to two
+# The logon task can fire before the volume enumerates, so poll for up to six
 # minutes: the one-shot lookup used to race the mount, FAIL leaving no log or
 # result anywhere, and power the guest off (2026-11-09).
 $volume = $null
-for ($attempt = 0; $attempt -lt 24; $attempt++) {
+for ($attempt = 0; $attempt -lt 72; $attempt++) {
     $volume = Get-Volume -FileSystemLabel $VolumeLabel -ErrorAction SilentlyContinue | Select-Object -First 1
+    if (-not ($volume -and $volume.DriveLetter)) {
+        # The Storage cmdlets can lag minutes behind the Win32 device stack on
+        # this guest (proven 2026-11-10: two consecutive boots polled the full
+        # two minutes, found nothing, and powered off with the volume healthy
+        # at E: the whole time). Fall back to the CIM logical-disk view of
+        # the same label, which answers on the device stack's schedule.
+        $ld = Get-CimInstance Win32_LogicalDisk -ErrorAction SilentlyContinue | Where-Object { $_.VolumeName -eq $VolumeLabel } | Select-Object -First 1
+        if ($ld) { $volume = [pscustomobject]@{ DriveLetter = $ld.DeviceID.TrimEnd(':') } }
+    }
     if ($volume -and $volume.DriveLetter) { break }
     Start-Sleep -Seconds 5
 }
