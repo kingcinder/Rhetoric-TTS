@@ -463,3 +463,44 @@ during own launch):
 Internal references: `docs/release/PRODUCT_OFFER.md` (product model),
 `docs/SOFT_LAUNCH.md` (release gate), and the owner's 2026-09-11 pricing
 anchor ($39, +$20 at hundreds/month) preserved in project records.
+Internal references: `docs/release/PRODUCT_OFFER.md` (product model),
+`docs/SOFT_LAUNCH.md` (release gate), and the owner's 2026-09-11 pricing
+anchor ($39, +$20 at hundreds/month) preserved in project records.
+
+## EU/UK checkout decision (2026-11-11)
+
+Researched from primary sources (full brief retained in the project
+workspace: `eu-checkout-research-2026-11-11.md`).
+
+Findings:
+
+- CRD Art. 16(m) removes the 14-day withdrawal right for digital
+  content only on prior express consent to immediate supply plus an
+  acknowledgement of losing the right, captured as a distinct step;
+  consent via general terms or a pre-ticked box does not satisfy it
+  (Commission Guidance Notice 2021/C 525/01, section 5.7).
+- Neither Lemon Squeezy nor Gumroad captures that consent in its
+  standard checkout. Lemon Squeezy's Buyer Terms carry a digital-
+  content clause in the statutory shape but deem consent from the act
+  of downloading inside general terms; Gumroad's terms do not address
+  withdrawal at all. Neither platform offers a seller-configurable
+  EU/UK exclusion, so geo-blocking the EU is not an available
+  fallback on either platform.
+- Both act as merchant of record and handle EU/UK VAT.
+
+Decision (owner-authorized, 2026-11-11):
+
+- **Processor: Lemon Squeezy** (merchant of record; EU VAT handled;
+  5% + $0.50 all-in; native license keys match the serial model).
+- **Launch globally, EU/UK included.** The surviving 14-day
+  withdrawal right for EU/UK buyers is priced in as refund exposure
+  at the $39-49 price points rather than treated as a launch gate.
+- **Mitigation:** the Rhetoric website captures the Art. 16(m)
+  consent seller-side before checkout -- an unticked box with the
+  Commission's model wording, logged with a timestamp -- and the
+  purchase confirmation email expressly confirms the consent and the
+  acknowledgement. This is a mitigation that strengthens the legal
+  position, not a verified cure: seller-side capture alongside an
+  MoR-as-trader is untested, and a live checkout test remains the
+  one verification that can rule an undocumented platform consent
+  step in or out.
