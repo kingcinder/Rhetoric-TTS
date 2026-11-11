@@ -108,7 +108,14 @@ outside the authorized scope.
    render, GUI, project save/reopen, settings persistence, update, rollback,
    uninstall, and data-retention behavior.
 3. Verify the installed LGPL library-replacement path and document fulfillment
-   of source/replacement obligations.
+   of source/replacement obligations. **Closed 2026-11-11:** replacement
+   verified live — the frozen Linux tree and a venv install both run with
+   their Qt 6.8.2 library set replaced by Qt 6.8.3 builds; libsndfile 1.2.2
+   and libsoxr 0.1.3 inventoried in the notices; source offer and per-form
+   replacement/relink instructions in
+   [`LGPL_FULFILLMENT.md`](LGPL_FULFILLMENT.md); owner allowances recorded
+   in `scripts/license_review.json` (counsel ratification rides with
+   item 7's counsel review).
 4. Complete the six-case production audio corpus and independent human review
    described in [`REAL_AUDIO_ACCEPTANCE_1.5.0.md`](REAL_AUDIO_ACCEPTANCE_1.5.0.md).
    Historical 1.4.2 outputs are not evidence for this candidate.

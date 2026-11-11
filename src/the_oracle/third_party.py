@@ -446,6 +446,40 @@ _EXTERNAL_COMPONENTS: tuple[Component, ...] = (
     ),
 )
 
+#: libsndfile ships as a loose shared library inside the soundfile wheel,
+#: unnamed by the wrapper's own metadata; its LGPL obligation is recorded
+#: here explicitly.
+_LIBSNDFILE_COMPONENT = Component(
+    name="libsndfile",
+    version="1.2.2",
+    license="LGPL-2.1",
+    kind="bundled-binary",
+    source="https://github.com/libsndfile/libsndfile",
+    notice=(
+        "LGPL-2.1. Shipped as a separate shared library inside the soundfile "
+        "wheel (_soundfile_data/), with its COPYING (LGPL-2.1 text) beside "
+        "it. Replaceable: substitute a same-ABI build at that path. See "
+        "docs/release/LGPL_FULFILLMENT.md."
+    ),
+)
+
+#: libsoxr is statically linked into the soxr extension module; the wheel
+#: carries its COPYING.LGPL, and the relink path is a rebuild of that
+#: module (see docs/release/LGPL_FULFILLMENT.md).
+_LIBSOXR_COMPONENT = Component(
+    name="libsoxr",
+    version="0.1.3",
+    license="LGPL-2.1",
+    kind="bundled-binary",
+    source="https://sourceforge.net/projects/soxr/",
+    notice=(
+        "LGPL-2.1. Statically linked into the soxr extension module; the "
+        "soxr wheel carries libsoxr's COPYING.LGPL. Relink path: rebuild "
+        "the soxr package against a modified libsoxr and replace the "
+        "installed soxr module. See docs/release/LGPL_FULFILLMENT.md."
+    ),
+)
+
 #: PySide6 and shiboken6 ship as native binaries; they are in the Python
 #: closure too, but the LGPL obligation deserves its own entry.
 _QT_COMPONENT = Component(
@@ -515,6 +549,8 @@ def bundled_components(root: Path) -> list[Component]:
     """Everything the repository ships or invokes beyond the Python closure."""
     components: list[Component] = [
         _QT_COMPONENT,
+        _LIBSNDFILE_COMPONENT,
+        _LIBSOXR_COMPONENT,
         *_MODEL_COMPONENTS,
         *_EXTERNAL_COMPONENTS,
         *_generic_voice_components(root),

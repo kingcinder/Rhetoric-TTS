@@ -31,6 +31,8 @@ Release version: **1.5.0**
 
 | Component | Version / pin | License | Source |
 |---|---|---|---|
+| `libsndfile` | 1.2.2 | LGPL-2.1 | [source](https://github.com/libsndfile/libsndfile) |
+| `libsoxr` | 0.1.3 | LGPL-2.1 | [source](https://sourceforge.net/projects/soxr/) |
 | `PySide6 / shiboken6 / Qt` | 6.8.2.1 | LGPL-3.0 (or commercial Qt license) | [source](https://code.qt.io/cgit/pyside/pyside-setup.git/) |
 | `audio.cpp` | built at install time from a pinned clone | Apache-2.0 | [source](https://github.com/0xShug0/audio.cpp) |
 | `ffmpeg` | host-provided | LGPL/GPL depending on the build | [source](https://ffmpeg.org/) |
@@ -167,6 +169,8 @@ tools are not part of the shipped environment.
 The following notices must accompany the distribution. The standard
 license texts are in `THIRD_PARTY_LICENSES/`.
 
+- **libsndfile** — LGPL-2.1. Shipped as a separate shared library inside the soundfile wheel (_soundfile_data/), with its COPYING (LGPL-2.1 text) beside it. Replaceable: substitute a same-ABI build at that path. See docs/release/LGPL_FULFILLMENT.md.
+- **libsoxr** — LGPL-2.1. Statically linked into the soxr extension module; the soxr wheel carries libsoxr's COPYING.LGPL. Relink path: rebuild the soxr package against a modified libsoxr and replace the installed soxr module. See docs/release/LGPL_FULFILLMENT.md.
 - **PySide6 / shiboken6 / Qt** — LGPL-3.0. A proprietary application may use the LGPL path while keeping its own source proprietary, provided the LGPL-covered libraries remain replaceable/relinkable, their complete corresponding source is made available (or a written offer is given), and the LGPL notice and text accompany the distribution. A Qt commercial license is the alternative.
 - **audio.cpp** — Copyright 2026 ShugoAI LLC. Apache-2.0. Modified by Rhetoric's vendored patches; see scripts/patches/.
 - **ffmpeg** — Not bundled. The host supplies ffmpeg; its own build determines the exact license.
