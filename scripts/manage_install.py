@@ -242,7 +242,7 @@ def install_dependencies(
             )
             _install_offline_chatterbox(venv_python, offline_bundle, pip_base, env)
             run_command(
-                [str(venv_python), "-m", "pip", "install", "--no-deps", "-e", "."],
+                [str(venv_python), "-m", "pip", "install", "--no-deps", "--no-build-isolation", "-e", "."],
                 env=env,
             )
             run_command([str(venv_python), str(REPO_ROOT / "scripts" / "patch_chatterbox_metadata.py")], env=env)
