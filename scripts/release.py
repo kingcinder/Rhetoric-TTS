@@ -593,11 +593,30 @@ def tree_is_dirty(repo_root: Path) -> bool:
     return bool(result.stdout.strip())
 
 
+# A healthy serial full-suite run takes ~30+ minutes; this cap exists only
+# so a wedged suite (the 2026-11-11 freeze) fails loudly instead of hanging
+# the release build forever. It cannot false-fire on a healthy run.
+TEST_SUITE_TIMEOUT_SECONDS = 7200
+
+
 def run_tests(repo_root: Path) -> None:
     """Run the full suite; QT_QPA_PLATFORM defaults to offscreen for headless hosts."""
     env = dict(os.environ)
     env.setdefault("QT_QPA_PLATFORM", "offscreen")
-    subprocess.run([sys.executable, "-m", "pytest"], cwd=str(repo_root), env=env, check=True)
+    try:
+        subprocess.run(
+            [sys.executable, "-m", "pytest"],
+            cwd=str(repo_root),
+            env=env,
+            check=True,
+            timeout=TEST_SUITE_TIMEOUT_SECONDS,
+        )
+    except subprocess.TimeoutExpired as exc:
+        raise ReleaseError(
+            f"the test suite exceeded {TEST_SUITE_TIMEOUT_SECONDS}s and was "
+            "killed; a healthy serial run finishes in ~30+ minutes, so this "
+            "means the suite wedged - see the pytest output above"
+        ) from exc
 
 
 def build_native_core(repo_root: Path) -> None:
