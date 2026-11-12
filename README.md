@@ -650,7 +650,7 @@ Linux:
 ```bash
 python3.12 -m venv .venv
 ./.venv/bin/python -m pip install --upgrade pip
-./.venv/bin/python -m pip install -e ".[dev]"
+./.venv/bin/python -m pip install -e ".[dev,ml,chatterbox]"
 ./.venv/bin/pytest
 ```
 
@@ -659,7 +659,7 @@ Windows:
 ```powershell
 py -3.12 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install --upgrade pip
-.\.venv\Scripts\python.exe -m pip install -e ".[dev]"
+.\.venv\Scripts\python.exe -m pip install -e ".[dev,ml,chatterbox]"
 .\.venv\Scripts\pytest.exe
 ```
 
