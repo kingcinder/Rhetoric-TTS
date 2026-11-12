@@ -103,6 +103,11 @@ def _doctor_report() -> dict:
         text=True,
         encoding="utf-8",
         errors="replace",
+        # Bounded, like the read-only gate's identical invocation: the doctor's
+        # probes carry their own timeouts, but its in-process imports and smoke
+        # do not, so an unbounded wait here is what froze the 1.5.0 release
+        # build on 2026-11-11. A wedged doctor must fail this test, not hang it.
+        timeout=600,
     )
     try:
         report = json.loads(completed.stdout)
