@@ -15,6 +15,19 @@ datas.extend(
         (str(repo / "THIRD_PARTY_NOTICES.md"), "."),
     ]
 )
+# THIRD_PARTY_NOTICES.md sends readers to the license texts in
+# THIRD_PARTY_LICENSES/ and to the LGPL fulfillment doc, so both must ship
+# inside the frozen bundle as well. The wheel and sdist carry them through
+# setuptools license-files, a mechanism PyInstaller never consults; without
+# these entries the frozen artifacts omitted them entirely.
+datas.extend(
+    (str(path), "THIRD_PARTY_LICENSES")
+    for path in sorted((repo / "THIRD_PARTY_LICENSES").iterdir())
+    if path.is_file()
+)
+datas.append(
+    (str(repo / "docs" / "release" / "LGPL_FULFILLMENT.md"), "docs/release")
+)
 
 a = Analysis(
     [str(repo / "packaging" / "linux" / "entrypoint.py")],
