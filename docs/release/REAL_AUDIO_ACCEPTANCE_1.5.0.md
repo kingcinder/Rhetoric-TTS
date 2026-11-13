@@ -44,3 +44,5 @@ case, check:
 
 **Human verdict: PENDING.** Do not replace this field with automated metrics
 or a model-generated assessment.
+
+**Reviewer comment — Dither, 2026-11-12 ~17:32 PST (general comment on the stock-voice renders above; NOT per-case pass/fail):** "Those renders sound fine." Per-case verdicts remain PENDING.
