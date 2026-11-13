@@ -291,8 +291,7 @@
         "QTimer": "QTimer: PySide6 import held by both sides; an app_gui-level rebind would miss gui_recording.py's uses - inject or repoint at gui_recording.py if a flow ever needs it; the census net escalates this pair automatically.",
         "QUrl": "QUrl: PySide6 import held by both sides; an app_gui-level rebind would miss gui_recording.py's uses - inject or repoint at gui_recording.py if a flow ever needs it; the census net escalates this pair automatically.",
         "QVBoxLayout": "QVBoxLayout: PySide6 import held by both sides; an app_gui-level rebind would miss gui_recording.py's uses - inject or repoint at gui_recording.py if a flow ever needs it; the census net escalates this pair automatically.",
-        "threading": "threading: stdlib import held by both sides; an app_gui-level rebind would miss gui_recording.py's uses - repoint at gui_recording.py if a flow ever needs it; the census net escalates this pair automatically.",
-        "QGroupBox": "QGroupBox: PySide6 import held by both sides; app_gui reads it for the Settings Advanced update group (2026-11-08) while gui_recording.py builds its prompt/capture boxes from its own import - an app_gui-level rebind would miss gui_recording.py's uses; inject or repoint at gui_recording.py if a flow ever needs it; the census net escalates this pair automatically."
+        "threading": "threading: stdlib import held by both sides; an app_gui-level rebind would miss gui_recording.py's uses - repoint at gui_recording.py if a flow ever needs it; the census net escalates this pair automatically."
       },
       "gui_render.py": {
         "Path": "Path: stdlib import held by both sides; an app_gui-level rebind would miss gui_render.py's uses - repoint at gui_render.py if a flow ever needs it; the census net escalates this pair automatically.",
@@ -307,8 +306,7 @@
       },
       "gui_sections.py": {
         "QHSectionGroup": "QHSectionGroup lives in gui_sections.py and app_gui re-imports it; an app_gui-level rebind covers only app_gui's reads - rebind at gui_sections.py for both sides.",
-        "Qt": "Qt: PySide6 import held by both sides; an app_gui-level rebind would miss gui_sections.py's uses - inject or repoint at gui_sections.py if a flow ever needs it; the census net escalates this pair automatically.",
-        "QGroupBox": "QGroupBox: PySide6 base class of QHSectionGroup, read in gui_sections.py by definition; app_gui reads it for the Settings Advanced update group (2026-11-08) - an app_gui-level rebind could never cover the section base class; repoint at gui_sections.py if a flow ever needs it; the census net escalates this pair automatically."
+        "Qt": "Qt: PySide6 import held by both sides; an app_gui-level rebind would miss gui_sections.py's uses - inject or repoint at gui_sections.py if a flow ever needs it; the census net escalates this pair automatically."
       },
       "gui_settings.py": {
         "GUISettingsError": "GUISettingsError lives in gui_settings.py and app_gui re-imports it; an app_gui-level rebind covers only app_gui's reads - rebind at gui_settings.py for both sides.",

@@ -905,7 +905,6 @@ class MainWindow(QMainWindow):
         form.addRow("Crossfade (ms)", self.crossfade_spin)
         form.addRow("", self.export_srt_check)
         form.addRow("", self.monologue_check)
-        self._build_update_settings(form)
 
     def _build_paths_content(self, section: QHSectionGroup) -> None:
         """The path rows + cast bar (Script & Cast section)."""
@@ -956,46 +955,6 @@ class MainWindow(QMainWindow):
             self.input_path.setText(str(self._default_input_path))
         self.outdir_path.setText(str(self._default_output_dir))
         self._refresh_cast_bar()
-
-    def _build_update_settings(self, layout) -> None:  # noqa: ANN001
-        """Advanced (low-prominence) update controls at the very bottom of
-        the Shared Render Settings section: the automated-updates opt-out.
-        Deliberately not on any main screen, and the app never nags about it."""
-        group = QGroupBox("Advanced")
-        group.setObjectName("advanced_settings")
-        box = QVBoxLayout(group)
-        self.automated_updates_check = QCheckBox("Turn off automated updates")
-        self.automated_updates_check.setObjectName("automated_updates_opt_out")
-        current = load_app_settings()
-        self.automated_updates_check.setChecked(
-            not bool(current.get("automatic_updates_enabled", True))
-        )
-        self.automated_updates_check.setToolTip(
-            "Rhetoric checks for updates automatically and installs verified "
-            "updates for managed installs. Turn this off only if you manage "
-            "updates yourself."
-        )
-        box.addWidget(self.automated_updates_check)
-        warning = QLabel(
-            "Warning: if you turn automated updates off, you will not be able "
-            "to submit bug tickets or receive any other form of customer "
-            "support until you re-enable automated updates, have fully "
-            "updated the program to the current version, and have re-checked "
-            "your issue with the automatic bug catcher on the fully updated "
-            "program."
-        )
-        warning.setObjectName("automated_updates_warning")
-        warning.setWordWrap(True)
-        # The settings sections live in splitter panes with a narrow floor;
-        # a long word-wrapped label must never widen the pane's minimum.
-        warning.setMinimumWidth(0)
-        warning.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
-        box.addWidget(warning)
-        self.automated_updates_check.toggled.connect(self._on_automated_updates_toggled)
-        # Inside the section's scrollable form: the group is the last row
-        # of Shared Render Settings, and living in the scroll area keeps
-        # it from raising the splitter pane's minimum width.
-        layout.addRow(group)
 
     def _on_automated_updates_toggled(self, checked: bool) -> None:
         """Persist the opt-out (checked means updates are OFF). When updates

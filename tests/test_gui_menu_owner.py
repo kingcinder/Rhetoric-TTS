@@ -67,7 +67,7 @@ MANIFEST = REPO_ROOT / "scripts" / "patch_surface_manifest.json"
 _OWNER = "rhetoric.gui_menu"
 _OWNER_NAME = "build_menu"
 
-#: Every attribute the moved body must SET on ``main_window``: the 25 public
+#: Every attribute the moved body must SET on ``main_window``: the 26 public
 #: action attributes, the two menus the rest of the window reads
 #: (``inference_wizard_menu``, ``templates_menu``), and ``_theme_actions``.
 #: A body that stopped setting any of these would strand a read elsewhere in
@@ -80,6 +80,7 @@ _MOVED_BODY_ASSIGNMENTS = (
     "replay_main_wizard_action",
     "recording_wizard_action",
     "output_filename_warning_action",
+    "automated_updates_action",
     "templates_menu",
     "confirmation_action",
     "remember_backend_action",
@@ -460,6 +461,7 @@ class _StubWindow(QMainWindow):
             "_start_inference_wizard",
             "_start_recording_wizard",
             "_on_output_filename_warning_toggled",
+            "_on_automated_updates_toggled",
             "_rebuild_templates_menu",
             "_enable_delete_confirmation",
             "_clear_trusted_input_files",

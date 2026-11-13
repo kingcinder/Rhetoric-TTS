@@ -125,6 +125,29 @@ def build_menu(main_window, *, themes: Mapping[str, ThemeTokens]) -> None:
     )
     main_window.output_filename_warning_action.toggled.connect(main_window._on_output_filename_warning_toggled)
     settings_menu.addAction(main_window.output_filename_warning_action)
+    # The automated-updates opt-out lives here, not in Shared Render
+    # Settings: it has nothing to do with rendering (owner order,
+    # 2026-11-12). Low-prominence by design -- a plain menu entry, never a
+    # nag. Checked means updates are OFF; the handler persists the same
+    # ``automatic_updates_enabled`` key the support gate reads.
+    main_window.automated_updates_action = QAction("Turn off automated updates", main_window)
+    main_window.automated_updates_action.setObjectName("automated_updates_opt_out")
+    main_window.automated_updates_action.setCheckable(True)
+    main_window.automated_updates_action.setChecked(
+        not bool(main_window._app_settings.get("automatic_updates_enabled", True))
+    )
+    main_window.automated_updates_action.setToolTip(
+        "Rhetoric checks for updates automatically and installs verified "
+        "updates for managed installs. Turn this off only if you manage "
+        "updates yourself. Warning: if you turn automated updates off, you "
+        "will not be able to submit bug tickets or receive any other form "
+        "of customer support until you re-enable automated updates, have "
+        "fully updated the program to the current version, and have "
+        "re-checked your issue with the automatic bug catcher on the fully "
+        "updated program."
+    )
+    main_window.automated_updates_action.toggled.connect(main_window._on_automated_updates_toggled)
+    settings_menu.addAction(main_window.automated_updates_action)
 
     main_window.templates_menu = settings_menu.addMenu("Load Template")
     main_window.templates_menu.aboutToShow.connect(main_window._rebuild_templates_menu)
