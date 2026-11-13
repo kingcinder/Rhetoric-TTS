@@ -16,9 +16,17 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = REPO_ROOT / "scripts" / "patch_audio_cpp_ggml.sh"
-ENGINE = "python3" if sys.platform != "win32" else "python"
+
+# The patch script is bash, and the audio.cpp build it feeds is Linux-only:
+# Windows runners resolve `bash` to the WSL shim, which has no distribution.
+pytestmark = pytest.mark.skipif(
+    sys.platform == "win32",
+    reason="bash script; WSL has no distributions on CI",
+)
 
 GGML_MINIMAL = """\
 #include <vulkan/vulkan.hpp>
