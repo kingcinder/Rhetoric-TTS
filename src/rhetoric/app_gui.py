@@ -101,6 +101,7 @@ from rhetoric.gui_themes import DEFAULT_THEME, THEMES, apply_theme, normalize_th
 # and the owner module is the single patch point, exactly as their
 # moved_owners listings record (rule 1).
 from rhetoric.gui_tooltips import install_ctrl_hover_help
+from rhetoric.gui_wheel import install_wheel_focus_guard
 from rhetoric.inference_wizard import InferenceSetupWizard
 from rhetoric.recording_wizard import RecordingStudioSetupWizard
 from rhetoric.gui_widgets import PerceptualSlider
@@ -370,6 +371,10 @@ class MainWindow(QMainWindow):
         # Attach after startup styling and state restoration so Qt does not
         # deliver construction-time event wrappers through the hover filter.
         self._ctrl_help = install_ctrl_hover_help(self)
+        # One application-wide filter: wheel events edit a spin box / combo box
+        # / slider only while that control holds keyboard focus; otherwise the
+        # wheel scrolls the enclosing panel (gui_wheel.py).
+        install_wheel_focus_guard(QApplication.instance())
         self._register_ctrl_help_descriptions()
         self._apply_serial_gate()
         self._mark_startup("mainwindow_init_end")
