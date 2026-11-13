@@ -130,7 +130,6 @@ _APP_GUI_PATCHED_POLICY_NAMES = frozenset(
         "QFileDialog",
         "ensure_repo_default_paths",
         "load_recent_reference_paths",
-        "blend_voice_choices",
         "default_voice_choices",
         "cuda_devices",
         "cuda_reason",

@@ -31,7 +31,6 @@ from rhetoric.text_repair.directives import parse_directives
 from rhetoric.text_repair.grammar import GrammarCorrector
 from rhetoric.text_repair.normalize import normalize_text
 from rhetoric.text_repair.punctuation import PunctuationRestorer
-from rhetoric.voice_catalog import blend_catalog_path, blend_voice_choices
 
 
 @contextlib.contextmanager
@@ -157,46 +156,6 @@ def test_empty_input_does_not_break_strict_zip_wrapper() -> None:
 
 # ----------------------------------------------------------------------
 # 5. Malformed blend-catalog entries never crash the picker
-# ----------------------------------------------------------------------
-
-
-def test_malformed_blend_catalog_entries_are_skipped(tmp_path: Path) -> None:
-    catalog = blend_catalog_path(tmp_path)
-    catalog.parent.mkdir(parents=True, exist_ok=True)
-    catalog.write_text(
-        json.dumps(
-            {
-                "version": 1,
-                "voices": [
-                    "not a dict",
-                    None,
-                    {"name": ""},
-                    {"name": "missing-paths"},
-                    {"name": "bad-weight", "path_a": "a.wav", "path_b": "b.wav", "weight": "abc"},
-                    {"name": "none-weight", "path_a": "a.wav", "path_b": "b.wav", "weight": None},
-                    {"name": 123, "path_a": "a.wav", "path_b": "b.wav"},
-                    {"name": "bad-mode", "path_a": "a.wav", "path_b": "b.wav", "mode": 42},
-                ],
-            }
-        ),
-        encoding="utf-8",
-    )
-
-    # Must not raise (previously: KeyError on voice["path_a"], TypeError on
-    # float(None), and uncaught errors from blend_references).
-    assert blend_voice_choices(tmp_path) == []
-
-
-def test_corrupt_blend_catalog_json_is_treated_as_empty(tmp_path: Path) -> None:
-    catalog = blend_catalog_path(tmp_path)
-    catalog.parent.mkdir(parents=True, exist_ok=True)
-    catalog.write_text("{not valid json", encoding="utf-8")
-
-    assert blend_voice_choices(tmp_path) == []
-
-
-# ----------------------------------------------------------------------
-# 6. Static emotion control mapping (no pipeline instantiation)
 # ----------------------------------------------------------------------
 
 

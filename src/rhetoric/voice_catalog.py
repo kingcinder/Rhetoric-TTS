@@ -14,9 +14,7 @@ from rhetoric.models.cache import atomic_write
 class VoiceChoice:
     label: str
     path: str
-    # "file" = a plain reference clip; "blend" = a saved named voice blend
-    # (see save_blend_voice). The picker renders blends under their own
-    # "Saved Blends" section.
+    # "file" = a plain reference clip.
     kind: str = "file"
 
 
@@ -67,11 +65,6 @@ def default_voice_choices(repo_root: str | Path, limit: int = 10) -> list[VoiceC
                     continue
                 seen.add(resolved)
                 choices.append(VoiceChoice(label=_label_for_path(path), path=resolved))
-    # Named blend voices (user-saved) follow the bundled/curated files so a
-    # plain file is always the first (English-conditioned) default, then
-    # truncate to the limit.
-    seen.update(choice.path for choice in choices)
-    choices.extend(blend for blend in blend_voice_choices(root / "Profiles") if blend.path not in seen)
     return choices[:limit]
 
 
@@ -123,138 +116,6 @@ def voice_catalog_audit(repo_root: str | Path) -> dict[str, Any]:
 def _label_for_path(path: Path) -> str:
     stem = path.stem.replace("_", " ").replace("-", " ").strip() or "Reference"
     return stem.title()
-
-
-def blend_catalog_path(profiles_dir: str | Path) -> Path:
-    """The JSON catalog of saved named blend voices under a Profiles dir."""
-    return Path(profiles_dir).expanduser() / "blend_voices.json"
-
-
-def blend_clips_dir(profiles_dir: str | Path) -> Path:
-    """Directory holding the derived (deterministic) blend reference wavs."""
-    return Path(profiles_dir).expanduser() / ".blends"
-
-
-def _load_blend_catalog(catalog_path: Path) -> dict[str, Any]:
-    if not catalog_path.exists():
-        return {"version": 1, "voices": []}
-    try:
-        payload = json.loads(catalog_path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
-        # A corrupt catalog must never crash the voice picker; treat as empty.
-        return {"version": 1, "voices": []}
-    if not isinstance(payload, dict) or not isinstance(payload.get("voices"), list):
-        return {"version": 1, "voices": []}
-    return payload
-
-
-def save_blend_voice(
-    profiles_dir: str | Path,
-    name: str,
-    path_a: str | Path,
-    path_b: str | Path,
-    weight: float = 0.5,
-    mode: str = "mix",
-) -> VoiceChoice:
-    """Save (or upsert by name) a named blend voice and return its picker entry.
-
-    The derived reference clip is materialized into ``.blends/`` by the same
-    deterministic ``blend_references`` the render pipeline uses, so picking
-    the saved voice is byte-identical to configuring the blend inline.
-    Saving the same name again replaces the entry.
-    """
-    from rhetoric.audio.blend import blend_references
-
-    clean_name = name.strip()
-    if not clean_name:
-        raise ValueError("Blend voice name must not be empty.")
-    source_a = Path(path_a).expanduser()
-    source_b = Path(path_b).expanduser()
-    for source in (source_a, source_b):
-        if not source.exists():
-            raise FileNotFoundError(f"Blend source does not exist: {source}")
-    derived = blend_references(
-        source_a,
-        source_b,
-        weight_a=float(weight),
-        mode=mode,
-        out_dir=blend_clips_dir(profiles_dir),
-    )
-    catalog_path = blend_catalog_path(profiles_dir)
-    payload = _load_blend_catalog(catalog_path)
-    entry = {
-        "name": clean_name,
-        "path_a": str(source_a),
-        "path_b": str(source_b),
-        "weight": float(max(0.0, min(1.0, float(weight)))),
-        "mode": mode,
-    }
-    payload["voices"] = [voice for voice in payload["voices"] if voice.get("name") != clean_name] + [entry]
-    text = json.dumps(payload, indent=2)
-    atomic_write(catalog_path, lambda temporary: temporary.write_text(text, encoding="utf-8"))
-    return VoiceChoice(label=clean_name, path=str(derived), kind="blend")
-
-
-def blend_voice_choices(profiles_dir: str | Path) -> list[VoiceChoice]:
-    """The saved named blend voices, as picker entries (derived wavs resolved).
-
-    Entries whose source clips no longer exist are skipped, never fatal: a
-    saved voice stays selectable only while its inputs are on disk. Malformed
-    entries (missing paths, non-numeric weights, bad modes) are skipped the
-    same way: a corrupt catalog must never crash the voice picker.
-    """
-    from rhetoric.audio.blend import blend_references
-
-    catalog_path = blend_catalog_path(profiles_dir)
-    payload = _load_blend_catalog(catalog_path)
-    choices: list[VoiceChoice] = []
-    seen: set[str] = set()
-    for voice in payload.get("voices", []):
-        if not isinstance(voice, dict):
-            continue
-        name = voice.get("name")
-        path_a = voice.get("path_a")
-        path_b = voice.get("path_b")
-        if not name or not isinstance(name, str) or not path_a or not path_b:
-            continue
-        try:
-            weight = float(voice.get("weight", 0.5))
-        except (TypeError, ValueError):
-            weight = 0.5
-        mode = voice.get("mode", "mix")
-        if not isinstance(mode, str):
-            mode = "mix"
-        try:
-            derived = blend_references(
-                path_a,
-                path_b,
-                weight_a=weight,
-                mode=mode,
-                out_dir=blend_clips_dir(profiles_dir),
-            )
-        except Exception:
-            # Missing clips, unreadable audio, unknown blend mode, missing
-            # optional audio deps: skip the entry, never crash the picker.
-            continue
-        resolved = str(derived)
-        if resolved in seen:
-            continue
-        seen.add(resolved)
-        choices.append(VoiceChoice(label=name, path=resolved, kind="blend"))
-    return choices
-
-
-def remove_blend_voice(profiles_dir: str | Path, name: str) -> bool:
-    """Remove a saved blend voice by name. Returns True when it existed."""
-    catalog_path = blend_catalog_path(profiles_dir)
-    payload = _load_blend_catalog(catalog_path)
-    before = len(payload["voices"])
-    payload["voices"] = [voice for voice in payload["voices"] if voice.get("name") != name]
-    if len(payload["voices"]) == before:
-        return False
-    text = json.dumps(payload, indent=2)
-    atomic_write(catalog_path, lambda temporary: temporary.write_text(text, encoding="utf-8"))
-    return True
 
 
 def _count_voice_files(directory: Path) -> int:

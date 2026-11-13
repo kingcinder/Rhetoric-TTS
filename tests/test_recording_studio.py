@@ -561,7 +561,6 @@ def _build_main_window(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
     monkeypatch.setattr(app_gui, "ModelDownloadThread", _FakeModelDownloadThread)
     monkeypatch.setattr(app_gui, "ensure_repo_default_paths", lambda _repo_root: paths)
     monkeypatch.setattr(app_gui, "default_voice_choices", lambda _repo_root, limit=10: [])
-    monkeypatch.setattr(app_gui, "blend_voice_choices", lambda _profiles: [])
     monkeypatch.setattr(app_gui, "load_recent_reference_paths", lambda limit=10: [])
     monkeypatch.setattr(app_gui, "find_audiocpp_binary", lambda: tmp_path / "audiocpp_cli")
     model_file = tmp_path / "chatterbox-model"

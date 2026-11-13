@@ -22,7 +22,6 @@ from rhetoric.platform_support import app_config_dir, app_data_dir
 GUI_SETTINGS_VERSION = 1
 _SUPPORTED_DEVICE_MODES = {"cpu", "cuda"}
 _SUPPORTED_INFERENCE_BACKENDS = {"pytorch", "vulkan"}
-_SUPPORTED_BLEND_MODES = {"mix", "alternate", "layer"}
 _LOG = logging.getLogger(__name__)
 
 
@@ -518,28 +517,6 @@ def _normalize_inference_backend(value: str) -> str:
     return candidate
 
 
-def _normalize_blend_references(value: Any) -> list[str]:
-    """Coerce the hybrid second-voice reference list to a list of strings."""
-    if not isinstance(value, (list, tuple)):
-        return []
-    return [str(item) for item in value if isinstance(item, (str, Path)) and str(item)]
-
-
-def _normalize_blend_weight(value: Any) -> float:
-    """Coerce the hybrid voice-dominance weight to a 0..1 float."""
-    try:
-        parsed = float(value)
-    except (TypeError, ValueError):
-        return 0.5
-    return min(1.0, max(0.0, parsed))
-
-
-def _normalize_blend_mode(value: Any) -> str:
-    """Coerce the hybrid combine mode to a supported value (default "mix")."""
-    candidate = str(value or "").strip().lower()
-    return candidate if candidate in _SUPPORTED_BLEND_MODES else "mix"
-
-
 def _normalize_payload(payload: dict[str, Any]) -> dict[str, Any]:
     required = {"version", "project", "speakers"}
     missing = sorted(required - set(payload))
@@ -601,12 +578,6 @@ def _normalize_payload(payload: dict[str, Any]) -> dict[str, Any]:
             "emotion_reference_paths": dict(config.get("emotion_reference_paths", {})),
             # Optional character name shown in the cast bar / cast dialog.
             "name": str(config.get("name", "") or ""),
-            # Hybrid (blend) voice settings: previously dropped on save/load,
-            # which silently reset every speaker's second voice, dominance
-            # weight, and combine mode to defaults.
-            "blend_references": _normalize_blend_references(config.get("blend_references")),
-            "blend_weight": _normalize_blend_weight(config.get("blend_weight", 0.5)),
-            "blend_mode": _normalize_blend_mode(config.get("blend_mode", "mix")),
         }
     # The cast may reference keys absent from (or pruned out of) the speakers
     # dict; keep the two consistent and within the engine's voice capacity.
@@ -741,27 +712,16 @@ def cast_request_from_payload(payload: dict) -> list[str]:
 def speaker_config_from_payload(data: dict) -> dict:
     """Decode one merged profile entry into plain speaker-config fields.
 
-    The decode/validation policy (blend clamp, mode validation, defaults)
-    lives here; the caller constructs the engine dataclass from the returned
-    fields, so this module never imports the pipeline.
+    The decode/validation policy (voice settings, defaults) lives here; the
+    caller constructs the engine dataclass from the returned fields, so this
+    module never imports the pipeline.
     """
     voice = VoiceSettings.from_mapping(data.get("voice_settings") or {})
-    blend_refs = [str(ref) for ref in (data.get("blend_references") or []) if str(ref).strip()]
-    try:
-        blend_weight = float(data.get("blend_weight", 0.5))
-    except (TypeError, ValueError):
-        blend_weight = 0.5
-    blend_mode = str(data.get("blend_mode", "mix")).strip().lower()
-    if blend_mode not in _SUPPORTED_BLEND_MODES:
-        blend_mode = "mix"
     emotions = data.get("emotion_reference_paths")
     return {
         "reference_path": str(data.get("reference_path", "")),
         "voice_settings": voice,
         "emotion_reference_paths": dict(emotions) if isinstance(emotions, dict) else {},
-        "blend_references": blend_refs,
-        "blend_weight": min(1.0, max(0.0, blend_weight)),
-        "blend_mode": blend_mode,
     }
 
 
@@ -800,11 +760,6 @@ def current_gui_settings_payload(snapshot: WidgetSnapshot) -> dict:
                 "emotion_reference_paths": dict(settings.emotion_reference_paths),
                 # Optional character name shown in the cast bar / dialog.
                 "name": snapshot.speaker_names.get(speaker, ""),
-                # Hybrid (blend) configuration: second reference voice, its
-                # dominance weight, and how the two are combined.
-                "blend_references": list(settings.blend_references),
-                "blend_weight": settings.blend_weight,
-                "blend_mode": settings.blend_mode,
             }
             for speaker, settings in snapshot.speaker_settings.items()
         },

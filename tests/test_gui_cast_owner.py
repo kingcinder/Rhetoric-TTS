@@ -49,7 +49,7 @@ The contract this file pins:
    moved half of the flow (the harm class these probes drive).
 
 The exact-equality of gui_cast's sanctioned bare names (QDialog, QMessageBox,
-blend_voice_choices, default_voice_choices, load_recent_reference_paths)
+default_voice_choices, load_recent_reference_paths)
 belongs to the patch-couple net in test_app_gui_patch_surface.py; this file
 pins the cluster's own owner-side shape.
 """
@@ -120,7 +120,7 @@ _INJECTED_NAMES = frozenset(
 #: bare global (such a read resolves from gui_cast's own namespace and is
 #: invisible to app_gui-level monkeypatching — the harm class). Names
 #: sanctioned for gui_cast by the couple net (QDialog, QMessageBox,
-#: blend_voice_choices, default_voice_choices, load_recent_reference_paths)
+#: default_voice_choices, load_recent_reference_paths)
 #: are deliberately absent: they are gui_cast-owned reads by design.
 _APP_GUI_PATCHED_POLICY_NAMES = frozenset(
     {
@@ -565,9 +565,6 @@ class _StubWindow:
     def _refresh_language_options(self) -> None:
         self.refreshed += 1
 
-    def _save_blend_as_voice(self, group) -> None:
-        pass
-
     def _section_content_built(self, key: str) -> bool:
         return True
 
@@ -633,7 +630,7 @@ def test_the_moved_bodies_use_the_collaborators_they_are_handed() -> None:
     process_callbacks = []
 
     class FakeGroup:
-        def __init__(self, key, voice_dir, on_save_blend=None, on_process_voice=None) -> None:
+        def __init__(self, key, voice_dir, on_process_voice=None) -> None:
             built.append(key)
             process_callbacks.append(on_process_voice)
 
@@ -728,7 +725,7 @@ def test_cast_bodies_never_resolve_app_gui_patched_policy_names() -> None:
     app_gui-resident, suite-patched policy name as a bare global; such a
     read resolves from gui_cast's own namespace and is invisible to
     app_gui-level monkeypatching. Collaborators cross as values (the
-    ``main_window`` parameter, the ``on_save_blend`` callback)."""
+    ``main_window`` parameter, the ``on_process_voice`` callback)."""
     owner, tree = _gui_cast_tree()
     scopes = [
         node for node in tree.body if isinstance(node, (ast.ClassDef, ast.FunctionDef))

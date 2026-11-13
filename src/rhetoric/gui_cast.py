@@ -63,11 +63,7 @@ from rhetoric.gui_utils import MAX_CAST_SPEAKERS, CastModel, next_speaker_key
 from rhetoric.gui_widgets import PerceptualSlider
 from rhetoric.models.project import VoiceSettings
 from rhetoric.models.settings import SpeakerSettings
-from rhetoric.voice_catalog import (
-    VoiceChoice,
-    blend_voice_choices,
-    default_voice_choices,
-)
+from rhetoric.voice_catalog import VoiceChoice, default_voice_choices
 
 
 class SpeakerGroup(QHSectionGroup):
@@ -75,14 +71,12 @@ class SpeakerGroup(QHSectionGroup):
         self,
         speaker: str,
         custom_reference_dir: Path,
-        on_save_blend: Callable[["SpeakerGroup"], None] | None = None,
         on_process_voice: Callable[["SpeakerGroup", bool], None] | None = None,
         *,
         lazy: bool = False,
     ) -> None:
         super().__init__(f"Speaker {speaker}")
         self.custom_reference_dir = custom_reference_dir
-        self.on_save_blend = on_save_blend
         self.on_process_voice = on_process_voice
         self._available_reference_paths: set[str] = set()
         if lazy:
@@ -109,7 +103,7 @@ class SpeakerGroup(QHSectionGroup):
         return object.__getattribute__(self, name)
 
     def _build_panel(self) -> None:
-        """Construct the full voice panel (reference/blend pickers, language,
+        """Construct the full voice panel (reference picker, language,
         perceptual sliders). Runs eagerly at construction unless the group
         was created with ``lazy=True``."""
         self.reference_path = QLineEdit()
@@ -120,55 +114,6 @@ class SpeakerGroup(QHSectionGroup):
         # already-current custom option that currentIndexChanged would miss.
         self.reference_picker.activated.connect(self._handle_reference_selection)
         self._available_reference_paths = set()
-
-        # Voice blending: optionally derive this speaker's conditioning
-        # reference from TWO clips (base + blend target), with a preference
-        # weight choosing which voice's qualities dominate and a mode
-        # choosing how they are combined (see audio/blend.py).
-        self.blend_picker = QComboBox()
-        self.blend_picker.setToolTip(
-            "Combine this speaker's voice with a second voice: the render "
-            "conditions Chatterbox on a deterministic blend of the two clips. "
-            "None keeps the single-voice behavior."
-        )
-        self.blend_weight_spin = PerceptualSlider(
-            minimum=0,
-            maximum=100,
-            value=50,
-            suffix="%",
-            int_mode=True,
-            accessible_name="Voice Dominance",
-            caption=(
-                "0% = the blend target's voice dominates; 100% = this speaker's "
-                "base voice dominates."
-            ),
-        )
-        self.blend_weight_spin.setToolTip(
-            "The preference weight for the two-voice hybrid (0-100%). The "
-            "conditioning clip is derived from your base voice and the second "
-            "voice: 100% keeps the base voice's qualities alone, 0% hands the "
-            "voice entirely to the second clip, 50% meets in the middle. The "
-            "derived clip is deterministic and content-hashed, so the same "
-            "blend always renders the same voice on CPU and Vulkan."
-        )
-        self.blend_mode_combo = QComboBox()
-        self.blend_mode_combo.addItem("Mix (voices blended together)", "mix")
-        self.blend_mode_combo.addItem("Alternate (voices take turns)", "alternate")
-        self.blend_mode_combo.addItem("Layer (base + texture under)", "layer")
-        self.blend_mode_combo.setToolTip(
-            "How the two clips are physically combined into the conditioning "
-            "reference: Mix weight-averages the waveforms by the dominance "
-            "weight, Alternate concatenates segments of each so the voices "
-            "take turns, and Layer keeps the base at full level with the "
-            "second voice mixed underneath."
-        )
-        self.save_blend_button = QPushButton("Save Blend As...")
-        self.save_blend_button.setToolTip(
-            "Save the current blend (base voice + blend target + presence + "
-            "mode) as a named voice that appears under 'Saved Blends' in the "
-            "voice picker, just like the bundled generic voices."
-        )
-        self.save_blend_button.clicked.connect(self._save_blend_clicked)
 
         if self.on_process_voice is not None:
             self.pitch_shift = PerceptualSlider(
@@ -336,13 +281,6 @@ class SpeakerGroup(QHSectionGroup):
         form.addRow("Human Drift", self.naturalness)
         form.addRow(_section_divider("TIMING"))
         form.addRow("Breath After This Speaker", self.pause_spin)
-        form.addRow(_section_divider("HYBRIDIZE VOICES"))
-        blend_row = QHBoxLayout()
-        blend_row.addWidget(self.blend_picker, 1)
-        blend_row.addWidget(self.save_blend_button, 0)
-        form.addRow("Hybrid Second Voice", blend_row)
-        form.addRow("Voice Dominance", self.blend_weight_spin)
-        form.addRow("Hybridize Mode", self.blend_mode_combo)
         if self.on_process_voice is not None:
             form.addRow(_section_divider("PROCESS THIS RECORDING"))
             form.addRow("Pitch Shift", self.pitch_shift)
@@ -378,7 +316,6 @@ class SpeakerGroup(QHSectionGroup):
         defaults: list[VoiceChoice],
         recents: list[str],
         selected_path: str = "",
-        blends: list[VoiceChoice] | None = None,
     ) -> None:
         current_path = selected_path or self.reference_path.text()
         self.reference_picker.blockSignals(True)
@@ -391,15 +328,6 @@ class SpeakerGroup(QHSectionGroup):
             if header_item is not None:
                 header_item.setEnabled(False)
             for voice in defaults:
-                self.reference_picker.addItem(f"  {voice.label}", voice.path)
-                self._available_reference_paths.add(voice.path)
-        if blends:
-            header_index = self.reference_picker.count()
-            self.reference_picker.addItem("Saved Blends")
-            header_item = self.reference_picker.model().item(header_index)
-            if header_item is not None:
-                header_item.setEnabled(False)
-            for voice in blends:
                 self.reference_picker.addItem(f"  {voice.label}", voice.path)
                 self._available_reference_paths.add(voice.path)
         if recents:
@@ -429,71 +357,6 @@ class SpeakerGroup(QHSectionGroup):
         if isinstance(data, str) and data:
             self.reference_path.setText(data)
 
-    def set_blend_choices(
-        self,
-        defaults: list[VoiceChoice],
-        recents: list[str],
-        selected_path: str = "",
-        blends: list[VoiceChoice] | None = None,
-    ) -> None:
-        """Populate the 'Blend With Voice' picker (None + the same voice lists)."""
-        current = selected_path or self.blend_target_path()
-        self.blend_picker.blockSignals(True)
-        self.blend_picker.clear()
-        self.blend_picker.addItem("None (single voice)", "__none__")
-        if defaults:
-            header_index = self.blend_picker.count()
-            self.blend_picker.addItem("Default Voices")
-            header_item = self.blend_picker.model().item(header_index)
-            if header_item is not None:
-                header_item.setEnabled(False)
-            for voice in defaults:
-                self.blend_picker.addItem(f"  {voice.label}", voice.path)
-        if blends:
-            header_index = self.blend_picker.count()
-            self.blend_picker.addItem("Saved Blends")
-            header_item = self.blend_picker.model().item(header_index)
-            if header_item is not None:
-                header_item.setEnabled(False)
-            for voice in blends:
-                self.blend_picker.addItem(f"  {voice.label}", voice.path)
-        if recents:
-            header_index = self.blend_picker.count()
-            self.blend_picker.addItem("Recent Custom Clips")
-            header_item = self.blend_picker.model().item(header_index)
-            if header_item is not None:
-                header_item.setEnabled(False)
-            for path in recents[:10]:
-                resolved = str(Path(path).expanduser())
-                self.blend_picker.addItem(f"  {Path(resolved).name}", resolved)
-        index = self.blend_picker.findData(current)
-        self.blend_picker.setCurrentIndex(index if index >= 0 else 0)
-        self.blend_picker.blockSignals(False)
-
-    def select_blend_path(self, path: str) -> None:
-        """Select a specific blend target (restoring a saved project)."""
-        if not path:
-            self.blend_picker.setCurrentIndex(0)
-            return
-        index = self.blend_picker.findData(str(Path(path).expanduser()))
-        if index < 0:
-            # The saved clip is not in the standard lists; keep the selection
-            # honest by staying on None rather than inventing an entry.
-            self.blend_picker.setCurrentIndex(0)
-            return
-        self.blend_picker.setCurrentIndex(index)
-
-    def blend_target_path(self) -> str:
-        """The selected second clip, or "" when blending is off."""
-        data = self.blend_picker.currentData()
-        if isinstance(data, str) and data and data != "__none__":
-            return data
-        return ""
-
-    def _save_blend_clicked(self) -> None:
-        if self.on_save_blend is not None:
-            self.on_save_blend(self)
-
     def _process_voice_clicked(self, save_as: bool) -> None:
         if self.on_process_voice is not None:
             self.on_process_voice(self, save_as)
@@ -509,7 +372,6 @@ def _speaker_settings_from_group(
     Module-level so both the main window and the cast-management dialog (which
     owns its own panels) build settings identically.
     """
-    blend_target = group.blend_target_path()
     return SpeakerSettings(
         reference_path=group.reference_path.text(),
         voice_settings=VoiceSettings(
@@ -523,19 +385,11 @@ def _speaker_settings_from_group(
             pause_ms=group.pause_spin.value(),
             crossfade_ms=crossfade_ms,
         ),
-        blend_references=[group.reference_path.text(), blend_target] if blend_target else [],
-        blend_weight=group.blend_weight_spin.value() / 100.0,
-        blend_mode=group.blend_mode_combo.currentData() or "mix",
     )
 
 
 def _apply_speaker_settings_to_group(group: SpeakerGroup, settings: SpeakerSettings) -> None:
-    """Write engine :class:`SpeakerSettings` back into one speaker panel's widgets.
-
-    Covers the hybrid (blend) controls too, so a saved blend target, dominance
-    weight, and combine mode survive a settings round-trip instead of being
-    silently reset.
-    """
+    """Write engine :class:`SpeakerSettings` back into one speaker panel's widgets."""
     voice = VoiceSettings.from_mapping(settings.voice_settings)
     group.reference_path.setText(settings.reference_path)
     language_index = group.language_combo.findData(voice.language)
@@ -547,11 +401,6 @@ def _apply_speaker_settings_to_group(group: SpeakerGroup, settings: SpeakerSetti
     group.emotion_intensity.setValue(voice.emotion_intensity)
     group.naturalness.setValue(voice.naturalness)
     group.pause_spin.setValue(voice.pause_ms)
-    group.blend_weight_spin.setValue(int(round(settings.blend_weight * 100)))
-    mode_index = group.blend_mode_combo.findData(settings.blend_mode)
-    if mode_index >= 0:
-        group.blend_mode_combo.setCurrentIndex(mode_index)
-    group.select_blend_path(settings.blend_references[1] if len(settings.blend_references) >= 2 else "")
 
 
 class _CastRow:
@@ -668,7 +517,7 @@ class CastManagementDialog(QDialog):
 
     def _add_row(self, key: str) -> None:
         member = next((m for m in self._model.members if m.key == key), None)
-        group = SpeakerGroup(key, self._main.paths.voice_dir, on_save_blend=self._on_save_blend)
+        group = SpeakerGroup(key, self._main.paths.voice_dir)
         if member is not None:
             _apply_speaker_settings_to_group(group, self._dict_to_settings(member.settings))
         row = _CastRow(key, group)
@@ -728,20 +577,14 @@ class CastManagementDialog(QDialog):
                 f"The engine voices up to {MAX_CAST_SPEAKERS} speakers distinctly."
             )
 
-    # -- blends / pickers ---------------------------------------------------
-
-    def _on_save_blend(self, group: SpeakerGroup) -> None:
-        self._main._save_blend_as_voice(group)
-        self._refresh_pickers()
+    # -- pickers ------------------------------------------------------------
 
     def _refresh_pickers(self) -> None:
         defaults = default_voice_choices(self._main.repo_root, limit=40)
-        blends = blend_voice_choices(self._main.paths.profile_dir)
         recents = [path for path in load_recent_reference_paths() if Path(path).exists()]
         for row in self._rows.values():
             group = row.group
-            group.set_reference_choices(defaults, recents, group.reference_path.text(), blends=blends)
-            group.set_blend_choices(defaults, recents, group.blend_target_path(), blends=blends)
+            group.set_reference_choices(defaults, recents, group.reference_path.text())
 
     # -- apply / close ------------------------------------------------------
 
@@ -753,9 +596,6 @@ class CastManagementDialog(QDialog):
             "reference_path": settings.reference_path,
             "voice_settings": voice_dict,
             "emotion_reference_paths": dict(settings.emotion_reference_paths),
-            "blend_references": list(settings.blend_references),
-            "blend_weight": settings.blend_weight,
-            "blend_mode": settings.blend_mode,
         }
 
     @staticmethod
@@ -765,9 +605,6 @@ class CastManagementDialog(QDialog):
             reference_path=str(data.get("reference_path", "")),
             voice_settings=dict(data.get("voice_settings", {})),
             emotion_reference_paths=dict(data.get("emotion_reference_paths", {})),
-            blend_references=list(data.get("blend_references", []) or []),
-            blend_weight=float(data.get("blend_weight", 0.5)),
-            blend_mode=str(data.get("blend_mode", "mix")),
         )
 
     def _collect(self) -> tuple[list[str], dict[str, str], dict[str, SpeakerSettings]]:
@@ -927,7 +764,6 @@ def _sync_extra_speaker_groups(
             group = speaker_group_cls(
                 key,
                 main_window.paths.voice_dir,
-                on_save_blend=main_window._save_blend_as_voice,
                 on_process_voice=main_window._process_selected_voice,
             )
             main_window.extra_speaker_groups[key] = group

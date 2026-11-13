@@ -91,7 +91,4 @@ def test_render_settings_validation_survived_the_move() -> None:
 def test_speaker_settings_defaults_survived_the_move() -> None:
     SpeakerSettings = _owner().SpeakerSettings
     settings = SpeakerSettings(reference_path="x")
-    assert settings.blend_weight == 0.5
-    assert settings.blend_mode == "mix"
-    assert settings.blend_references == []
     assert settings.emotion_reference_paths == {}

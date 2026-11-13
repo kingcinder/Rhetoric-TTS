@@ -34,11 +34,11 @@ def test_tutorial_stages_are_dependency_ordered():
     # Ctrl+hover tooltip gate before any configuration step); the
     # dependency-ordered configuration stages follow unchanged.
     keys = [stage.key for stage in STAGES]
-    assert keys == ["help", "discovery", "backend", "input", "model", "voices", "timing", "hybrid", "review"]
+    assert keys == ["help", "discovery", "backend", "input", "model", "voices", "timing", "review"]
     assert STAGES[0].key == "help"
     assert next(s for s in STAGES if s.key == "discovery").discovery is True
     assert all(not stage.discovery for stage in STAGES if stage.key != "discovery")
-    assert keys.index("voices") < keys.index("timing") < keys.index("hybrid") < keys.index("review")
+    assert keys.index("voices") < keys.index("timing") < keys.index("review")
 
 
 def test_help_stage_is_first_in_full_and_main_and_absent_from_discovery(qt_app):

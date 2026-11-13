@@ -1254,9 +1254,6 @@ class RhetoricPipeline:
                     variant=variant,
                     language=coerced_voice_settings[speaker].language if variant == "multilingual" else "en",
                 ),
-                blend_references=list(config.blend_references),
-                blend_weight=config.blend_weight,
-                blend_mode=config.blend_mode,
             )
             for speaker, config in speaker_settings.items()
             if speaker in detected_speakers

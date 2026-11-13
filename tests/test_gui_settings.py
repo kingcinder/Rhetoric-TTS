@@ -629,29 +629,6 @@ def test_cast_keys_floor_property_holds() -> None:
         assert normalize_cast_keys(garbage) == ["A"]
 
 
-def test_speaker_config_decode_validates_blend_fields() -> None:
-    from rhetoric.models.project import VoiceSettings
-
-    decoded = speaker_config_from_payload(
-        {
-            "reference_path": "/ref/x.wav",
-            "voice_settings": VoiceSettings().to_dict(),
-            "blend_references": ["  ", "/second.wav", ""],
-            "blend_weight": 2.0,
-            "blend_mode": "ROTATION",
-            "emotion_reference_paths": "not-a-dict",
-        }
-    )
-    assert decoded["reference_path"] == "/ref/x.wav"
-    assert decoded["blend_references"] == ["/second.wav"]  # blanks dropped
-    assert decoded["blend_weight"] == 1.0  # clamped into [0, 1]
-    assert decoded["blend_mode"] == "mix"  # invalid -> default
-    assert decoded["emotion_reference_paths"] == {}  # non-dict guarded
-
-    garbage = speaker_config_from_payload({"blend_weight": "not-a-number"})
-    assert garbage["blend_weight"] == 0.5
-
-
 def test_current_payload_decodes_back_to_equal_speaker_settings() -> None:
     """A current-payload speakers entry round-trips through the decoder."""
     from rhetoric.models.settings import SpeakerSettings

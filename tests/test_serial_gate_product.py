@@ -128,12 +128,11 @@ def test_gui_functional_entry_points_require_serial_number() -> None:
         (MainWindow.prepare_project, "analyze a project"),
         (MainWindow.open_recording_studio, "record a voice"),
         (MainWindow.download_vulkan_model, "download a model"),
-        (MainWindow._save_blend_as_voice, "save a blended voice"),
         (MainWindow._process_selected_voice, "process a voice recording"),
         (MainWindow.preview_utterance, "preview audio"),
     ):
         fake = FakeWindow()
-        args = (None, False) if method is MainWindow._process_selected_voice else ((None,) if method in {MainWindow._save_blend_as_voice, MainWindow.preview_utterance} else ())
+        args = (None, False) if method is MainWindow._process_selected_voice else ((None,) if method is MainWindow.preview_utterance else ())
         result = method(fake, *args)  # type: ignore[arg-type]
         assert result is None or result is False
         assert fake.feature == expected

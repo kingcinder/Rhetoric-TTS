@@ -23,14 +23,6 @@ class SpeakerSettings:
     reference_path: str
     voice_settings: VoiceSettings | dict[str, Any] = field(default_factory=VoiceSettings)
     emotion_reference_paths: dict[str, str] = field(default_factory=dict)
-    # Voice blending: when two reference paths are given, the speaker's
-    # conditioning reference is a deterministic blend of them (see
-    # audio/blend.py) instead of ``reference_path`` alone. ``blend_weight``
-    # is the proportion (0..1) of the first clip; ``blend_mode`` is one of
-    # "mix", "alternate", "layer".
-    blend_references: list[str] = field(default_factory=list)
-    blend_weight: float = 0.5
-    blend_mode: str = "mix"
 
 
 @dataclass(slots=True)

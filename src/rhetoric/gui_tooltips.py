@@ -729,14 +729,6 @@ def _register_speaker_group_help(group, ctrl_help) -> None:
                 "multilingual variant; otherwise fixed to English.",
             ),
             (
-                group.blend_weight_spin,
-                "Voice Dominance: preference weight (0-100%) for the "
-                "two-voice hybrid. 100% keeps the base voice alone, 0% "
-                "hands the voice to the second clip, 50% meets in the "
-                "middle. Deterministic and content-hashed, so the same "
-                "blend always renders identically on both backends.",
-            ),
-            (
                 group.cfg_weight,
                 "Identity Lock: classifier-free guidance weight (0.0-1.5). "
                 "How strongly the conditioned guess wins over the "
@@ -782,9 +774,6 @@ def _register_speaker_group_help(group, ctrl_help) -> None:
         ])
     ctrl_help.register_form_labels(group.form, [
         group.reference_picker,
-        group.blend_picker,
-        group.blend_weight_spin,
-        group.blend_mode_combo,
         group.language_combo,
         group.cfg_weight,
         group.exaggeration,

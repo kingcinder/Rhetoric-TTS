@@ -112,12 +112,7 @@ from rhetoric.models.project import RenderPlan, VoiceProfile, VoiceSettings, Utt
 from rhetoric.models.settings import RenderSettings, SpeakerSettings
 from rhetoric.pipeline import RhetoricPipeline, RenderProgress
 from rhetoric.project_manifest import build_saved_project, load_project_manifest, save_project_manifest
-from rhetoric.voice_catalog import (
-    VoiceChoice,
-    blend_voice_choices,
-    default_voice_choices,
-    save_blend_voice,
-)
+from rhetoric.voice_catalog import VoiceChoice, default_voice_choices
 from rhetoric.tts_engines.chatterbox_engine import SUPPORTED_VARIANTS, ChatterboxEngine
 from rhetoric.gui_vulkan import (
     AudioCppUnavailableError,  # re-export: tests raise/expect it via app_gui
@@ -517,14 +512,12 @@ class MainWindow(QMainWindow):
         self.speaker_a = SpeakerGroup(
             "A",
             self.paths.voice_dir,
-            on_save_blend=self._save_blend_as_voice,
             on_process_voice=self._process_selected_voice,
             lazy=self._section_starts_collapsed("speaker_a"),
         )
         self.speaker_b = SpeakerGroup(
             "B",
             self.paths.voice_dir,
-            on_save_blend=self._save_blend_as_voice,
             on_process_voice=self._process_selected_voice,
             lazy=self._section_starts_collapsed("speaker_b"),
         )
@@ -921,6 +914,10 @@ class MainWindow(QMainWindow):
         self.output_name = QLineEdit()
         self.output_name.setPlaceholderText("Auto-derived from the input file; a caution appears before using the generic name")
         self._output_name_edited = False
+        # The last name THIS window derived from the input stem. Only a field
+        # still holding it may be re-derived at render time; any other name
+        # (typed, or set by a caller/project/template) is left alone.
+        self._auto_output_name = ""
         self.input_path.textChanged.connect(self._handle_outdir_changed)
         self.outdir_path.textChanged.connect(self._handle_outdir_changed)
         self.output_name.textEdited.connect(self._mark_output_name_edited)
@@ -1112,6 +1109,7 @@ class MainWindow(QMainWindow):
             # name afterwards. Loading a different script is a fresh naming
             # decision, not an edit of the previous one.
             self._output_name_edited = False
+            self._auto_output_name = ""
             self.input_path.setText(path)
             # A picked file becomes the remembered default for future sessions
             # (settled before setText's textChanged side effects finish).
@@ -1173,6 +1171,7 @@ class MainWindow(QMainWindow):
         default_name = default_output_filename(
             self.input_path.text() or "", self.outdir_path.text() or ""
         )
+        self._auto_output_name = default_name
         if default_name and default_name != self.output_name.text():
             self.output_name.setText(default_name)
 
@@ -2144,15 +2143,13 @@ class MainWindow(QMainWindow):
         # shows up in the pickers right after the bundled generic voices
         # instead of being cut off by the catalog's default 10-entry cap.
         defaults = default_voice_choices(self.repo_root, limit=40)
-        blends = blend_voice_choices(self.paths.profile_dir)
         recents = [path for path in load_recent_reference_paths() if Path(path).exists()]
         for group in self._all_speaker_groups().values():
             # Deferred panels re-run this from their restore hook; touching
             # them here would force their build.
             if not group.is_content_built():
                 continue
-            group.set_reference_choices(defaults, recents, group.reference_path.text(), blends=blends)
-            group.set_blend_choices(defaults, recents, group.blend_target_path(), blends=blends)
+            group.set_reference_choices(defaults, recents, group.reference_path.text())
 
     # --------------------
     # Inference setup and replayable GUI tutorial
@@ -2454,50 +2451,6 @@ class MainWindow(QMainWindow):
                 f"Recorded new Seashell: {dialog._last_saved_path.name} - "
                 "pick it under Custom Voice Reference Audio for any speaker."
             )
-
-    def _save_blend_as_voice(self, group: SpeakerGroup) -> None:
-        """Save the group's current blend configuration as a named picker voice.
-
-        The derived clip is materialized deterministically (same inputs,
-        weight, and mode always produce the same wav), then the voice appears
-        under 'Saved Blends' in every speaker panel's pickers.
-        """
-        if not self._require_serial("save a blended voice"):
-            return
-        base = group.reference_path.text().strip()
-        target = group.blend_target_path()
-        if not base or not target:
-            self.error_panel.append(
-                "Pick a base voice (Voice Reference) and a Hybrid Second Voice before saving."
-            )
-            QMessageBox.information(
-                self,
-                "Save Blend As",
-                "Pick a base voice and a Hybrid Second Voice first, then save the blend.",
-            )
-            return
-        name, ok = QInputDialog.getText(
-            self,
-            "Save Blend As Voice",
-            "Name for this blended voice (shown in the voice picker):",
-        )
-        if not ok or not name.strip():
-            return
-        try:
-            choice = save_blend_voice(
-                self.paths.profile_dir,
-                name,
-                base,
-                target,
-                weight=group.blend_weight_spin.value() / 100.0,
-                mode=group.blend_mode_combo.currentData() or "mix",
-            )
-        except Exception as exc:
-            self.error_panel.append(f"Could not save blend voice: {exc}")
-            QMessageBox.critical(self, "Save Blend As", str(exc))
-            return
-        self._refresh_reference_pickers()
-        self.error_panel.append(f"Saved blend voice '{name}' — select it under Saved Blends in any speaker panel.")
 
     def _process_selected_voice(self, group: SpeakerGroup, save_as: bool) -> None:
         """Apply the recorded-audio controls to the selected Seashell."""
@@ -3370,6 +3323,7 @@ class MainWindow(QMainWindow):
         """The Script & Cast section's slice of a GUI payload (output folder
         and filename)."""
         self.outdir_path.setText(str(project.get("output_dir", self.paths.output_dir)))
+        self._auto_output_name = ""
         self._output_name_edited = bool(project.get("output_filename", ""))
         self.output_name.setText(normalize_output_filename(str(project.get("output_filename", ""))))
 
@@ -3996,15 +3950,20 @@ class MainWindow(QMainWindow):
             return
         try:
             self._sync_plan_from_table()
-            if not self._output_name_edited:
+            if not self._output_name_edited and (
+                not self.output_name.text().strip()
+                or normalize_output_filename(self.output_name.text())
+                == self._auto_output_name
+            ):
                 # Re-derive right before rendering: files may have appeared in
                 # the folder since the script was loaded, and the displayed
-                # name must be the name this render writes.
-                self.output_name.setText(
-                    default_output_filename(
-                        self.input_path.text(), self.outdir_path.text()
-                    )
+                # name must be the name this render writes. Only a field that
+                # still holds the app's own derived name is touched; any other
+                # name was supplied deliberately and is respected.
+                self._auto_output_name = default_output_filename(
+                    self.input_path.text(), self.outdir_path.text()
                 )
+                self.output_name.setText(self._auto_output_name)
             output_filename = resolve_output_filename(
                 self.input_path.text(),
                 self.outdir_path.text(),

@@ -284,7 +284,7 @@ def test_load_recent_reference_paths_round_trip(tmp_path, monkeypatch):
 
 
 # ---------------------------------------------------------------------------
-# Settings round-trip: cast, names, and hybrid (blend) fields must survive
+# Settings round-trip: cast and character names must survive
 # ---------------------------------------------------------------------------
 
 
@@ -309,18 +309,12 @@ def _profile_payload() -> dict:
                 "reference_path": "/tmp/a.wav",
                 "voice_settings": {},
                 "name": "Narrator",
-                "blend_references": ["/tmp/a.wav", "/tmp/b.wav"],
-                "blend_weight": 0.75,
-                "blend_mode": "layer",
             },
             "B": {"reference_path": "", "voice_settings": {}},
             "C": {
                 "reference_path": "/tmp/c.wav",
                 "voice_settings": {},
                 "name": "Imp",
-                "blend_references": [],
-                "blend_weight": 0.25,
-                "blend_mode": "bogus-mode",
             },
         },
     }
@@ -335,21 +329,7 @@ def test_settings_round_trip_preserves_cast_names_and_blend(tmp_path):
 
     speaker_a = loaded["speakers"]["A"]
     assert speaker_a["name"] == "Narrator"
-    assert speaker_a["blend_references"] == ["/tmp/a.wav", "/tmp/b.wav"]
-    assert speaker_a["blend_weight"] == pytest.approx(0.75)
-    assert speaker_a["blend_mode"] == "layer"
-
-    # Unknown blend modes normalize to "mix" instead of crashing or leaking through.
-    assert loaded["speakers"]["C"]["blend_mode"] == "mix"
     assert loaded["speakers"]["C"]["name"] == "Imp"
-
-
-def test_settings_round_trip_clamps_blend_weight(tmp_path):
-    payload = _profile_payload()
-    payload["speakers"]["A"]["blend_weight"] = 42
-    path = tmp_path / "profile.json"
-    save_gui_settings(path, payload)
-    assert load_gui_settings(path)["speakers"]["A"]["blend_weight"] == pytest.approx(1.0)
 
 
 def test_settings_normalize_old_profile_without_cast_falls_back_to_speaker_keys(tmp_path):
@@ -368,7 +348,7 @@ def test_settings_normalize_old_profile_without_cast_falls_back_to_speaker_keys(
 @requires_qt
 def test_cast_dialog_opens_with_full_voice_panels_per_speaker():
     """Manual-with-Qt: the cast dialog shows one full SpeakerGroup per cast
-    member (voice picker, hybrid second voice, weight, mode, sliders), an
+    member (voice picker and sliders), an
     add/remove row per speaker, and applies on close."""
 
 

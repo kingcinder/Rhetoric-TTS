@@ -90,14 +90,8 @@ STAGES: tuple[TutorialStage, ...] = (
         "speaker_a",
     ),
     TutorialStage(
-        "hybrid",
-        "7. Optional hybrid voices",
-        "Hybridize Voices is independent of the normal voice modifiers. Pick a second reference, choose Voice Dominance, and choose Mix, Alternate, or Layer. The base voice and second clip are combined deterministically into the conditioning reference; the same inputs produce the same result on CPU and Vulkan. A hybrid changes the voice identity input, so configure it after choosing the base voice and before judging the character sliders.",
-        "speaker_a",
-    ),
-    TutorialStage(
         "review",
-        "8. Analyze, preview, then render",
+        "7. Analyze, preview, then render",
         "Analyze creates the review table so you can inspect repaired text, speaker attribution, emotion, and per-line status before any full render. Preview tests one utterance with the active voice and inference settings. Render FLAC synthesizes the complete plan, applies pacing and crossfades, and writes the output. If a GPU becomes unavailable later, switch to CPU here; the setup wizard can be reopened from Settings at any time.",
         "analyze_button",
     ),

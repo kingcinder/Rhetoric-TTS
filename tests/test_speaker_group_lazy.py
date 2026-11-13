@@ -15,7 +15,7 @@ Pinned here:
 * touching any panel attribute builds exactly once, then reads normally;
 * expanding the collapsed group builds its content (same trigger as every
   other section);
-* the MainWindow-driven population calls (language/reference/blend
+* the MainWindow-driven population calls (language/reference
   choices) work on a lazily built panel.
 """
 
@@ -43,7 +43,6 @@ def test_eager_speaker_group_builds_content_immediately(qt_app, tmp_path: Path) 
     assert group.is_content_built() is True
     assert isinstance(group.reference_path, QLineEdit)
     assert isinstance(group.reference_picker, QComboBox)
-    assert group.blend_target_path() == ""
     group.deleteLater()
 
 
@@ -74,7 +73,7 @@ def test_touching_a_panel_attribute_builds_it_exactly_once(qt_app, tmp_path: Pat
         assert isinstance(reference, QLineEdit)
         assert group.is_content_built() is True
         widget_count = len(group.findChildren(QWidget))
-        assert widget_count > 50, "the full panel must exist after the build"
+        assert widget_count > 40, "the full panel must exist after the build"
 
         # Second wave of reads: no rebuild, same widgets.
         assert group.reference_path is reference
@@ -99,16 +98,14 @@ def test_expanding_a_collapsed_lazy_group_builds_its_content(qt_app, tmp_path: P
 
 def test_population_calls_work_on_a_lazily_built_panel(qt_app, tmp_path: Path) -> None:
     """MainWindow restores a deferred panel through exactly these calls
-    (language options, reference/blend choices), so they must be safe on a
+    (language options, reference choices), so they must be safe on a
     group that starts cold."""
     group = SpeakerGroup("A", tmp_path, lazy=True)
     try:
         group.set_language_options({"en": "English"}, True)
         group.set_reference_choices([], [], "")
-        group.set_blend_choices([], [], "")
         assert group.is_content_built() is True
         assert group.language_combo.currentData() == "en"
-        assert group.blend_target_path() == ""
         assert group.reference_path.text() == ""
     finally:
         group.deleteLater()
