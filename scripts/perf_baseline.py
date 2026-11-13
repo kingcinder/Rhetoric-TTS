@@ -89,7 +89,7 @@ def main(argv: list[str] | None = None) -> int:
     # whole native synthesis stack. Consent-aware, idempotent (the runpy'd
     # smoke_render.main re-arm is a no-op), fail-closed — same contract as
     # cli.main and launch_gui.
-    from the_oracle.crash import handlers as crash_handlers
+    from rhetoric.crash import handlers as crash_handlers
 
     crash_handlers.install()
     crash_handlers.arm_native_capture()

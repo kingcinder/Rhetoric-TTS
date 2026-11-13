@@ -4,10 +4,10 @@ from unittest.mock import patch
 
 import pytest
 
-from the_oracle.project_manifest import ProjectManifestError, build_saved_project, load_project_manifest, save_project_manifest
-from the_oracle.models.settings import RenderSettings, SpeakerSettings; from the_oracle.pipeline import OraclePipeline
-from the_oracle.smoke import _DeterministicChatterboxEngine, _SmokeEmotionClassifier, _write_reference
-from the_oracle.models.project import RenderPlan, VoiceSettings
+from rhetoric.project_manifest import ProjectManifestError, build_saved_project, load_project_manifest, save_project_manifest
+from rhetoric.models.settings import RenderSettings, SpeakerSettings; from rhetoric.pipeline import RhetoricPipeline
+from rhetoric.smoke import _DeterministicChatterboxEngine, _SmokeEmotionClassifier, _write_reference
+from rhetoric.models.project import RenderPlan, VoiceSettings
 
 
 def _sample_project(tmp_path: Path):
@@ -33,10 +33,10 @@ def _sample_project(tmp_path: Path):
         "A": SpeakerSettings(reference_path=str(speaker_a), voice_settings=voice),
         "B": SpeakerSettings(reference_path=str(speaker_b), voice_settings=voice),
     }
-    with patch("the_oracle.pipeline.GoEmotionsClassifier", _SmokeEmotionClassifier):
-        pipeline = OraclePipeline()
+    with patch("rhetoric.pipeline.GoEmotionsClassifier", _SmokeEmotionClassifier):
+        pipeline = RhetoricPipeline()
         plan = pipeline.prepare_plan(source, tmp_path / "output", speakers, settings)
-    plan.metadata["artist"] = "Oracle QA"
+    plan.metadata["artist"] = "Rhetoric QA"
     return pipeline, plan, settings, speakers
 
 
@@ -49,7 +49,7 @@ def test_project_manifest_round_trip_preserves_key_fields(tmp_path: Path) -> Non
     loaded = load_project_manifest(manifest_path)
 
     assert loaded.title == plan.title
-    assert loaded.artist == "Oracle QA"
+    assert loaded.artist == "Rhetoric QA"
     assert loaded.input_path == plan.source_path
     assert loaded.output_path == plan.output_dir
     assert loaded.engine == "chatterbox"
@@ -211,8 +211,8 @@ def test_loaded_project_renders_with_deterministic_engine(tmp_path: Path) -> Non
     loaded = load_project_manifest(manifest_path)
 
     with (
-        patch("the_oracle.pipeline.ChatterboxEngine", _DeterministicChatterboxEngine),
-        patch("the_oracle.pipeline.GoEmotionsClassifier", _SmokeEmotionClassifier),
+        patch("rhetoric.pipeline.ChatterboxEngine", _DeterministicChatterboxEngine),
+        patch("rhetoric.pipeline.GoEmotionsClassifier", _SmokeEmotionClassifier),
     ):
         output_path = pipeline.render(loaded.plan, loaded.render_settings)
 

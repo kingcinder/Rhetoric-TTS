@@ -1,7 +1,7 @@
 {
   "description": "Consolidated policy data for the extraction-slice safety nets: each rule set is read from this one record so no test file hard-codes policy that belongs to an ownership map. Read by tests/test_app_gui_patch_surface.py (the patch-surface net, whose load_* loaders validate every section), tests/test_payload_policy_ownership.py, tests/test_stem_cache_write_path.py (the writer-manifest net) and extraction-slice tooling that needs to know what has already been moved.",
   "moved_owners": {
-    "the_oracle.gui_settings": {
+    "rhetoric.gui_settings": {
       "names": [
         "default_gui_settings_payload",
         "current_gui_settings_payload",
@@ -16,44 +16,44 @@
         "PayloadDefaults"
       ]
     },
-    "the_oracle.models.settings": {
+    "rhetoric.models.settings": {
       "names": [
         "RenderSettings",
         "SpeakerSettings"
       ]
     },
-    "the_oracle.gui_vulkan": {
+    "rhetoric.gui_vulkan": {
       "names": [
         "_device_row_text",
-        "_parse_oracle_model_path"
+        "_parse_rhetoric_model_path"
       ]
     },
-    "the_oracle.gui_render": {
+    "rhetoric.gui_render": {
       "names": [
         "_render_child_environment"
       ],
       "note": "Only the no-op-after-move name. The three class names must NOT be listed: MainWindow (still in app_gui) constructs RenderWorker, PreviewWorker and RenderProgressDialog from app_gui globals, so app_gui-level class patches remain live and legitimate."
     },
-    "the_oracle.gui_recording": {
+    "rhetoric.gui_recording": {
       "names": [
         "RecordStudioWorker"
       ],
-      "note": "Only the worker: MainWindow constructs it only via RecordingStudioDialog's body, which resolves the name from gui_recording's globals, so an app_gui-level patch is a silent no-op. RecordingStudioDialog must NOT be listed: MainWindow constructs it directly from app_gui globals, so app_gui-level class patches remain live and legitimate - the RenderWorker precedent. The dialog's QMediaPlayer/QAudioOutput fakes patch the_oracle.gui_recording by module object, never app_gui."
+      "note": "Only the worker: MainWindow constructs it only via RecordingStudioDialog's body, which resolves the name from gui_recording's globals, so an app_gui-level patch is a silent no-op. RecordingStudioDialog must NOT be listed: MainWindow constructs it directly from app_gui globals, so app_gui-level class patches remain live and legitimate - the RenderWorker precedent. The dialog's QMediaPlayer/QAudioOutput fakes patch rhetoric.gui_recording by module object, never app_gui."
     },
-    "the_oracle.gui_cast": {
+    "rhetoric.gui_cast": {
       "names": [
         "_CastRow",
         "CastManagementDialog"
       ],
-      "note": "EXECUTED 2026-10-10 (the cast-bar cluster slice; the pre-flight below was recorded earlier the same day and is kept for the reasoning it carries). Only the row widget and the modal dialog are listed. _CastRow: the dialog builds its rows from gui_cast's globals, so an app_gui-level patch of it is a silent no-op. CastManagementDialog: listed as of this slice - its only app_gui runtime reader was the moved open_cast_manager (the __init__ use is an annotation), so no app_gui runtime reader remains, app_gui no longer re-exports it, and an app_gui-level patch of it is an offender to repoint at gui_cast (the _CastRow rule). SpeakerGroup, _speaker_settings_from_group and _apply_speaker_settings_to_group are NOT listed: a staying app_gui site reads each (SpeakerGroup - _build_ui builds panels A/B; _speaker_settings_from_group - _widget_snapshot; _apply_speaker_settings_to_group - _restore_speaker_section), so app_gui-level patches stay legitimate and the moved bodies receive them as INJECTIONS at the delegate boundary, resolved from app_gui's globals at call time. The four call-boundary names this slice injects are speaker_group_cls into _sync_extra_speaker_groups, settings_from_group_fn into _speaker_settings, and apply_settings_fn + normalize_keys_fn into apply_cast (the find_audiocpp_binary pattern) - normalize_cast_keys included (its staying readers are _load_project_into_ui and prepare_project, so it stays bare-resolvable at app_gui level and gains no PARTIAL_OWNED entry). A module-global read of any of the four inside gui_cast would turn every app_gui-level rebind of it into a silent no-op for the moved path; they stay unlistable permanently because their staying readers are window-assembly and persistence code that does not travel with the cluster. SpeakerSettings and speaker_config_from_payload need no seam: each is read at runtime only by the moved _speaker_config_from_payload body and each is already listed as moved-owned elsewhere in this record (the_oracle.models.settings; the_oracle.gui_settings), so app_gui-level patches are already offenders and the moved body resolves gui_cast's imports of them - and gui_cast joins payload_policy.policy_owners as a delegates owner for speaker_config_from_payload, since the decode delegate genuinely lives there now. SpeakerSettings' latent split adjudication is pruned in the same edit: app_gui keeps only annotation uses of it, so no runtime read remains on that side and the pair the latent net audits is gone. The ten cluster methods' bodies moved VERBATIM into gui_cast as main_window-taking functions (comments and blank lines preserved; the only textual edits are self -> main_window, the four injected names, and CastManagementDialog(self) -> CastManagementDialog(main_window)), and each app_gui method remains as a thin delegate whose body imports its owner function FUNCTION-LOCALLY (the settled entry-point delegate convention), so app_gui holds no module-level binding for any of them, an app_gui-level patch is a silent no-op, and gui_cast is the single patch point - literally what this listing records under rule 1."
+      "note": "EXECUTED 2026-10-10 (the cast-bar cluster slice; the pre-flight below was recorded earlier the same day and is kept for the reasoning it carries). Only the row widget and the modal dialog are listed. _CastRow: the dialog builds its rows from gui_cast's globals, so an app_gui-level patch of it is a silent no-op. CastManagementDialog: listed as of this slice - its only app_gui runtime reader was the moved open_cast_manager (the __init__ use is an annotation), so no app_gui runtime reader remains, app_gui no longer re-exports it, and an app_gui-level patch of it is an offender to repoint at gui_cast (the _CastRow rule). SpeakerGroup, _speaker_settings_from_group and _apply_speaker_settings_to_group are NOT listed: a staying app_gui site reads each (SpeakerGroup - _build_ui builds panels A/B; _speaker_settings_from_group - _widget_snapshot; _apply_speaker_settings_to_group - _restore_speaker_section), so app_gui-level patches stay legitimate and the moved bodies receive them as INJECTIONS at the delegate boundary, resolved from app_gui's globals at call time. The four call-boundary names this slice injects are speaker_group_cls into _sync_extra_speaker_groups, settings_from_group_fn into _speaker_settings, and apply_settings_fn + normalize_keys_fn into apply_cast (the find_audiocpp_binary pattern) - normalize_cast_keys included (its staying readers are _load_project_into_ui and prepare_project, so it stays bare-resolvable at app_gui level and gains no PARTIAL_OWNED entry). A module-global read of any of the four inside gui_cast would turn every app_gui-level rebind of it into a silent no-op for the moved path; they stay unlistable permanently because their staying readers are window-assembly and persistence code that does not travel with the cluster. SpeakerSettings and speaker_config_from_payload need no seam: each is read at runtime only by the moved _speaker_config_from_payload body and each is already listed as moved-owned elsewhere in this record (rhetoric.models.settings; rhetoric.gui_settings), so app_gui-level patches are already offenders and the moved body resolves gui_cast's imports of them - and gui_cast joins payload_policy.policy_owners as a delegates owner for speaker_config_from_payload, since the decode delegate genuinely lives there now. SpeakerSettings' latent split adjudication is pruned in the same edit: app_gui keeps only annotation uses of it, so no runtime read remains on that side and the pair the latent net audits is gone. The ten cluster methods' bodies moved VERBATIM into gui_cast as main_window-taking functions (comments and blank lines preserved; the only textual edits are self -> main_window, the four injected names, and CastManagementDialog(self) -> CastManagementDialog(main_window)), and each app_gui method remains as a thin delegate whose body imports its owner function FUNCTION-LOCALLY (the settled entry-point delegate convention), so app_gui holds no module-level binding for any of them, an app_gui-level patch is a silent no-op, and gui_cast is the single patch point - literally what this listing records under rule 1."
     },
-    "the_oracle.gui_menu": {
+    "rhetoric.gui_menu": {
       "names": [
         "build_menu"
       ],
       "note": "extraction slice 12 (2026-10-10): the whole menu-bar body moved verbatim out of MainWindow._build_menu, which stays in app_gui as the thin call-site delegate (a method, so _build_menu itself is NOT listed here). `themes` crosses by injection at that boundary, so gui_menu binds no THEMES global and an app_gui-level THEMES rebind stays live for the moved body - the seam this slice is mutation-proven on. The patch-couple net needs no new bare-set exemption: neither QAction (imported by gui_menu) nor THEMES (injected) is in the suite's app_gui-rebind census. ENTRY-POINT DELEGATE CONVENTION (adjudicated 2026-10-10): the delegate imports build_menu FUNCTION-LOCALLY inside `_build_menu` (the slice-10 gui_ingest_tools style, settled as the campaign's single entry-point convention), so app_gui holds NO module-level binding for this name - an app_gui-level patch is a silent no-op and gui_menu is the single patch point, resolving at call time, which is what makes this listing literally true under rule 1. Before this, the module-level import made an app_gui-level patch LIVE for the delegate call while repointing at gui_menu was inert."
     },
-    "the_oracle.gui_ingest_tools": {
+    "rhetoric.gui_ingest_tools": {
       "names": [
         "run_ingest_transformer_check",
         "batch_fix_input_folder",
@@ -61,7 +61,7 @@
       ],
       "note": "extraction slice 10 (2026-10-08): the ingest-tools handler flow bodies moved verbatim from MainWindow methods (which remain as thin delegates with the exact test-driven signatures); every patch-coupled Qt name crosses as an INJECTION parameter resolved from app_gui globals at call time (message_box_cls, file_dialog_cls) so app_gui-level wholesale rebinds keep intercepting the moved code"
     },
-    "the_oracle.gui_tooltips": {
+    "rhetoric.gui_tooltips": {
       "names": [
         "register_ctrl_help_descriptions"
       ],
@@ -128,9 +128,9 @@
       "PayloadDefaults"
     ],
     "policy_owners": {
-      "the_oracle.gui_settings": "definition",
-      "the_oracle.app_gui": "delegates",
-      "the_oracle.gui_cast": "delegates"
+      "rhetoric.gui_settings": "definition",
+      "rhetoric.app_gui": "delegates",
+      "rhetoric.gui_cast": "delegates"
     },
     "schema_keys": [
       "model_variant",
@@ -152,12 +152,12 @@
       "audio_cpp_max_batch"
     ],
     "schema_exempt_modules": [
-      "the_oracle.gui_settings",
-      "the_oracle.app_gui"
+      "rhetoric.gui_settings",
+      "rhetoric.app_gui"
     ]
   },
   "writer_manifest": {
-    "description": "Policy data for tests/test_stem_cache_write_path.py's writer manifest: which write functions count as cache writes, which call/target shapes classify a write as stem- or preview-shaped, which source files are the gated owners of each kind, and the blindness floors under which the scan has demonstrably not gone blind. Stem writes must pass the engine-output gate (sanitize_engine_audio); preview writes are owned by OraclePipeline.render_preview (pause-only via _write_pause_only_stem, spoken via the gated engine path).",
+    "description": "Policy data for tests/test_stem_cache_write_path.py's writer manifest: which write functions count as cache writes, which call/target shapes classify a write as stem- or preview-shaped, which source files are the gated owners of each kind, and the blindness floors under which the scan has demonstrably not gone blind. Stem writes must pass the engine-output gate (sanitize_engine_audio); preview writes are owned by RhetoricPipeline.render_preview (pause-only via _write_pause_only_stem, spoken via the gated engine path).",
     "write_functions": [
       "save_wav",
       "atomic_write"
@@ -185,7 +185,7 @@
     ],
     "census_anchor_names": [
       "QMessageBox",
-      "OraclePipeline",
+      "RhetoricPipeline",
       "find_audiocpp_binary",
       "QMediaPlayer"
     ],
@@ -194,7 +194,7 @@
     "min_bare_pairs": 8,
     "sanctioned_exemptions": {
       "gui_render.py": {
-        "OraclePipeline": "documented split-readership rule: direct-path worker bodies resolve from gui_render globals (tests patch it there); app_gui-level rebinds target app_gui-resident constructions only",
+        "RhetoricPipeline": "documented split-readership rule: direct-path worker bodies resolve from gui_render globals (tests patch it there); app_gui-level rebinds target app_gui-resident constructions only",
         "QDialog": "import-time class base of RenderProgressDialog; no app_gui-level rebind targets dialog class identity",
         "RenderWorker": "documented precedent split: MainWindow constructs RenderWorker from app_gui globals (rebinds there cover window-assembly tests); the class body and PreviewWorker's inheritance resolve from gui_render globals, where worker-path tests patch them"
       },
@@ -225,7 +225,7 @@
         "QFileDialog": "QFileDialog: PySide6 import held by both sides; an app_gui-level rebind would miss gui_cast.py's uses - inject or repoint at gui_cast.py if a flow ever needs it; the census net escalates this pair automatically.",
         "QFormLayout": "QFormLayout: PySide6 import held by both sides; an app_gui-level rebind would miss gui_cast.py's uses - inject or repoint at gui_cast.py if a flow ever needs it; the census net escalates this pair automatically.",
         "QHBoxLayout": "QHBoxLayout: PySide6 import held by both sides; an app_gui-level rebind would miss gui_cast.py's uses - inject or repoint at gui_cast.py if a flow ever needs it; the census net escalates this pair automatically.",
-        "QHSectionGroup": "QHSectionGroup is imported by both sides from the_oracle.gui_sections; an app_gui-level rebind would miss gui_cast.py's reads - repoint at gui_cast.py (or rebind the_oracle.gui_sections) if a flow ever needs it.",
+        "QHSectionGroup": "QHSectionGroup is imported by both sides from rhetoric.gui_sections; an app_gui-level rebind would miss gui_cast.py's reads - repoint at gui_cast.py (or rebind rhetoric.gui_sections) if a flow ever needs it.",
         "QLabel": "QLabel: PySide6 import held by both sides; an app_gui-level rebind would miss gui_cast.py's uses - inject or repoint at gui_cast.py if a flow ever needs it; the census net escalates this pair automatically.",
         "QLineEdit": "QLineEdit: PySide6 import held by both sides; an app_gui-level rebind would miss gui_cast.py's uses - inject or repoint at gui_cast.py if a flow ever needs it; the census net escalates this pair automatically.",
         "QPushButton": "QPushButton: PySide6 import held by both sides; an app_gui-level rebind would miss gui_cast.py's uses - inject or repoint at gui_cast.py if a flow ever needs it; the census net escalates this pair automatically.",
@@ -233,16 +233,16 @@
         "QVBoxLayout": "QVBoxLayout: PySide6 import held by both sides; an app_gui-level rebind would miss gui_cast.py's uses - inject or repoint at gui_cast.py if a flow ever needs it; the census net escalates this pair automatically.",
         "QWidget": "QWidget: PySide6 import held by both sides; an app_gui-level rebind would miss gui_cast.py's uses - inject or repoint at gui_cast.py if a flow ever needs it; the census net escalates this pair automatically.",
         "SpeakerGroup": "SpeakerGroup lives in gui_cast.py and app_gui re-imports it; an app_gui-level rebind covers only app_gui's reads - rebind at gui_cast.py for both sides.",
-        "VoiceSettings": "VoiceSettings is imported by both sides from the_oracle.models.project; an app_gui-level rebind would miss gui_cast.py's reads - repoint at gui_cast.py (or rebind the_oracle.models.project) if a flow ever needs it.",
+        "VoiceSettings": "VoiceSettings is imported by both sides from rhetoric.models.project; an app_gui-level rebind would miss gui_cast.py's reads - repoint at gui_cast.py (or rebind rhetoric.models.project) if a flow ever needs it.",
         "_apply_speaker_settings_to_group": "_apply_speaker_settings_to_group lives in gui_cast.py and app_gui re-imports it; an app_gui-level rebind covers only app_gui's reads - rebind at gui_cast.py for both sides.",
         "_speaker_settings_from_group": "_speaker_settings_from_group lives in gui_cast.py and app_gui re-imports it; an app_gui-level rebind covers only app_gui's reads - rebind at gui_cast.py for both sides."
       },
       "gui_chrome.py": {
-        "QHSectionGroup": "QHSectionGroup is imported by both sides from the_oracle.gui_sections; an app_gui-level rebind would miss gui_chrome.py's reads - repoint at gui_chrome.py (or rebind the_oracle.gui_sections) if a flow ever needs it.",
+        "QHSectionGroup": "QHSectionGroup is imported by both sides from rhetoric.gui_sections; an app_gui-level rebind would miss gui_chrome.py's reads - repoint at gui_chrome.py (or rebind rhetoric.gui_sections) if a flow ever needs it.",
         "QLabel": "QLabel: PySide6 import held by both sides; an app_gui-level rebind would miss gui_chrome.py's uses - inject or repoint at gui_chrome.py if a flow ever needs it; the census net escalates this pair automatically.",
         "QVBoxLayout": "QVBoxLayout: PySide6 import held by both sides; an app_gui-level rebind would miss gui_chrome.py's uses - inject or repoint at gui_chrome.py if a flow ever needs it; the census net escalates this pair automatically.",
         "QWidget": "QWidget: PySide6 import held by both sides; an app_gui-level rebind would miss gui_chrome.py's uses - inject or repoint at gui_chrome.py if a flow ever needs it; the census net escalates this pair automatically.",
-        "RenderProgressDialog": "RenderProgressDialog is imported by both sides from the_oracle.gui_render; an app_gui-level rebind would miss gui_chrome.py's reads - repoint at gui_chrome.py (or rebind the_oracle.gui_render) if a flow ever needs it."
+        "RenderProgressDialog": "RenderProgressDialog is imported by both sides from rhetoric.gui_render; an app_gui-level rebind would miss gui_chrome.py's reads - repoint at gui_chrome.py (or rebind rhetoric.gui_render) if a flow ever needs it."
       },
       "gui_crash.py": {
         "QApplication": "QApplication: PySide6 import held by both sides (the bug-report dialog's clipboard fallback reads it); app_gui-level rebinds would miss gui_crash.py's use - inject or repoint at gui_crash.py if a flow ever needs it; the census net escalates this pair automatically.",
@@ -268,7 +268,7 @@
       },
       "gui_ingest_tools.py": {
         "Path": "Path: stdlib import held by both sides; an app_gui-level rebind would miss gui_ingest_tools.py's uses - repoint at gui_ingest_tools.py if a flow ever needs it; the census net escalates this pair automatically.",
-        "save_app_settings": "save_app_settings is imported by both sides from the_oracle.gui_settings; an app_gui-level rebind would miss gui_ingest_tools.py's reads - repoint at gui_ingest_tools.py (or rebind the_oracle.gui_settings) if a flow ever needs it."
+        "save_app_settings": "save_app_settings is imported by both sides from rhetoric.gui_settings; an app_gui-level rebind would miss gui_ingest_tools.py's reads - repoint at gui_ingest_tools.py (or rebind rhetoric.gui_settings) if a flow ever needs it."
       },
       "gui_license.py": {
         "Path": "Path: stdlib import held by both sides; an app_gui-level rebind would miss gui_license.py's uses - repoint at gui_license.py if a flow ever needs it; the census net escalates this pair automatically.",
@@ -298,8 +298,8 @@
         "Path": "Path: stdlib import held by both sides; an app_gui-level rebind would miss gui_render.py's uses - repoint at gui_render.py if a flow ever needs it; the census net escalates this pair automatically.",
         "QLabel": "QLabel: PySide6 import held by both sides; an app_gui-level rebind would miss gui_render.py's uses - inject or repoint at gui_render.py if a flow ever needs it; the census net escalates this pair automatically.",
         "QVBoxLayout": "QVBoxLayout: PySide6 import held by both sides; an app_gui-level rebind would miss gui_render.py's uses - inject or repoint at gui_render.py if a flow ever needs it; the census net escalates this pair automatically.",
-        "RenderPlan": "RenderPlan is imported by both sides from the_oracle.models.project; an app_gui-level rebind would miss gui_render.py's reads - repoint at gui_render.py (or rebind the_oracle.models.project) if a flow ever needs it.",
-        "Utterance": "Utterance is imported by both sides from the_oracle.models.project; an app_gui-level rebind would miss gui_render.py's reads - repoint at gui_render.py (or rebind the_oracle.models.project) if a flow ever needs it.",
+        "RenderPlan": "RenderPlan is imported by both sides from rhetoric.models.project; an app_gui-level rebind would miss gui_render.py's reads - repoint at gui_render.py (or rebind rhetoric.models.project) if a flow ever needs it.",
+        "Utterance": "Utterance is imported by both sides from rhetoric.models.project; an app_gui-level rebind would miss gui_render.py's reads - repoint at gui_render.py (or rebind rhetoric.models.project) if a flow ever needs it.",
         "json": "json: stdlib import held by both sides; an app_gui-level rebind would miss gui_render.py's uses - repoint at gui_render.py if a flow ever needs it; the census net escalates this pair automatically.",
         "os": "os: stdlib import held by both sides; an app_gui-level rebind would miss gui_render.py's uses - repoint at gui_render.py if a flow ever needs it; the census net escalates this pair automatically.",
         "sys": "sys: stdlib import held by both sides; an app_gui-level rebind would miss gui_render.py's uses - repoint at gui_render.py if a flow ever needs it; the census net escalates this pair automatically.",
@@ -313,12 +313,12 @@
       "gui_settings.py": {
         "GUISettingsError": "GUISettingsError lives in gui_settings.py and app_gui re-imports it; an app_gui-level rebind covers only app_gui's reads - rebind at gui_settings.py for both sides.",
         "Path": "Path: stdlib import held by both sides; an app_gui-level rebind would miss gui_settings.py's uses - repoint at gui_settings.py if a flow ever needs it; the census net escalates this pair automatically.",
-        "VoiceSettings": "VoiceSettings is imported by both sides from the_oracle.models.project; an app_gui-level rebind would miss gui_settings.py's reads - repoint at gui_settings.py (or rebind the_oracle.models.project) if a flow ever needs it.",
+        "VoiceSettings": "VoiceSettings is imported by both sides from rhetoric.models.project; an app_gui-level rebind would miss gui_settings.py's reads - repoint at gui_settings.py (or rebind rhetoric.models.project) if a flow ever needs it.",
         "json": "json: stdlib import held by both sides; an app_gui-level rebind would miss gui_settings.py's uses - repoint at gui_settings.py if a flow ever needs it; the census net escalates this pair automatically.",
         "load_gui_settings": "load_gui_settings lives in gui_settings.py and app_gui re-imports it; an app_gui-level rebind covers only app_gui's reads - rebind at gui_settings.py for both sides.",
-        "normalize_cast_keys": "normalize_cast_keys is imported by both sides from the_oracle.gui_utils; an app_gui-level rebind would miss gui_settings.py's reads - repoint at gui_settings.py (or rebind the_oracle.gui_utils) if a flow ever needs it.",
-        "normalize_correction_mode": "normalize_correction_mode is imported by both sides from the_oracle.correction_modes; an app_gui-level rebind would miss gui_settings.py's reads - repoint at gui_settings.py (or rebind the_oracle.correction_modes) if a flow ever needs it.",
-        "normalize_output_filename": "normalize_output_filename is imported by both sides from the_oracle.app_paths; an app_gui-level rebind would miss gui_settings.py's reads - repoint at gui_settings.py (or rebind the_oracle.app_paths) if a flow ever needs it.",
+        "normalize_cast_keys": "normalize_cast_keys is imported by both sides from rhetoric.gui_utils; an app_gui-level rebind would miss gui_settings.py's reads - repoint at gui_settings.py (or rebind rhetoric.gui_utils) if a flow ever needs it.",
+        "normalize_correction_mode": "normalize_correction_mode is imported by both sides from rhetoric.correction_modes; an app_gui-level rebind would miss gui_settings.py's reads - repoint at gui_settings.py (or rebind rhetoric.correction_modes) if a flow ever needs it.",
+        "normalize_output_filename": "normalize_output_filename is imported by both sides from rhetoric.app_paths; an app_gui-level rebind would miss gui_settings.py's reads - repoint at gui_settings.py (or rebind rhetoric.app_paths) if a flow ever needs it.",
         "save_gui_settings": "save_gui_settings lives in gui_settings.py and app_gui re-imports it; an app_gui-level rebind covers only app_gui's reads - rebind at gui_settings.py for both sides."
       },
       "gui_themes.py": {

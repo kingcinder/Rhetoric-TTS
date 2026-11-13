@@ -1,4 +1,4 @@
-"""The activation flow end-to-end: `the-oracle activate` → current_license.
+"""The activation flow end-to-end: `rhetoric activate` → current_license.
 
 The handler must refuse a bad token BEFORE any bytes are written (the store
 cannot come to hold a token the verifier rejects), and a good token activates
@@ -27,8 +27,8 @@ import pytest
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
-from the_oracle import cli  # noqa: E402
-from the_oracle.licensing import store, tokens  # noqa: E402
+from rhetoric import cli  # noqa: E402
+from rhetoric.licensing import store, tokens  # noqa: E402
 from tests.licensing_fixtures import TEST_KEY_ID, TEST_SEED  # noqa: E402
 
 pytestmark = pytest.mark.usefixtures("test_license_registry")
@@ -51,7 +51,7 @@ PAYLOAD = {
 
 @pytest.fixture()
 def sandbox_root(tmp_path: Path, monkeypatch) -> Path:
-    from the_oracle import offline
+    from rhetoric import offline
 
     monkeypatch.setattr(offline, "repo_root", lambda: tmp_path)
     return tmp_path
@@ -67,8 +67,8 @@ def test_good_token_activates_offline(sandbox_root: Path, capsys) -> None:
     output = capsys.readouterr().out
     assert "Activated" in output and "no server was contacted" in output
 
-    from the_oracle.licensing import current_license
-    from the_oracle import offline
+    from rhetoric.licensing import current_license
+    from rhetoric import offline
 
     status = current_license(offline.repo_root())
     assert status.ok and status.state == "valid"

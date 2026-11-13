@@ -11,9 +11,9 @@ from pathlib import Path
 
 import pytest
 
-from the_oracle import update_manifest as um
-from the_oracle import update_service as us
-from the_oracle.support import gate
+from rhetoric import update_manifest as um
+from rhetoric import update_service as us
+from rhetoric.support import gate
 
 
 def _manifest(tmp_path: Path, version: str = "9.9.9", artifact_bytes: bytes = b"new appimage bytes"):

@@ -9,7 +9,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 from PySide6.QtWidgets import QApplication
 
-from the_oracle.app_gui import RecordingStudioDialog
+from rhetoric.app_gui import RecordingStudioDialog
 
 pytestmark = pytest.mark.slow
 
@@ -30,7 +30,7 @@ def _make_dirs(tmp_path: Path) -> tuple[Path, Path, Path]:
 
 
 def _dialog(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
-    import the_oracle.audio.recorder as recorder_mod
+    import rhetoric.audio.recorder as recorder_mod
 
     monkeypatch.setattr(recorder_mod, "_sd", object())  # pretend backend present
     repo, voice, inputs = _make_dirs(tmp_path)
@@ -92,7 +92,7 @@ def test_recording_destination_cannot_be_redirected_by_stale_setup_preferences(
 
 
 def test_no_microphone_disables_record(tmp_path, monkeypatch, qt_app):
-    import the_oracle.audio.recorder as recorder_mod
+    import rhetoric.audio.recorder as recorder_mod
 
     repo, voice, inputs = _make_dirs(tmp_path)
     monkeypatch.setattr(recorder_mod, "_sd", object())
@@ -103,7 +103,7 @@ def test_no_microphone_disables_record(tmp_path, monkeypatch, qt_app):
 
 
 def test_rate_menu_appears_after_mic_selected(tmp_path, monkeypatch, qt_app):
-    import the_oracle.audio.recorder as recorder_mod
+    import rhetoric.audio.recorder as recorder_mod
 
     class _Device:
         index = 0
@@ -122,7 +122,7 @@ def test_rate_menu_appears_after_mic_selected(tmp_path, monkeypatch, qt_app):
 
 
 def _enabled_dialog(tmp_path, monkeypatch):
-    import the_oracle.audio.recorder as recorder_mod
+    import rhetoric.audio.recorder as recorder_mod
 
     class _Device:
         index = 0
@@ -176,7 +176,7 @@ class _FakeAudioOutput:
 def test_successful_take_auto_auditions_and_enables_actions(tmp_path, monkeypatch, qt_app):
     import numpy as np
 
-    import the_oracle.gui_recording as gui_recording
+    import rhetoric.gui_recording as gui_recording
 
     monkeypatch.setattr(gui_recording, "QMediaPlayer", _FakeMediaPlayer)
     monkeypatch.setattr(gui_recording, "QAudioOutput", _FakeAudioOutput)
@@ -202,7 +202,7 @@ def test_successful_take_auto_auditions_and_enables_actions(tmp_path, monkeypatc
 def test_auto_audition_can_be_disabled(tmp_path, monkeypatch, qt_app):
     import numpy as np
 
-    import the_oracle.gui_recording as gui_recording
+    import rhetoric.gui_recording as gui_recording
 
     monkeypatch.setattr(gui_recording, "QMediaPlayer", _FakeMediaPlayer)
     monkeypatch.setattr(gui_recording, "QAudioOutput", _FakeAudioOutput)
@@ -216,7 +216,7 @@ def test_auto_audition_can_be_disabled(tmp_path, monkeypatch, qt_app):
 
 def test_recording_applies_selected_voice_effects_before_writing(tmp_path, monkeypatch, qt_app):
     import numpy as np
-    import the_oracle.gui_recording as gui_recording
+    import rhetoric.gui_recording as gui_recording
 
     observed = {}
 
@@ -291,7 +291,7 @@ def test_end_of_media_does_not_delete_or_stop_player_in_handler(
     """
     import numpy as np
 
-    import the_oracle.gui_recording as gui_recording
+    import rhetoric.gui_recording as gui_recording
 
     monkeypatch.setattr(gui_recording, "QMediaPlayer", _SpyMediaPlayer)
     monkeypatch.setattr(gui_recording, "QAudioOutput", _SpyAudioOutput)
@@ -320,7 +320,7 @@ def test_playback_reuses_one_player_across_takes(tmp_path, monkeypatch, qt_app):
     """
     import numpy as np
 
-    import the_oracle.gui_recording as gui_recording
+    import rhetoric.gui_recording as gui_recording
 
     monkeypatch.setattr(gui_recording, "QMediaPlayer", _SpyMediaPlayer)
     monkeypatch.setattr(gui_recording, "QAudioOutput", _SpyAudioOutput)
@@ -537,7 +537,7 @@ def test_main_window_assign_wires_the_group_reference(monkeypatch, tmp_path, qt_
 
 def _build_main_window(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
     """Minimal MainWindow with the same fakes the profile GUI tests use."""
-    import the_oracle.app_gui as app_gui
+    import rhetoric.app_gui as app_gui
     from tests.test_app_gui_profiles import (
         _FakeAudioOutput,
         _FakeMediaPlayer,
@@ -548,12 +548,12 @@ def _build_main_window(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
         _FakeVulkanSetupThread,
         _FakeModelDownloadThread,
     )
-    from the_oracle.app_paths import ensure_repo_default_paths
+    from rhetoric.app_paths import ensure_repo_default_paths
 
     paths = ensure_repo_default_paths(tmp_path / "repo")
     monkeypatch.setattr(app_gui, "QAudioOutput", _FakeAudioOutput)
     monkeypatch.setattr(app_gui, "QMediaPlayer", _FakeMediaPlayer)
-    monkeypatch.setattr(app_gui, "OraclePipeline", _FakePipeline)
+    monkeypatch.setattr(app_gui, "RhetoricPipeline", _FakePipeline)
     monkeypatch.setattr(app_gui, "ChatterboxEngine", _FakeChatterboxEngine)
     monkeypatch.setattr(app_gui, "VulkanDeviceProbeThread", _FakeVulkanProbeThread)
     monkeypatch.setattr(app_gui, "VulkanPreflightThread", _FakeVulkanPreflightThread)
@@ -566,7 +566,7 @@ def _build_main_window(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
     monkeypatch.setattr(app_gui, "find_audiocpp_binary", lambda: tmp_path / "audiocpp_cli")
     model_file = tmp_path / "chatterbox-model"
     model_file.write_text("model", encoding="utf-8")
-    monkeypatch.setenv("ORACLE_AUDIOCPP_MODEL", str(model_file))
+    monkeypatch.setenv("RHETORIC_AUDIOCPP_MODEL", str(model_file))
     isolate_user_config(monkeypatch, tmp_path / "config")
     return app_gui.MainWindow(), paths
 
@@ -593,7 +593,7 @@ def test_open_recording_studio_launches_the_guide_from_the_child_timer(
     later (the launch the context-less singleShot used to schedule)."""
     from PySide6.QtTest import QTest
 
-    from the_oracle.recording_wizard import RecordingStudioSetupWizard
+    from rhetoric.recording_wizard import RecordingStudioSetupWizard
 
     window, _ = _build_main_window(monkeypatch, tmp_path)
     # _on_gui_shown arms the crash startup flow, which is modal and reads
@@ -612,7 +612,7 @@ def test_open_recording_studio_launches_the_guide_from_the_child_timer(
 
 
 def test_main_window_reports_saved_seashell_and_refreshes(monkeypatch, tmp_path, qt_app):
-    import the_oracle.app_gui as app_gui
+    import rhetoric.app_gui as app_gui
 
     window, paths = _build_main_window(monkeypatch, tmp_path)
     refresh_calls = []

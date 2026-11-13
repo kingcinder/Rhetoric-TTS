@@ -7,11 +7,11 @@ index 7a85f48..3cd9ae2 100644
     (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND
       CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 8.0))
 -  string(APPEND CMAKE_CXX_FLAGS " -fmacro-prefix-map=${CMAKE_SOURCE_DIR}/=''")
-+  # ===== BEGIN ORACLE VENDORED PATCH (space-safe macro-prefix-map) =====
++  # ===== BEGIN RHETORIC VENDORED PATCH (space-safe macro-prefix-map) =====
 +  # audio.cpp fails to build from checkout paths containing spaces: the
 +  # unquoted -fmacro-prefix-map=... flag is split on the space. Quote the
 +  # value so builds work from any path.
-+  # ===== END ORACLE VENDORED PATCH (space-safe macro-prefix-map) =====
++  # ===== END RHETORIC VENDORED PATCH (space-safe macro-prefix-map) =====
 +  string(APPEND CMAKE_CXX_FLAGS " -fmacro-prefix-map=\"${CMAKE_SOURCE_DIR}/=\"")
  endif()
  

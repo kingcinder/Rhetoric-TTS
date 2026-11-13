@@ -1,6 +1,6 @@
 """Windows frozen application entry point."""
 
-from the_oracle.app_gui import launch_gui
+from rhetoric.app_gui import launch_gui
 
 
 if __name__ == "__main__":

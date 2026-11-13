@@ -81,7 +81,7 @@ good. Measured: the exits that skip the ``finally`` are exactly where this
 harness's /tmp litter came from, one root per run.
 
 1. **Config root** — ``XDG_CONFIG_HOME`` / ``%APPDATA%`` (both, per the
-   isolate_user_config contract) are redirected before any ``the_oracle``
+   isolate_user_config contract) are redirected before any ``rhetoric``
    import, so the per-theme settings rewrites and the persistence
    round-trip never touch the real config — even if this process dies
    mid-run, which is why the old backup-and-restore was not enough and is
@@ -139,7 +139,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 # The throwaway config root, the environment redirect, and the reap that covers
 # every exit path are the certifier family's shared preamble — the policy, its
 # retries and the measurements behind them live in scripts/certifier_isolation.py.
-# Two rules stay here at the call site: this must sit ABOVE any the_oracle import
+# Two rules stay here at the call site: this must sit ABOVE any rhetoric import
 # (the config root is read from the environment at call time, and the order is
 # pinned by tests/test_certifier_hermeticity.py), and the sweep must also reap at
 # its own teardown point, because the helper's atexit hook cannot run before Qt's
@@ -147,7 +147,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from certifier_isolation import isolated_config_root, reap_isolated_root  # noqa: E402
 
-_CONFIG_ROOT = isolated_config_root("oracle_gui_cert_cfg_")
+_CONFIG_ROOT = isolated_config_root("rhetoric_gui_cert_cfg_")
 
 # Native-fault capture: if the sweep dies on a signal (the hosted Linux
 # runners killed this process with SIGSEGV while every local run passed —
@@ -164,14 +164,14 @@ sys.path.insert(0, str(REPO_ROOT / "src"))
 from PySide6.QtCore import QCoreApplication, QEvent  # noqa: E402
 from PySide6.QtWidgets import QApplication, QScrollArea, QSlider, QTableWidgetItem, QWidget  # noqa: E402
 
-from the_oracle import app_gui as _app_gui  # noqa: E402
-from the_oracle import gui_settings  # noqa: E402
-from the_oracle.app_gui import MainWindow  # noqa: E402
-from the_oracle.app_paths import ensure_repo_default_paths  # noqa: E402
-from the_oracle.gui_recording import RecordingStudioDialog  # noqa: E402
-from the_oracle.inference_wizard import InferenceSetupWizard  # noqa: E402
-from the_oracle.gui_settings import app_settings_path  # noqa: E402
-from the_oracle.gui_themes import THEMES, contrast_ratio, in_bulk_restyle  # noqa: E402
+from rhetoric import app_gui as _app_gui  # noqa: E402
+from rhetoric import gui_settings  # noqa: E402
+from rhetoric.app_gui import MainWindow  # noqa: E402
+from rhetoric.app_paths import ensure_repo_default_paths  # noqa: E402
+from rhetoric.gui_recording import RecordingStudioDialog  # noqa: E402
+from rhetoric.inference_wizard import InferenceSetupWizard  # noqa: E402
+from rhetoric.gui_settings import app_settings_path  # noqa: E402
+from rhetoric.gui_themes import THEMES, contrast_ratio, in_bulk_restyle  # noqa: E402
 
 
 def _hermetic_paths(_repo_root):
@@ -238,8 +238,8 @@ class ThemeCertification:
 #: this is the pin. A theme with no entry here fails the sweep before a window
 #: is built, and so does an entry with no theme.
 THEME_CERTIFICATIONS: dict[str, ThemeCertification] = {
-    "oracle_light": ThemeCertification(),
-    "oracle_dark": ThemeCertification(),
+    "rhetoric_light": ThemeCertification(),
+    "rhetoric_dark": ThemeCertification(),
     "sephiroth": ThemeCertification(),
     "pulp_scifi": ThemeCertification(),
     "tape_deck": ThemeCertification(),
@@ -1071,8 +1071,8 @@ def main(argv: list[str] | None = None) -> int:
     # throwaway config root instead of the repo's crash_reports/ (hermeticity
     # has to hold for the crash channel too; the bare arm below resolves
     # _root(), which the override has already repointed).
-    from the_oracle.crash import consent as crash_consent
-    from the_oracle.crash import handlers as crash_handlers
+    from rhetoric.crash import consent as crash_consent
+    from rhetoric.crash import handlers as crash_handlers
 
     crash_handlers.install(root=_CONFIG_ROOT)
     if crash_consent.read_consent(REPO_ROOT):
@@ -1087,7 +1087,7 @@ def main(argv: list[str] | None = None) -> int:
             crash_consent.consent_path(_CONFIG_ROOT),
         )
     crash_handlers.arm_native_capture()
-    from the_oracle.crash import bundle as crash_bundle
+    from rhetoric.crash import bundle as crash_bundle
 
     app = QApplication.instance() or QApplication([])
     # Resolved AFTER the env redirect above: this is the throwaway root's

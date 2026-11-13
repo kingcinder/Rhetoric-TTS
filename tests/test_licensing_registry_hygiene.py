@@ -27,8 +27,8 @@ import pytest
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
-from the_oracle import _ed25519  # noqa: E402
-from the_oracle.licensing import keys  # noqa: E402
+from rhetoric import _ed25519  # noqa: E402
+from rhetoric.licensing import keys  # noqa: E402
 
 #: RFC 8032 §7.1 published test vectors: (seed, public key). Their seeds are
 #: public, so any registry entry derived from one is forgeable.
@@ -43,7 +43,7 @@ RFC8032_TEST_VECTORS: tuple[tuple[bytes, bytes], ...] = (
     ),
 )
 
-KEY_SOURCE = (REPO_ROOT / "src" / "the_oracle" / "licensing" / "keys.py").read_text(
+KEY_SOURCE = (REPO_ROOT / "src" / "rhetoric" / "licensing" / "keys.py").read_text(
     encoding="utf-8"
 )
 
@@ -108,7 +108,7 @@ def test_release_refuses_to_ship_without_a_production_verify_key() -> None:
     # And behaviourally: the real gate passes a configured registry and blocks
     # an empty or forgeable one. The production k2 key was registered on
     # 2026-10-19, so this tree exercises the passing branch.
-    spec = importlib.util.spec_from_file_location("oracle_release_hygiene", release_path)
+    spec = importlib.util.spec_from_file_location("rhetoric_release_hygiene", release_path)
     assert spec is not None and spec.loader is not None
     module = importlib.util.module_from_spec(spec)
     # Register before exec: the module's dataclasses resolve their own module

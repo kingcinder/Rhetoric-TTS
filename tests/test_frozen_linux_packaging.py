@@ -25,7 +25,7 @@ def test_packaging_uses_rhetoric_distribution_filenames() -> None:
 
 def _load_builder():
     path = REPO_ROOT / "scripts" / "build_frozen_linux.py"
-    spec = importlib.util.spec_from_file_location("oracle_frozen_linux_builder", path)
+    spec = importlib.util.spec_from_file_location("rhetoric_frozen_linux_builder", path)
     assert spec and spec.loader
     module = importlib.util.module_from_spec(spec)
     sys.modules[spec.name] = module
@@ -127,7 +127,7 @@ def test_stage_appdir_uses_replaceable_runtime_and_keeps_user_data(tmp_path: Pat
     )
     assert "Exec=rhetoric" in desktop
     assert "models" not in desktop.lower()
-    assert "~/.config/the-oracle" in (appdir / "AppRun").read_text(encoding="utf-8")
+    assert "~/.config/rhetoric" in (appdir / "AppRun").read_text(encoding="utf-8")
 
 
 def test_build_refuses_non_linux_or_non_x86_64(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:

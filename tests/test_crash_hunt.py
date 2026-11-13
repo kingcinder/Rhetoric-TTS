@@ -10,7 +10,7 @@ import sys
 from pathlib import Path
 
 SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "crash_hunt.py"
-spec = importlib.util.spec_from_file_location("oracle_crash_hunt", SCRIPT)
+spec = importlib.util.spec_from_file_location("rhetoric_crash_hunt", SCRIPT)
 crash_hunt = importlib.util.module_from_spec(spec)
 # dataclasses resolve annotations through sys.modules; register before exec.
 sys.modules[spec.name] = crash_hunt
@@ -52,13 +52,13 @@ def test_sigsegv_child_is_recorded(tmp_path: Path, monkeypatch):
 def test_render_command_uses_real_input():
     cmd = crash_hunt._render_command()
     assert "--input" in cmd and "--outdir" in cmd
-    assert any("the_oracle" in part or part.endswith("the-oracle") for part in cmd)
+    assert any("rhetoric" in part or part.endswith("rhetoric") for part in cmd)
     input_path = Path(cmd[cmd.index("--input") + 1])
     assert input_path.exists(), f"input file must exist for a real repro: {input_path}"
 
 
 def test_harvest_detects_new_records(tmp_path: Path):
-    from the_oracle import crash
+    from rhetoric import crash
 
     root = tmp_path
     before = set(crash.list_records(root))
@@ -70,7 +70,7 @@ def test_harvest_detects_new_records(tmp_path: Path):
 
 
 def test_harvest_ignores_preexisting_records(tmp_path: Path):
-    from the_oracle import crash
+    from rhetoric import crash
 
     root = tmp_path
     crash.crash_dir(root).mkdir(parents=True, exist_ok=True)
@@ -187,7 +187,7 @@ def test_gui_env_forces_offscreen():
 def test_gui_command_launches_gui():
     cmd = crash_hunt._gui_command()
     assert "gui" in cmd
-    assert any("the_oracle" in part or part.endswith("the-oracle") for part in cmd)
+    assert any("rhetoric" in part or part.endswith("rhetoric") for part in cmd)
 
 
 def test_gui_launch_waits_for_mainwindow_built(tmp_path: Path, monkeypatch):
@@ -275,8 +275,8 @@ def test_capture_readiness_probe_child_reports_launch_arming():
     exactly when consent is on (fail-closed contract), so the regression
     shape (consent on, armed False) is detected end-to-end, not just in
     synthetic summaries."""
-    from the_oracle import crash
-    from the_oracle.offline import repo_root
+    from rhetoric import crash
+    from rhetoric.offline import repo_root
 
     readiness = crash_hunt._capture_readiness(repo_root())
     assert "probe_error" not in readiness, readiness

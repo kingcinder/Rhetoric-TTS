@@ -13,13 +13,13 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
-from the_oracle.crash import sanitize  # noqa: E402
+from rhetoric.crash import sanitize  # noqa: E402
 
 HOME = "/home/test-user"
 
 
 def test_home_prefix_becomes_tilde() -> None:
-    out = sanitize.sanitize_text(f"{HOME}/Documents/the oracle tts/crash_reports/x.json", home=HOME)
+    out = sanitize.sanitize_text(f"{HOME}/Documents/Rhetoric tts/crash_reports/x.json", home=HOME)
     # The two-stage collapse (~, then <path>) keeps nothing structured; the
     # contract is: tilde form, and no home prefix or username anywhere.
     assert out.startswith("~")
@@ -48,7 +48,7 @@ def test_property_no_output_contains_the_home_prefix() -> None:
         f"{HOME}/x.wav",
         f"file://{HOME}/Input/a.txt",
         f"trace: {HOME}/.venv/lib/mod.py:12",
-        f"{HOME}/Documents/the oracle tts/Output/b.flac",
+        f"{HOME}/Documents/Rhetoric tts/Output/b.flac",
         "no path here",
     ]
     for text in samples:
@@ -72,7 +72,7 @@ def test_log_tail_cap_and_order() -> None:
 
 
 def test_frames_carry_location_not_content() -> None:
-    frame = sanitize.sanitize_frame(f"{HOME}/src/the_oracle/pipeline.py", "render_one", 412, home=HOME)
+    frame = sanitize.sanitize_frame(f"{HOME}/src/rhetoric/pipeline.py", "render_one", 412, home=HOME)
     assert frame.endswith(":412: render_one")
     assert "src" not in frame or "<path>" in frame or frame.startswith("~")
     # A frame never carries source text or variable values by construction.

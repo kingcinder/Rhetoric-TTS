@@ -9,10 +9,10 @@ import yaml
 
 pytestmark = pytest.mark.slow
 
-from the_oracle.models.project import VoiceProfile
-from the_oracle.models.project import VoiceSettings
-from the_oracle.models.settings import RenderSettings, SpeakerSettings; from the_oracle.pipeline import OraclePipeline, RenderProgress
-from the_oracle.smoke import (
+from rhetoric.models.project import VoiceProfile
+from rhetoric.models.project import VoiceSettings
+from rhetoric.models.settings import RenderSettings, SpeakerSettings; from rhetoric.pipeline import RhetoricPipeline, RenderProgress
+from rhetoric.smoke import (
     SmokeRenderResult,
     _DeterministicChatterboxEngine,
     _SmokeEmotionClassifier,
@@ -119,10 +119,10 @@ def test_render_progress_reports_stage_updates(tmp_path: Path) -> None:
     events: list[RenderProgress] = []
 
     with (
-        patch("the_oracle.pipeline.ChatterboxEngine", _DeterministicChatterboxEngine),
-        patch("the_oracle.pipeline.GoEmotionsClassifier", _SmokeEmotionClassifier),
+        patch("rhetoric.pipeline.ChatterboxEngine", _DeterministicChatterboxEngine),
+        patch("rhetoric.pipeline.GoEmotionsClassifier", _SmokeEmotionClassifier),
     ):
-        pipeline = OraclePipeline(
+        pipeline = RhetoricPipeline(
             use_transformers=False,
             use_language_tool=False,
             use_punctuation_model=False,
@@ -153,10 +153,10 @@ def test_render_preview_creates_preview_files_for_both_speakers(tmp_path: Path) 
     render_settings = RenderSettings(model_variant="standard", language="en", loudness_preset="off")
 
     with (
-        patch("the_oracle.pipeline.ChatterboxEngine", _DeterministicChatterboxEngine),
-        patch("the_oracle.pipeline.GoEmotionsClassifier", _SmokeEmotionClassifier),
+        patch("rhetoric.pipeline.ChatterboxEngine", _DeterministicChatterboxEngine),
+        patch("rhetoric.pipeline.GoEmotionsClassifier", _SmokeEmotionClassifier),
     ):
-        pipeline = OraclePipeline(
+        pipeline = RhetoricPipeline(
             use_transformers=False,
             use_language_tool=False,
             use_punctuation_model=False,
@@ -177,7 +177,7 @@ def test_render_preview_rejects_blank_reference_path_before_reading_dot(tmp_path
     utterance = type("PreviewUtterance", (), {"speaker": "A", "index": 0, "engine_settings": VoiceSettings(), "text_for_tts": lambda self: "Preview text"})()
     profile = VoiceProfile(name="Speaker A", speaker="A", neutral_reference=Path(""), engine_params=VoiceSettings())
 
-    pipeline = OraclePipeline(
+    pipeline = RhetoricPipeline(
         use_transformers=False,
         use_language_tool=False,
         use_punctuation_model=False,
@@ -198,10 +198,10 @@ def test_render_preview_reports_honest_stage_progress(tmp_path: Path) -> None:
     events: list[RenderProgress] = []
 
     with (
-        patch("the_oracle.pipeline.ChatterboxEngine", _DeterministicChatterboxEngine),
-        patch("the_oracle.pipeline.GoEmotionsClassifier", _SmokeEmotionClassifier),
+        patch("rhetoric.pipeline.ChatterboxEngine", _DeterministicChatterboxEngine),
+        patch("rhetoric.pipeline.GoEmotionsClassifier", _SmokeEmotionClassifier),
     ):
-        pipeline = OraclePipeline(
+        pipeline = RhetoricPipeline(
             use_transformers=False,
             use_language_tool=False,
             use_punctuation_model=False,
@@ -230,7 +230,7 @@ def test_render_preview_reports_honest_stage_progress(tmp_path: Path) -> None:
 
 def _script_module():
     path = Path(__file__).resolve().parents[1] / "scripts" / "smoke_render.py"
-    spec = importlib.util.spec_from_file_location("oracle_smoke_render_script", path)
+    spec = importlib.util.spec_from_file_location("rhetoric_smoke_render_script", path)
     assert spec is not None and spec.loader is not None
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
@@ -294,7 +294,7 @@ def test_smoke_render_script_exits_zero_only_when_outputs_are_usable(
 
 def test_the_output_verdict_policy_has_one_owner() -> None:
     repo = Path(__file__).resolve().parents[1]
-    owner = (repo / "src" / "the_oracle" / "smoke.py").read_text(encoding="utf-8")
+    owner = (repo / "src" / "rhetoric" / "smoke.py").read_text(encoding="utf-8")
     doctor = (repo / "scripts" / "doctor.py").read_text(encoding="utf-8")
     runner = (repo / "scripts" / "smoke_render.py").read_text(encoding="utf-8")
     # The verdict literals live exactly once, in the owner (vacuity guard:
@@ -336,7 +336,7 @@ WORKFLOW_PATH = Path(__file__).resolve().parents[1] / ".github" / "workflows" / 
 
 
 def _load_smoke_render_script():
-    spec = importlib.util.spec_from_file_location("oracle_smoke_render_script", SCRIPT_PATH)
+    spec = importlib.util.spec_from_file_location("rhetoric_smoke_render_script", SCRIPT_PATH)
     module = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
     spec.loader.exec_module(module)
@@ -420,7 +420,7 @@ def test_workflow_runs_the_deterministic_smoke_render_on_both_operating_systems(
 
 def test_the_smoke_output_verdict_policy_has_one_owner() -> None:
     repo = Path(__file__).resolve().parents[1]
-    smoke_src = (repo / "src" / "the_oracle" / "smoke.py").read_text(encoding="utf-8")
+    smoke_src = (repo / "src" / "rhetoric" / "smoke.py").read_text(encoding="utf-8")
     doctor_src = (repo / "scripts" / "doctor.py").read_text(encoding="utf-8")
     script_src = (repo / "scripts" / "smoke_render.py").read_text(encoding="utf-8")
     # The reason strings live once, in the owner; the count is its own

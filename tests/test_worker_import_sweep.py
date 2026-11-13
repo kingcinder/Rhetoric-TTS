@@ -14,7 +14,7 @@ one-hop target list is explicit so a new worker call-graph edge must be
 added here deliberately.
 
 **Mutation contract:** moving the FLAC tagger import in
-``src/the_oracle/audio/export_flac.py`` back inside a function must fail
+``src/rhetoric/audio/export_flac.py`` back inside a function must fail
 ``test_no_worker_thread_first_imports_suite_wide``.
 """
 
@@ -28,7 +28,7 @@ sys.path.insert(0, str(REPO_ROOT / "src"))
 
 from tests import helpers  # noqa: E402
 
-SRC = REPO_ROOT / "src" / "the_oracle"
+SRC = REPO_ROOT / "src" / "rhetoric"
 
 #: Modules a worker's run() call graph can reach one hop out. Every module
 #: here must be fully module-scoped. When a worker gains a new call edge,

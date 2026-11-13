@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from the_oracle.app_paths import (
+from rhetoric.app_paths import (
     PORTABLE_MARKER,
     default_output_filename,
     ensure_repo_default_paths,
@@ -17,17 +17,17 @@ def test_portable_marker_keeps_repo_local_paths(tmp_path: Path) -> None:
 
 
 def test_installed_root_migrates_repo_content_without_deleting_it(tmp_path: Path, monkeypatch) -> None:
-    import the_oracle.app_paths as app_paths
+    import rhetoric.app_paths as app_paths
 
     repo = tmp_path / "repo"
     (repo / "Input").mkdir(parents=True)
     (repo / "Input" / "story.txt").write_text("A: hello\n", encoding="utf-8")
-    monkeypatch.setattr(app_paths, "__file__", str(repo / "src" / "the_oracle" / "app_paths.py"))
-    monkeypatch.setattr(app_paths, "app_data_dir", lambda: tmp_path / "data" / "the_oracle")
+    monkeypatch.setattr(app_paths, "__file__", str(repo / "src" / "rhetoric" / "app_paths.py"))
+    monkeypatch.setattr(app_paths, "app_data_dir", lambda: tmp_path / "data" / "rhetoric")
 
     paths = app_paths.ensure_repo_default_paths(repo)
 
-    assert paths.input_dir == tmp_path / "data" / "the_oracle" / "Input"
+    assert paths.input_dir == tmp_path / "data" / "rhetoric" / "Input"
     assert (paths.input_dir / "story.txt").read_text(encoding="utf-8") == "A: hello\n"
     assert (repo / "Input" / "story.txt").is_file()
 

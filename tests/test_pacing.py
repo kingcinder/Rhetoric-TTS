@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from the_oracle.utils.pacing import chunk_seam_pause_ms, pause_for_utterance
+from rhetoric.utils.pacing import chunk_seam_pause_ms, pause_for_utterance
 
 
 def test_period_keeps_base_pause():

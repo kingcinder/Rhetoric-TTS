@@ -1,6 +1,6 @@
 """Tests for the doctor's Input/ subtitle-encoding check (scripts/doctor.py).
 
-The subtitle decode chain (``the_oracle.srt_ingest``) reads UTF-8 with BOM
+The subtitle decode chain (``rhetoric.srt_ingest``) reads UTF-8 with BOM
 first and falls back to CP1252. This doctor check surfaces, before a render,
 which Input/ subtitle files would take that fallback — and, critically,
 which would be BLOCKED by it: ``convert_srt_file`` re-decodes strictly, so a
@@ -19,7 +19,7 @@ DOCTOR_PATH = Path(__file__).resolve().parents[1] / "scripts" / "doctor.py"
 
 
 def _load_doctor():
-    spec = importlib.util.spec_from_file_location("oracle_doctor", DOCTOR_PATH)
+    spec = importlib.util.spec_from_file_location("rhetoric_doctor", DOCTOR_PATH)
     module = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
     spec.loader.exec_module(module)
@@ -146,14 +146,14 @@ def test_non_subtitle_files_are_ignored(tmp_path: Path) -> None:
 
 def test_cli_classifier_agrees_with_the_doctor_on_every_class(tmp_path: Path) -> None:
     """check-input --json (and the render path's --check-input-json) classify
-    subtitle bytes through ``the_oracle.srt_ingest.classify_subtitle_bytes``;
+    subtitle bytes through ``rhetoric.srt_ingest.classify_subtitle_bytes``;
     the doctor classifies through its mirrored scan. The two surfaces are
     only useful together if they cannot disagree about the same file before a
     render — so the same bytes must get the same verdict on every class.
     (This is the agreement direction the other pins here don't cover: they
     pin the doctor's shapes against the real chain's, not the doctor's
     per-file verdicts against the classifier the CLI actually calls.)"""
-    from the_oracle.srt_ingest import classify_subtitle_bytes
+    from rhetoric.srt_ingest import classify_subtitle_bytes
 
     doctor = _load_doctor()
     input_dir = tmp_path / "Input"
@@ -200,7 +200,7 @@ def _full_report(input_subtitles: dict) -> dict:
         "ci_mode": False,
         "python": {"ok": True, "executable": "python3", "version": "3.12.0"},
         "ffmpeg": {"ok": True, "path": "/usr/bin/ffmpeg"},
-        "entrypoint": {"ok": True, "fresh_shell_path": "/bin/the-oracle", "path_entrypoint": "", "venv_entrypoint": ""},
+        "entrypoint": {"ok": True, "fresh_shell_path": "/bin/rhetoric", "path_entrypoint": "", "venv_entrypoint": ""},
         "chatterbox_import": {"ok": True, "target": "from chatterbox.tts import ChatterboxTTS", "error": ""},
         "chatterbox_init": {"ok": True, "seconds": 1.0, "skipped": False, "error": ""},
         "perth": {"ok": True, "watermarker_symbol": "PerthImplicitWatermarker", "error": ""},

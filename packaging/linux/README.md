@@ -24,7 +24,7 @@ The PyInstaller output contains the application runtime and CPU dependencies.
 It does not contain model weights, license signing material, or user data.
 The application must show the EULA first; model acquisition remains behind the
 serial-number gate. The AppImage and package keep per-user settings and model
-caches under `~/.config/the-oracle` and `~/.cache`; uninstall removes the
+caches under `~/.config/rhetoric` and `~/.cache`; uninstall removes the
 installed application tree and leaves those paths in place.
 
 The owner supplies signing keys later. Signing, publication, and clean-machine

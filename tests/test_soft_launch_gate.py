@@ -8,7 +8,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from the_oracle import third_party
+from rhetoric import third_party
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]

@@ -17,8 +17,8 @@ SRC_ROOT = REPO_ROOT / "src"
 if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
 
-from the_oracle.offline import OFFLINE_ENV, OFFLINE_MARKER_FILENAME, apply_offline_environment  # noqa: E402
-from the_oracle.platform_support import (  # noqa: E402
+from rhetoric.offline import OFFLINE_ENV, OFFLINE_MARKER_FILENAME, apply_offline_environment  # noqa: E402
+from rhetoric.platform_support import (  # noqa: E402
     is_linux,
     is_windows,
     managed_launcher_dir,
@@ -60,14 +60,14 @@ CHATTERBOX_ENGINE_PACKAGES = (
 )
 CHATTERBOX_TTS_PACKAGE = "chatterbox-tts==0.1.7"
 #: Marker file written into REPO_ROOT by an offline install (defined by
-#: the_oracle.offline, which is also what the runtime checks). The managed
+#: rhetoric.offline, which is also what the runtime checks). The managed
 #: wrapper exports HF_HUB_OFFLINE=1 when it exists, so every model loader
 #: (ours and third-party) resolves the pinned revisions from the seeded
 #: local HF cache instead of the network. Delete it to go back online.
-OFFLINE_MARKER_FILENAME = ".oracle_offline"
-MANAGED_WRAPPER_MARKER = "ORACLE_TTS_WRAPPER"
-LINUX_DESKTOP_MARKER = "ORACLE_TTS_DESKTOP"
-WINDOWS_START_MENU_MARKER = "ORACLE_TTS_START_MENU"
+OFFLINE_MARKER_FILENAME = ".rhetoric_offline"
+MANAGED_WRAPPER_MARKER = "RHETORIC_TTS_WRAPPER"
+LINUX_DESKTOP_MARKER = "RHETORIC_TTS_DESKTOP"
+WINDOWS_START_MENU_MARKER = "RHETORIC_TTS_START_MENU"
 SUPPORTED_PYTHON_MIN = (3, 11)
 SUPPORTED_PYTHON_MAX = (3, 13)
 
@@ -126,7 +126,7 @@ def _suitable_nvidia_hardware_present() -> bool:
     1-GiB cards instead of installing a CUDA wheel that cannot be useful.
     """
     try:
-        from the_oracle.device_support import _nvidia_smi_devices
+        from rhetoric.device_support import _nvidia_smi_devices
 
         return any(device.suitable for device in _nvidia_smi_devices())
     except Exception:
@@ -322,7 +322,7 @@ def seed_offline_models(offline_bundle: Path) -> None:
     ``HF_HUB_OFFLINE=1`` (set by the managed wrapper on offline installs),
     no model fetch can ever touch the network.
     """
-    from the_oracle.models.pins import MODEL_PINS  # noqa: E402
+    from rhetoric.models.pins import MODEL_PINS  # noqa: E402
 
     src_root = offline_bundle / "hf_cache"
     if not src_root.is_dir():
@@ -370,10 +370,9 @@ def install_managed_wrapper() -> Path:
     wrapper_path = managed_launcher_path()
     wrapper_path.parent.mkdir(parents=True, exist_ok=True)
     contents = managed_wrapper_contents()
-    for path in (wrapper_path, managed_launcher_path("the-oracle")):
-        path.write_text(contents, encoding="utf-8", newline="" if is_windows() else "\n")
-        if not is_windows():
-            path.chmod(0o755)
+    wrapper_path.write_text(contents, encoding="utf-8", newline="" if is_windows() else "\n")
+    if not is_windows():
+        wrapper_path.chmod(0o755)
     passed(f"Installed managed wrapper at {wrapper_path}")
     return wrapper_path
 
@@ -433,7 +432,7 @@ def desktop_entry_contents(*, trusted: bool = False, legacy: bool = False) -> st
     desktop shortcut, so the two can never drift apart.
 
     ``Exec`` points at the absolute managed-launcher path rather than the
-    bare ``the-oracle`` command, so the entry still works when
+    bare ``rhetoric`` command, so the entry still works when
     ``~/.local/bin`` is missing from PATH (a fresh login may not have it).
     """
     # The freedesktop Desktop Entry spec only recognizes double-quote quoting
@@ -520,13 +519,6 @@ def install_desktop_launcher() -> None:
             encoding="utf-8",
             newline="",
         )
-        legacy_start_menu_launcher_path().write_text(
-            "@echo off\r\n"
-            f"REM {WINDOWS_START_MENU_MARKER} legacy launcher\r\n"
-            f"call \"{managed_launcher_path()}\" gui %*\r\n",
-            encoding="utf-8",
-            newline="",
-        )
         passed(f"Installed Start Menu launcher at {launcher_path}")
         return
     if not is_linux():
@@ -534,15 +526,9 @@ def install_desktop_launcher() -> None:
     launcher_path = desktop_file_path()
     launcher_path.parent.mkdir(parents=True, exist_ok=True)
     launcher_path.write_text(desktop_entry_contents(), encoding="utf-8")
-    legacy_desktop_file_path().write_text(desktop_entry_contents(legacy=True), encoding="utf-8")
     passed(f"Installed desktop entry at {launcher_path}")
     refresh_desktop_database(launcher_path.parent)
     install_desktop_shortcut()
-    legacy_shortcut = legacy_desktop_shortcut_path()
-    legacy_shortcut.parent.mkdir(parents=True, exist_ok=True)
-    legacy_shortcut.write_text(desktop_entry_contents(trusted=True, legacy=True), encoding="utf-8")
-    legacy_shortcut.chmod(0o755)
-    mark_desktop_shortcut_trusted(legacy_shortcut)
 
 
 def remove_if_managed(path: Path, marker: str) -> None:
@@ -578,16 +564,16 @@ def run_gui() -> int:
     env = build_env()
     # Mirror the managed launcher and the desktop entries: on an offline install
     # the marker drives offline model resolution, so launching through this path
-    # (./run_oracle_tts.sh) must honour the same contract as the GUI shortcut or
+    # (./run_rhetoric.sh) must honour the same contract as the GUI shortcut or
     # the install reaches for the network here. Delete the marker (documented) to
-    # re-enable network model fetches. the_oracle.offline owns the marker name and
+    # re-enable network model fetches. rhetoric.offline owns the marker name and
     # the variable set, so the launchers, this path, and the app cannot drift.
     if apply_offline_environment(REPO_ROOT):
         env.update(OFFLINE_ENV)
     if is_linux():
         has_display = bool(os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY"))
         if not has_display:
-            return fail(f"No GUI display detected. Set DISPLAY or WAYLAND_DISPLAY, then rerun {REPO_ROOT / 'run_oracle_tts.sh'}.")
+            return fail(f"No GUI display detected. Set DISPLAY or WAYLAND_DISPLAY, then rerun {REPO_ROOT / 'run_rhetoric.sh'}.")
         if not env.get("QT_QPA_PLATFORM") and os.environ.get("DISPLAY"):
             env["QT_QPA_PLATFORM"] = "xcb"
     completed = subprocess.run([str(entrypoint), "gui"], cwd=REPO_ROOT, env=env, check=False)
@@ -635,7 +621,7 @@ def install(*, pytorch_runtime: str = "auto", offline_bundle: Path | None = None
     # below does, and each doctor run constructs the Chatterbox model, so a
     # fresh install paid for two identical model loads. The single run here is
     # the one that gates install, and it still runs in full (non-CI) mode, so a
-    # broken the-oracle entrypoint remains a blocking failure.
+    # broken rhetoric entrypoint remains a blocking failure.
     status = bootstrap(skip_doctor=True, pytorch_runtime=pytorch_runtime, offline_bundle=offline_bundle)
     if status != 0:
         return status

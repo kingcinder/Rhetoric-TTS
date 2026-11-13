@@ -4,7 +4,7 @@ import pytest
 
 from tests.helpers import isolate_user_config
 
-from the_oracle.gui_settings import (
+from rhetoric.gui_settings import (
     GUISettingsError,
     PayloadDefaults,
     WidgetSnapshot,
@@ -27,13 +27,13 @@ from the_oracle.gui_settings import (
     save_template,
     speaker_config_from_payload,
 )
-from the_oracle.gui_utils import normalize_cast_keys
+from rhetoric.gui_utils import normalize_cast_keys
 
 
 def _payload() -> dict:
     return {
         "version": 1,
-        "name": "Oracle Template",
+        "name": "Rhetoric Template",
         "device_mode": "cpu",
         "project": {
             "model_variant": "standard",
@@ -44,7 +44,7 @@ def _payload() -> dict:
             "crossfade_ms": 20,
             "target_wpm": 150.0,
             "output_dir": "/tmp/output",
-            "output_filename": "oracle_render.flac",
+            "output_filename": "rhetoric_render.flac",
         },
         "speakers": {
             "A": {
@@ -69,7 +69,7 @@ def test_gui_settings_round_trip(tmp_path: Path) -> None:
 
     assert loaded["project"]["model_variant"] == "standard"
     assert loaded["project"]["output_dir"] == "/tmp/output"
-    assert loaded["project"]["output_filename"] == "oracle_render.flac"
+    assert loaded["project"]["output_filename"] == "rhetoric_render.flac"
     assert loaded["project"]["target_wpm"] == pytest.approx(150.0)
     assert loaded["speakers"]["A"]["reference_path"] == "/tmp/a.wav"
     assert loaded["speakers"]["B"]["voice_settings"]["cfg_weight"] == 0.6
@@ -77,10 +77,10 @@ def test_gui_settings_round_trip(tmp_path: Path) -> None:
 
 def test_gui_template_round_trip(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     isolate_user_config(monkeypatch, tmp_path)
-    save_template("Oracle Template", _payload())
+    save_template("Rhetoric Template", _payload())
 
-    assert list_templates() == ["Oracle_Template"]
-    assert load_template("Oracle Template")["name"] == "Oracle Template"
+    assert list_templates() == ["Rhetoric_Template"]
+    assert load_template("Rhetoric Template")["name"] == "Rhetoric Template"
 
 
 def test_incomplete_gui_settings_fail_clearly(tmp_path: Path) -> None:
@@ -292,7 +292,7 @@ def test_app_settings_drops_malformed_inference_wizard_state(tmp_path: Path, mon
 
 def test_app_settings_robust_to_corrupt_file(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     isolate_user_config(monkeypatch, tmp_path)
-    from the_oracle.gui_settings import app_settings_path
+    from rhetoric.gui_settings import app_settings_path
 
     app_settings_path().write_text("{not json", encoding="utf-8")
 
@@ -516,8 +516,8 @@ def test_next_and_drop_format_backup_skip_malformed_records() -> None:
 
 
 def _defaults() -> "PayloadDefaults":
-    from the_oracle.models.project import VoiceSettings
-    from the_oracle.models.settings import RenderSettings
+    from rhetoric.models.project import VoiceSettings
+    from rhetoric.models.settings import RenderSettings
 
     render = RenderSettings()
     return PayloadDefaults(
@@ -537,9 +537,9 @@ def _defaults() -> "PayloadDefaults":
 
 
 def _snapshot(**overrides) -> "WidgetSnapshot":
-    from the_oracle.gui_settings import WidgetSnapshot
-    from the_oracle.models.settings import SpeakerSettings
-    from the_oracle.models.project import VoiceSettings
+    from rhetoric.gui_settings import WidgetSnapshot
+    from rhetoric.models.settings import SpeakerSettings
+    from rhetoric.models.project import VoiceSettings
 
     base = dict(
         cast_keys=["A", "B"],
@@ -630,7 +630,7 @@ def test_cast_keys_floor_property_holds() -> None:
 
 
 def test_speaker_config_decode_validates_blend_fields() -> None:
-    from the_oracle.models.project import VoiceSettings
+    from rhetoric.models.project import VoiceSettings
 
     decoded = speaker_config_from_payload(
         {
@@ -654,7 +654,7 @@ def test_speaker_config_decode_validates_blend_fields() -> None:
 
 def test_current_payload_decodes_back_to_equal_speaker_settings() -> None:
     """A current-payload speakers entry round-trips through the decoder."""
-    from the_oracle.models.settings import SpeakerSettings
+    from rhetoric.models.settings import SpeakerSettings
 
     snapshot = _snapshot()
     payload = current_gui_settings_payload(snapshot)

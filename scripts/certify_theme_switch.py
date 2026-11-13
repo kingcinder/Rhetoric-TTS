@@ -68,7 +68,7 @@ branches are skipped belongs to
 which is where the line-by-line contract lives.
 
 Writes nothing: the app config root is redirected to a throwaway before any
-``the_oracle`` import, and the window's default paths are drained into it, so the
+``rhetoric`` import, and the window's default paths are drained into it, so the
 settings rewrites and the ``Output/logs`` timing writes land there. That
 directory is removed again on every exit path (``main``'s window teardown plus
 the ``atexit`` hook ``scripts/certifier_isolation.py`` registers with the root),
@@ -88,17 +88,17 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 # Offscreen before Qt is imported, and the throwaway config root before any
-# the_oracle import (both must precede their readers, not merely be intended).
+# rhetoric import (both must precede their readers, not merely be intended).
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 # The throwaway root, its environment redirect and the reap that covers every
 # exit path are the certifier family's shared preamble — policy, retries and the
 # measurements behind them in scripts/certifier_isolation.py. The one rule that
-# stays at this call site is the order: above any the_oracle import.
+# stays at this call site is the order: above any rhetoric import.
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from certifier_isolation import isolated_config_root, reap_isolated_root  # noqa: E402
 
-_CONFIG_ROOT = isolated_config_root("oracle_theme_switch_cfg_")
+_CONFIG_ROOT = isolated_config_root("rhetoric_theme_switch_cfg_")
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT / "src"))
@@ -106,18 +106,18 @@ sys.path.insert(0, str(REPO_ROOT / "src"))
 from PySide6.QtCore import QCoreApplication, QEvent, QObject, qInstallMessageHandler  # noqa: E402
 from PySide6.QtWidgets import QApplication, QWidget  # noqa: E402
 
-from the_oracle import app_gui as _app_gui  # noqa: E402
-from the_oracle import gui_tooltips  # noqa: E402
-from the_oracle.app_gui import MainWindow  # noqa: E402
-from the_oracle.app_paths import ensure_repo_default_paths  # noqa: E402
-from the_oracle.gui_themes import (  # noqa: E402
+from rhetoric import app_gui as _app_gui  # noqa: E402
+from rhetoric import gui_tooltips  # noqa: E402
+from rhetoric.app_gui import MainWindow  # noqa: E402
+from rhetoric.app_paths import ensure_repo_default_paths  # noqa: E402
+from rhetoric.gui_themes import (  # noqa: E402
     DEFAULT_THEME,
     THEMES,
     apply_theme,
     build_stylesheet,
     in_bulk_restyle,
 )
-from the_oracle.platform_support import is_windows  # noqa: E402
+from rhetoric.platform_support import is_windows  # noqa: E402
 
 #: The event types Qt sends while repolishing. The storm's size is the
 #: propagation term; the exact mix is reported, not asserted (Qt's choice).

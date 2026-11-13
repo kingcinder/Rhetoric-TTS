@@ -1,7 +1,7 @@
 """Exercise repeated MainWindow rebuilds related to the native fault report.
 
 The 1.4.0 CI certifier logs (2026-10-13) show the fault landing in
-``the_oracle.gui_tooltips.CtrlHoverHelp.eventFilter`` -> ``event.type()``
+``rhetoric.gui_tooltips.CtrlHoverHelp.eventFilter`` -> ``event.type()``
 while a *later* MainWindow is being built, after an earlier one was torn
 down and deleted. This driver reproduces that shape deterministically:
 
@@ -70,7 +70,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
 
-    from the_oracle.app_gui import MainWindow
+    from rhetoric.app_gui import MainWindow
 
     app = CountingApp([])
     parked: list[QObject] = []

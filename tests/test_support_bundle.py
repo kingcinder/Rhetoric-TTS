@@ -8,7 +8,7 @@ import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
 
-from the_oracle import support_bundle
+from rhetoric import support_bundle
 
 
 def _make_root(tmp_path: Path) -> Path:
@@ -169,8 +169,8 @@ def test_missing_output_parent_is_created(tmp_path: Path) -> None:
 
 
 def test_cli_handler_prints_the_manifest(monkeypatch, tmp_path: Path, capsys) -> None:
-    import the_oracle.cli as cli
-    from the_oracle.support_bundle import SupportBundleResult
+    import rhetoric.cli as cli
+    from rhetoric.support_bundle import SupportBundleResult
 
     calls: dict[str, object] = {}
 
@@ -183,8 +183,8 @@ def test_cli_handler_prints_the_manifest(monkeypatch, tmp_path: Path, capsys) ->
             skipped=(),
         )
 
-    monkeypatch.setattr("the_oracle.support_bundle.build_support_bundle", fake_build)
-    monkeypatch.setattr("the_oracle.offline.repo_root", lambda: tmp_path)
+    monkeypatch.setattr("rhetoric.support_bundle.build_support_bundle", fake_build)
+    monkeypatch.setattr("rhetoric.offline.repo_root", lambda: tmp_path)
     code = cli.main(["support-bundle", "--no-doctor", "--out", str(tmp_path / "bundle.zip"), "--json"])
     assert code == 0
     payload = json.loads(capsys.readouterr().out)

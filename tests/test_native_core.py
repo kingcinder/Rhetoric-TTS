@@ -24,8 +24,8 @@ import pytest
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
-from the_oracle import _native  # noqa: E402
-from the_oracle.licensing import tokens  # noqa: E402
+from rhetoric import _native  # noqa: E402
+from rhetoric.licensing import tokens  # noqa: E402
 from tests.licensing_fixtures import (  # noqa: E402
     PRODUCTION_KEYS,
     TEST_KEY_ID,
@@ -61,7 +61,7 @@ def _legacy(**overrides: object) -> str:
 
 
 def _raw(body: bytes, *, signed: bytes | None = None) -> str:
-    from the_oracle import _ed25519
+    from rhetoric import _ed25519
 
     signed = body if signed is None else signed
     signature = _ed25519.sign(TEST_SEED, signed)
@@ -96,7 +96,7 @@ CASES = {
     "legacy_extra_key": (_legacy(serial="x"), NOW, ""),
     "not_json_object": (_raw(b"[]"), NOW, ""),
     "not_utf8": (_raw(b"\xff\xfe"), NOW, ""),
-    "wrong_prefix": ("ORACLE2." + _token().split(".", 1)[1], NOW, ""),
+    "wrong_prefix": ("RHETORIC2." + _token().split(".", 1)[1], NOW, ""),
     "two_parts": ("ORACLE1.abc", NOW, ""),
     "garbage": ("not-a-serial", NOW, ""),
 }

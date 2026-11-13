@@ -28,7 +28,7 @@ engine gate and take the whole batch down with it.
 
 This file pins both sides: per-path stale-entry rejection, the pause-only
 exemption, and a writer manifest — the scan of every stem/preview-shaped
-write call in ``src/the_oracle`` must land in the gated owners and must not
+write call in ``src/rhetoric`` must land in the gated owners and must not
 come up empty. The manifest's rule data (write functions, target-name
 classifiers, per-kind owner sets, blindness floors) lives in the validated
 ``writer_manifest`` section of ``scripts/patch_surface_manifest.json`` —
@@ -59,9 +59,9 @@ sys.modules.setdefault("huggingface_hub", _hub)
 sys.modules.setdefault("huggingface_hub.errors", _hub_errors)
 sys.modules.setdefault("huggingface_hub.utils", _hub_utils)
 
-from the_oracle.models.cache import CachedReference, ProjectCache  # noqa: E402
-from the_oracle.models.project import VoiceSettings  # noqa: E402
-from the_oracle.pipeline import (  # noqa: E402
+from rhetoric.models.cache import CachedReference, ProjectCache  # noqa: E402
+from rhetoric.models.project import VoiceSettings  # noqa: E402
+from rhetoric.pipeline import (  # noqa: E402
     SynthesisTask,
     _chunk_engine_key,
     _load_cached_stem,
@@ -71,11 +71,11 @@ from the_oracle.pipeline import (  # noqa: E402
     synthesize_task,
     synthesize_tasks_batched,
 )
-from the_oracle.utils.audio import sanitize_engine_audio, stem_is_speech_like  # noqa: E402
-from the_oracle.utils.hashing import build_chunk_hash  # noqa: E402
+from rhetoric.utils.audio import sanitize_engine_audio, stem_is_speech_like  # noqa: E402
+from rhetoric.utils.hashing import build_chunk_hash  # noqa: E402
 
 SAMPLE_RATE = 24000
-REPO_SRC = Path(__file__).resolve().parents[1] / "src" / "the_oracle"
+REPO_SRC = Path(__file__).resolve().parents[1] / "src" / "rhetoric"
 
 
 def _ramp(seconds: float, sample_rate: int = SAMPLE_RATE) -> np.ndarray:
@@ -365,7 +365,7 @@ _STEM_TARGET_NAMES: frozenset[str] = _WRITER_MANIFEST["stem_target_names"]
 _PREVIEW_TARGET_NAMES: frozenset[str] = _WRITER_MANIFEST["preview_target_names"]
 _EXPECTED_STEM_WRITERS: frozenset[str] = _WRITER_MANIFEST["stem_writers"]
 # The preview-side gate: preview audio is produced by
-# OraclePipeline.render_preview alone — pause-only utterances route through
+# RhetoricPipeline.render_preview alone — pause-only utterances route through
 # _write_pause_only_stem there, spoken ones through the gated engine path.
 _EXPECTED_PREVIEW_WRITERS: frozenset[str] = _WRITER_MANIFEST["preview_writers"]
 _MIN_STEM_SITES: int = _WRITER_MANIFEST["min_stem_sites"]
@@ -408,7 +408,7 @@ def _scan_cache_write_sites() -> list[tuple[str, int, str, str]]:
     """Every save_wav/atomic_write call writing a stem- or preview-shaped file.
 
     Returns ``(file_name, line, write_fn, kind)`` tuples for the whole of
-    ``src/the_oracle``.
+    ``src/rhetoric``.
     """
     sites: list[tuple[str, int, str, str]] = []
     for path in sorted(REPO_SRC.rglob("*.py")):
@@ -440,7 +440,7 @@ class TestWriterManifest:
         """The preview-side equivalent of the stem gate.
 
         Preview files are user-facing audio produced by
-        OraclePipeline.render_preview: pause-only utterances bank canonical
+        RhetoricPipeline.render_preview: pause-only utterances bank canonical
         silence through _write_pause_only_stem (which writes via the counted
         atomic_write), spoken ones go through save_wav here. A second writer
         would reintroduce exactly the ungated-bytes hole the stem gate closed.
@@ -449,7 +449,7 @@ class TestWriterManifest:
         offenders = sorted({name for name, _line, _fn, _kind in sites if name not in _EXPECTED_PREVIEW_WRITERS})
         assert offenders == [], (
             "New modules are writing preview files directly. Preview audio is "
-            "owned by OraclePipeline.render_preview (pause-only utterances via "
+            "owned by RhetoricPipeline.render_preview (pause-only utterances via "
             "_write_pause_only_stem, spoken ones via the gated engine path) — "
             "route the write there, or extend the record's preview_writers "
             f"consciously with a reason. Offending modules: {offenders}"
@@ -543,15 +543,15 @@ def _run_pause_only_preview(monkeypatch, tmp_path: Path, sample_rate: int = 2400
     """
     from types import SimpleNamespace
 
-    from the_oracle.models.project import Utterance, VoiceProfile
-    from the_oracle.pipeline import OraclePipeline
+    from rhetoric.models.project import Utterance, VoiceProfile
+    from rhetoric.pipeline import RhetoricPipeline
 
     ref_path = tmp_path / "ref.wav"
     sf.write(ref_path, np.zeros(240, dtype=np.float32), 24000)
     utterance = Utterance(index=0, original_text="   ", repaired_text="", speaker="A", pause_after_ms=250)
     profile = VoiceProfile(name="A", speaker="A", reference_audio=[ref_path], engine_params=VoiceSettings())
     # render_preview derives its cache from the reference's parent — same root here.
-    cache = ProjectCache(ref_path.parent / ".oracle_preview")
+    cache = ProjectCache(ref_path.parent / ".rhetoric_preview")
 
     class _EngineDouble:
         def ensure_model_ready(self) -> None:
@@ -569,8 +569,8 @@ def _run_pause_only_preview(monkeypatch, tmp_path: Path, sample_rate: int = 2400
     # Class bodies cannot read the enclosing function's parameters, so the
     # rate is attached after the definition.
     _EngineDouble.sample_rate = sample_rate
-    monkeypatch.setattr("the_oracle.pipeline.ChatterboxEngine", lambda *args, **kwargs: _EngineDouble())
-    pipeline = OraclePipeline.__new__(OraclePipeline)
+    monkeypatch.setattr("rhetoric.pipeline.ChatterboxEngine", lambda *args, **kwargs: _EngineDouble())
+    pipeline = RhetoricPipeline.__new__(RhetoricPipeline)
     output = pipeline.render_preview(utterance, profile, "standard", progress_callback=None)
     return output, cache
 
@@ -596,11 +596,11 @@ def test_preview_pause_output_is_byte_identical_to_the_canonical_writer(monkeypa
 
 
 def _render_preview_function():
-    """The AST node of OraclePipeline.render_preview, plus a zeros-call finder."""
+    """The AST node of RhetoricPipeline.render_preview, plus a zeros-call finder."""
     import ast
     import inspect
 
-    from the_oracle import pipeline as pipeline_module
+    from rhetoric import pipeline as pipeline_module
 
     tree = ast.parse(inspect.getsource(pipeline_module))
     for node in ast.walk(tree):

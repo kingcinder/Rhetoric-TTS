@@ -46,7 +46,7 @@ Type: filesandordirs; Name: "{app}"
 [Code]
 // When setup finishes, record the EULA acceptance given on the license
 // page in the exact JSON shape the app checks
-// (src/the_oracle/eula_acceptance.py): the app reads
+// (src/rhetoric/eula_acceptance.py): the app reads
 // {app}\eula_acceptance.json and compares eula_sha256 with the digest of
 // its bundled EULA text. build.ps1 passes that digest in as
 // /DEulaSha256. Reaching ssPostInstall means the license was accepted

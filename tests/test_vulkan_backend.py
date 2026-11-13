@@ -15,9 +15,9 @@ import numpy as np
 import pytest
 import soundfile as sf
 
-from the_oracle.models.cache import CachedReference, ProjectCache
-from the_oracle.models.project import VoiceSettings
-from the_oracle.pipeline import (
+from rhetoric.models.cache import CachedReference, ProjectCache
+from rhetoric.models.project import VoiceSettings
+from rhetoric.pipeline import (
     RenderSettings,
     SynthesisTask,
     _chunk_engine_key,
@@ -25,9 +25,9 @@ from the_oracle.pipeline import (
     synthesize_task,
     synthesize_tasks_batched,
 )
-from the_oracle.utils.hashing import build_chunk_hash, hash_file
-import the_oracle.tts_engines.vulkan_backend as vulkan_backend
-from the_oracle.tts_engines.vulkan_backend import (
+from rhetoric.utils.hashing import build_chunk_hash, hash_file
+import rhetoric.tts_engines.vulkan_backend as vulkan_backend
+from rhetoric.tts_engines.vulkan_backend import (
     AudioCppUnavailableError,
     AudioCppVulkanEngine,
     RDNA1VulkanError,
@@ -151,13 +151,13 @@ def test_ensure_model_ready_flags_nonexistent_model_path(tmp_path: Path) -> None
     # The recovery command is in the message, so fixing the model is one
     # copy-paste away instead of a README hunt.
     assert "download_audio_cpp_model.sh" in str(excinfo.value)
-    assert "ORACLE_AUDIOCPP_MODEL" in str(excinfo.value)
+    assert "RHETORIC_AUDIOCPP_MODEL" in str(excinfo.value)
 
 
 def test_ensure_model_ready_unset_model_includes_recovery_command(monkeypatch, tmp_path: Path) -> None:
     # Hermetic: a dev machine with the env var or the repo-local model present
     # would otherwise route this through a different branch entirely.
-    monkeypatch.delenv("ORACLE_AUDIOCPP_MODEL", raising=False)
+    monkeypatch.delenv("RHETORIC_AUDIOCPP_MODEL", raising=False)
     monkeypatch.setattr(vulkan_backend, "find_audiocpp_model", lambda: None)
     binary = tmp_path / "audiocpp_cli"
     binary.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
@@ -359,7 +359,7 @@ def test_device_index_from_constructor_and_env(tmp_path: Path, monkeypatch) -> N
     command2 = _recorded_command(tmp_path, monkeypatch, engine2)
     assert _flag_value(command2, "--device") == "1"
 
-    monkeypatch.setenv("ORACLE_AUDIOCPP_DEVICE", "0")
+    monkeypatch.setenv("RHETORIC_AUDIOCPP_DEVICE", "0")
     engine3 = _engine_with_fake_binary(tmp_path)
     command3 = _recorded_command(tmp_path, monkeypatch, engine3)
     assert _flag_value(command3, "--device") == "0"
@@ -370,13 +370,13 @@ def test_threads_env_forwarded(tmp_path: Path, monkeypatch) -> None:
     command = _recorded_command(tmp_path, monkeypatch, engine)
     assert "--threads" not in command
 
-    monkeypatch.setenv("ORACLE_AUDIOCPP_THREADS", "8")
+    monkeypatch.setenv("RHETORIC_AUDIOCPP_THREADS", "8")
     command2 = _recorded_command(tmp_path, monkeypatch, engine)
     assert _flag_value(command2, "--threads") == "8"
 
 
 def test_constructor_device_index_wins_over_env(tmp_path: Path, monkeypatch) -> None:
-    monkeypatch.setenv("ORACLE_AUDIOCPP_DEVICE", "0")
+    monkeypatch.setenv("RHETORIC_AUDIOCPP_DEVICE", "0")
     engine = _engine_with_fake_binary(tmp_path, device_index=1)
     command = _recorded_command(tmp_path, monkeypatch, engine)
     assert _flag_value(command, "--device") == "1"
@@ -387,7 +387,7 @@ def test_constructor_threads_forwarded_and_wins_over_env(tmp_path: Path, monkeyp
     command = _recorded_command(tmp_path, monkeypatch, engine)
     assert _flag_value(command, "--threads") == "4"
 
-    monkeypatch.setenv("ORACLE_AUDIOCPP_THREADS", "8")
+    monkeypatch.setenv("RHETORIC_AUDIOCPP_THREADS", "8")
     engine2 = _engine_with_fake_binary(tmp_path, threads=4)
     command2 = _recorded_command(tmp_path, monkeypatch, engine2)
     assert _flag_value(command2, "--threads") == "4"
@@ -395,11 +395,11 @@ def test_constructor_threads_forwarded_and_wins_over_env(tmp_path: Path, monkeyp
 
 def test_constructor_timeout_wins_over_env_and_feeds_run_command(tmp_path: Path, monkeypatch) -> None:
     """The timeout constructor arg (fed by the GUI spin box / CLI flag) wins
-    over ORACLE_AUDIOCPP_TIMEOUT and is what _run_command actually uses."""
+    over RHETORIC_AUDIOCPP_TIMEOUT and is what _run_command actually uses."""
     engine = _engine_with_fake_binary(tmp_path, timeout=90)
     assert engine.timeout == 90
 
-    monkeypatch.setenv("ORACLE_AUDIOCPP_TIMEOUT", "30")
+    monkeypatch.setenv("RHETORIC_AUDIOCPP_TIMEOUT", "30")
     assert engine.timeout == 90  # constructor wins
 
     # The env var is honored when no constructor override is given.
@@ -407,7 +407,7 @@ def test_constructor_timeout_wins_over_env_and_feeds_run_command(tmp_path: Path,
     assert engine2.timeout == 30
 
     # Default without env override is 600.
-    monkeypatch.delenv("ORACLE_AUDIOCPP_TIMEOUT", raising=False)
+    monkeypatch.delenv("RHETORIC_AUDIOCPP_TIMEOUT", raising=False)
     engine3 = _engine_with_fake_binary(tmp_path)
     assert engine3.timeout == 600
 
@@ -418,7 +418,7 @@ def test_constructor_timeout_wins_over_env_and_feeds_run_command(tmp_path: Path,
         recorded["timeout"] = kwargs.get("timeout")
         return _fake_completed(0)
 
-    monkeypatch.setattr("the_oracle.tts_engines.vulkan_backend.subprocess.run", recording_run)
+    monkeypatch.setattr("rhetoric.tts_engines.vulkan_backend.subprocess.run", recording_run)
     reference = tmp_path / "ref.wav"
     sf.write(reference, np.zeros(2400, dtype=np.float32), 24000)
     conditioning = VulkanConditioning(cache_id="c1", reference_path=reference, speaker="A")
@@ -434,7 +434,7 @@ def test_list_devices_parses_audio_cpp_output(tmp_path: Path, monkeypatch) -> No
         'CPU:0 "AMD Ryzen 7 3700X 8-Core Processor" [CPU]\n'
     )
     monkeypatch.setattr(
-        "the_oracle.tts_engines.vulkan_backend.subprocess.run",
+        "rhetoric.tts_engines.vulkan_backend.subprocess.run",
         lambda *a, **k: _fake_completed(0, stdout=sample),
     )
     devices = engine.list_devices()
@@ -444,7 +444,7 @@ def test_list_devices_parses_audio_cpp_output(tmp_path: Path, monkeypatch) -> No
 def test_list_devices_raises_without_binary(tmp_path: Path, monkeypatch) -> None:
     # Do not depend on what is on disk (this repo may have the real built
     # binary at audio.cpp/build/...), so force binary discovery to fail.
-    monkeypatch.setattr("the_oracle.tts_engines.vulkan_backend.find_audiocpp_binary", lambda: None)
+    monkeypatch.setattr("rhetoric.tts_engines.vulkan_backend.find_audiocpp_binary", lambda: None)
     engine = AudioCppVulkanEngine()
     with pytest.raises(AudioCppUnavailableError, match="build_audio_cpp"):
         engine.list_devices()
@@ -510,7 +510,7 @@ def test_synthesize_batch_runs_one_process_for_many_utterances(tmp_path: Path, m
     def fake_run(command: list[str], **kwargs) -> subprocess.CompletedProcess[str]:
         # The batch passes a scaled timeout (per-synthesis timeout x request
         # count); the fake must accept it. Computed from the engine so the
-        # assertion is hermetic even when ORACLE_AUDIOCPP_TIMEOUT is exported.
+        # assertion is hermetic even when RHETORIC_AUDIOCPP_TIMEOUT is exported.
         assert kwargs.get("timeout") == engine.timeout * 2
         recorded["command"] = command
         sequence_path = Path(command[command.index("--request-sequence") + 1])
@@ -646,7 +646,7 @@ def test_synthesize_batch_rejects_over_cap_entries_from_constructor(tmp_path: Pa
     """The engine's defense-in-depth cap honors the constructor batch_limit
     (not just the env var), so a direct caller can never build an unbounded
     requests.json even when the cap is set via settings."""
-    monkeypatch.setenv("ORACLE_AUDIOCPP_MAX_BATCH", "64")
+    monkeypatch.setenv("RHETORIC_AUDIOCPP_MAX_BATCH", "64")
     engine = _engine_with_fake_binary(tmp_path, batch_limit=2)
     reference = tmp_path / "ref.wav"
     sf.write(reference, np.zeros(2400, dtype=np.float32), 24000)
@@ -658,10 +658,10 @@ def test_synthesize_batch_rejects_over_cap_entries_from_constructor(tmp_path: Pa
 
 def test_synthesize_batch_rejects_over_cap_entries(tmp_path: Path, monkeypatch) -> None:
     """Defense-in-depth: the engine itself refuses a group larger than
-    ORACLE_AUDIOCPP_MAX_BATCH so a direct caller (e.g. a future server mode)
+    RHETORIC_AUDIOCPP_MAX_BATCH so a direct caller (e.g. a future server mode)
     can never build an unbounded requests.json -- even one that skips the
     pipeline's grouping in synthesize_tasks_batched."""
-    monkeypatch.setenv("ORACLE_AUDIOCPP_MAX_BATCH", "2")
+    monkeypatch.setenv("RHETORIC_AUDIOCPP_MAX_BATCH", "2")
     engine = _engine_with_fake_binary(tmp_path)
     reference = tmp_path / "ref.wav"
     sf.write(reference, np.zeros(2400, dtype=np.float32), 24000)
@@ -677,13 +677,13 @@ def test_synthesize_batch_rejects_over_cap_entries(tmp_path: Path, monkeypatch) 
     entries = [("Probe.", conditioning, VoiceSettings()) for _ in range(3)]
     with pytest.raises(ValueError, match="at most 2 requests per subprocess") as excinfo:
         engine.synthesize_batch(entries)
-    assert "ORACLE_AUDIOCPP_MAX_BATCH" in str(excinfo.value)
+    assert "RHETORIC_AUDIOCPP_MAX_BATCH" in str(excinfo.value)
 
 
 def test_synthesize_batch_accepts_exactly_the_cap(tmp_path: Path, monkeypatch) -> None:
-    """A group of exactly ORACLE_AUDIOCPP_MAX_BATCH entries is allowed (the
+    """A group of exactly RHETORIC_AUDIOCPP_MAX_BATCH entries is allowed (the
     boundary the pipeline's grouping sends per subprocess)."""
-    monkeypatch.setenv("ORACLE_AUDIOCPP_MAX_BATCH", "2")
+    monkeypatch.setenv("RHETORIC_AUDIOCPP_MAX_BATCH", "2")
     engine = _engine_with_fake_binary(tmp_path)
     reference = tmp_path / "ref.wav"
     sf.write(reference, np.zeros(2400, dtype=np.float32), 24000)
@@ -705,34 +705,34 @@ def test_synthesize_batch_accepts_exactly_the_cap(tmp_path: Path, monkeypatch) -
 def test_engine_batch_limit_constructor_wins_over_env(monkeypatch) -> None:
     """The batch cap is threaded like device/threads/timeout: a constructor
     arg (fed by the CLI flag / GUI spin / manifest field) wins over
-    ORACLE_AUDIOCPP_MAX_BATCH, and without either the default is 32."""
-    monkeypatch.setenv("ORACLE_AUDIOCPP_MAX_BATCH", "64")
+    RHETORIC_AUDIOCPP_MAX_BATCH, and without either the default is 32."""
+    monkeypatch.setenv("RHETORIC_AUDIOCPP_MAX_BATCH", "64")
     engine = AudioCppVulkanEngine(batch_limit=8)
     assert engine.batch_limit == 8
 
     engine2 = AudioCppVulkanEngine()
     assert engine2.batch_limit == 64  # env var honored when no ctor arg
 
-    monkeypatch.delenv("ORACLE_AUDIOCPP_MAX_BATCH", raising=False)
+    monkeypatch.delenv("RHETORIC_AUDIOCPP_MAX_BATCH", raising=False)
     engine3 = AudioCppVulkanEngine()
     assert engine3.batch_limit == 32  # default
 
 
 def test_vulkan_batch_max_requests_default_and_override(monkeypatch) -> None:
-    monkeypatch.delenv("ORACLE_AUDIOCPP_MAX_BATCH", raising=False)
+    monkeypatch.delenv("RHETORIC_AUDIOCPP_MAX_BATCH", raising=False)
     assert _vulkan_batch_max_requests() == 32
-    monkeypatch.setenv("ORACLE_AUDIOCPP_MAX_BATCH", "8")
+    monkeypatch.setenv("RHETORIC_AUDIOCPP_MAX_BATCH", "8")
     assert _vulkan_batch_max_requests() == 8
-    monkeypatch.setenv("ORACLE_AUDIOCPP_MAX_BATCH", "bogus")
+    monkeypatch.setenv("RHETORIC_AUDIOCPP_MAX_BATCH", "bogus")
     assert _vulkan_batch_max_requests() == 32  # malformed falls back
-    monkeypatch.setenv("ORACLE_AUDIOCPP_MAX_BATCH", "0")
+    monkeypatch.setenv("RHETORIC_AUDIOCPP_MAX_BATCH", "0")
     assert _vulkan_batch_max_requests() == 1  # clamped to >= 1
 
 
 def test_synthesize_tasks_batched_groups_and_isolates_failures(tmp_path: Path, monkeypatch) -> None:
     """Cache-missing stems split into bounded groups (one subprocess each), and
     a failed group only takes down its own tasks -- the rest still render."""
-    monkeypatch.setenv("ORACLE_AUDIOCPP_MAX_BATCH", "2")
+    monkeypatch.setenv("RHETORIC_AUDIOCPP_MAX_BATCH", "2")
     project_cache = ProjectCache(tmp_path / "project")
     engine = _BatchStubEngine()
     tasks = [
@@ -814,7 +814,7 @@ def test_synthesize_tasks_batched_propagates_rdna1_failure(tmp_path: Path, monke
                 "RDNA1 device-lost limitation; re-run with --inference-backend pytorch"
             )
 
-    monkeypatch.setenv("ORACLE_AUDIOCPP_MAX_BATCH", "2")
+    monkeypatch.setenv("RHETORIC_AUDIOCPP_MAX_BATCH", "2")
     project_cache = ProjectCache(tmp_path / "project")
     task = SynthesisTask(
         utterance_index=1,
@@ -837,7 +837,7 @@ def test_synthesize_tasks_batched_propagates_rdna1_failure(tmp_path: Path, monke
 def test_synthesize_tasks_batched_forwards_request_completion(tmp_path: Path, monkeypatch) -> None:
     """The pipeline maps each group-local request index back to the task's
     utterance_index and forwards it to on_request_complete as it lands."""
-    monkeypatch.setenv("ORACLE_AUDIOCPP_MAX_BATCH", "2")
+    monkeypatch.setenv("RHETORIC_AUDIOCPP_MAX_BATCH", "2")
     project_cache = ProjectCache(tmp_path / "project")
     engine = _BatchStubEngine(fail_on=None)
     tasks = [
@@ -912,7 +912,7 @@ def test_synthesize_batch_streams_progress_per_request(tmp_path: Path, monkeypat
             self.killed = True
             self.returncode = 1
 
-    monkeypatch.setattr("the_oracle.tts_engines.vulkan_backend.subprocess.Popen", _FakePopen)
+    monkeypatch.setattr("rhetoric.tts_engines.vulkan_backend.subprocess.Popen", _FakePopen)
 
     completed: list[int] = []
     outputs = engine.synthesize_batch(
@@ -958,7 +958,7 @@ def test_synthesize_batch_streaming_timeout_kills_child(tmp_path: Path, monkeypa
             self.killed = True
             self.returncode = 1
 
-    monkeypatch.setattr("the_oracle.tts_engines.vulkan_backend.subprocess.Popen", _HangingPopen)
+    monkeypatch.setattr("rhetoric.tts_engines.vulkan_backend.subprocess.Popen", _HangingPopen)
 
     with pytest.raises(RuntimeError, match="timed out after"):
         engine.synthesize_batch(
@@ -1059,7 +1059,7 @@ def test_vulkan_backend_smoke_requires_device() -> None:
     if engine.binary is None:
         pytest.skip("audiocpp_cli is not built; run scripts/build_audio_cpp.sh first.")
     if engine.model is None:
-        pytest.skip("Chatterbox ggml model is not configured; set ORACLE_AUDIOCPP_MODEL.")
+        pytest.skip("Chatterbox ggml model is not configured; set RHETORIC_AUDIOCPP_MODEL.")
 
     # Reaching here means a Vulkan device exists and the CLI + model are
     # configured. Exercise the deterministic preflight only -- real synthesis

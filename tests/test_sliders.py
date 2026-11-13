@@ -6,7 +6,7 @@ pytest.importorskip("PySide6")
 
 from PySide6.QtWidgets import QApplication
 
-from the_oracle.gui_widgets import PerceptualSlider
+from rhetoric.gui_widgets import PerceptualSlider
 
 _APP = QApplication.instance() or QApplication([])
 

@@ -7,19 +7,19 @@ import pytest
 
 pytestmark = pytest.mark.slow
 
-from the_oracle.models.project import VoiceProfile, VoiceSettings
-from the_oracle.pipeline import (
-    OraclePipeline,
+from rhetoric.models.project import VoiceProfile, VoiceSettings
+from rhetoric.pipeline import (
+    RhetoricPipeline,
     RenderPlan,
     RenderSettings,
     PartialRenderError,
     SynthesisResult,
     Utterance,
 )
-from the_oracle.smoke import _DeterministicChatterboxEngine, _SmokeEmotionClassifier, _write_reference
-from the_oracle.text_repair.repairer import RepairResult
+from rhetoric.smoke import _DeterministicChatterboxEngine, _SmokeEmotionClassifier, _write_reference
+from rhetoric.text_repair.repairer import RepairResult
 
-import the_oracle.pipeline as pipeline_module
+import rhetoric.pipeline as pipeline_module
 
 
 class _StubTextRepairPipeline:
@@ -264,16 +264,16 @@ def _run_render_with_interrupt(
     expected_message: str,
 ) -> RenderPlan:
     with (
-        patch("the_oracle.pipeline.ChatterboxEngine", _DeterministicChatterboxEngine),
-        patch("the_oracle.pipeline.GoEmotionsClassifier", _SmokeEmotionClassifier),
-        patch("the_oracle.pipeline.assemble_dialogue", lambda *_args, **_kwargs: (b"", 24000)),
-        patch("the_oracle.pipeline.write_flac", lambda path, audio, rate, metadata: str(path)),
-        patch("the_oracle.pipeline.next_available_output_path", lambda path: path),
-        patch("the_oracle.pipeline.TextRepairPipeline", _StubTextRepairPipeline),
-        patch("the_oracle.pipeline._run_tasks_with_worker_pool", new=pool_override),
-        patch("the_oracle.pipeline._sequential_worker_execution", new=seq_override),
+        patch("rhetoric.pipeline.ChatterboxEngine", _DeterministicChatterboxEngine),
+        patch("rhetoric.pipeline.GoEmotionsClassifier", _SmokeEmotionClassifier),
+        patch("rhetoric.pipeline.assemble_dialogue", lambda *_args, **_kwargs: (b"", 24000)),
+        patch("rhetoric.pipeline.write_flac", lambda path, audio, rate, metadata: str(path)),
+        patch("rhetoric.pipeline.next_available_output_path", lambda path: path),
+        patch("rhetoric.pipeline.TextRepairPipeline", _StubTextRepairPipeline),
+        patch("rhetoric.pipeline._run_tasks_with_worker_pool", new=pool_override),
+        patch("rhetoric.pipeline._sequential_worker_execution", new=seq_override),
     ):
-        pipeline = OraclePipeline()
+        pipeline = RhetoricPipeline()
         with pytest.raises(RuntimeError, match=expected_message):
             pipeline.render(plan, render_settings)
     return plan
@@ -333,7 +333,7 @@ def test_render_worker_pool_failure_triggers_sequential(tmp_path: Path) -> None:
 
 def test_long_utterance_gets_chunked_before_synthesis(tmp_path: Path) -> None:
     """Verify that overlong utterances are split into multiple synthesis tasks."""
-    from the_oracle.utils.chunking import chunk_utterance
+    from rhetoric.utils.chunking import chunk_utterance
 
     # Create a long utterance that should be chunked
     long_text = "This is a very long sentence. " * 20  # ~560 chars
@@ -342,20 +342,20 @@ def test_long_utterance_gets_chunked_before_synthesis(tmp_path: Path) -> None:
     # Should produce multiple chunks
     assert len(chunks) > 1
     # All chunks should be within size limits
-    from the_oracle.utils.chunking import MAX_CHUNK_SIZE
+    from rhetoric.utils.chunking import MAX_CHUNK_SIZE
     assert all(len(c.text) <= MAX_CHUNK_SIZE + 50 for c in chunks)  # Small tolerance
     # Chunks should preserve order
     for i, chunk in enumerate(chunks):
         assert chunk.chunk_sequence == i
         assert chunk.parent_index == 1
     # Reassembly should match original
-    from the_oracle.utils.chunking import verify_chunking
+    from rhetoric.utils.chunking import verify_chunking
     assert verify_chunking(long_text, chunks) is True
 
 
 def test_short_utterance_stays_unsplit(tmp_path: Path) -> None:
     """Verify that short utterances remain as single chunks."""
-    from the_oracle.utils.chunking import chunk_utterance, MIN_CHUNK_SIZE
+    from rhetoric.utils.chunking import chunk_utterance, MIN_CHUNK_SIZE
 
     short_text = "Short utterance."
     chunks = chunk_utterance(short_text, parent_index=1)
@@ -375,7 +375,7 @@ def test_chunked_utterance_progress_accounting() -> None:
     This is a unit test that verifies the accounting logic without running
     actual synthesis.
     """
-    from the_oracle.utils.chunking import chunk_utterance, MIN_CHUNK_SIZE, MAX_CHUNK_SIZE
+    from rhetoric.utils.chunking import chunk_utterance, MIN_CHUNK_SIZE, MAX_CHUNK_SIZE
     
     # Simulate what happens in pipeline.render() when chunking occurs
     # Original utterance count
@@ -493,7 +493,7 @@ def test_chunked_row_lifecycle_e2e() -> None:
     - Row state reset before rerender
     - Preview uses same chunking path as render
     """
-    from the_oracle.utils.chunking import chunk_utterance, MIN_CHUNK_SIZE, MAX_CHUNK_SIZE
+    from rhetoric.utils.chunking import chunk_utterance, MIN_CHUNK_SIZE, MAX_CHUNK_SIZE
     
     # Test 1: Non-chunked row (short text)
     short_text = "Hello world."
@@ -661,11 +661,11 @@ def test_render_partial_failure_with_stub_synthesis() -> None:
     - Untouched rows after failure remain status="pending"
     - Plan metadata records which rows failed
     """
-    from the_oracle.pipeline import (
-        SynthesisResult, OraclePipeline, RenderSettings, SpeakerSettings,
+    from rhetoric.pipeline import (
+        SynthesisResult, RhetoricPipeline, RenderSettings, SpeakerSettings,
         _sequential_worker_execution,
     )
-    from the_oracle.models.project import VoiceSettings, RenderPlan, Utterance
+    from rhetoric.models.project import VoiceSettings, RenderPlan, Utterance
     from pathlib import Path
     
     # Create a mock plan with 3 utterances
@@ -827,13 +827,13 @@ def test_render_raises_on_partial_failure(tmp_path: Path) -> None:
         return iter([failing_result]), "parallel"
 
     with (
-        patch("the_oracle.pipeline._run_tasks_with_worker_pool", new=fake_pool),
-        patch("the_oracle.pipeline._sequential_worker_execution", new=fake_seq),
-        patch("the_oracle.pipeline._should_use_worker_pool", return_value=True),
-        patch("the_oracle.pipeline._MIN_TASKS_FOR_POOL", 0),
-        patch("the_oracle.pipeline.assemble_dialogue", lambda *_args, **_kwargs: (_args, 24000)),
-        patch("the_oracle.pipeline.write_flac") as write_flac,
+        patch("rhetoric.pipeline._run_tasks_with_worker_pool", new=fake_pool),
+        patch("rhetoric.pipeline._sequential_worker_execution", new=fake_seq),
+        patch("rhetoric.pipeline._should_use_worker_pool", return_value=True),
+        patch("rhetoric.pipeline._MIN_TASKS_FOR_POOL", 0),
+        patch("rhetoric.pipeline.assemble_dialogue", lambda *_args, **_kwargs: (_args, 24000)),
+        patch("rhetoric.pipeline.write_flac") as write_flac,
     ):
         with pytest.raises(PartialRenderError):
-            OraclePipeline().render(plan, render_settings)
+            RhetoricPipeline().render(plan, render_settings)
         write_flac.assert_not_called()

@@ -39,7 +39,7 @@ sys.path.insert(0, str(SCRIPTS_DIR))
 sys.path.insert(0, str(SRC_DIR))
 
 import release  # noqa: E402
-from the_oracle import third_party  # noqa: E402
+from rhetoric import third_party  # noqa: E402
 
 BLOCKER = "blocker"
 WARNING = "warning"
@@ -218,20 +218,20 @@ def _license_policy_findings(root: Path, inventory: third_party.Inventory) -> li
 
 
 def _support_bundle_available() -> bool:
-    return importlib.util.find_spec("the_oracle.support_bundle") is not None
+    return importlib.util.find_spec("rhetoric.support_bundle") is not None
 
 
 def _bug_report_available() -> bool:
     """The composed support layer (report, store, package, links), not just
     the raw bundle it builds on."""
-    return importlib.util.find_spec("the_oracle.support") is not None
+    return importlib.util.find_spec("rhetoric.support") is not None
 
 
 def _artifact_finding(root: Path, version: str) -> Finding:
     """Both published artifacts, not just whichever name a glob happens to hit.
 
-    The sdist is ``the_oracle-<version>.tar.gz`` and the wheel carries a
-    ``-<tag>.whl`` suffix, so a single ``the_oracle-<version>-*`` glob silently
+    The sdist is ``rhetoric-<version>.tar.gz`` and the wheel carries a
+    ``-<tag>.whl`` suffix, so a single ``rhetoric-<version>-*`` glob silently
     counted only the wheel. A release record with half the artifacts is a
     warning here (the build folder is gitignored, so a fresh clone cannot have
     either), but the report must name the half that is missing.
@@ -299,7 +299,7 @@ def audit(root: Path = REPO_ROOT, *, today: date | None = None) -> list[Finding]
                 False,
                 BLOCKER,
                 "; ".join(key_problems),
-                "Register the production verify key in src/the_oracle/licensing/keys.py (see docs/LICENSING_OPS.md §1).",
+                "Register the production verify key in src/rhetoric/licensing/keys.py (see docs/LICENSING_OPS.md §1).",
             )
         )
     else:
@@ -407,7 +407,7 @@ def audit(root: Path = REPO_ROOT, *, today: date | None = None) -> list[Finding]
                 "support_bundle",
                 False,
                 BLOCKER,
-                "the_oracle.support_bundle is not importable.",
+                "rhetoric.support_bundle is not importable.",
                 "Install or implement the support-bundle capability.",
             )
         )
@@ -427,7 +427,7 @@ def audit(root: Path = REPO_ROOT, *, today: date | None = None) -> list[Finding]
                 "bug_report",
                 True,
                 WARNING,
-                "the_oracle.support is not importable; early users have only the raw support bundle.",
+                "rhetoric.support is not importable; early users have only the raw support bundle.",
                 "Install the bug-report workflow or document the bundle-only support path.",
             )
         )

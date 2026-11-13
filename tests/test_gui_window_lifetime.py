@@ -62,7 +62,7 @@ def test_teardown_destroys_the_window_so_it_cannot_pin(
 def test_wizard_launch_timer_does_not_outlive_the_window(
     qt_app, monkeypatch: pytest.MonkeyPatch, tmp_path
 ) -> None:
-    from the_oracle.inference_wizard import InferenceSetupWizard
+    from rhetoric.inference_wizard import InferenceSetupWizard
 
     window, _paths = _build_window(monkeypatch, tmp_path)
     # Run the queued _on_gui_shown: it arms the crash flow and the 250 ms
@@ -143,7 +143,7 @@ def test_recording_wizard_timer_does_not_outlive_the_window(
     above the window (the pending call fires after destruction). Both fail
     the weakref check below.
     """
-    from the_oracle.recording_wizard import RecordingStudioSetupWizard
+    from rhetoric.recording_wizard import RecordingStudioSetupWizard
 
     window, _paths = _build_window(monkeypatch, tmp_path)
     window.open_recording_studio()

@@ -7,7 +7,7 @@ import numpy as np
 import pytest
 import soundfile as sf
 
-from the_oracle.audio import recorder
+from rhetoric.audio import recorder
 
 
 class _FakeStream:

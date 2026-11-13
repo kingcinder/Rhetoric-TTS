@@ -1,8 +1,8 @@
 """Hermetic tests for the automatic CPU→GPU (Vulkan) backend setup.
 
-The orchestrator (the_oracle.vulkan_setup) completes the switch by itself:
+The orchestrator (rhetoric.vulkan_setup) completes the switch by itself:
 it builds audiocpp_cli when missing, downloads the Chatterbox model when
-missing, and sets ORACLE_AUDIOCPP_CLI/ORACLE_AUDIOCPP_MODEL for the session.
+missing, and sets RHETORIC_AUDIOCPP_CLI/RHETORIC_AUDIOCPP_MODEL for the session.
 These tests exercise that with fake build/download scripts in a temp repo so
 nothing touches the real audio.cpp checkout, the network, or the GPU.
 
@@ -20,7 +20,7 @@ from pathlib import Path
 
 import pytest
 
-from the_oracle import vulkan_setup
+from rhetoric import vulkan_setup
 
 
 def _fake_repo(tmp_path: Path, binary: Path, model: Path) -> Path:
@@ -28,7 +28,7 @@ def _fake_repo(tmp_path: Path, binary: Path, model: Path) -> Path:
 
     ``build_audio_cpp.sh`` creates the ``audiocpp_cli`` file (unless
     FAKE_BUILD_FAIL=1 is set), and ``download_audio_cpp_model.sh`` creates the
-    model file and prints the ORACLE_AUDIOCPP_MODEL export line (unless
+    model file and prints the RHETORIC_AUDIOCPP_MODEL export line (unless
     FAKE_DOWNLOAD_FAIL=1 is set). ``model_path`` is baked in so the parse step
     has something to resolve.
     """
@@ -55,7 +55,7 @@ def _fake_repo(tmp_path: Path, binary: Path, model: Path) -> Path:
         "fi\n"
         f'mkdir -p "$(dirname {model})"\n'
         f'touch {model}\n'
-        f'echo \'export ORACLE_AUDIOCPP_MODEL="{model}"\'\n',
+        f'echo \'export RHETORIC_AUDIOCPP_MODEL="{model}"\'\n',
         encoding="utf-8",
     )
     return root
@@ -64,7 +64,7 @@ def _fake_repo(tmp_path: Path, binary: Path, model: Path) -> Path:
 def test_parse_model_export_extracts_path() -> None:
     sample = (
         "Chatterbox model installed: /tmp/x.gguf\n\n"
-        '    export ORACLE_AUDIOCPP_MODEL="/tmp/x.gguf"\n'
+        '    export RHETORIC_AUDIOCPP_MODEL="/tmp/x.gguf"\n'
     )
     assert vulkan_setup.parse_model_export(sample) == "/tmp/x.gguf"
     assert vulkan_setup.parse_model_export("no export line here") == ""
@@ -110,17 +110,17 @@ def test_vulkan_setup_needed_when_configured(monkeypatch, tmp_path: Path) -> Non
     model = tmp_path / "model.gguf"
     model.write_text("m")
     monkeypatch.setattr(vulkan_setup, "find_audiocpp_binary", lambda: binary)
-    monkeypatch.setenv("ORACLE_AUDIOCPP_MODEL", str(model))
+    monkeypatch.setenv("RHETORIC_AUDIOCPP_MODEL", str(model))
     assert vulkan_setup.vulkan_setup_needed() == []
 
 
 def test_vulkan_setup_needed_reports_missing_pieces(monkeypatch) -> None:
     monkeypatch.setattr(vulkan_setup, "find_audiocpp_binary", lambda: None)
     monkeypatch.setattr(vulkan_setup, "find_audiocpp_model", lambda: None)
-    monkeypatch.delenv("ORACLE_AUDIOCPP_MODEL", raising=False)
+    monkeypatch.delenv("RHETORIC_AUDIOCPP_MODEL", raising=False)
     missing = vulkan_setup.vulkan_setup_needed()
     assert any("audiocpp_cli is not built" in item for item in missing)
-    assert any("ORACLE_AUDIOCPP_MODEL" in item for item in missing)
+    assert any("RHETORIC_AUDIOCPP_MODEL" in item for item in missing)
 
 
 def test_vulkan_setup_auto_detects_repo_local_model(
@@ -128,8 +128,8 @@ def test_vulkan_setup_auto_detects_repo_local_model(
 ) -> None:
     """The no-env case this machine hit: binary built and the model downloaded
     by the official script into the repo -- readiness must be [] with no
-    ORACLE_AUDIOCPP_MODEL export anywhere."""
-    import the_oracle.tts_engines.vulkan_backend as vk_backend
+    RHETORIC_AUDIOCPP_MODEL export anywhere."""
+    import rhetoric.tts_engines.vulkan_backend as vk_backend
 
     binary = tmp_path / "audiocpp_cli"
     binary.write_text("x")
@@ -138,7 +138,7 @@ def test_vulkan_setup_auto_detects_repo_local_model(
     model.write_text("m")
     monkeypatch.setattr(vulkan_setup, "find_audiocpp_binary", lambda: binary)
     monkeypatch.setattr(vk_backend, "_repo_root", lambda: tmp_path)
-    monkeypatch.delenv("ORACLE_AUDIOCPP_MODEL", raising=False)
+    monkeypatch.delenv("RHETORIC_AUDIOCPP_MODEL", raising=False)
     monkeypatch.delenv("AUDIOCPP_MODELS_ROOT", raising=False)
 
     assert vk_backend.find_audiocpp_model() == model
@@ -153,7 +153,7 @@ def test_run_vulkan_setup_already_configured_no_scripts(
     model = tmp_path / "model.gguf"
     model.write_text("m")
     monkeypatch.setattr(vulkan_setup, "find_audiocpp_binary", lambda: binary)
-    monkeypatch.setenv("ORACLE_AUDIOCPP_MODEL", str(model))
+    monkeypatch.setenv("RHETORIC_AUDIOCPP_MODEL", str(model))
     root = _fake_repo(tmp_path, binary, model)
 
     result = vulkan_setup.run_vulkan_setup(repo_root=root)
@@ -191,11 +191,11 @@ def test_run_vulkan_setup_builds_and_downloads(monkeypatch, tmp_path: Path) -> N
     model = tmp_path / "models" / "chatterbox-q8_0.gguf"
     root = _fake_repo(tmp_path, binary, model)
     saved = {
-        "ORACLE_AUDIOCPP_MODEL": os.environ.get("ORACLE_AUDIOCPP_MODEL"),
-        "ORACLE_AUDIOCPP_CLI": os.environ.get("ORACLE_AUDIOCPP_CLI"),
+        "RHETORIC_AUDIOCPP_MODEL": os.environ.get("RHETORIC_AUDIOCPP_MODEL"),
+        "RHETORIC_AUDIOCPP_CLI": os.environ.get("RHETORIC_AUDIOCPP_CLI"),
     }
-    monkeypatch.delenv("ORACLE_AUDIOCPP_MODEL", raising=False)
-    monkeypatch.delenv("ORACLE_AUDIOCPP_CLI", raising=False)
+    monkeypatch.delenv("RHETORIC_AUDIOCPP_MODEL", raising=False)
+    monkeypatch.delenv("RHETORIC_AUDIOCPP_CLI", raising=False)
     progress: list[str] = []
     # The probe sees the binary only after the fake build creates it.
     def probe() -> Path | None:
@@ -212,8 +212,8 @@ def test_run_vulkan_setup_builds_and_downloads(monkeypatch, tmp_path: Path) -> N
         assert result.model == str(model)
 
         # run_vulkan_setup mutates os.environ directly; read the live value.
-        assert os.environ.get("ORACLE_AUDIOCPP_CLI") == str(binary)
-        assert os.environ.get("ORACLE_AUDIOCPP_MODEL") == str(model)
+        assert os.environ.get("RHETORIC_AUDIOCPP_CLI") == str(binary)
+        assert os.environ.get("RHETORIC_AUDIOCPP_MODEL") == str(model)
         assert any("Building audiocpp_cli" in line for line in progress)
         assert any("Model ready" in line for line in progress)
     finally:
@@ -231,7 +231,7 @@ def test_run_vulkan_setup_skips_download_when_model_present(
     model.write_text("m")
     root = _fake_repo(tmp_path, binary, model)
     monkeypatch.setattr(vulkan_setup, "find_audiocpp_binary", lambda: binary)
-    monkeypatch.setenv("ORACLE_AUDIOCPP_MODEL", str(model))
+    monkeypatch.setenv("RHETORIC_AUDIOCPP_MODEL", str(model))
     progress: list[str] = []
 
     result = vulkan_setup.run_vulkan_setup(progress=progress.append, repo_root=root)
@@ -251,7 +251,7 @@ def test_run_vulkan_setup_build_failure(monkeypatch, tmp_path: Path) -> None:
     model = tmp_path / "models" / "chatterbox-q8_0.gguf"
     root = _fake_repo(tmp_path, binary, model)
     monkeypatch.setattr(vulkan_setup, "find_audiocpp_binary", lambda: None)
-    monkeypatch.delenv("ORACLE_AUDIOCPP_MODEL", raising=False)
+    monkeypatch.delenv("RHETORIC_AUDIOCPP_MODEL", raising=False)
     monkeypatch.setenv("FAKE_BUILD_FAIL", "1")
 
     result = vulkan_setup.run_vulkan_setup(repo_root=root)
@@ -271,11 +271,11 @@ def test_run_vulkan_setup_download_failure(monkeypatch, tmp_path: Path) -> None:
     root = _fake_repo(tmp_path, binary, model)
     monkeypatch.setattr(vulkan_setup, "find_audiocpp_binary", lambda: binary)
     monkeypatch.setattr(vulkan_setup, "find_audiocpp_model", lambda: None)
-    monkeypatch.delenv("ORACLE_AUDIOCPP_MODEL", raising=False)
+    monkeypatch.delenv("RHETORIC_AUDIOCPP_MODEL", raising=False)
     monkeypatch.setenv("FAKE_DOWNLOAD_FAIL", "1")
     # The build step runs before the download fails, so run_vulkan_setup sets
-    # ORACLE_AUDIOCPP_CLI directly; restore it so later tests are unaffected.
-    saved_cli = os.environ.get("ORACLE_AUDIOCPP_CLI")
+    # RHETORIC_AUDIOCPP_CLI directly; restore it so later tests are unaffected.
+    saved_cli = os.environ.get("RHETORIC_AUDIOCPP_CLI")
 
     try:
         result = vulkan_setup.run_vulkan_setup(repo_root=root)
@@ -283,7 +283,7 @@ def test_run_vulkan_setup_download_failure(monkeypatch, tmp_path: Path) -> None:
         assert not result.ok
         assert "download failed" in result.error
     finally:
-        _restore_env_after_setup({"ORACLE_AUDIOCPP_CLI": saved_cli})
+        _restore_env_after_setup({"RHETORIC_AUDIOCPP_CLI": saved_cli})
 
 
 def test_run_vulkan_setup_respects_cancel_before_scripts(
@@ -293,7 +293,7 @@ def test_run_vulkan_setup_respects_cancel_before_scripts(
     model = tmp_path / "models" / "chatterbox-q8_0.gguf"
     root = _fake_repo(tmp_path, binary, model)
     monkeypatch.setattr(vulkan_setup, "find_audiocpp_binary", lambda: None)
-    monkeypatch.delenv("ORACLE_AUDIOCPP_MODEL", raising=False)
+    monkeypatch.delenv("RHETORIC_AUDIOCPP_MODEL", raising=False)
     cancel = threading.Event()
     cancel.set()
 
@@ -307,7 +307,7 @@ def test_run_vulkan_setup_respects_cancel_before_scripts(
 def test_handle_render_auto_runs_vulkan_setup(
     monkeypatch, tmp_path: Path, capsys
 ) -> None:
-    from the_oracle.cli import build_parser, handle_render
+    from rhetoric.cli import build_parser, handle_render
 
     class _FakePipeline:
         def __init__(self) -> None:
@@ -322,10 +322,10 @@ def test_handle_render_auto_runs_vulkan_setup(
         def render(self, plan, settings):
             return self.output
 
-    monkeypatch.setattr("the_oracle.cli.OraclePipeline", lambda: _FakePipeline())
+    monkeypatch.setattr("rhetoric.cli.RhetoricPipeline", lambda: _FakePipeline())
     setup_calls: list[str] = []
     monkeypatch.setattr(
-        "the_oracle.vulkan_setup.vulkan_setup_needed",
+        "rhetoric.vulkan_setup.vulkan_setup_needed",
         lambda: ["audiocpp_cli is not built"],
     )
 
@@ -337,7 +337,7 @@ def test_handle_render_auto_runs_vulkan_setup(
         # re-printed on top of the progress callback (that doubled output).
         return type("R", (), {"ok": True, "messages": ["stub duplicate"], "error": ""})()
 
-    monkeypatch.setattr("the_oracle.vulkan_setup.run_vulkan_setup", ok_result)
+    monkeypatch.setattr("rhetoric.vulkan_setup.run_vulkan_setup", ok_result)
 
     args = build_parser().parse_args(
         [
@@ -367,7 +367,7 @@ def test_handle_render_ready_when_vulkan_already_configured(
 ) -> None:
     """A configured Vulkan backend renders with a single 'ready' line -- no
     no-op setup round-trip and no per-line output."""
-    from the_oracle.cli import build_parser, handle_render
+    from rhetoric.cli import build_parser, handle_render
 
     class _FakePipeline:
         def __init__(self) -> None:
@@ -382,15 +382,15 @@ def test_handle_render_ready_when_vulkan_already_configured(
         def render(self, plan, settings):
             return self.output
 
-    monkeypatch.setattr("the_oracle.cli.OraclePipeline", lambda: _FakePipeline())
-    monkeypatch.setattr("the_oracle.vulkan_setup.vulkan_setup_needed", lambda: [])
+    monkeypatch.setattr("rhetoric.cli.RhetoricPipeline", lambda: _FakePipeline())
+    monkeypatch.setattr("rhetoric.vulkan_setup.vulkan_setup_needed", lambda: [])
     setup_calls: list[str] = []
 
     def fail_if_called(**kwargs):
         setup_calls.append("setup")
         raise AssertionError("no setup needed when prerequisites are present")
 
-    monkeypatch.setattr("the_oracle.vulkan_setup.run_vulkan_setup", fail_if_called)
+    monkeypatch.setattr("rhetoric.vulkan_setup.run_vulkan_setup", fail_if_called)
 
     args = build_parser().parse_args(
         [
@@ -415,7 +415,7 @@ def test_handle_render_ready_when_vulkan_already_configured(
 def test_handle_render_no_audio_cpp_setup_skips_auto_setup(
     monkeypatch, tmp_path: Path
 ) -> None:
-    from the_oracle.cli import build_parser, handle_render
+    from rhetoric.cli import build_parser, handle_render
 
     class _FakePipeline:
         def __init__(self) -> None:
@@ -430,14 +430,14 @@ def test_handle_render_no_audio_cpp_setup_skips_auto_setup(
         def render(self, plan, settings):
             return self.output
 
-    monkeypatch.setattr("the_oracle.cli.OraclePipeline", lambda: _FakePipeline())
+    monkeypatch.setattr("rhetoric.cli.RhetoricPipeline", lambda: _FakePipeline())
     called: list[str] = []
 
     def fail_if_called(**kwargs):
         called.append("boom")
         raise AssertionError("auto-setup must not run with --no-audio-cpp-setup")
 
-    monkeypatch.setattr("the_oracle.vulkan_setup.run_vulkan_setup", fail_if_called)
+    monkeypatch.setattr("rhetoric.vulkan_setup.run_vulkan_setup", fail_if_called)
 
     args = build_parser().parse_args(
         [
@@ -460,9 +460,9 @@ def test_handle_render_no_audio_cpp_setup_skips_auto_setup(
 
 
 def test_setup_vulkan_subcommand_runs_setup(monkeypatch, tmp_path: Path, capsys) -> None:
-    """``the-oracle setup-vulkan`` performs the one-shot auto-setup and prints
+    """``rhetoric setup-vulkan`` performs the one-shot auto-setup and prints
     the export lines, exiting 0 on success."""
-    from the_oracle.cli import build_parser, handle_setup_vulkan
+    from rhetoric.cli import build_parser, handle_setup_vulkan
 
     binary = tmp_path / "bin" / "audiocpp_cli"
     binary.parent.mkdir(parents=True, exist_ok=True)
@@ -472,7 +472,7 @@ def test_setup_vulkan_subcommand_runs_setup(monkeypatch, tmp_path: Path, capsys)
     model.write_text("m")
     root = _fake_repo(tmp_path, binary, model)
     monkeypatch.setattr(vulkan_setup, "find_audiocpp_binary", lambda: binary)
-    monkeypatch.setenv("ORACLE_AUDIOCPP_MODEL", str(model))
+    monkeypatch.setenv("RHETORIC_AUDIOCPP_MODEL", str(model))
     # Point the CLI at the hermetic repo so no real scripts run.
     monkeypatch.setattr(vulkan_setup, "_repo_root", lambda: root)
 
@@ -489,10 +489,10 @@ def test_setup_vulkan_subcommand_runs_setup(monkeypatch, tmp_path: Path, capsys)
 def test_setup_vulkan_refuses_offline_install(monkeypatch, tmp_path: Path, capsys) -> None:
     """On an offline install the Vulkan GGUF model is not in the bundle, so
     setup must refuse with the way out instead of attempting a network fetch."""
-    from the_oracle import offline
-    from the_oracle.cli import build_parser, handle_setup_vulkan
+    from rhetoric import offline
+    from rhetoric.cli import build_parser, handle_setup_vulkan
 
-    marker = tmp_path / ".oracle_offline"
+    marker = tmp_path / ".rhetoric_offline"
     marker.write_text("", encoding="utf-8")
     monkeypatch.setattr(offline, "marker_path", lambda root=None: marker)
     attempts: list[object] = []
@@ -504,5 +504,5 @@ def test_setup_vulkan_refuses_offline_install(monkeypatch, tmp_path: Path, capsy
     assert handle_setup_vulkan() == 1
     captured = capsys.readouterr()
     assert "offline install" in captured.err
-    assert ".oracle_offline" in captured.err  # the message names the way out
+    assert ".rhetoric_offline" in captured.err  # the message names the way out
     assert attempts == [], "setup must refuse before any model work"

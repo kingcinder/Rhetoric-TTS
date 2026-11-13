@@ -7,12 +7,12 @@ from unittest.mock import patch
 import numpy as np
 import pytest
 
-from the_oracle.audio.assemble import AudioSegment, assemble_dialogue, normalize_loudness
-from the_oracle.audio.blend import blend_references
-from the_oracle.models.project import VoiceSettings
-from the_oracle.models.settings import RenderSettings, SpeakerSettings; from the_oracle.pipeline import OraclePipeline
-from the_oracle.smoke import _SmokeEmotionClassifier, _write_reference
-from the_oracle.text_repair.repairer import RepairResult
+from rhetoric.audio.assemble import AudioSegment, assemble_dialogue, normalize_loudness
+from rhetoric.audio.blend import blend_references
+from rhetoric.models.project import VoiceSettings
+from rhetoric.models.settings import RenderSettings, SpeakerSettings; from rhetoric.pipeline import RhetoricPipeline
+from rhetoric.smoke import _SmokeEmotionClassifier, _write_reference
+from rhetoric.text_repair.repairer import RepairResult
 
 
 class _StubTextRepairPipeline:
@@ -131,10 +131,10 @@ def test_monologue_plan_skips_unused_speaker_profiles(tmp_path: Path) -> None:
     settings = RenderSettings(monologue=True, loudness_preset="off")
 
     with (
-        patch("the_oracle.pipeline.GoEmotionsClassifier", _SmokeEmotionClassifier),
-        patch("the_oracle.pipeline.TextRepairPipeline", _StubTextRepairPipeline),
+        patch("rhetoric.pipeline.GoEmotionsClassifier", _SmokeEmotionClassifier),
+        patch("rhetoric.pipeline.TextRepairPipeline", _StubTextRepairPipeline),
     ):
-        plan = OraclePipeline().prepare_plan(dialogue, tmp_path / "output", speakers, settings)
+        plan = RhetoricPipeline().prepare_plan(dialogue, tmp_path / "output", speakers, settings)
 
     assert set(plan.voice_profiles) == {"A"}
     assert all(utterance.speaker == "A" for utterance in plan.utterances)
@@ -153,9 +153,9 @@ def test_dual_speaker_plan_keeps_both_profiles(tmp_path: Path) -> None:
     settings = RenderSettings(loudness_preset="off")
 
     with (
-        patch("the_oracle.pipeline.GoEmotionsClassifier", _SmokeEmotionClassifier),
-        patch("the_oracle.pipeline.TextRepairPipeline", _StubTextRepairPipeline),
+        patch("rhetoric.pipeline.GoEmotionsClassifier", _SmokeEmotionClassifier),
+        patch("rhetoric.pipeline.TextRepairPipeline", _StubTextRepairPipeline),
     ):
-        plan = OraclePipeline().prepare_plan(dialogue, tmp_path / "output", speakers, settings)
+        plan = RhetoricPipeline().prepare_plan(dialogue, tmp_path / "output", speakers, settings)
 
     assert set(plan.voice_profiles) == {"A", "B"}

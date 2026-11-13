@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from the_oracle import gui_settings
+from rhetoric import gui_settings
 
 
 @pytest.fixture()

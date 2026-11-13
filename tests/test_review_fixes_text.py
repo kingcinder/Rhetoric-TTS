@@ -17,21 +17,21 @@ from unittest.mock import MagicMock
 import numpy as np
 import pytest
 
-from the_oracle.emotion.goemotions import EmotionResult, GoEmotionsClassifier
-from the_oracle.emotion.infer import EmotionInferer, apply_emotion_settings
-from the_oracle.models.project import Utterance, VoiceSettings
-from the_oracle.speaker_attribution.assign import SpeakerAttributor
-from the_oracle.speaker_attribution.heuristics import (
+from rhetoric.emotion.goemotions import EmotionResult, GoEmotionsClassifier
+from rhetoric.emotion.infer import EmotionInferer, apply_emotion_settings
+from rhetoric.models.project import Utterance, VoiceSettings
+from rhetoric.speaker_attribution.assign import SpeakerAttributor
+from rhetoric.speaker_attribution.heuristics import (
     MAX_SPEAKERS,
     AnchorAssignments,
     DualSpeakerAttributor,
 )
-from the_oracle.text_ingest import TextIngestor, ingest_text_file
-from the_oracle.text_repair.directives import parse_directives
-from the_oracle.text_repair.grammar import GrammarCorrector
-from the_oracle.text_repair.normalize import normalize_text
-from the_oracle.text_repair.punctuation import PunctuationRestorer
-from the_oracle.voice_catalog import blend_catalog_path, blend_voice_choices
+from rhetoric.text_ingest import TextIngestor, ingest_text_file
+from rhetoric.text_repair.directives import parse_directives
+from rhetoric.text_repair.grammar import GrammarCorrector
+from rhetoric.text_repair.normalize import normalize_text
+from rhetoric.text_repair.punctuation import PunctuationRestorer
+from rhetoric.voice_catalog import blend_catalog_path, blend_voice_choices
 
 
 @contextlib.contextmanager
@@ -57,7 +57,7 @@ def _stubbed_heavy_imports():
             else:
                 sys.modules.pop(name, None)
         for name in set(sys.modules) - before:
-            if name.split(".")[0] == "the_oracle":
+            if name.split(".")[0] == "rhetoric":
                 sys.modules.pop(name, None)
 
 
@@ -222,7 +222,7 @@ def _import_smoke_module():
     with _stubbed_heavy_imports():
         import importlib
 
-        return importlib.import_module("the_oracle.real_engine_smoke")
+        return importlib.import_module("rhetoric.real_engine_smoke")
 
 
 def test_smoke_validation_rejects_silent_output(tmp_path: Path) -> None:

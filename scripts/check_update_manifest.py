@@ -1,6 +1,6 @@
 """Validate a static update manifest without downloading or replacing files.
 
-Thin CLI over :mod:`the_oracle.update_manifest` — the shared validation
+Thin CLI over :mod:`rhetoric.update_manifest` — the shared validation
 core the in-app updater also uses, so release-side and app-side checks
 can never drift apart.
 """
@@ -13,7 +13,7 @@ import sys
 from pathlib import Path
 
 try:
-    from the_oracle.update_manifest import (
+    from rhetoric.update_manifest import (
         ManifestError,
         load_manifest,
         update_available,
@@ -21,7 +21,7 @@ try:
     )
 except ImportError:  # source checkout without the package installed
     sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
-    from the_oracle.update_manifest import (
+    from rhetoric.update_manifest import (
         ManifestError,
         load_manifest,
         update_available,

@@ -8,8 +8,8 @@ import pytest
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QApplication, QComboBox, QWidget
 
-from the_oracle.device_support import CUDADeviceInfo, DeviceModeOption
-from the_oracle.inference_wizard import InferenceSetupWizard, STAGES, hardware_summary
+from rhetoric.device_support import CUDADeviceInfo, DeviceModeOption
+from rhetoric.inference_wizard import InferenceSetupWizard, STAGES, hardware_summary
 
 
 @pytest.fixture(scope="module")
@@ -107,7 +107,7 @@ def test_discovery_wizard_offers_cpu_and_disables_unsuitable_cuda(qt_app):
 
 
 def test_vulkan_backend_tooltip_uses_combo_item_data(qt_app, monkeypatch):
-    from the_oracle import inference_wizard
+    from rhetoric import inference_wizard
 
     monkeypatch.setattr(
         inference_wizard,

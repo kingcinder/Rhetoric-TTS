@@ -1,6 +1,6 @@
 """The cache sweep: maintenance counterpart of the servable-stem gate.
 
-The read-side gate (:func:`the_oracle.pipeline._load_servable_stem`) deletes a
+The read-side gate (:func:`rhetoric.pipeline._load_servable_stem`) deletes a
 degenerate entry when a render reads it. But entries sit in project caches
 between renders, and an operator may want the cache clean *now*:
 ``sweep_project_cache`` (and the ``sweep-cache`` CLI command) classifies every
@@ -30,10 +30,10 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from the_oracle.audio.assemble import save_wav
-from the_oracle.cli import build_parser, handle_sweep_cache
-from the_oracle.models.cache import ProjectCache
-from the_oracle.pipeline import _write_pause_only_stem, sweep_project_cache
+from rhetoric.audio.assemble import save_wav
+from rhetoric.cli import build_parser, handle_sweep_cache
+from rhetoric.models.cache import ProjectCache
+from rhetoric.pipeline import _write_pause_only_stem, sweep_project_cache
 
 
 RATE = 24000
@@ -190,7 +190,7 @@ def test_sweep_purge_list_is_exactly_the_resynthesis_set(tmp_path: Path) -> None
     work exactly.
     """
     from tests.test_synthesis_retry_visibility import _seeded_determinism_render
-    from the_oracle.smoke import _DeterministicChatterboxEngine
+    from rhetoric.smoke import _DeterministicChatterboxEngine
 
     plan_a, _events, _out, stems_a = _seeded_determinism_render(tmp_path, "sweep_e2e", _DeterministicChatterboxEngine)
     cache = ProjectCache(plan_a.output_dir)
@@ -217,7 +217,7 @@ def test_stem_cache_dir_helper_cannot_drift_from_the_constructor_layout() -> Non
     """The sweep probes existence via the no-mkdir static helper; if that
     path ever drifted from ProjectCache.__init__'s layout, real caches would
     report "missing" and the drift would only surface in the slow e2e."""
-    from the_oracle.models.cache import ProjectCache as _PC
+    from rhetoric.models.cache import ProjectCache as _PC
 
     # The helper side never touches the filesystem; the constructor side
     # creates its layout under /tmp (disposable scratch), which is exactly

@@ -32,8 +32,8 @@ import pytest
 from PySide6.QtCore import QCoreApplication, QEvent, QObject
 from PySide6.QtWidgets import QApplication, QLineEdit, QPushButton, QWidget
 
-import the_oracle.gui_tooltips as gui_tooltips
-from the_oracle.gui_tooltips import CtrlHoverHelp, install_ctrl_hover_help
+import rhetoric.gui_tooltips as gui_tooltips
+from rhetoric.gui_tooltips import CtrlHoverHelp, install_ctrl_hover_help
 
 
 @pytest.fixture(scope="module")
@@ -252,7 +252,7 @@ def test_event_filter_ignores_a_deleted_receiver_wrapper(qt_app):
 
 def test_windows_tooltips_use_safe_polling_without_qevent_filters(qt_app, monkeypatch):
     """Windows uses the cursor poller and suppresses native hover tips."""
-    import the_oracle.gui_tooltips as gui_tooltips
+    import rhetoric.gui_tooltips as gui_tooltips
 
     monkeypatch.setattr(gui_tooltips, "is_windows", lambda: True)
     window = QWidget()

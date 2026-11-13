@@ -24,9 +24,7 @@ import pytest
 from tests.install_recorder import install_boundary, load_manage_install
 
 DESKTOP_ENTRY_LABEL = "home/.local/share/applications/rhetoric.desktop"
-LEGACY_DESKTOP_ENTRY_LABEL = "home/.local/share/applications/the-oracle.desktop"
 DESKTOP_SHORTCUT_LABEL = "home/Desktop/rhetoric.desktop"
-LEGACY_DESKTOP_SHORTCUT_LABEL = "home/Desktop/the-oracle.desktop"
 
 
 @pytest.fixture()
@@ -63,7 +61,6 @@ def _desktop_commands(boundary) -> list[tuple[str, ...]]:
     return [
         ("update-desktop-database", str(boundary.home / ".local" / "share" / "applications")),
         ("gio", "set", str(boundary.home / "Desktop" / "rhetoric.desktop"), "metadata::trusted", "true"),
-        ("gio", "set", str(boundary.home / "Desktop" / "the-oracle.desktop"), "metadata::trusted", "true"),
     ]
 
 
@@ -119,11 +116,8 @@ def test_online_install_writes_exactly_these_files(manage_install, install_bound
 
     assert boundary.created_labels() == [
         "home/.local/bin/rhetoric",
-        "home/.local/bin/the-oracle",
         DESKTOP_ENTRY_LABEL,
-        LEGACY_DESKTOP_ENTRY_LABEL,
         DESKTOP_SHORTCUT_LABEL,
-        LEGACY_DESKTOP_SHORTCUT_LABEL,
     ]
 
     wrapper = boundary.created_file("home/.local/bin/rhetoric")
@@ -181,16 +175,13 @@ def _offline_pip_commands(venv_python: Path, wheels_dir: Path) -> list[tuple[str
 
 def _expected_offline_labels(boundary) -> list[str]:
     """Every file an offline install creates, derived from the pinned models."""
-    from the_oracle.models.pins import MODEL_PINS
+    from rhetoric.models.pins import MODEL_PINS
 
     labels = {
         "home/.local/bin/rhetoric",
-        "home/.local/bin/the-oracle",
         DESKTOP_ENTRY_LABEL,
-        LEGACY_DESKTOP_ENTRY_LABEL,
         DESKTOP_SHORTCUT_LABEL,
-        LEGACY_DESKTOP_SHORTCUT_LABEL,
-        "repo/.oracle_offline",
+        "repo/.rhetoric_offline",
     }
     for repo_id, sha in MODEL_PINS.items():
         cache = f"home/.cache/huggingface/hub/models--{repo_id.replace('/', '--')}"
@@ -221,7 +212,7 @@ def test_offline_install_commands_cannot_reach_the_network(manage_install, insta
 def test_offline_install_seeds_the_pinned_models_and_writes_the_marker(
     manage_install, install_boundary, tmp_path: Path
 ) -> None:
-    from the_oracle.models.pins import MODEL_PINS
+    from rhetoric.models.pins import MODEL_PINS
 
     bundle = tmp_path / "bundle"
     boundary = install_boundary(manage_install, bundle=bundle)
@@ -235,8 +226,8 @@ def test_offline_install_seeds_the_pinned_models_and_writes_the_marker(
         # Byte-exact (no trailing newline): huggingface_hub uses the raw contents
         # as the snapshot directory name, so whitespace makes the seed invisible.
         assert ref.read_bytes() == sha.encode("ascii"), f"{repo_id}: refs/main must pin the revision"
-    marker = boundary.created_file("repo/.oracle_offline").text
-    assert json.loads(marker) == {"offline_bundle_manifest": '{"app": "the-oracle"}'}
+    marker = boundary.created_file("repo/.rhetoric_offline").text
+    assert json.loads(marker) == {"offline_bundle_manifest": '{"app": "rhetoric"}'}
     # The launcher is what makes the promise true at run time.
     assert "HF_HUB_OFFLINE=1" in boundary.created_file("home/.local/bin/rhetoric").text
 
@@ -284,9 +275,7 @@ def test_windows_install_registers_a_start_menu_launcher(manage_install, install
     assert [command.args for command in boundary.commands] == expected, "\n".join(boundary.command_lines())
     assert boundary.created_labels() == [
         "home/AppData/Roaming/Microsoft/Windows/Start Menu/Programs/Rhetoric.cmd",
-        "home/AppData/Roaming/Microsoft/Windows/Start Menu/Programs/The Oracle.cmd",
         "home/AppData/Roaming/Python/Scripts/rhetoric.cmd",
-        "home/AppData/Roaming/Python/Scripts/the-oracle.cmd",
     ]
 
     wrapper = boundary.created_file("home/AppData/Roaming/Python/Scripts/rhetoric.cmd")
@@ -295,6 +284,6 @@ def test_windows_install_registers_a_start_menu_launcher(manage_install, install
     assert "HF_HUB_OFFLINE=1" in wrapper.text
 
     start_menu = boundary.created_file(
-        "home/AppData/Roaming/Microsoft/Windows/Start Menu/Programs/The Oracle.cmd"
+        "home/AppData/Roaming/Microsoft/Windows/Start Menu/Programs/Rhetoric.cmd"
     )
     assert f'call "{boundary.launcher}" gui %*' in start_menu.text

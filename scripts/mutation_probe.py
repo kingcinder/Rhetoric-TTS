@@ -96,7 +96,7 @@ from pathlib import Path
 
 #: Prefix of the probe's throwaway root under the system temp directory. The
 #: root holds one cache directory per run and nothing else.
-_SCRATCH_PREFIX = "oracle_mutation_probe_"
+_SCRATCH_PREFIX = "rhetoric_mutation_probe_"
 
 #: The repository this script ships in. A preset names its files and its proof
 #: command relative to HERE, so ``--preset`` works from any working directory
@@ -336,7 +336,7 @@ _HERMETIC_PATHS_NEW = (
 # _hermetic_paths patch — the layer that actually roots the sweep's paths in
 # the throwaway. app_paths' installed-root diversion is only a backup: with
 # the patch gone, MainWindow's Output/logs writes land in the real DATA root
-# (user_data_root()/the_oracle), which the hermeticity test did not snapshot,
+# (user_data_root()/rhetoric), which the hermeticity test did not snapshot,
 # so the mutation scored SURVIVED until the test learned to watch that tree.
 _HERMETIC_CONFIG_OLD = 'THROWAWAY_ENV_VARS = ("XDG_CONFIG_HOME", "APPDATA")\n'
 _HERMETIC_CONFIG_NEW = (
@@ -349,7 +349,7 @@ _HERMETIC_CRASH_NEW = (
 )
 _HERMETIC_LOG_OLD = "    crash_handlers.arm_native_capture()\n"
 _HERMETIC_LOG_NEW = (
-    "    from the_oracle.utils.logging import configure_logging\n"
+    "    from rhetoric.utils.logging import configure_logging\n"
     "    configure_logging()  # mutation-probe M4: a repo-local log writer is reachable again\n"
     "    crash_handlers.arm_native_capture()\n"
 )
@@ -361,7 +361,7 @@ _PRESETS: tuple[Preset, ...] = (
         "chrome aspect has to fail the sweep on a CLOSED bulk-restyle gate",
         mutations=(
             Mutation(
-                path=Path("src/the_oracle/gui_chrome.py"),
+                path=Path("src/rhetoric/gui_chrome.py"),
                 old=_LIVE_HEADER_GATE_OLD,
                 new=_LIVE_HEADER_GATE_NEW,
                 count=1,

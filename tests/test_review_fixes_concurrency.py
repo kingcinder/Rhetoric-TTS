@@ -6,7 +6,7 @@ Heavy third-party dependencies (soundfile, torch, PySide6, huggingface_hub)
 are NOT installed in this runtime, so this module installs minimal
 functional stubs for ``soundfile`` (real WAV bytes via the stdlib ``wave``
 module) and ``huggingface_hub`` (enough for module import) *before* importing
-``the_oracle``. The stubs are removed from ``sys.modules`` immediately after
+``rhetoric``. The stubs are removed from ``sys.modules`` immediately after
 the import so the rest of the suite keeps its baseline collection behavior
 for modules that import those packages directly.
 """
@@ -123,50 +123,50 @@ def _remove_stubs(previous):
 
 _STUB_PREVIOUS = _install_stubs()
 try:
-    from the_oracle.models.cache import (
+    from rhetoric.models.cache import (
         ProjectCache,
         atomic_write,
         sanitize_speaker_component,
     )
-    from the_oracle.models.project import (
+    from rhetoric.models.project import (
         CorrectionRecord,
         RenderPlan,
         Utterance,
         VoiceSettings,
     )
-    from the_oracle.pipeline import (
+    from rhetoric.pipeline import (
         RenderSettings,
         SpeakerSettings,
         SynthesisTask,
         _run_tasks_with_worker_pool,
         _time_weighted_progress,
     )
-    from the_oracle.project_manifest import (
+    from rhetoric.project_manifest import (
         ProjectManifestError,
         build_saved_project,
         load_project_manifest,
         save_project_manifest,
         saved_project_from_dict,
     )
-    from the_oracle.tts_engines import chatterbox_engine as chatterbox_engine_module
-    from the_oracle.tts_engines import vulkan_backend as vulkan_backend_module
-    from the_oracle.tts_engines.chatterbox_engine import (
+    from rhetoric.tts_engines import chatterbox_engine as chatterbox_engine_module
+    from rhetoric.tts_engines import vulkan_backend as vulkan_backend_module
+    from rhetoric.tts_engines.chatterbox_engine import (
         ChatterboxConditioning,
         ChatterboxEngine,
     )
-    from the_oracle.tts_engines.vulkan_backend import AudioCppVulkanEngine
-    from the_oracle import vulkan_setup as vulkan_setup_module
-    from the_oracle.vulkan_setup import (
+    from rhetoric.tts_engines.vulkan_backend import AudioCppVulkanEngine
+    from rhetoric import vulkan_setup as vulkan_setup_module
+    from rhetoric.vulkan_setup import (
         VulkanSetupCancelled,
         _run_script_streaming,
     )
-    from the_oracle.audio import recorder as recorder_module
-    from the_oracle.audio.recorder import (
+    from rhetoric.audio import recorder as recorder_module
+    from rhetoric.audio.recorder import (
         allocate_seashell_path,
         next_seashell_name,
     )
-    from the_oracle.utils import logging as oracle_logging
-    from the_oracle.utils.logging import configure_logging
+    from rhetoric.utils import logging as rhetoric_logging
+    from rhetoric.utils.logging import configure_logging
 finally:
     _remove_stubs(_STUB_PREVIOUS)
 del _STUB_PREVIOUS
@@ -176,7 +176,7 @@ del _STUB_PREVIOUS
 def _restore_logging():
     """Leave the root logger in a sane state after logging tests."""
     yield
-    oracle_logging._created_file_handlers.clear()
+    rhetoric_logging._created_file_handlers.clear()
     for handler in list(logging.getLogger().handlers):
         logging.getLogger().removeHandler(handler)
         try:
@@ -199,7 +199,7 @@ def _write_wav(path: Path, samples: np.ndarray, rate: int = 24000) -> None:
 
 
 def _cached_reference(speaker: str = "A", original_hash: str = "hash-a"):
-    from the_oracle.models.cache import CachedReference
+    from rhetoric.models.cache import CachedReference
 
     return CachedReference(
         original_path="ref.wav",
@@ -271,7 +271,7 @@ class TestProjectCacheAtomicity:
         def _failing(path, writer):
             raise OSError("disk exploded")
 
-        import the_oracle.models.cache as cache_module
+        import rhetoric.models.cache as cache_module
 
         with patch.object(cache_module, "atomic_write", side_effect=_failing):
             with pytest.raises(OSError, match="disk exploded"):
@@ -465,7 +465,7 @@ class _FakePoolEngine:
         return 24000
 
     def prepare_reference(self, project_cache, speaker, reference_path):
-        from the_oracle.models.cache import CachedReference
+        from rhetoric.models.cache import CachedReference
 
         return CachedReference(
             original_path=str(reference_path),
@@ -548,7 +548,7 @@ class TestSeedCrossesTheSpawnBoundary:
     """
 
     def test_pool_initargs_carry_the_configured_seed(self, tmp_path, _recording_pool):
-        from the_oracle.pipeline import _worker_initialize
+        from rhetoric.pipeline import _worker_initialize
 
         tasks = [_pool_task(i, f"text {i}", tmp_path) for i in range(1, 5)]
         _run_tasks_with_worker_pool(
@@ -833,19 +833,19 @@ class TestTimeoutValidation:
         assert engine.timeout == 30
 
     def test_negative_env_timeout_clamped(self, monkeypatch):
-        monkeypatch.setenv("ORACLE_AUDIOCPP_TIMEOUT", "-30")
+        monkeypatch.setenv("RHETORIC_AUDIOCPP_TIMEOUT", "-30")
         assert vulkan_backend_module._synthesis_timeout_seconds() == 1.0
 
     def test_zero_env_timeout_clamped(self, monkeypatch):
-        monkeypatch.setenv("ORACLE_AUDIOCPP_TIMEOUT", "0")
+        monkeypatch.setenv("RHETORIC_AUDIOCPP_TIMEOUT", "0")
         assert vulkan_backend_module._synthesis_timeout_seconds() == 1.0
 
     def test_malformed_env_timeout_falls_back(self, monkeypatch):
-        monkeypatch.setenv("ORACLE_AUDIOCPP_TIMEOUT", "bogus")
+        monkeypatch.setenv("RHETORIC_AUDIOCPP_TIMEOUT", "bogus")
         assert vulkan_backend_module._synthesis_timeout_seconds() == 600.0
 
     def test_valid_env_timeout_parsed(self, monkeypatch):
-        monkeypatch.setenv("ORACLE_AUDIOCPP_TIMEOUT", "45")
+        monkeypatch.setenv("RHETORIC_AUDIOCPP_TIMEOUT", "45")
         assert vulkan_backend_module._synthesis_timeout_seconds() == 45.0
 
 
@@ -919,7 +919,7 @@ class TestLoggingReconfiguration:
     def test_still_logs_after_reconfigure(self, tmp_path):
         log_file = tmp_path / "run.log"
         configure_logging(log_file)
-        logging.getLogger("oracle-test").warning("hello-log")
+        logging.getLogger("rhetoric-test").warning("hello-log")
         for handler in logging.getLogger().handlers:
             handler.flush()
         assert "hello-log" in log_file.read_text(encoding="utf-8")
@@ -945,26 +945,26 @@ def _sample_saved_project():
 
 class TestManifestAtomicity:
     def test_save_creates_backup_of_previous(self, tmp_path):
-        manifest_path = tmp_path / "project.oracle.json"
+        manifest_path = tmp_path / "project.rhetoric.json"
         save_project_manifest(manifest_path, _sample_saved_project())
         project = _sample_saved_project()
         project.plan.title = "Second Version"
         save_project_manifest(manifest_path, project)
-        backup = tmp_path / "project.oracle.json.bak"
+        backup = tmp_path / "project.rhetoric.json.bak"
         assert backup.exists()
         assert json.loads(backup.read_text(encoding="utf-8"))["render_plan"]["title"] == "Manifest Test"
         loaded = load_project_manifest(manifest_path)
         assert loaded.plan.title == "Second Version"
 
     def test_failed_save_keeps_previous_manifest(self, tmp_path, monkeypatch):
-        manifest_path = tmp_path / "project.oracle.json"
+        manifest_path = tmp_path / "project.rhetoric.json"
         save_project_manifest(manifest_path, _sample_saved_project())
         before = manifest_path.read_text(encoding="utf-8")
 
         def _boom(*args, **kwargs):
             raise OSError("disk exploded")
 
-        import the_oracle.project_manifest as manifest_module
+        import rhetoric.project_manifest as manifest_module
 
         monkeypatch.setattr(manifest_module, "atomic_write", _boom)
         with pytest.raises(OSError, match="disk exploded"):
@@ -972,7 +972,7 @@ class TestManifestAtomicity:
         assert manifest_path.read_text(encoding="utf-8") == before
 
     def test_write_render_plan_keeps_backup(self, tmp_path):
-        from the_oracle.models.cache import read_previous_render_plan, write_render_plan
+        from rhetoric.models.cache import read_previous_render_plan, write_render_plan
 
         destination = tmp_path / "project" / "render_plan.json"
         plan = RenderPlan(
@@ -1112,7 +1112,7 @@ class TestHardenedCachePaths:
     def test_reference_wav_writer_uses_explicit_format(self, tmp_path):
         # The atomic temp file has a .tmp suffix, so the writer must name the
         # format explicitly instead of relying on extension inference.
-        import the_oracle.models.cache as cache_module
+        import rhetoric.models.cache as cache_module
 
         seen: dict = {}
         real_write = cache_module.sf.write

@@ -3,7 +3,7 @@
 ``tests/test_synthesis_retry.py`` proves the one-shot engine retry heals a
 gate-rejected generation. This file proves the heal is *seen*: the engine
 records a structured note at the moment the retry succeeds
-(:func:`the_oracle.utils.audio.record_synthesis_retry`), the pipeline drains
+(:func:`rhetoric.utils.audio.record_synthesis_retry`), the pipeline drains
 it (``synthesize_task`` for the pool paths, the batched-Vulkan call sites in
 process), rides it out on ``RenderProgress.retry_note``, and the GUI logs the
 note live and names the total in the completion summary.
@@ -30,25 +30,25 @@ from unittest.mock import patch
 import numpy as np
 import pytest
 
-from the_oracle.models.settings import RenderSettings, SpeakerSettings
-from the_oracle.models.project import VoiceSettings
-from the_oracle.pipeline import OraclePipeline, RenderProgress
-from the_oracle.smoke import (
+from rhetoric.models.settings import RenderSettings, SpeakerSettings
+from rhetoric.models.project import VoiceSettings
+from rhetoric.pipeline import RhetoricPipeline, RenderProgress
+from rhetoric.smoke import (
     SMOKE_DIALOGUE,
     _DeterministicChatterboxEngine,
     _SmokeEmotionClassifier,
     _write_reference,
 )
-from the_oracle.tts_engines import vulkan_backend as vb
-from the_oracle.tts_engines.chatterbox_engine import ChatterboxEngine
-from the_oracle.tts_engines.vulkan_backend import AudioCppVulkanEngine
-from the_oracle.utils.audio import (
+from rhetoric.tts_engines import vulkan_backend as vb
+from rhetoric.tts_engines.chatterbox_engine import ChatterboxEngine
+from rhetoric.tts_engines.vulkan_backend import AudioCppVulkanEngine
+from rhetoric.utils.audio import (
     RETRY_NOTES,
     DegenerateEngineOutput,
     SynthesisRetryNote,
     record_synthesis_retry,
 )
-from the_oracle.utils.hashing import hash_payload
+from rhetoric.utils.hashing import hash_payload
 
 
 @pytest.fixture(autouse=True)
@@ -153,7 +153,7 @@ def test_batched_vulkan_records_one_note_per_healed_request(monkeypatch) -> None
 
 
 def _synth_result(retried_note: SynthesisRetryNote | None = None):
-    from the_oracle.pipeline import SynthesisResult
+    from rhetoric.pipeline import SynthesisResult
 
     return SynthesisResult(
         utterance_index=0,
@@ -181,12 +181,12 @@ def test_emit_progress_consumes_a_staged_note_exactly_once() -> None:
     """
     events: list[RenderProgress] = []
 
-    pipeline = OraclePipeline.__new__(OraclePipeline)
+    pipeline = RhetoricPipeline.__new__(RhetoricPipeline)
     pipeline.render = None  # type: ignore[method-assign]  # not under test here
     # Build render_state the way render() does, then stage a note the way the
     # results loop does, and deliver through the real emit_progress closure.
     render_state = {"retry_note": None}
-    from the_oracle.pipeline import OraclePipeline as _P
+    from rhetoric.pipeline import RhetoricPipeline as _P
 
     # Reach the real closure: render() binds emit_progress over its own
     # locals, so drive the note-consumption contract through a minimal fake
@@ -235,8 +235,8 @@ def test_batched_pipeline_drains_the_note_and_tags_its_result(tmp_path: Path) ->
     completion summary. Staging the note onto a progress event is the render
     loop's job (pinned by the flaky-render end-to-end below).
     """
-    from the_oracle.models.cache import ProjectCache
-    from the_oracle.pipeline import SynthesisTask, synthesize_tasks_batched
+    from rhetoric.models.cache import ProjectCache
+    from rhetoric.pipeline import SynthesisTask, synthesize_tasks_batched
 
     class _BatchDouble:
         engine_version = "double"
@@ -326,7 +326,7 @@ def test_flaky_render_surfaces_the_retry_in_progress_and_metadata(tmp_path: Path
     ``record_synthesis_retry`` call site the real engines use — the retry
     machinery under test here is the pipeline/GUI half, not the engines'.
     """
-    from the_oracle.models.project import VoiceProfile
+    from rhetoric.models.project import VoiceProfile
 
     class _FlakyOnceEngine(_DeterministicChatterboxEngine):
         _calls = 0
@@ -350,10 +350,10 @@ def test_flaky_render_surfaces_the_retry_in_progress_and_metadata(tmp_path: Path
     project_dir = tmp_path / "render_project"
 
     with (
-        patch("the_oracle.pipeline.ChatterboxEngine", _FlakyOnceEngine),
-        patch("the_oracle.pipeline.GoEmotionsClassifier", _SmokeEmotionClassifier),
+        patch("rhetoric.pipeline.ChatterboxEngine", _FlakyOnceEngine),
+        patch("rhetoric.pipeline.GoEmotionsClassifier", _SmokeEmotionClassifier),
     ):
-        pipeline = OraclePipeline(use_transformers=False, use_language_tool=False, use_punctuation_model=False)
+        pipeline = RhetoricPipeline(use_transformers=False, use_language_tool=False, use_punctuation_model=False)
         shared_voice = VoiceSettings(variant="standard", language="en")
         speaker_settings = {
             "A": SpeakerSettings(reference_path=str(speaker_a), voice_settings=shared_voice),
@@ -571,7 +571,7 @@ def _make_flaky_once_engine():
 
 def _seeded_determinism_render(tmp_path: Path, project_name: str, engine_cls):
     """One cold-cache seeded render; returns (plan, events, output_path, stems)."""
-    from the_oracle.models.cache import ProjectCache
+    from rhetoric.models.cache import ProjectCache
 
     dialogue_path = tmp_path / "smoke_dialogue.txt"
     if not dialogue_path.exists():
@@ -581,10 +581,10 @@ def _seeded_determinism_render(tmp_path: Path, project_name: str, engine_cls):
     project_dir = tmp_path / project_name
 
     with (
-        patch("the_oracle.pipeline.ChatterboxEngine", engine_cls),
-        patch("the_oracle.pipeline.GoEmotionsClassifier", _SmokeEmotionClassifier),
+        patch("rhetoric.pipeline.ChatterboxEngine", engine_cls),
+        patch("rhetoric.pipeline.GoEmotionsClassifier", _SmokeEmotionClassifier),
     ):
-        pipeline = OraclePipeline(use_transformers=False, use_language_tool=False, use_punctuation_model=False)
+        pipeline = RhetoricPipeline(use_transformers=False, use_language_tool=False, use_punctuation_model=False)
         shared_voice = VoiceSettings(variant="standard", language="en")
         speaker_settings = {
             "A": SpeakerSettings(reference_path=str(speaker_a), voice_settings=shared_voice),
@@ -624,7 +624,7 @@ def test_seeded_render_with_a_retry_reproduces_run_to_run(tmp_path: Path) -> Non
     into the *same* project is all cache hits and carries no note, proving
     the healed audio was stored under the configured seed's chunk hashes.
     """
-    from the_oracle.models.cache import ProjectCache
+    from rhetoric.models.cache import ProjectCache
 
     engine_cls = _make_flaky_once_engine()
 
@@ -706,7 +706,7 @@ def _seeded_pool_render(tmp_path: Path, project_name: str, engine_cls):
     variant, cpu, pytorch backend) decides the mode — and the test asserts the
     pool actually ran via ``plan.metadata['synthesis_mode']``.
     """
-    from the_oracle.models.cache import ProjectCache
+    from rhetoric.models.cache import ProjectCache
 
     dialogue_path = tmp_path / "smoke_dialogue.txt"
     if not dialogue_path.exists():
@@ -725,10 +725,10 @@ def _seeded_pool_render(tmp_path: Path, project_name: str, engine_cls):
     project_dir = tmp_path / project_name
 
     with (
-        patch("the_oracle.pipeline.ChatterboxEngine", engine_cls),
-        patch("the_oracle.pipeline.GoEmotionsClassifier", _SmokeEmotionClassifier),
+        patch("rhetoric.pipeline.ChatterboxEngine", engine_cls),
+        patch("rhetoric.pipeline.GoEmotionsClassifier", _SmokeEmotionClassifier),
     ):
-        pipeline = OraclePipeline(use_transformers=False, use_language_tool=False, use_punctuation_model=False)
+        pipeline = RhetoricPipeline(use_transformers=False, use_language_tool=False, use_punctuation_model=False)
         shared_voice = VoiceSettings(variant="standard", language="en")
         speaker_settings = {
             "A": SpeakerSettings(reference_path=str(speaker_a), voice_settings=shared_voice),
@@ -779,9 +779,9 @@ def test_seeded_pool_render_with_a_retry_reproduces_run_to_run(tmp_path: Path) -
     ran (``synthesis_mode == 'parallel'``) on a multi-core host and that a
     warm re-render re-serves the healed stems note-free.
     """
-    from the_oracle.pipeline import _MIN_TASKS_FOR_POOL
+    from rhetoric.pipeline import _MIN_TASKS_FOR_POOL
 
-    from the_oracle.pipeline import _MIN_TASKS_FOR_POOL
+    from rhetoric.pipeline import _MIN_TASKS_FOR_POOL
 
     assert _MIN_TASKS_FOR_POOL >= 4 and _n_tasks() >= _MIN_TASKS_FOR_POOL
     # The pool only runs where more than one worker is worth spawning; on a

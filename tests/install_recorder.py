@@ -44,7 +44,7 @@ SCRIPTS_DIR = REPO_ROOT / "scripts"
 DESKTOP_TOOLS = ("update-desktop-database", "gio")
 
 
-def load_manage_install(name: str = "oracle_manage_install_boundary"):
+def load_manage_install(name: str = "rhetoric_manage_install_boundary"):
     """Load ``scripts/manage_install.py`` without executing its ``__main__`` path."""
     spec = importlib.util.spec_from_file_location(name, SCRIPTS_DIR / "manage_install.py")
     module = importlib.util.module_from_spec(spec)
@@ -145,7 +145,7 @@ class InstallBoundary:
         so patching only one of them yields an inconsistent boundary (a Windows
         wrapper body around a POSIX venv path).
         """
-        from the_oracle import platform_support
+        from rhetoric import platform_support
 
         windows = platform == "windows"
         for target in (platform_support, self.module):
@@ -176,11 +176,11 @@ class InstallBoundary:
         and every pinned model in hub-cache layout. A partial bundle is rejected
         before anything is seeded, so a partial fixture would only ever record an
         aborted install."""
-        from the_oracle.models.pins import MODEL_PINS
+        from rhetoric.models.pins import MODEL_PINS
 
         platform_dir = "windows" if self.module.is_windows() else "linux"
         (bundle / "wheels" / platform_dir).mkdir(parents=True, exist_ok=True)
-        (bundle / "manifest.json").write_text('{"app": "the-oracle"}', encoding="utf-8")
+        (bundle / "manifest.json").write_text('{"app": "rhetoric"}', encoding="utf-8")
         for repo_id, sha in MODEL_PINS.items():
             snapshot = (
                 bundle / "hf_cache" / ("models--" + repo_id.replace("/", "--")) / "snapshots" / sha
@@ -273,7 +273,7 @@ class InstallBoundary:
                 # as_posix(): the label is this harness's own vocabulary (a
                 # stable key the assertions compare across platforms), not a
                 # path to open. str(Path) uses the platform separator, so on
-                # Windows the labels came back "home/.local\\bin\\the-oracle"
+                # Windows the labels came back "home/.local\\bin\\rhetoric"
                 # and four boundary tests failed on a separator alone.
                 label = f"{root_name}/{path.relative_to(root).as_posix()}"
                 found[label] = WrittenFile(

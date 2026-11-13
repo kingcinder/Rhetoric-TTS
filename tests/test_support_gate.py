@@ -11,8 +11,8 @@ from pathlib import Path
 
 import pytest
 
-from the_oracle import gui_settings, update_service
-from the_oracle.support import gate
+from rhetoric import gui_settings, update_service
+from rhetoric.support import gate
 
 
 @pytest.fixture()

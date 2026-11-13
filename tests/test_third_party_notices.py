@@ -11,8 +11,8 @@ from pathlib import Path
 
 import pytest
 
-from the_oracle import third_party
-from the_oracle.models.pins import MODEL_PINS
+from rhetoric import third_party
+from rhetoric.models.pins import MODEL_PINS
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]

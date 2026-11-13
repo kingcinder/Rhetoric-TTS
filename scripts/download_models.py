@@ -5,8 +5,8 @@ import argparse
 import sys
 from pathlib import Path
 
-from the_oracle.models.pins import GO_EMOTIONS_REPO, MODEL_PINS, PUNCTUATION_REPO
-from the_oracle.tts_engines.chatterbox_engine import ChatterboxEngine
+from rhetoric.models.pins import GO_EMOTIONS_REPO, MODEL_PINS, PUNCTUATION_REPO
+from rhetoric.tts_engines.chatterbox_engine import ChatterboxEngine
 
 
 HF_MODELS = {
@@ -22,7 +22,7 @@ HF_MODELS = {
 # but makes installs non-reproducible: upstream model updates can silently
 # change voice/emotion behavior between machines.
 #
-# Pinned revisions live in the_oracle.models.pins so the runtime, the model
+# Pinned revisions live in rhetoric.models.pins so the runtime, the model
 # downloader, and the offline bundle builder all pin the exact same commits.
 HF_MODEL_REVISIONS: dict[str, str | None] = {
     name: MODEL_PINS[repo_id] for name, repo_id in HF_MODELS.items()

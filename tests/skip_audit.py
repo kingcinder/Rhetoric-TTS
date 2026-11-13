@@ -7,7 +7,7 @@ anything. That is exactly how the Vulkan smoke went untested in CI: ``audio.cpp`
 was never built there, so the test skipped and the suite stayed green for months.
 
 So skips are always reported, and a job that provisions its own requirements can
-demand there be none: set ``ORACLE_FAIL_ON_SKIP=1`` (the CI job that builds the
+demand there be none: set ``RHETORIC_FAIL_ON_SKIP=1`` (the CI job that builds the
 Vulkan backend does) and any skip fails the session.
 
 The reporting and the verdict live here rather than in ``conftest.py`` so they can
@@ -23,7 +23,7 @@ from dataclasses import dataclass
 #: Set this to make a skipped test fail the run. Truthy values are "1", "true",
 #: "yes" and "on" (case-insensitive); anything else, or unset, leaves skips as
 #: skips and merely reports them.
-FAIL_ON_SKIP_ENV = "ORACLE_FAIL_ON_SKIP"
+FAIL_ON_SKIP_ENV = "RHETORIC_FAIL_ON_SKIP"
 
 _TRUTHY = frozenset({"1", "true", "yes", "on"})
 

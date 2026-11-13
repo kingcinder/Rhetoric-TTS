@@ -6,7 +6,7 @@ import sys
 from pathlib import Path
 
 SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "perf_baseline.py"
-spec = importlib.util.spec_from_file_location("oracle_perf_baseline", SCRIPT)
+spec = importlib.util.spec_from_file_location("rhetoric_perf_baseline", SCRIPT)
 pb = importlib.util.module_from_spec(spec)
 sys.modules[spec.name] = pb  # dataclasses resolve through sys.modules
 spec.loader.exec_module(pb)

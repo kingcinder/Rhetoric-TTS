@@ -51,8 +51,7 @@ dev = [
 ]
 
 [project.scripts]
-rhetoric = "the_oracle.cli:main"
-the-oracle = "the_oracle.cli:main"
+rhetoric = "rhetoric.cli:main"
 
 [tool.setuptools]
 package-dir = { "" = "src" }
@@ -68,16 +67,16 @@ license-files = [
 ]
 
 [tool.setuptools.dynamic]
-version = { attr = "the_oracle.__version__" }
+version = { attr = "rhetoric.__version__" }
 
 [tool.setuptools.packages.find]
 where = ["src"]
 
 [tool.setuptools.package-data]
-the_oracle = ["text_repair/data/*.txt", "EULA.md"]
+rhetoric = ["text_repair/data/*.txt", "EULA.md"]
 # The compiled license core. Built by scripts/build_native_license.py; without
 # it a wheel installs and falls back to the pure-Python verifier.
-"the_oracle._native" = ["*.so", "*.pyd", "*.dylib", "*.dll"]
+"rhetoric._native" = ["*.so", "*.pyd", "*.dylib", "*.dll"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

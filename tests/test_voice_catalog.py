@@ -1,9 +1,9 @@
 from pathlib import Path
 
-from the_oracle.voice_catalog import default_voice_choices, voice_catalog_audit
+from rhetoric.voice_catalog import default_voice_choices, voice_catalog_audit
 
 def test_default_voice_choices_are_capped_and_real_paths(tmp_path: Path) -> None:
-    seashell = tmp_path / "Seashells" / "oracle.wav"
+    seashell = tmp_path / "Seashells" / "rhetoric.wav"
     extra = tmp_path / "build" / "smoke_render" / "fallback.wav"
     seashell.parent.mkdir(parents=True, exist_ok=True)
     extra.parent.mkdir(parents=True, exist_ok=True)
@@ -18,7 +18,7 @@ def test_default_voice_choices_are_capped_and_real_paths(tmp_path: Path) -> None
 
 
 def test_default_voice_choices_prefer_repo_local_seashells(tmp_path: Path) -> None:
-    seashell = tmp_path / "Seashells" / "oracle.wav"
+    seashell = tmp_path / "Seashells" / "rhetoric.wav"
     fallback = tmp_path / "build" / "smoke_render" / "fallback.wav"
     seashell.parent.mkdir(parents=True, exist_ok=True)
     fallback.parent.mkdir(parents=True, exist_ok=True)

@@ -7,9 +7,9 @@ from unittest.mock import patch
 
 import pytest
 
-import the_oracle.device_support as device_support
-from the_oracle.cli import build_parser
-from the_oracle.device_support import CUDA_MIN_VRAM_BYTES, CUDADeviceInfo
+import rhetoric.device_support as device_support
+from rhetoric.cli import build_parser
+from rhetoric.device_support import CUDA_MIN_VRAM_BYTES, CUDADeviceInfo
 
 
 def _fake_torch(*, available: bool, devices: list[tuple[str, int]]):

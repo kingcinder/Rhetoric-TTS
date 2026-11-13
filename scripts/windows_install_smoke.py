@@ -2,7 +2,7 @@
 """End-to-end install smoke for Windows: a temp user profile, then the real launchers.
 
 The suite covers what the installer *writes* (``tests/test_install_boundary.py``
-pins the exact ``the-oracle.cmd`` and Start Menu contents). What it cannot cover
+pins the exact ``rhetoric.cmd`` and Start Menu contents). What it cannot cover
 is whether those files *execute*: that needs cmd.exe on Windows, and the GUI the
 Start Menu entry starts runs an event loop that has to be killed rather than
 awaited. This script closes that gap, which is why it is a script rather than a
@@ -10,7 +10,7 @@ test — it needs a Windows shell, a throwaway profile and process control.
 
 Run by ``.github/workflows/ci.yml`` (the ``windows-install-smoke`` job)::
 
-    python scripts/windows_install_smoke.py --profile "%RUNNER_TEMP%\\oracle profile"
+    python scripts/windows_install_smoke.py --profile "%RUNNER_TEMP%\\rhetoric profile"
 
 It works against a temp profile only: ``USERPROFILE``/``HOME``/``APPDATA``/
 ``LOCALAPPDATA`` are redirected there, the pinned model cache and pip cache go
@@ -21,7 +21,7 @@ writes the runner's real user profile. Steps, in order:
    because that is the state a user who followed the install instructions is in),
 2. run ``manage_install.py install``: venv, dependencies, managed ``.cmd``
    launcher, Start Menu entry, then the installer's own doctor,
-3. execute the managed launcher for real (``the-oracle.cmd --help``),
+3. execute the managed launcher for real (``rhetoric.cmd --help``),
 4. launch the **Start Menu entry** — which ``call``s the managed launcher with
    ``gui`` — wait for the GUI to report a built main window, then kill it.
 
@@ -72,7 +72,7 @@ class Layout:
         return self.managed_launcher.parent
 
 
-def _load_manage_install(name: str = "oracle_manage_install_smoke"):
+def _load_manage_install(name: str = "rhetoric_manage_install_smoke"):
     """Load ``scripts/manage_install.py`` so the launcher paths come from it.
 
     The smoke must exercise the installer's own idea of where the launchers go,
@@ -305,7 +305,7 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     # This smoke is non-interactive. Record the current digest so the GUI can
     # reach its main window; the real first-run click-through is unchanged.
-    from the_oracle import eula_acceptance
+    from rhetoric import eula_acceptance
 
     eula_acceptance.record_acceptance(REPO_ROOT)
 

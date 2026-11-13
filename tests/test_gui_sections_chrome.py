@@ -26,8 +26,8 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QApplication, QSplitter, QWidget
 
-from the_oracle.gui_sections import QHSectionGroup, _COLLAPSED_HEADER_HEIGHT
-from the_oracle.gui_themes import THEMES
+from rhetoric.gui_sections import QHSectionGroup, _COLLAPSED_HEADER_HEIGHT
+from rhetoric.gui_themes import THEMES
 from tests.test_app_gui_profiles import _build_window
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -235,7 +235,7 @@ def _harness_aspects() -> tuple[str, ...]:
     That tuple is what ``--aspects`` validates against, so it is the contract
     CI has to cover. Read from the source rather than imported: importing the
     script makes its throwaway config root and redirects the config environment
-    before any ``the_oracle`` import — the isolation that makes the sweep safe
+    before any ``rhetoric`` import — the isolation that makes the sweep safe
     to run on a developer's machine — so an import here would make the test
     part of what it grades.
     """

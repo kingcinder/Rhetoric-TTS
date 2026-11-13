@@ -1,4 +1,4 @@
-"""The privacy CLI commands (the-oracle privacy-status / opt-in / opt-out).
+"""The privacy CLI commands (rhetoric privacy-status / opt-in / opt-out).
 
 The opt-in is the only write path that can enable capture; opt-out takes
 effect immediately (fire-time consent) and --purge is an explicit flag, not
@@ -22,14 +22,14 @@ import pytest
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
-from the_oracle import cli, crash  # noqa: E402
-from the_oracle.crash import handlers as crash_handlers  # noqa: E402
-from the_oracle.crash import bundle  # noqa: E402
+from rhetoric import cli, crash  # noqa: E402
+from rhetoric.crash import handlers as crash_handlers  # noqa: E402
+from rhetoric.crash import bundle  # noqa: E402
 
 
 @pytest.fixture()
 def sandbox(tmp_path: Path, monkeypatch) -> Path:
-    from the_oracle import offline
+    from rhetoric import offline
 
     monkeypatch.setattr(offline, "repo_root", lambda: tmp_path)
     return tmp_path

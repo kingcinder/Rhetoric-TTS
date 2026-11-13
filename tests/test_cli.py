@@ -14,7 +14,7 @@ from unittest.mock import patch
 
 import pytest
 
-from the_oracle.cli import (
+from rhetoric.cli import (
     _input_json_document,
     build_parser,
     handle_check_input,
@@ -22,7 +22,7 @@ from the_oracle.cli import (
     handle_render,
     handle_voices,
 )
-from the_oracle.ingest_transformer import analyze_input_file
+from rhetoric.ingest_transformer import analyze_input_file
 
 
 def _render_args(*extra: str, outdir: str = "/tmp/fake-out") -> argparse.Namespace:
@@ -83,19 +83,19 @@ def test_parser_accepts_audio_cpp_flags() -> None:
 
 
 def test_audio_cpp_flags_require_vulkan_backend() -> None:
-    with patch("the_oracle.cli.OraclePipeline"):
+    with patch("rhetoric.cli.RhetoricPipeline"):
         with pytest.raises(SystemExit, match="require --inference-backend vulkan"):
             handle_render(_render_args("--audio-cpp-device", "1"))
 
-    with patch("the_oracle.cli.OraclePipeline"):
+    with patch("rhetoric.cli.RhetoricPipeline"):
         with pytest.raises(SystemExit, match="require --inference-backend vulkan"):
             handle_render(_render_args("--audio-cpp-threads", "4"))
 
-    with patch("the_oracle.cli.OraclePipeline"):
+    with patch("rhetoric.cli.RhetoricPipeline"):
         with pytest.raises(SystemExit, match="require --inference-backend vulkan"):
             handle_render(_render_args("--audio-cpp-timeout", "120"))
 
-    with patch("the_oracle.cli.OraclePipeline"):
+    with patch("rhetoric.cli.RhetoricPipeline"):
         with pytest.raises(SystemExit, match="require --inference-backend vulkan"):
             handle_render(_render_args("--audio-cpp-max-batch", "16"))
 
@@ -130,7 +130,7 @@ def test_audio_cpp_flags_reject_invalid_ranges(capsys) -> None:
 
 def test_audio_cpp_flags_wire_into_render_settings(tmp_path: Path, monkeypatch) -> None:
     fake = _FakePipeline(str(tmp_path / "output"))
-    monkeypatch.setattr("the_oracle.cli.OraclePipeline", lambda: fake)
+    monkeypatch.setattr("rhetoric.cli.RhetoricPipeline", lambda: fake)
     args = _render_args(
         "--inference-backend",
         "vulkan",
@@ -159,7 +159,7 @@ def test_audio_cpp_flags_wire_into_render_settings(tmp_path: Path, monkeypatch) 
 
 
 def test_render_fails_fast_without_input_or_outdir(monkeypatch) -> None:
-    """Validation must run before OraclePipeline() is constructed.
+    """Validation must run before RhetoricPipeline() is constructed.
 
     The real pipeline loads the optional repair stack, so a missing-flag
     mistake must fail before that load.
@@ -170,7 +170,7 @@ def test_render_fails_fast_without_input_or_outdir(monkeypatch) -> None:
         constructed.append(True)
         raise AssertionError("pipeline must not be constructed before input validation")
 
-    monkeypatch.setattr("the_oracle.cli.OraclePipeline", fake_pipeline)
+    monkeypatch.setattr("rhetoric.cli.RhetoricPipeline", fake_pipeline)
     args = build_parser().parse_args(
         ["render", "--speakerA-ref", "a.wav", "--speakerB-ref", "b.wav"]
     )
@@ -181,7 +181,7 @@ def test_render_fails_fast_without_input_or_outdir(monkeypatch) -> None:
 
 def test_render_requires_speaker_refs_without_defaults(monkeypatch, tmp_path: Path) -> None:
     """Without Seashells defaults and without speaker flags, fail with a clear message."""
-    monkeypatch.setattr("the_oracle.cli.default_voice_choices", lambda repo_root: [])
+    monkeypatch.setattr("rhetoric.cli.default_voice_choices", lambda repo_root: [])
     args = build_parser().parse_args(
         ["render", "--input", "in.txt", "--outdir", str(tmp_path)]
     )
@@ -191,7 +191,7 @@ def test_render_requires_speaker_refs_without_defaults(monkeypatch, tmp_path: Pa
 
 def test_render_defaults_speaker_refs_to_seashells(monkeypatch, tmp_path: Path) -> None:
     """Omitted speaker flags fall back to the repo-local default voices."""
-    from the_oracle.voice_catalog import VoiceChoice
+    from rhetoric.voice_catalog import VoiceChoice
 
     captured: dict[str, dict] = {}
 
@@ -211,10 +211,10 @@ def test_render_defaults_speaker_refs_to_seashells(monkeypatch, tmp_path: Path) 
             return self.output
 
     monkeypatch.setattr(
-        "the_oracle.cli.default_voice_choices",
+        "rhetoric.cli.default_voice_choices",
         lambda repo_root: [VoiceChoice("A", "/tmp/a.wav"), VoiceChoice("B", "/tmp/b.wav")],
     )
-    monkeypatch.setattr("the_oracle.cli.OraclePipeline", lambda: _CapturePipeline())
+    monkeypatch.setattr("rhetoric.cli.RhetoricPipeline", lambda: _CapturePipeline())
 
     args = build_parser().parse_args(
         ["render", "--input", "in.txt", "--outdir", str(tmp_path)]
@@ -227,7 +227,7 @@ def test_render_defaults_speaker_refs_to_seashells(monkeypatch, tmp_path: Path) 
 def test_version_flag_prints_version_and_exits(capsys: pytest.CaptureFixture[str]) -> None:
     """`--version` prints the installed version and exits 0 without requiring
     a subcommand (the subparsers are required=True)."""
-    from the_oracle import __version__
+    from rhetoric import __version__
 
     with pytest.raises(SystemExit) as excinfo:
         build_parser().parse_args(["--version"])
@@ -247,7 +247,7 @@ def test_monologue_flag_wires_into_render_settings(tmp_path: Path, monkeypatch) 
     """`--monologue` reaches RenderSettings.monologue so the whole input renders
     as a single narrator voice (Speaker A)."""
     fake = _FakePipeline(str(tmp_path / "output"))
-    monkeypatch.setattr("the_oracle.cli.OraclePipeline", lambda: fake)
+    monkeypatch.setattr("rhetoric.cli.RhetoricPipeline", lambda: fake)
     args = _render_args("--monologue", outdir=str(tmp_path / "output"))
 
     assert handle_render(args) == 0
@@ -255,7 +255,7 @@ def test_monologue_flag_wires_into_render_settings(tmp_path: Path, monkeypatch) 
 
     # Default: attribution stays on.
     fake2 = _FakePipeline(str(tmp_path / "output2"))
-    monkeypatch.setattr("the_oracle.cli.OraclePipeline", lambda: fake2)
+    monkeypatch.setattr("rhetoric.cli.RhetoricPipeline", lambda: fake2)
     args2 = _render_args(outdir=str(tmp_path / "output2"))
     assert handle_render(args2) == 0
     assert fake2.settings.monologue is False
@@ -272,7 +272,7 @@ def test_speaker_ref_extra_voices_wire_into_speaker_settings(tmp_path: Path, mon
             captured["settings"] = settings
             return _FakePlan(str(output_dir))
 
-    monkeypatch.setattr("the_oracle.cli.OraclePipeline", lambda: _CapturePipeline(str(tmp_path / "output")))
+    monkeypatch.setattr("rhetoric.cli.RhetoricPipeline", lambda: _CapturePipeline(str(tmp_path / "output")))
     args = _render_args(
         "--speaker-ref", "C=/tmp/c.wav",
         "--speaker-ref", "D=/tmp/d.wav",
@@ -298,7 +298,7 @@ def test_seed_flag_reaches_render_settings(monkeypatch, tmp_path) -> None:
             captured["settings"] = settings
             return _FakePlan(str(output_dir))
 
-    monkeypatch.setattr("the_oracle.cli.OraclePipeline", lambda: _CapturePipeline(str(tmp_path / "output")))
+    monkeypatch.setattr("rhetoric.cli.RhetoricPipeline", lambda: _CapturePipeline(str(tmp_path / "output")))
     args = _render_args("--seed", "1234", outdir=str(tmp_path / "output"))
 
     assert handle_render(args) == 0
@@ -313,15 +313,15 @@ def test_seed_flag_defaults_to_none() -> None:
 def test_speaker_ref_validates_keys_and_duplicates(monkeypatch) -> None:
     """Bad --speaker-ref entries fail fast with a clear message: duplicate A/B,
     invalid characters, and missing KEY=PATH separators."""
-    with patch("the_oracle.cli.OraclePipeline"):
+    with patch("rhetoric.cli.RhetoricPipeline"):
         with pytest.raises(SystemExit, match="duplicates --speakerA-ref/--speakerB-ref"):
             handle_render(_render_args("--speaker-ref", "A=/tmp/a.wav"))
 
-    with patch("the_oracle.cli.OraclePipeline"):
+    with patch("rhetoric.cli.RhetoricPipeline"):
         with pytest.raises(SystemExit, match="voices are A..X"):
             handle_render(_render_args("--speaker-ref", "Z=/tmp/z.wav"))
 
-    with patch("the_oracle.cli.OraclePipeline"):
+    with patch("rhetoric.cli.RhetoricPipeline"):
         with pytest.raises(SystemExit, match="expected KEY=PATH"):
             handle_render(_render_args("--speaker-ref", "no-equals-here"))
 
@@ -336,7 +336,7 @@ def test_fix_input_flag_parses_off_by_default() -> None:
 
 
 def test_fix_input_reports_issues_without_modifying(tmp_path: Path, capsys) -> None:
-    from the_oracle.cli import _check_input_formatting
+    from rhetoric.cli import _check_input_formatting
 
     target = tmp_path / "messy.txt"
     target.write_text("A - Hello there.\nB - Hi back.\n", encoding="utf-8")
@@ -349,7 +349,7 @@ def test_fix_input_reports_issues_without_modifying(tmp_path: Path, capsys) -> N
 
 
 def test_fix_input_corrects_file_and_keeps_backup(tmp_path: Path, capsys) -> None:
-    from the_oracle.cli import _check_input_formatting
+    from rhetoric.cli import _check_input_formatting
 
     target = tmp_path / "messy.txt"
     original = "A - Hello there.\nB - Hi back.\n"
@@ -365,7 +365,7 @@ def test_fix_input_corrects_file_and_keeps_backup(tmp_path: Path, capsys) -> Non
 
 
 def test_fix_input_silent_on_clean_and_missing_files(tmp_path: Path, capsys) -> None:
-    from the_oracle.cli import _check_input_formatting
+    from rhetoric.cli import _check_input_formatting
 
     clean = tmp_path / "clean.txt"
     clean.write_text("A: Hello there.\nB: Hi back.\n", encoding="utf-8")
@@ -379,7 +379,7 @@ def test_fix_input_silent_on_clean_and_missing_files(tmp_path: Path, capsys) -> 
 
 def test_fix_input_with_no_fixable_issues_leaves_file(tmp_path: Path, capsys) -> None:
     """--fix-input on a warnings-only file explains and changes nothing."""
-    from the_oracle.cli import _check_input_formatting
+    from rhetoric.cli import _check_input_formatting
 
     target = tmp_path / "warn.txt"
     target.write_text(
@@ -393,7 +393,7 @@ def test_fix_input_with_no_fixable_issues_leaves_file(tmp_path: Path, capsys) ->
 
 
 def test_fix_input_runs_before_pipeline_construction(tmp_path: Path, monkeypatch) -> None:
-    """The transformer check runs before OraclePipeline() is built, so a
+    """The transformer check runs before RhetoricPipeline() is built, so a
     --fix-input correction happens even when pipeline setup would be slow."""
     order: list[str] = []
 
@@ -404,8 +404,8 @@ def test_fix_input_runs_before_pipeline_construction(tmp_path: Path, monkeypatch
         order.append("pipeline")
         return _FakePipeline(str(tmp_path / "output"))
 
-    monkeypatch.setattr("the_oracle.cli._check_input_formatting", fake_check)
-    monkeypatch.setattr("the_oracle.cli.OraclePipeline", fake_pipeline)
+    monkeypatch.setattr("rhetoric.cli._check_input_formatting", fake_check)
+    monkeypatch.setattr("rhetoric.cli.RhetoricPipeline", fake_pipeline)
     target = tmp_path / "in.txt"
     target.write_text("A: Hi.\n", encoding="utf-8")
     args = _render_args("--fix-input", outdir=str(tmp_path / "output"))
@@ -437,7 +437,7 @@ def test_check_input_clean_file_exits_zero(tmp_path: Path, capsys) -> None:
     target = tmp_path / "clean.txt"
     target.write_text("A: fine.\nB: also fine.\n", encoding="utf-8")
 
-    from the_oracle.cli import handle_check_input
+    from rhetoric.cli import handle_check_input
 
     assert handle_check_input(_check_args(str(target))) == 0
     assert "no formatting issues found" in capsys.readouterr().out
@@ -447,7 +447,7 @@ def test_check_input_reports_issues_and_exits_one(tmp_path: Path, capsys) -> Non
     target = tmp_path / "messy.txt"
     target.write_text("A - Hello there.\nB - Hi back.\n", encoding="utf-8")
 
-    from the_oracle.cli import handle_check_input
+    from rhetoric.cli import handle_check_input
 
     assert handle_check_input(_check_args(str(target))) == 1
     out = capsys.readouterr().out
@@ -463,7 +463,7 @@ def test_check_input_fix_corrects_file_and_exits_zero(tmp_path: Path, capsys) ->
     target = tmp_path / "messy.txt"
     target.write_text("A - Hello there.\n", encoding="utf-8")
 
-    from the_oracle.cli import handle_check_input
+    from rhetoric.cli import handle_check_input
 
     assert handle_check_input(_check_args(str(target), "--fix")) == 0
     out = capsys.readouterr().out
@@ -479,7 +479,7 @@ def test_check_input_fix_never_rewrites_warnings(tmp_path: Path, capsys) -> None
     target = tmp_path / "warn.txt"
     target.write_text("A: fine.\nChapter: prose.\n", encoding="utf-8")
 
-    from the_oracle.cli import handle_check_input
+    from rhetoric.cli import handle_check_input
 
     assert handle_check_input(_check_args(str(target), "--fix")) == 1
     out = capsys.readouterr().out
@@ -491,7 +491,7 @@ def test_check_input_fix_never_rewrites_warnings(tmp_path: Path, capsys) -> None
 
 
 def test_check_input_missing_file_exits_two(tmp_path: Path, capsys) -> None:
-    from the_oracle.cli import handle_check_input
+    from rhetoric.cli import handle_check_input
 
     assert handle_check_input(_check_args(str(tmp_path / "nope.txt"))) == 2
     assert "file not found" in capsys.readouterr().err
@@ -511,7 +511,7 @@ def test_check_input_json_emits_single_document(tmp_path: Path, capsys) -> None:
     """Exactly one JSON object is printed to stdout for a consumer to parse."""
     import json
 
-    from the_oracle.cli import _check_input_formatting
+    from rhetoric.cli import _check_input_formatting
 
     target = tmp_path / "messy.txt"
     target.write_text("A - Hello there.\nB - Hi back.\n", encoding="utf-8")
@@ -532,7 +532,7 @@ def test_check_input_json_emits_single_document(tmp_path: Path, capsys) -> None:
 def test_check_input_json_clean_file_zero_counts(tmp_path: Path, capsys) -> None:
     import json
 
-    from the_oracle.cli import _check_input_formatting
+    from rhetoric.cli import _check_input_formatting
 
     target = tmp_path / "clean.txt"
     target.write_text("A: fine.\n", encoding="utf-8")
@@ -555,7 +555,7 @@ def test_check_input_json_with_fix_reports_applied_fix(tmp_path: Path, capsys) -
     the applied fix count + backup path."""
     import json
 
-    from the_oracle.cli import _check_input_formatting
+    from rhetoric.cli import _check_input_formatting
 
     target = tmp_path / "messy.txt"
     original = "A - Hello there.\n"
@@ -575,7 +575,7 @@ def test_check_input_json_with_fix_reports_applied_fix(tmp_path: Path, capsys) -
 def test_check_input_json_missing_file_reports_error(tmp_path: Path, capsys) -> None:
     import json
 
-    from the_oracle.cli import _check_input_formatting
+    from rhetoric.cli import _check_input_formatting
 
     _check_input_formatting(str(tmp_path / "nope.txt"), fix=False, json_output=True)
     doc = json.loads(capsys.readouterr().out)
@@ -587,7 +587,7 @@ def test_check_input_json_missing_file_reports_error(tmp_path: Path, capsys) -> 
 def test_check_input_json_warnings_flagged_not_fixable(tmp_path: Path, capsys) -> None:
     import json
 
-    from the_oracle.cli import _check_input_formatting
+    from rhetoric.cli import _check_input_formatting
 
     target = tmp_path / "warn.txt"
     target.write_text("A: fine.\nChapter: prose.\n", encoding="utf-8")
@@ -651,7 +651,7 @@ def test_check_input_json_render_path_carries_subtitle_classification(
     render's pre-flight report classifies identically to check-input --json."""
     import json
 
-    from the_oracle.cli import _check_input_formatting
+    from rhetoric.cli import _check_input_formatting
 
     data, expected = _subtitle_fixtures()["mixed.srt"]
     target = tmp_path / "mixed.srt"
@@ -702,7 +702,7 @@ def test_check_input_json_marks_unreadable_subtitle_file(tmp_path: Path, capsys,
 
 def test_suggest_speaker_refs_group_cast(tmp_path: Path) -> None:
     """Three speakers map to A/B/C; C and beyond need an added --speaker-ref."""
-    from the_oracle.ingest_transformer import suggest_speaker_refs
+    from rhetoric.ingest_transformer import suggest_speaker_refs
 
     text = (
         "Winston - The plans are ready.\n"
@@ -722,14 +722,14 @@ def test_suggest_speaker_refs_group_cast(tmp_path: Path) -> None:
 
 def test_suggest_speaker_refs_includes_post_fix_cast(tmp_path: Path) -> None:
     """A speaker only visible after a transform is still suggested."""
-    from the_oracle.ingest_transformer import suggest_speaker_refs
+    from rhetoric.ingest_transformer import suggest_speaker_refs
 
     refs = suggest_speaker_refs("Alice - Hello.\nBob - Hi.\n")
     assert [(r.speaker, r.voice_key) for r in refs] == [("alice", "A"), ("bob", "B")]
 
 
 def test_rejected_labels_identified(tmp_path: Path) -> None:
-    from the_oracle.ingest_transformer import rejected_labels
+    from rhetoric.ingest_transformer import rejected_labels
 
     text = "A: fine.\nChapter: prose.\nNote: also prose.\nB: okay.\n"
     # Both are prose labels the engine will read as narration.
@@ -739,7 +739,7 @@ def test_rejected_labels_identified(tmp_path: Path) -> None:
 def test_check_input_json_includes_speaker_refs(tmp_path: Path, capsys) -> None:
     import json
 
-    from the_oracle.cli import _check_input_formatting
+    from rhetoric.cli import _check_input_formatting
 
     target = tmp_path / "cast.txt"
     target.write_text(
@@ -760,7 +760,7 @@ def test_check_input_json_clean_file_still_suggests_refs(tmp_path: Path, capsys)
     flags before rendering."""
     import json
 
-    from the_oracle.cli import _check_input_formatting
+    from rhetoric.cli import _check_input_formatting
 
     target = tmp_path / "clean.txt"
     target.write_text("Winston: Ready.\nJulia: Sure?\n", encoding="utf-8")
@@ -771,7 +771,7 @@ def test_check_input_json_clean_file_still_suggests_refs(tmp_path: Path, capsys)
 
 
 def test_check_input_human_report_prints_ref_hints(tmp_path: Path, capsys) -> None:
-    from the_oracle.cli import handle_check_input
+    from rhetoric.cli import handle_check_input
 
     target = tmp_path / "cast.txt"
     target.write_text(
@@ -803,7 +803,7 @@ Do they suspect anything?
 
 
 def test_maybe_convert_srt_converts_and_reuses(tmp_path: Path, capsys) -> None:
-    from the_oracle.cli import _maybe_convert_srt
+    from rhetoric.cli import _maybe_convert_srt
 
     source = tmp_path / "movie.srt"
     source.write_text(_SRT_SAMPLE, encoding="utf-8")
@@ -825,7 +825,7 @@ def test_maybe_convert_srt_converts_and_reuses(tmp_path: Path, capsys) -> None:
 
 
 def test_maybe_convert_srt_passthrough_non_srt(tmp_path: Path) -> None:
-    from the_oracle.cli import _maybe_convert_srt
+    from rhetoric.cli import _maybe_convert_srt
 
     # Non-.srt extension: never touched, even if the content looks like SRT.
     decoy = tmp_path / "notes.txt"
@@ -844,7 +844,7 @@ def test_maybe_convert_srt_passthrough_non_srt(tmp_path: Path) -> None:
 def test_srt_conversion_runs_before_transformer_check(tmp_path: Path, monkeypatch, capsys) -> None:
     """The SRT conversion lands before the format check, so the transformer
     sees the converted script, not the subtitles."""
-    from the_oracle import cli
+    from rhetoric import cli
 
     order: list[str] = []
 
@@ -861,7 +861,7 @@ def test_srt_conversion_runs_before_transformer_check(tmp_path: Path, monkeypatc
 
     monkeypatch.setattr(cli, "_maybe_convert_srt", fake_srt)
     monkeypatch.setattr(cli, "_check_input_formatting", fake_check)
-    monkeypatch.setattr(cli, "OraclePipeline", lambda *a, **k: order.append("pipeline"))
+    monkeypatch.setattr(cli, "RhetoricPipeline", lambda *a, **k: order.append("pipeline"))
 
     target = tmp_path / "in.txt"
     target.write_text("A: Hi.\n", encoding="utf-8")
@@ -887,7 +887,7 @@ def test_fix_input_interactive_flag_parses_off_by_default() -> None:
 
 
 def test_interactive_accept_applies_fix_with_backup(tmp_path: Path, capsys) -> None:
-    from the_oracle.cli import _check_input_formatting_interactive
+    from rhetoric.cli import _check_input_formatting_interactive
 
     target = tmp_path / "messy.txt"
     original = "A - Hello there.\nB - Hi back.\n"
@@ -914,7 +914,7 @@ def test_interactive_accept_applies_fix_with_backup(tmp_path: Path, capsys) -> N
 
 
 def test_interactive_decline_leaves_file_and_reports(tmp_path: Path, capsys) -> None:
-    from the_oracle.cli import _check_input_formatting_interactive
+    from rhetoric.cli import _check_input_formatting_interactive
 
     target = tmp_path / "messy.txt"
     target.write_text("A - Hello there.\n", encoding="utf-8")
@@ -927,7 +927,7 @@ def test_interactive_decline_leaves_file_and_reports(tmp_path: Path, capsys) -> 
 
 
 def test_interactive_eof_declines_instead_of_crashing(tmp_path: Path, capsys) -> None:
-    from the_oracle.cli import _check_input_formatting_interactive
+    from rhetoric.cli import _check_input_formatting_interactive
 
     target = tmp_path / "messy.txt"
     target.write_text("A - Hello there.\n", encoding="utf-8")
@@ -940,7 +940,7 @@ def test_interactive_eof_declines_instead_of_crashing(tmp_path: Path, capsys) ->
 
 
 def test_interactive_clean_and_warnings_only_proceed_without_prompt(tmp_path: Path, capsys) -> None:
-    from the_oracle.cli import _check_input_formatting_interactive
+    from rhetoric.cli import _check_input_formatting_interactive
 
     clean = tmp_path / "clean.txt"
     clean.write_text("A: fine.\n", encoding="utf-8")
@@ -955,8 +955,8 @@ def test_interactive_clean_and_warnings_only_proceed_without_prompt(tmp_path: Pa
 
 
 def test_interactive_decline_aborts_render_before_pipeline(tmp_path: Path, monkeypatch) -> None:
-    """A declined fix must stop the render before OraclePipeline is built."""
-    from the_oracle import cli
+    """A declined fix must stop the render before RhetoricPipeline is built."""
+    from rhetoric import cli
 
     calls: list[str] = []
 
@@ -971,7 +971,7 @@ def test_interactive_decline_aborts_render_before_pipeline(tmp_path: Path, monke
     )
     monkeypatch.setattr(cli, "_check_input_formatting_interactive", fake_interactive)
     monkeypatch.setattr(
-        cli, "OraclePipeline", lambda *a, **k: calls.append("pipeline") or (_ for _ in ()).throw(AssertionError("pipeline must not load"))
+        cli, "RhetoricPipeline", lambda *a, **k: calls.append("pipeline") or (_ for _ in ()).throw(AssertionError("pipeline must not load"))
     )
 
     target = tmp_path / "in.txt"
@@ -984,7 +984,7 @@ def test_interactive_decline_aborts_render_before_pipeline(tmp_path: Path, monke
 
 def test_interactive_non_tty_refuses_prompt_and_continues(tmp_path: Path, monkeypatch, capsys) -> None:
     """Pipes/CI: the flag degrades to a report-only check, never a hang."""
-    from the_oracle import cli
+    from rhetoric import cli
     import io
 
     monkeypatch.setattr("sys.stdin", io.StringIO(""))  # isatty() -> False
@@ -1069,7 +1069,7 @@ def test_check_input_json_reuses_render_path_schema(tmp_path, capsys) -> None:
     file_path = tmp_path / "messy.txt"
     file_path.write_text("[Speaker A]: Hello there.\n", encoding="utf-8")
     analysis = analyze_input_file(file_path)
-    from the_oracle.ingest_transformer import speaker_ref_report_for_file
+    from rhetoric.ingest_transformer import speaker_ref_report_for_file
 
     refs, rejected = speaker_ref_report_for_file(file_path, None)
     standalone = _input_json_document(str(file_path), analysis, speaker_refs=refs, rejected=rejected)
@@ -1085,7 +1085,7 @@ _VTT = "WEBVTT\n\n00:00:01.000 --> 00:00:04.000\n<v Winston>The party is tonight
 
 
 def test_maybe_convert_srt_handles_vtt(tmp_path, capsys) -> None:
-    from the_oracle.cli import _maybe_convert_srt
+    from rhetoric.cli import _maybe_convert_srt
 
     vtt = tmp_path / "episode.vtt"
     vtt.write_text(_VTT, encoding="utf-8")
@@ -1098,7 +1098,7 @@ def test_maybe_convert_srt_handles_vtt(tmp_path, capsys) -> None:
 
 
 def test_maybe_convert_srt_reuses_existing_vtt_script(tmp_path, capsys) -> None:
-    from the_oracle.cli import _maybe_convert_srt
+    from rhetoric.cli import _maybe_convert_srt
 
     vtt = tmp_path / "episode.vtt"
     vtt.write_text(_VTT, encoding="utf-8")
@@ -1111,7 +1111,7 @@ def test_maybe_convert_srt_reuses_existing_vtt_script(tmp_path, capsys) -> None:
 
 
 def test_srt_script_if_converted_handles_vtt(tmp_path) -> None:
-    from the_oracle.cli import _srt_script_if_converted
+    from rhetoric.cli import _srt_script_if_converted
 
     vtt = tmp_path / "episode.vtt"
     assert _srt_script_if_converted(str(vtt)) == str(vtt)  # no script yet
@@ -1125,7 +1125,7 @@ _VTT_HINTS = "WEBVTT\n\n00:00:01.000 --> 00:00:04.000\n<v Winston>The party is t
 
 
 def test_maybe_convert_srt_prints_speaker_ref_hints(tmp_path, capsys) -> None:
-    from the_oracle.cli import _maybe_convert_srt
+    from rhetoric.cli import _maybe_convert_srt
 
     vtt = tmp_path / "episode.vtt"
     vtt.write_text(_VTT_HINTS, encoding="utf-8")
@@ -1138,7 +1138,7 @@ def test_maybe_convert_srt_prints_speaker_ref_hints(tmp_path, capsys) -> None:
 
 
 def test_maybe_convert_srt_reuse_also_prints_hints(tmp_path, capsys) -> None:
-    from the_oracle.cli import _maybe_convert_srt
+    from rhetoric.cli import _maybe_convert_srt
 
     vtt = tmp_path / "episode.vtt"
     vtt.write_text(_VTT_HINTS, encoding="utf-8")

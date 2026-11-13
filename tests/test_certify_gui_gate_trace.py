@@ -38,7 +38,7 @@ def certifier():
     tests/test_gui_theme_certification._load_certifier documents.
     """
     spec = importlib.util.spec_from_file_location(
-        "oracle_certify_gui_for_gate_trace", CERTIFIER
+        "rhetoric_certify_gui_for_gate_trace", CERTIFIER
     )
     assert spec is not None and spec.loader is not None
     module = importlib.util.module_from_spec(spec)
@@ -142,7 +142,7 @@ def test_the_certifiers_gated_module_list_cannot_drift_from_the_nets() -> None:
     from tests.test_widget_restyle_gate import GATED_MODULES
 
     spec = importlib.util.spec_from_file_location(
-        "oracle_certify_gui_for_gate_list", CERTIFIER
+        "rhetoric_certify_gui_for_gate_list", CERTIFIER
     )
     assert spec is not None and spec.loader is not None
     module = importlib.util.module_from_spec(spec)

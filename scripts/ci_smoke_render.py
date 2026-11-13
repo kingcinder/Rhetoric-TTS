@@ -3,7 +3,7 @@
 CI has no serial number, so the production license gate would stop the render
 at prepare_plan. This patches a valid status onto the same seam that
 tests/conftest.py uses, then runs the target script unchanged via runpy. The
-production gate in the_oracle.licensing is not modified.
+production gate in rhetoric.licensing is not modified.
 
 Usage: python scripts/ci_smoke_render.py scripts/smoke_render.py
 """
@@ -13,8 +13,8 @@ from __future__ import annotations
 import runpy
 import sys
 
-from the_oracle import licensing
-from the_oracle.licensing.tokens import LicenseStatus
+from rhetoric import licensing
+from rhetoric.licensing.tokens import LicenseStatus
 
 
 def main(argv: list[str]) -> None:

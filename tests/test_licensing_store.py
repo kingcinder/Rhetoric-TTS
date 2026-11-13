@@ -23,7 +23,7 @@ import pytest
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
-from the_oracle.licensing import store, tokens  # noqa: E402
+from rhetoric.licensing import store, tokens  # noqa: E402
 from tests.licensing_fixtures import TEST_KEY_ID, TEST_SEED  # noqa: E402
 
 #: Tokens are minted for the INJECTED test-only registry: the production
@@ -140,6 +140,6 @@ def test_store_never_holds_a_token_the_verifier_rejects(tmp_path: Path) -> None:
     expired = tokens.mint(dict(PAYLOAD, exp=int(time.time()) - 5), SEED)
     result = store.save_token(tmp_path, expired, verify_before_save=_verifier())
     assert result.state == "refused"
-    from the_oracle.licensing import current_license
+    from rhetoric.licensing import current_license
 
     assert current_license(tmp_path).state == "no_token"

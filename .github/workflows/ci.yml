@@ -300,7 +300,7 @@ jobs:
       # build, and reference clips that change what the gate says. This runs the
       # gate and the documented entry points in a clean `git archive HEAD` tree
       # and fails if anything differs from this tree for a reason nobody has
-      # registered -- which is how `./oracle` being tracked 100644 was found. The
+      # registered -- which is how `./rhetoric` being tracked 100644 was found. The
       # suite leg is left out here because the step above already runs it; run
       # this script with no --only to get all three legs.
       # Linux only: the matrix's rows are the .sh wrappers, which do not exist on
@@ -351,7 +351,7 @@ jobs:
   # none of them. A skip looks exactly like a pass in a green run, so the suite
   # covered nothing here and said so only to whoever read the skip summary.
   #
-  # This job provides all three and then runs the suite with ORACLE_FAIL_ON_SKIP=1,
+  # This job provides all three and then runs the suite with RHETORIC_FAIL_ON_SKIP=1,
   # so a skip fails the job instead of hiding in it.
   vulkan-smoke:
     name: Vulkan backend (audio.cpp built, no skips allowed)
@@ -421,11 +421,11 @@ jobs:
       - name: Cache The Chatterbox GGML Model
         uses: actions/cache@v4
         with:
-          path: ${{ runner.temp }}/oracle-vulkan-models
+          path: ${{ runner.temp }}/rhetoric-vulkan-models
           key: vulkan-smoke-model-chatterbox_q8_0-v1
 
       # scripts/vulkan_ci_smoke.py builds the CLI, fetches the model, asserts the
-      # smoke's three gates resolve, then runs the suite with ORACLE_FAIL_ON_SKIP=1.
+      # smoke's three gates resolve, then runs the suite with RHETORIC_FAIL_ON_SKIP=1.
       - name: Build audio.cpp, Fetch The Model, Run The Suite Without Skips
         shell: bash
         # Outside the clone path on purpose: scripts/build_audio_cpp.sh clones
@@ -435,13 +435,13 @@ jobs:
         # the two cannot diverge, and `runner` is a legal context here (step
         # level) where it was not at job level.
         env:
-          AUDIOCPP_MODELS_ROOT: ${{ runner.temp }}/oracle-vulkan-models
+          AUDIOCPP_MODELS_ROOT: ${{ runner.temp }}/rhetoric-vulkan-models
         run: ./.venv/bin/python scripts/vulkan_ci_smoke.py
 
       - name: Package The Pinned Vulkan Binary
         shell: bash
         env:
-          AUDIOCPP_MODELS_ROOT: ${{ runner.temp }}/oracle-vulkan-models
+          AUDIOCPP_MODELS_ROOT: ${{ runner.temp }}/rhetoric-vulkan-models
         run: |
           set -Eeuo pipefail
           version="$(./.venv/bin/python -c 'from pathlib import Path; from scripts.release import read_version; print(read_version(Path(".")))')"
@@ -482,9 +482,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: |
-            ${{ runner.temp }}/oracle-smoke/hf
-            ${{ runner.temp }}/oracle-smoke/pip-cache
-          key: install-smoke-${{ runner.os }}-${{ hashFiles('src/the_oracle/models/pins.py') }}
+            ${{ runner.temp }}/rhetoric-smoke/hf
+            ${{ runner.temp }}/rhetoric-smoke/pip-cache
+          key: install-smoke-${{ runner.os }}-${{ hashFiles('src/rhetoric/models/pins.py') }}
 
       - name: Ensure ffmpeg Is Available
         shell: pwsh
@@ -502,9 +502,9 @@ jobs:
         shell: pwsh
         run: |
           python scripts/windows_install_smoke.py `
-            --profile "${{ runner.temp }}\oracle smoke profile" `
-            --hf-home "${{ runner.temp }}\oracle-smoke\hf" `
-            --pip-cache "${{ runner.temp }}\oracle-smoke\pip-cache"
+            --profile "${{ runner.temp }}\rhetoric smoke profile" `
+            --hf-home "${{ runner.temp }}\rhetoric-smoke\hf" `
+            --pip-cache "${{ runner.temp }}\rhetoric-smoke\pip-cache"
 
   linux-frozen-artifacts:
     name: Linux frozen AppImage and deb (unsigned rehearsal)

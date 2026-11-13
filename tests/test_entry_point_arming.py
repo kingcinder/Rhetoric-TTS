@@ -16,7 +16,7 @@ Coverage of the audit:
 - scripts/doctor.py probe children — QtMultimedia imports in bare children
 
 Already armed (verified in this audit, not re-pinned here):
-- the-oracle console script → cli.main (install + arm_native_capture)
+- rhetoric console script → cli.main (install + arm_native_capture)
 - app_gui.launch_gui (arms before MainWindow)
 - render_subprocess.main (arms in the render/preview child)
 - scripts whose children pass through cli.main (crash_hunt GUI leg,
@@ -25,8 +25,8 @@ Already armed (verified in this audit, not re-pinned here):
 
 Armed by the 2026-10-08 smoke-entry extension (pinned below):
 - scripts/doctor.py main() — model loads + probe children in THIS process
-- scripts/smoke_render.py main(), the_oracle.smoke.main,
-  the_oracle.real_engine_smoke.main, scripts/perf_baseline.py main() —
+- scripts/smoke_render.py main(), rhetoric.smoke.main,
+  rhetoric.real_engine_smoke.main, scripts/perf_baseline.py main() —
   the deterministic/real-engine smoke stack, in-process native synthesis
   (the audit's earlier runpy annotation is superseded: the entries now arm
   like every other python -m path; the arming is idempotent so the
@@ -58,7 +58,7 @@ def _assert_armed_before(source: str, relative: str, before_marker: str) -> None
         f"{relative}: arm must run before {before_marker!r} (the entry point's "
         "Qt/native work), not after"
     )
-    assert "from the_oracle.crash import handlers as crash_handlers" in source, (
+    assert "from rhetoric.crash import handlers as crash_handlers" in source, (
         f"{relative}: arm import missing"
     )
 
@@ -131,7 +131,7 @@ def test_doctor_probe_children_arm() -> None:
     assert source.index(".arm_native_capture()") < source.index("'<doctor-probe>'"), (
         "doctor.py: the arm must run before the probe code execs"
     )
-    assert "from the_oracle.crash import handlers" in source, "doctor.py: arm import missing"
+    assert "from rhetoric.crash import handlers" in source, "doctor.py: arm import missing"
 
 
 # --- the smoke-entry extension (2026-10-08): every python -m path arms ---------
@@ -175,12 +175,12 @@ def test_smoke_render_entry_arms_before_work() -> None:
     _assert_smoke_entry_arms("scripts/smoke_render.py", "results = [")
 
 
-def test_the_oracle_smoke_module_entry_arms_before_work() -> None:
-    _assert_smoke_entry_arms("src/the_oracle/smoke.py", "result = run_deterministic_smoke_render(")
+def test_rhetoric_smoke_module_entry_arms_before_work() -> None:
+    _assert_smoke_entry_arms("src/rhetoric/smoke.py", "result = run_deterministic_smoke_render(")
 
 
 def test_real_engine_smoke_entry_arms_before_offline_env() -> None:
-    _assert_smoke_entry_arms("src/the_oracle/real_engine_smoke.py", "apply_offline_environment()")
+    _assert_smoke_entry_arms("src/rhetoric/real_engine_smoke.py", "apply_offline_environment()")
 
 
 def test_perf_baseline_entry_arms_before_profiling() -> None:
@@ -202,7 +202,7 @@ def test_every_python_m_smoke_entry_arm_is_consent_aware(tmp_path: Path) -> None
     import json
     import subprocess
 
-    from the_oracle.crash import consent as crash_consent
+    from rhetoric.crash import consent as crash_consent
 
     wired = tmp_path / "sandbox"
     wired.mkdir()
@@ -212,7 +212,7 @@ def test_every_python_m_smoke_entry_arm_is_consent_aware(tmp_path: Path) -> None
         [sys.executable, "-c", (
             "import sys, os, json, faulthandler; "
             "sys.path.insert(0, 'src'); "
-            "from the_oracle.crash import handlers; "
+            "from rhetoric.crash import handlers; "
             f"handlers.install(root={str(wired)!r}); "
             "armed = handlers.arm_native_capture(); "
             "print(json.dumps({'armed': armed, 'enabled': faulthandler.is_enabled(), "
@@ -234,7 +234,7 @@ def test_every_python_m_smoke_entry_arm_is_consent_aware(tmp_path: Path) -> None
         [sys.executable, "-c", (
             "import sys, json, faulthandler; "
             "sys.path.insert(0, 'src'); "
-            "from the_oracle.crash import handlers; "
+            "from rhetoric.crash import handlers; "
             f"handlers.install(root={str(wired)!r}); "
             "armed = handlers.arm_native_capture(); "
             "print(json.dumps({'armed': armed, 'enabled': faulthandler.is_enabled()}))"

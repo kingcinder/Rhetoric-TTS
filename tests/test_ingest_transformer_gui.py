@@ -11,7 +11,7 @@ from tests.helpers import isolate_user_config
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
-from the_oracle.ingest_transformer import preview_fixed_text
+from rhetoric.ingest_transformer import preview_fixed_text
 
 pytestmark = pytest.mark.slow
 
@@ -68,13 +68,13 @@ def _build_window(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
         _FakeVulkanProbeThread,
         _FakeVulkanSetupThread,
     )
-    import the_oracle.app_gui as app_gui
-    from the_oracle.app_paths import ensure_repo_default_paths
+    import rhetoric.app_gui as app_gui
+    from rhetoric.app_paths import ensure_repo_default_paths
 
     paths = ensure_repo_default_paths(tmp_path / "repo")
     monkeypatch.setattr(app_gui, "QAudioOutput", _FakeAudioOutput)
     monkeypatch.setattr(app_gui, "QMediaPlayer", _FakeMediaPlayer)
-    monkeypatch.setattr(app_gui, "OraclePipeline", _FakePipeline)
+    monkeypatch.setattr(app_gui, "RhetoricPipeline", _FakePipeline)
     monkeypatch.setattr(app_gui, "ChatterboxEngine", _FakeChatterboxEngine)
     monkeypatch.setattr(app_gui, "VulkanDeviceProbeThread", _FakeVulkanProbeThread)
     monkeypatch.setattr(app_gui, "VulkanPreflightThread", _FakeVulkanPreflightThread)
@@ -86,7 +86,7 @@ def _build_window(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
     model_file = tmp_path / "chatterbox-model"
     model_file.write_text("model", encoding="utf-8")
     monkeypatch.setattr(app_gui, "find_audiocpp_binary", lambda: tmp_path / "audiocpp_cli")
-    monkeypatch.setenv("ORACLE_AUDIOCPP_MODEL", str(model_file))
+    monkeypatch.setenv("RHETORIC_AUDIOCPP_MODEL", str(model_file))
     isolate_user_config(monkeypatch, tmp_path / "config")
     window = app_gui.MainWindow()
     return window, paths
@@ -99,7 +99,7 @@ def test_preview_dialog_shows_side_by_side_and_accepts(qt_app, monkeypatch, tmp_
 
     # Invoke the preview builder directly and simulate acceptance by calling
     # the dialog's accept() from inside a patched exec().
-    import the_oracle.app_gui as app_gui
+    import rhetoric.app_gui as app_gui
 
     class _PreviewDialog(app_gui.QDialog):
         accepted = False
@@ -126,7 +126,7 @@ def test_preview_dialog_shows_side_by_side_and_accepts(qt_app, monkeypatch, tmp_
             return app_gui.QDialog.DialogCode.Accepted
 
     monkeypatch.setattr(app_gui, "QDialog", _PreviewDialog)
-    from the_oracle.ingest_transformer import transform_text_detailed
+    from rhetoric.ingest_transformer import transform_text_detailed
 
     _fixed, line_fixes = transform_text_detailed(original)
     result = window._show_fix_preview_dialog(original, fixed, 2, line_fixes=line_fixes)
@@ -139,7 +139,7 @@ def test_preview_dialog_synchronizes_pane_scrolling(qt_app, monkeypatch, tmp_pat
     window, _paths = _build_window(monkeypatch, tmp_path)
     original = "A - Hello there.\nB - Hi back.\n"
     fixed = "A: Hello there.\nB: Hi back.\n"
-    import the_oracle.app_gui as app_gui
+    import rhetoric.app_gui as app_gui
 
     captured: dict = {}
 
@@ -165,7 +165,7 @@ def test_preview_dialog_synchronizes_pane_scrolling(qt_app, monkeypatch, tmp_pat
 
 def test_preview_dialog_reject_leaves_file(qt_app, monkeypatch, tmp_path) -> None:
     window, _paths = _build_window(monkeypatch, tmp_path)
-    import the_oracle.app_gui as app_gui
+    import rhetoric.app_gui as app_gui
 
     class _PreviewDialog(app_gui.QDialog):
         def exec(self):  # noqa: D102 - test double
@@ -181,7 +181,7 @@ def test_transformer_check_shows_popup_and_previews_before_fix(
 ) -> None:
     """The full popup flow: warning popup -> preview dialog -> file fixed."""
     window, _paths = _build_window(monkeypatch, tmp_path)
-    import the_oracle.app_gui as app_gui
+    import rhetoric.app_gui as app_gui
     from tests.test_app_gui_profiles import _FakeSignal  # noqa: F401
 
     target = tmp_path / "input" / "messy.txt"
@@ -235,7 +235,7 @@ def test_transformer_check_shows_popup_and_previews_before_fix(
 def test_transformer_check_cancel_in_preview_keeps_file(qt_app, monkeypatch, tmp_path) -> None:
     """Cancelling inside the preview dialog leaves the file untouched."""
     window, _paths = _build_window(monkeypatch, tmp_path)
-    import the_oracle.app_gui as app_gui
+    import rhetoric.app_gui as app_gui
 
     target = tmp_path / "input" / "messy2.txt"
     target.parent.mkdir(exist_ok=True)
@@ -270,7 +270,7 @@ def test_transformer_check_cancel_in_preview_keeps_file(qt_app, monkeypatch, tmp
 
 def test_clean_file_skips_popup_entirely(qt_app, monkeypatch, tmp_path) -> None:
     window, _paths = _build_window(monkeypatch, tmp_path)
-    import the_oracle.app_gui as app_gui
+    import rhetoric.app_gui as app_gui
 
     target = tmp_path / "input" / "clean.txt"
     target.parent.mkdir(exist_ok=True)
@@ -289,8 +289,8 @@ def test_analyze_reruns_automatically_after_fix(qt_app, monkeypatch, tmp_path) -
     """One Analyze click on a messy file must produce a plan built from the
     CORRECTED content: fix -> Analyze re-runs itself with no second click."""
     window, _paths = _build_window(monkeypatch, tmp_path)
-    import the_oracle.app_gui as app_gui
-    from the_oracle.models.project import RenderPlan, Utterance, VoiceProfile, VoiceSettings
+    import rhetoric.app_gui as app_gui
+    from rhetoric.models.project import RenderPlan, Utterance, VoiceProfile, VoiceSettings
 
     target = tmp_path / "input" / "messy3.txt"
     target.parent.mkdir(exist_ok=True)
@@ -321,7 +321,7 @@ def test_analyze_reruns_automatically_after_fix(qt_app, monkeypatch, tmp_path) -
             ]
             return plan
 
-    monkeypatch.setattr(app_gui, "OraclePipeline", _PlanPipeline)
+    monkeypatch.setattr(app_gui, "RhetoricPipeline", _PlanPipeline)
 
     class _Popup(app_gui.QMessageBox):
         information = staticmethod(lambda *a, **k: None)
@@ -357,7 +357,7 @@ def test_status_panel_reports_the_auto_fix(qt_app, monkeypatch, tmp_path) -> Non
     """The error/status panel records the correction and the automatic
     re-analysis, so the one-click flow is visible instead of silent."""
     window, _paths = _build_window(monkeypatch, tmp_path)
-    import the_oracle.app_gui as app_gui
+    import rhetoric.app_gui as app_gui
 
     target = tmp_path / "input" / "messy4.txt"
     target.parent.mkdir(exist_ok=True)
@@ -398,8 +398,8 @@ def test_batch_fix_scans_previews_and_applies(qt_app, monkeypatch, tmp_path) -> 
     """Folder picker -> combined preview -> apply writes every file + backups,
     and the status panel reports per-file results."""
     window, _paths = _build_window(monkeypatch, tmp_path)
-    import the_oracle.app_gui as app_gui
-    from the_oracle.ingest_transformer import FolderFix
+    import rhetoric.app_gui as app_gui
+    from rhetoric.ingest_transformer import FolderFix
 
     folder = tmp_path / "inputs"
     folder.mkdir()
@@ -462,7 +462,7 @@ def test_batch_fix_scans_previews_and_applies(qt_app, monkeypatch, tmp_path) -> 
 def test_batch_fix_cancel_changes_nothing(qt_app, monkeypatch, tmp_path) -> None:
     """Rejecting the combined preview leaves every file untouched."""
     window, _paths = _build_window(monkeypatch, tmp_path)
-    import the_oracle.app_gui as app_gui
+    import rhetoric.app_gui as app_gui
 
     folder = tmp_path / "inputs"
     folder.mkdir()
@@ -490,7 +490,7 @@ def test_batch_fix_cancel_changes_nothing(qt_app, monkeypatch, tmp_path) -> None
 def test_batch_fix_clean_folder_shows_no_preview(qt_app, monkeypatch, tmp_path) -> None:
     """A folder with nothing to fix gets an informational popup, no dialog."""
     window, _paths = _build_window(monkeypatch, tmp_path)
-    import the_oracle.app_gui as app_gui
+    import rhetoric.app_gui as app_gui
 
     folder = tmp_path / "inputs"
     folder.mkdir()
@@ -528,7 +528,7 @@ def test_batch_fix_clean_folder_shows_no_preview(qt_app, monkeypatch, tmp_path) 
 def test_trusted_file_is_autocorrected_without_popup(qt_app, monkeypatch, tmp_path) -> None:
     """A remembered file is fixed silently: no popup, no preview dialog."""
     window, _paths = _build_window(monkeypatch, tmp_path)
-    import the_oracle.app_gui as app_gui
+    import rhetoric.app_gui as app_gui
 
     target = tmp_path / "input" / "trusted.txt"
     target.parent.mkdir(exist_ok=True)
@@ -562,7 +562,7 @@ def test_trusted_file_is_autocorrected_without_popup(qt_app, monkeypatch, tmp_pa
 def test_remember_checkbox_persists_trust_on_accept(qt_app, monkeypatch, tmp_path) -> None:
     """Ticking the checkbox and accepting adds the file to the trusted list."""
     window, _paths = _build_window(monkeypatch, tmp_path)
-    import the_oracle.app_gui as app_gui
+    import rhetoric.app_gui as app_gui
     from PySide6.QtWidgets import QCheckBox
 
     target = tmp_path / "messy.txt"
@@ -584,7 +584,7 @@ def test_remember_checkbox_persists_trust_on_accept(qt_app, monkeypatch, tmp_pat
 
 def test_unchecked_remember_box_does_not_trust(qt_app, monkeypatch, tmp_path) -> None:
     window, _paths = _build_window(monkeypatch, tmp_path)
-    import the_oracle.app_gui as app_gui
+    import rhetoric.app_gui as app_gui
     from PySide6.QtWidgets import QCheckBox
 
     target = tmp_path / "messy.txt"
@@ -605,7 +605,7 @@ def test_unchecked_remember_box_does_not_trust(qt_app, monkeypatch, tmp_path) ->
 def test_untrusted_file_still_prompts(qt_app, monkeypatch, tmp_path) -> None:
     """Trust is per-file: other files keep the full popup + preview flow."""
     window, _paths = _build_window(monkeypatch, tmp_path)
-    import the_oracle.app_gui as app_gui
+    import rhetoric.app_gui as app_gui
 
     trusted_file = tmp_path / "trusted.txt"
     trusted_file.write_text("A - Hello there.\n", encoding="utf-8")
@@ -651,7 +651,7 @@ def test_trust_persists_across_windows(qt_app, monkeypatch, tmp_path) -> None:
     window2, _paths2 = _build_window(monkeypatch, tmp_path)
     assert window2._input_file_is_trusted(str(target))
     # ...and the file itself holds the resolved path.
-    from the_oracle.gui_settings import load_app_settings
+    from rhetoric.gui_settings import load_app_settings
 
     reloaded = load_app_settings()
     assert str(target.resolve()) in reloaded.get("trusted_format_files", [])
@@ -660,7 +660,7 @@ def test_trust_persists_across_windows(qt_app, monkeypatch, tmp_path) -> None:
 def test_batch_tree_selection_switches_diff(qt_app, monkeypatch, tmp_path) -> None:
     """Selecting another file in the tree shows that file's labeled diff."""
     window, _paths = _build_window(monkeypatch, tmp_path)
-    import the_oracle.app_gui as app_gui
+    import rhetoric.app_gui as app_gui
 
     folder = tmp_path / "inputs"
     folder.mkdir()
@@ -695,7 +695,7 @@ def test_batch_tree_selection_switches_diff(qt_app, monkeypatch, tmp_path) -> No
 
 
 def _fixes_and_warnings(folder):
-    from the_oracle.ingest_transformer import preview_folder_fixes
+    from rhetoric.ingest_transformer import preview_folder_fixes
 
     return preview_folder_fixes(folder)
 
@@ -703,7 +703,7 @@ def _fixes_and_warnings(folder):
 def test_batch_tree_checkboxes_exclude_files_from_apply(qt_app, monkeypatch, tmp_path) -> None:
     """Unticking a file removes it from the returned apply list."""
     window, _paths = _build_window(monkeypatch, tmp_path)
-    import the_oracle.app_gui as app_gui
+    import rhetoric.app_gui as app_gui
 
     folder = tmp_path / "inputs"
     folder.mkdir()
@@ -752,7 +752,7 @@ def test_batch_tree_checkboxes_exclude_files_from_apply(qt_app, monkeypatch, tmp
 def test_popup_and_panel_surface_speaker_ref_hints(qt_app, monkeypatch, tmp_path) -> None:
     """The fix flow suggests the exact voice flags for the (post-fix) cast."""
     window, _paths = _build_window(monkeypatch, tmp_path)
-    import the_oracle.app_gui as app_gui
+    import rhetoric.app_gui as app_gui
 
     target = tmp_path / "messy.txt"
     target.write_text("[Winston]: The plans are ready.\nJulia: Agreed.\n", encoding="utf-8")
@@ -806,7 +806,7 @@ def test_popup_and_panel_surface_speaker_ref_hints(qt_app, monkeypatch, tmp_path
 def test_preview_dialog_color_codes_changed_rows(qt_app, monkeypatch, tmp_path) -> None:
     """Changed rows get red highlights left, green highlights right."""
     window, _paths = _build_window(monkeypatch, tmp_path)
-    from the_oracle.ingest_transformer import preview_fixed_text
+    from rhetoric.ingest_transformer import preview_fixed_text
 
     target = tmp_path / "messy.txt"
     target.write_text(
@@ -816,7 +816,7 @@ def test_preview_dialog_color_codes_changed_rows(qt_app, monkeypatch, tmp_path) 
     original_text, fixed_text, fix_count, _issues, line_fixes = preview_fixed_text(target)
 
     captured: dict = {}
-    import the_oracle.app_gui as app_gui
+    import rhetoric.app_gui as app_gui
     real_dialog = app_gui.QDialog
 
     class _PreviewDialog(real_dialog):
@@ -844,13 +844,13 @@ def test_preview_dialog_remembers_geometry_between_sessions(qt_app, monkeypatch,
     """The dialog's size/position persists via app settings and restores."""
     window, _paths = _build_window(monkeypatch, tmp_path)
     window._app_settings_ready = True
-    from the_oracle.ingest_transformer import preview_fixed_text
+    from rhetoric.ingest_transformer import preview_fixed_text
 
     target = tmp_path / "messy.txt"
     target.write_text("[Speaker A]: Hello there.\n", encoding="utf-8")
     original_text, fixed_text, fix_count, _issues, line_fixes = preview_fixed_text(target)
 
-    import the_oracle.app_gui as app_gui
+    import rhetoric.app_gui as app_gui
     from PySide6.QtCore import QByteArray
 
     real_dialog = app_gui.QDialog
@@ -887,7 +887,7 @@ def test_preview_dialog_remembers_geometry_between_sessions(qt_app, monkeypatch,
 def test_batch_rule_filter_excludes_rule_from_apply(qt_app, monkeypatch, tmp_path) -> None:
     """Unticking a rule checkbox applies only the remaining rules' fixes."""
     window, _paths = _build_window(monkeypatch, tmp_path)
-    import the_oracle.app_gui as app_gui
+    import rhetoric.app_gui as app_gui
 
     folder = tmp_path / "inputs"
     folder.mkdir()
@@ -923,7 +923,7 @@ def test_batch_rule_filter_excludes_rule_from_apply(qt_app, monkeypatch, tmp_pat
 def test_preview_dialog_colors_rule_labels(qt_app, monkeypatch, tmp_path) -> None:
     """Each [rule label] in the diff panes is tinted with its rule's color."""
     window, _paths = _build_window(monkeypatch, tmp_path)
-    from the_oracle.ingest_transformer import preview_fixed_text, rule_color
+    from rhetoric.ingest_transformer import preview_fixed_text, rule_color
 
     target = tmp_path / "messy.txt"
     target.write_text(
@@ -933,7 +933,7 @@ def test_preview_dialog_colors_rule_labels(qt_app, monkeypatch, tmp_path) -> Non
     original_text, fixed_text, fix_count, _issues, line_fixes = preview_fixed_text(target)
     expected = {rule_color("bracket"), rule_color("timestamp")}
 
-    import the_oracle.app_gui as app_gui
+    import rhetoric.app_gui as app_gui
 
     real_dialog = app_gui.QDialog
     seen: dict = {}
@@ -978,7 +978,7 @@ _VTT_GUI = "WEBVTT\n\n00:00:01.000 --> 00:00:04.000\n<v Winston>The party is ton
 def test_input_picker_converts_subtitle_to_script(qt_app, monkeypatch, tmp_path) -> None:
     """Picking a subtitle file fills the field with the converted script."""
     window, _paths = _build_window(monkeypatch, tmp_path)
-    import the_oracle.app_gui as app_gui
+    import rhetoric.app_gui as app_gui
 
     vtt = tmp_path / "episode.vtt"
     vtt.write_text(_VTT_GUI, encoding="utf-8")
@@ -1004,7 +1004,7 @@ def test_analyze_path_converts_typed_subtitle_path(qt_app, monkeypatch, tmp_path
     # Stop the real analysis right after the conversion step: patch the
     # transformer check to observe the (already re-pointed) field.
     seen: dict = {}
-    import the_oracle.app_gui as app_gui
+    import rhetoric.app_gui as app_gui
     monkeypatch.setattr(
         type(window),
         "_run_ingest_transformer_check",
@@ -1145,7 +1145,7 @@ def test_fix_records_backup_for_restore(qt_app, monkeypatch, tmp_path) -> None:
 
 
 def test_restore_most_recent_backup_undoes_fix(qt_app, monkeypatch, tmp_path) -> None:
-    import the_oracle.app_gui as app_gui
+    import rhetoric.app_gui as app_gui
     from unittest.mock import patch
 
     window, _paths = _build_window(monkeypatch, tmp_path)
@@ -1169,7 +1169,7 @@ def test_restore_most_recent_backup_undoes_fix(qt_app, monkeypatch, tmp_path) ->
 
 
 def test_restore_declined_leaves_file_alone(qt_app, monkeypatch, tmp_path) -> None:
-    import the_oracle.app_gui as app_gui
+    import rhetoric.app_gui as app_gui
     from unittest.mock import patch
 
     window, _paths = _build_window(monkeypatch, tmp_path)
@@ -1188,7 +1188,7 @@ def test_restore_declined_leaves_file_alone(qt_app, monkeypatch, tmp_path) -> No
 
 
 def test_restore_with_no_records_shows_hint(qt_app, monkeypatch, tmp_path) -> None:
-    import the_oracle.app_gui as app_gui
+    import rhetoric.app_gui as app_gui
     from unittest.mock import patch
 
     window, _paths = _build_window(monkeypatch, tmp_path)
@@ -1201,7 +1201,7 @@ def test_restore_with_no_records_shows_hint(qt_app, monkeypatch, tmp_path) -> No
 
 
 def test_restore_missing_backup_prunes_record(qt_app, monkeypatch, tmp_path) -> None:
-    import the_oracle.app_gui as app_gui
+    import rhetoric.app_gui as app_gui
     from unittest.mock import patch
 
     window, _paths = _build_window(monkeypatch, tmp_path)

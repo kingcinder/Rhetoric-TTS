@@ -22,7 +22,7 @@ SRC_ROOT = REPO_ROOT_DEFAULT / "src"
 if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
 
-from the_oracle.platform_support import (
+from rhetoric.platform_support import (
     is_linux,
     is_windows,
     managed_launcher_dir,
@@ -35,8 +35,8 @@ from the_oracle.platform_support import (
 )
 
 
-JSON_PREFIX = "__ORACLE_TTS_JSON__"
-MANAGED_WRAPPER_MARKER = "ORACLE_TTS_WRAPPER"
+JSON_PREFIX = "__RHETORIC_TTS_JSON__"
+MANAGED_WRAPPER_MARKER = "RHETORIC_TTS_WRAPPER"
 SUPPORTED_PYTHON_MIN = (3, 11)
 SUPPORTED_PYTHON_MAX = (3, 13)
 LIBRARY_PACKAGE_CANDIDATES: dict[str, list[str]] = {
@@ -160,7 +160,7 @@ def _run_python_probe(
     # preamble ahead of them.
     boot = (
         "try:\n"
-        "    from the_oracle.crash import handlers as _crash_handlers\n"
+        "    from rhetoric.crash import handlers as _crash_handlers\n"
         "    _crash_handlers.install()\n"
         "    _crash_handlers.arm_native_capture()\n"
         "except Exception:\n"
@@ -332,7 +332,7 @@ def _crash_reports_status(repo_root: Path) -> dict[str, Any]:
     import os as _os
 
     try:
-        from the_oracle import crash
+        from rhetoric import crash
     except ImportError as error:
         return {
             "ok": False,
@@ -343,7 +343,7 @@ def _crash_reports_status(repo_root: Path) -> dict[str, Any]:
             "newest_exception": "",
             "native_dump_present": False,
             "total_bytes": 0,
-            "detail": f"the_oracle.crash is not importable: {error}",
+            "detail": f"rhetoric.crash is not importable: {error}",
         }
 
     consent_on = crash.read_consent(repo_root)
@@ -417,7 +417,7 @@ def _licensing_status(repo_root: Path) -> dict[str, Any]:
     own verdict and the human-readable line carry the signal instead.
     """
     try:
-        from the_oracle.licensing import current_license
+        from rhetoric.licensing import current_license
     except ImportError as error:
         return {
             "ok": False,
@@ -426,7 +426,7 @@ def _licensing_status(repo_root: Path) -> dict[str, Any]:
             "key_id": None,
             "exp": None,
             "machine_locked": False,
-            "detail": f"the_oracle.licensing is not importable: {error}",
+            "detail": f"rhetoric.licensing is not importable: {error}",
         }
 
     status = current_license(repo_root)
@@ -444,7 +444,7 @@ def _licensing_status(repo_root: Path) -> dict[str, Any]:
 
 #: Cue separator: the blank-line runs that end one SubRip/WebVTT cue and
 #: start the next. Mirror of ``srt_ingest._CUE_SEPARATOR_RE`` — the doctor
-#: never imports the_oracle, so the decode chain's shapes are mirrored here
+#: never imports rhetoric, so the decode chain's shapes are mirrored here
 #: and pinned against the real chain by tests/test_doctor_input_subtitles.py.
 _CUE_SEPARATOR_RE = re.compile(rb"(\r?\n\r?\n+)")
 
@@ -585,7 +585,7 @@ def _preview_writers_status(repo_root: Path) -> dict[str, Any]:
     owner's naming scheme.
 
     The writer-manifest net (tests/test_stem_cache_write_path.py) pins the
-    SOURCE side: preview audio is produced by ``OraclePipeline.render_preview``
+    SOURCE side: preview audio is produced by ``RhetoricPipeline.render_preview``
     alone, which names every file through ``ProjectCache.preview_path`` —
     ``preview_<alnum-speaker>_<index>.wav`` inside the project's ``previews/``
     directory. This check is the DISK side: any file in a ``previews/``
@@ -622,7 +622,7 @@ def _preview_writers_status(repo_root: Path) -> dict[str, Any]:
         report["error"] = f"could not scan for previews/ directories: {exc}"
         return report
     report["dirs_scanned"] = len(candidates)
-    from the_oracle.models.cache import ProjectCache
+    from rhetoric.models.cache import ProjectCache
 
     for previews_dir in candidates:
         try:
@@ -674,7 +674,7 @@ def _release_metadata_status(repo_root: Path) -> dict[str, Any]:
     """
     report: dict[str, Any] = {"ok": True, "problems": [], "post_cut": [], "version": "", "error": ""}
     release_script = Path(__file__).resolve().parent / "release.py"
-    spec = importlib.util.spec_from_file_location("oracle_release_tool", release_script)
+    spec = importlib.util.spec_from_file_location("rhetoric_release_tool", release_script)
     if spec is None or spec.loader is None:
         report["ok"] = False
         report["error"] = f"release.py could not be loaded from {release_script}"
@@ -1055,7 +1055,7 @@ def _deterministic_smoke_status(repo_root: Path, *, licensed: bool = True) -> di
     try:
         from unittest.mock import patch
 
-        from the_oracle.smoke import run_deterministic_smoke_render, smoke_output_problem
+        from rhetoric.smoke import run_deterministic_smoke_render, smoke_output_problem
     except Exception as exc:
         return {"ok": False, "error": f"{type(exc).__name__}: {exc}"}
 
@@ -1065,8 +1065,8 @@ def _deterministic_smoke_status(repo_root: Path, *, licensed: bool = True) -> di
         # Keep the doctor smoke deterministic and lightweight by forcing the
         # text-repair helpers onto their built-in fallback paths.
         with (
-            patch("the_oracle.text_repair.grammar.GrammarCorrector._try_load_language_tool", return_value=None),
-            patch("the_oracle.text_repair.punctuation.PunctuationRestorer._try_load_punctuator", return_value=None),
+            patch("rhetoric.text_repair.grammar.GrammarCorrector._try_load_language_tool", return_value=None),
+            patch("rhetoric.text_repair.punctuation.PunctuationRestorer._try_load_punctuator", return_value=None),
         ):
             result = run_deterministic_smoke_render(output_root, source_format="txt")
     except Exception as exc:
@@ -1105,7 +1105,7 @@ def _deterministic_smoke_for_report(repo_root: Path, license_status: dict[str, A
 def _real_engine_smoke_status(repo_root: Path) -> dict[str, Any]:
     _prepend_repo_src(repo_root)
     try:
-        from the_oracle.real_engine_smoke import real_engine_smoke_prerequisites
+        from rhetoric.real_engine_smoke import real_engine_smoke_prerequisites
     except Exception as exc:
         return {"ok": False, "ready": False, "error": f"{type(exc).__name__}: {exc}"}
 
@@ -1134,7 +1134,7 @@ def _real_engine_smoke_status(repo_root: Path) -> dict[str, Any]:
     return result
 
 
-_VULKAN_PATCH_MARKER = "ORACLE VENDORED PATCH"
+_VULKAN_PATCH_MARKER = "RHETORIC VENDORED PATCH"
 
 
 def _vulkaninfo_summary() -> tuple[bool, str]:
@@ -1167,13 +1167,13 @@ def _probe_audiocpp_devices(binary: Path | None) -> dict[str, Any]:
 
     ``ran`` is the evidence a verdict needs, and it is why this reports the probe
     rather than just its output. A path that merely *exists* proves nothing: with
-    ``ORACLE_AUDIOCPP_CLI`` pointing at a file that cannot execute, the doctor
+    ``RHETORIC_AUDIOCPP_CLI`` pointing at a file that cannot execute, the doctor
     reported ``ok: True`` because ``find_audiocpp_binary`` returns anything that
     ``exists()``, while this very probe returned no devices -- a PASS graded from
     a filename, next to evidence gathered in the same run that contradicted it.
 
     Each device is ``{"index": <n>, "name": "..."}`` where ``<n>`` is the value
-    to pass as ``ORACLE_AUDIOCPP_DEVICE`` / ``--device <n>``. audio.cpp's own
+    to pass as ``RHETORIC_AUDIOCPP_DEVICE`` / ``--device <n>``. audio.cpp's own
     indexes are what the backend uses, so this is the authoritative answer for
     multi-GPU machines (vulkaninfo alone cannot tell us which index audio.cpp
     picks).
@@ -1228,7 +1228,7 @@ def _vulkan_caveat(*, rdna1_device: bool, patched: bool | None, binary_built: bo
         notes.append(
             "RDNA1 (gfx1010/gfx1012) GPU detected: audio.cpp's ggml can hit "
             "VK_ERROR_DEVICE_LOST during buffer init unless the vendored "
-            "ORACLE_VENDORED ggml patch is applied (whisper.cpp#3611)."
+            "RHETORIC_VENDORED ggml patch is applied (whisper.cpp#3611)."
         )
     if binary_built and patched is False:
         notes.append(
@@ -1250,7 +1250,7 @@ def _vulkan_backend_status(repo_root: Path) -> dict[str, Any]:
     """
     _prepend_repo_src(repo_root)
     try:
-        from the_oracle.tts_engines.vulkan_backend import _vulkan_batch_max_requests, find_audiocpp_binary, find_audiocpp_model
+        from rhetoric.tts_engines.vulkan_backend import _vulkan_batch_max_requests, find_audiocpp_binary, find_audiocpp_model
     except Exception as exc:
         return {
             "ok": False,
@@ -1276,7 +1276,7 @@ def _vulkan_backend_status(repo_root: Path) -> dict[str, Any]:
         }
 
     binary = find_audiocpp_binary()
-    model_env = os.environ.get("ORACLE_AUDIOCPP_MODEL", "")
+    model_env = os.environ.get("RHETORIC_AUDIOCPP_MODEL", "")
     model_override = Path(model_env).expanduser() if model_env else None
     # Mirrors AudioCppVulkanEngine.ensure_model_ready: the env override always
     # wins (a dangling value must surface, not silently fall through); without
@@ -1295,8 +1295,8 @@ def _vulkan_backend_status(repo_root: Path) -> dict[str, Any]:
     rdna1_device = any(token in lowered for token in ("rdna1", "navi1", "navi10", "navi14"))
     patched = _vulkan_patches_applied(repo_root)
     # The effective per-subprocess request cap: same single source of truth as
-    # the engine (ORACLE_AUDIOCPP_MAX_BATCH, clamped >= 1, default 32).
-    batch_env = os.environ.get("ORACLE_AUDIOCPP_MAX_BATCH", "")
+    # the engine (RHETORIC_AUDIOCPP_MAX_BATCH, clamped >= 1, default 32).
+    batch_env = os.environ.get("RHETORIC_AUDIOCPP_MAX_BATCH", "")
     effective_batch_cap = _vulkan_batch_max_requests()
     # The one execution-backed fact in this check: the binary is not merely on
     # disk, it ran. Everything else it reports is a stat of one kind or another,
@@ -1309,7 +1309,7 @@ def _vulkan_backend_status(repo_root: Path) -> dict[str, Any]:
         "binary_built": binary is not None,
         "binary_runs": binary_runs,
         "binary": str(binary) if binary else "",
-        "cli_override": os.environ.get("ORACLE_AUDIOCPP_CLI", ""),
+        "cli_override": os.environ.get("RHETORIC_AUDIOCPP_CLI", ""),
         "model_override_set": bool(model_env),
         "model_path": str(model_path) if model_path else "",
         "model_file_exists": model_file_exists,
@@ -1318,8 +1318,8 @@ def _vulkan_backend_status(repo_root: Path) -> dict[str, Any]:
         "device_name": _first_device_name(vulkaninfo_text),
         "rdna1_device": rdna1_device,
         "vendored_patch_applied": patched,
-        "device_index_env": os.environ.get("ORACLE_AUDIOCPP_DEVICE", ""),
-        "threads_env": os.environ.get("ORACLE_AUDIOCPP_THREADS", ""),
+        "device_index_env": os.environ.get("RHETORIC_AUDIOCPP_DEVICE", ""),
+        "threads_env": os.environ.get("RHETORIC_AUDIOCPP_THREADS", ""),
         "batch_env": batch_env,
         "effective_batch_cap": effective_batch_cap,
         "audio_cpp_devices": device_probe["devices"],
@@ -1333,7 +1333,7 @@ def _cuda_backend_status(repo_root: Path) -> dict[str, Any]:
     """Report NVIDIA/CUDA readiness without making CUDA a required check."""
     _prepend_repo_src(repo_root)
     try:
-        from the_oracle.device_support import cuda_devices, cuda_reason, cuda_runtime_available
+        from rhetoric.device_support import cuda_devices, cuda_reason, cuda_runtime_available
 
         devices = cuda_devices()
         runtime_available = cuda_runtime_available()
@@ -1368,7 +1368,7 @@ def _turbo_status(repo_root: Path, timeout: float) -> dict[str, Any]:
 from __future__ import annotations
 import json
 
-from the_oracle.tts_engines.chatterbox_engine import turbo_readiness_report
+from rhetoric.tts_engines.chatterbox_engine import turbo_readiness_report
 
 payload = turbo_readiness_report(device="cpu")
 print({JSON_PREFIX!r} + json.dumps(payload))
@@ -1387,7 +1387,7 @@ def _build_next_steps(report: dict[str, Any], *, ci_mode: bool) -> list[str]:
     steps: list[str] = []
     if not report["python"]["ok"]:
         if is_windows():
-            steps.append(r"Install Python 3.12, make sure the `py` launcher can find it, then rerun .\bootstrap_oracle_tts.ps1.")
+            steps.append(r"Install Python 3.12, make sure the `py` launcher can find it, then rerun .\bootstrap_rhetoric.ps1.")
         else:
             steps.append("Install Python 3.12 with venv support: sudo apt install python3.12 python3.12-venv")
 
@@ -1452,7 +1452,7 @@ def _build_next_steps(report: dict[str, Any], *, ci_mode: bool) -> list[str]:
     if vulkan["binary_built"] and not vulkan["model_file_exists"]:
         if vulkan.get("model_override_set"):
             steps.append(
-                f"Vulkan backend: ORACLE_AUDIOCPP_MODEL points at a missing model file "
+                f"Vulkan backend: RHETORIC_AUDIOCPP_MODEL points at a missing model file "
                 f"({vulkan.get('model_path') or '?'}); fix the variable before "
                 f"rendering on Vulkan."
             )
@@ -1473,7 +1473,7 @@ def _build_next_steps(report: dict[str, Any], *, ci_mode: bool) -> list[str]:
         indexes = ", ".join(str(device["index"]) for device in audio_cpp_devices)
         steps.append(
             f"Vulkan backend: {len(audio_cpp_devices)} GPUs detected by audio.cpp "
-            f"(indexes {indexes}); set ORACLE_AUDIOCPP_DEVICE to choose which one renders."
+            f"(indexes {indexes}); set RHETORIC_AUDIOCPP_DEVICE to choose which one renders."
         )
     # The per-subprocess request cap is sensible in roughly 1-128; warn when
     # it is outside that, since a tiny cap destroys batching and a huge one
@@ -1493,7 +1493,7 @@ def _build_next_steps(report: dict[str, Any], *, ci_mode: bool) -> list[str]:
     if cap_too_small or cap_too_large:
         steps.append(
             f"Vulkan backend: effective batch cap is {effective_batch_cap} "
-            f"(ORACLE_AUDIOCPP_MAX_BATCH={batch_env or 'unset'}); set it "
+            f"(RHETORIC_AUDIOCPP_MAX_BATCH={batch_env or 'unset'}); set it "
             f"to a value in the sensible 1-128 range or unset it for the default 32."
         )
     cuda = report.get("cuda_backend", {"devices": [], "runtime_available": True, "reason": "CUDA probe not requested."})
@@ -1517,7 +1517,7 @@ def _build_next_steps(report: dict[str, Any], *, ci_mode: bool) -> list[str]:
     for entry in preview_writers.get("foreign") or []:
         steps.append(
             f"Preview cache: {entry['path']} was not written by the gated "
-            "preview owner (OraclePipeline.render_preview names every preview "
+            "preview owner (RhetoricPipeline.render_preview names every preview "
             "via ProjectCache.preview_path). Review the file and whatever "
             "wrote it."
         )
@@ -1547,7 +1547,7 @@ def _build_next_steps(report: dict[str, Any], *, ci_mode: bool) -> list[str]:
 def run(repo_root: Path, *, model_timeout: float, qt_timeout: float, skip_model_init: bool, ci_mode: bool) -> dict[str, Any]:
     repo_root = repo_root.resolve()
     _prepend_repo_src(repo_root)
-    from the_oracle.voice_catalog import voice_catalog_audit
+    from rhetoric.voice_catalog import voice_catalog_audit
 
     chatterbox_probe = _chatterbox_probe(repo_root, timeout=model_timeout, skip_model_init=skip_model_init)
     license_status = _licensing_status(repo_root)
@@ -1759,7 +1759,7 @@ def _print_human_report(report: dict[str, Any]) -> None:
         model_state = f"set but file missing ({vulkan.get('model_path') or '?'})"
     parts = [
         f"binary={'built' if vulkan['binary_built'] else 'not built'}",
-        f"ORACLE_AUDIOCPP_MODEL={model_state}",
+        f"RHETORIC_AUDIOCPP_MODEL={model_state}",
         f"vulkan device={'yes' if vulkan['vulkan_device'] else 'no'}",
     ]
     if vulkan["device_name"]:
@@ -1790,7 +1790,7 @@ def _print_human_report(report: dict[str, Any]) -> None:
         print(f"      audio.cpp Vulkan devices: {labels}")
         if len(audio_cpp_devices) > 1 and not vulkan.get("device_index_env"):
             indexes = ", ".join(str(device["index"]) for device in audio_cpp_devices)
-            print(f"      Multi-GPU: set ORACLE_AUDIOCPP_DEVICE to one of [{indexes}] to pick a device.")
+            print(f"      Multi-GPU: set RHETORIC_AUDIOCPP_DEVICE to one of [{indexes}] to pick a device.")
 
     release_meta = report.get("release_metadata")
     if release_meta is not None:
@@ -1882,7 +1882,7 @@ def _print_human_report(report: dict[str, Any]) -> None:
         for entry in previews["foreign"]:
             print(
                 f"      {entry['path']}: not written by the gated preview owner "
-                "(OraclePipeline.render_preview via ProjectCache.preview_path) "
+                "(RhetoricPipeline.render_preview via ProjectCache.preview_path) "
                 "— review the file and its writer."
             )
 
@@ -1902,7 +1902,7 @@ def main(argv: list[str] | None = None) -> int:
     # standard). The install() beside it matters for the read-only contract:
     # the faulthandler dump then lives beside the doctor's own declared
     # smoke output only when consent is on — nothing is created when off.
-    from the_oracle.crash import handlers as crash_handlers
+    from rhetoric.crash import handlers as crash_handlers
 
     crash_handlers.install()
     parser = argparse.ArgumentParser(description="Install and launch diagnostics for Rhetoric.")
@@ -1925,7 +1925,7 @@ def main(argv: list[str] | None = None) -> int:
     # checkpoint, so on an offline install those probes must resolve from the
     # seeded cache. Applied before run() so every subprocess probe inherits it
     # through _probe_environment().
-    from the_oracle.offline import apply_offline_environment
+    from rhetoric.offline import apply_offline_environment
 
     apply_offline_environment()
 

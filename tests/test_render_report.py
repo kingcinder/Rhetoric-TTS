@@ -36,8 +36,8 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
 from tests.licensing_fixtures import TEST_SEED, payload  # noqa: E402
-from the_oracle import cli  # noqa: E402
-from the_oracle.licensing import store, tokens  # noqa: E402
+from rhetoric import cli  # noqa: E402
+from rhetoric.licensing import store, tokens  # noqa: E402
 
 pytestmark = pytest.mark.usefixtures("test_license_registry")
 
@@ -96,11 +96,11 @@ def _isolate(monkeypatch: pytest.MonkeyPatch, root: Path) -> Path:
     """Point the install root (and therefore the license store) at scratch.
 
     ``current_license()`` resolves the running install's root through
-    ``the_oracle.offline.repo_root`` (imported inside the function), so patching
+    ``rhetoric.offline.repo_root`` (imported inside the function), so patching
     that one seam isolates the whole licensing stack for the command.
     """
     root.mkdir(parents=True, exist_ok=True)
-    monkeypatch.setattr("the_oracle.offline.repo_root", lambda: root)
+    monkeypatch.setattr("rhetoric.offline.repo_root", lambda: root)
     return root
 
 
@@ -266,7 +266,7 @@ def test_two_renders_in_one_folder_is_refused_rather_than_guessed(
 
 def test_the_report_is_read_only(tmp_path: Path) -> None:
     """No fixture, no CLI: build_report must not touch the project at all."""
-    import the_oracle.render_report as render_report
+    import rhetoric.render_report as render_report
 
     project = tmp_path / "project"
     _make_render(project)

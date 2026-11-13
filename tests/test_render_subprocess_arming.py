@@ -1,7 +1,7 @@
 """The render child arms native-crash capture like every other launch path.
 
 ``render_subprocess.main`` is the spawned clean interpreter the GUI delegates
-renders to (``python -m the_oracle.render_subprocess``) — precisely so native
+renders to (``python -m rhetoric.render_subprocess``) — precisely so native
 model code runs OUT of the Qt process. That made it the last unarmed process
 class: the parent's ``cli.main`` arm lives in a different process and a
 faulthandler cannot see across a process boundary, so a native segfault
@@ -26,13 +26,13 @@ import pytest
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
-from the_oracle import crash, render_subprocess  # noqa: E402
-from the_oracle.crash import handlers as crash_handlers  # noqa: E402
+from rhetoric import crash, render_subprocess  # noqa: E402
+from rhetoric.crash import handlers as crash_handlers  # noqa: E402
 
 
 @pytest.fixture()
 def sandbox(tmp_path: Path, monkeypatch) -> Path:
-    from the_oracle import offline
+    from rhetoric import offline
 
     monkeypatch.setattr(offline, "repo_root", lambda: tmp_path)
     # Fresh handler state: sibling crash tests install targeted handlers and

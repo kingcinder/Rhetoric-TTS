@@ -25,7 +25,7 @@ from pathlib import Path
 
 import pytest
 
-from the_oracle.gui_themes import (
+from rhetoric.gui_themes import (
     DEFAULT_THEME,
     THEMES,
     USED_PAIRS,
@@ -291,11 +291,11 @@ def test_design_token_certification_runs_locally_and_passes(tmp_path: Path) -> N
     without certifying a single theme. tests/test_fast_subset.py asks pytest's
     own collector whether the fast subset still keeps this gate.
     """
-    from the_oracle.platform_support import user_config_root
+    from rhetoric.platform_support import user_config_root
 
     from tests.helpers import repo_tree_snapshot, snapshot_differences
 
-    config_root = user_config_root() / "the_oracle"
+    config_root = user_config_root() / "rhetoric"
     before_repo = repo_tree_snapshot(REPO_ROOT)
     before_config = repo_tree_snapshot(config_root) if config_root.exists() else {}
 
@@ -433,7 +433,7 @@ def test_the_dialog_report_parser_cannot_pass_on_a_truncated_report() -> None:
 # --- the geometry scan's report shape ------------------------------------------
 
 
-def _load_certifier(name: str = "oracle_certify_gui_for_geometry"):
+def _load_certifier(name: str = "rhetoric_certify_gui_for_geometry"):
     """The certifier, imported as a file (the suite's own script-test idiom).
 
     Importing the real module runs its preamble (config root + app import),

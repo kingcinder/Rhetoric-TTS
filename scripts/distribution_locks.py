@@ -68,11 +68,11 @@ def build_lock(
     lock_path.write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
 
     manifest_path.parent.mkdir(parents=True, exist_ok=True)
-    manifest = {"schema": 1, "app": "the-oracle", "python_version": python_version, "platforms": {}}
+    manifest = {"schema": 1, "app": "rhetoric", "python_version": python_version, "platforms": {}}
     if manifest_path.exists():
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     manifest.setdefault("schema", 1)
-    manifest.setdefault("app", "the-oracle")
+    manifest.setdefault("app", "rhetoric")
     manifest.setdefault("python_version", python_version)
     manifest.setdefault("platforms", {})
     manifest["platforms"][platform] = {"lockfile": lock_path.name, "wheels": records}

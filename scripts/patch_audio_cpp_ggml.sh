@@ -13,7 +13,7 @@
 #   -fmacro-prefix-map=... flag is emitted unquoted and split on the space.
 #   The value is quoted so builds work from any path.
 #
-# Both patches are idempotent (no-op when their ORACLE_VENDORED marker is
+# Both patches are idempotent (no-op when their RHETORIC_VENDORED marker is
 # present) and FAIL LOUDLY if the source changes shape on an audio.cpp/ggml
 # update, so the fixes can never be silently lost on a version bump.
 set -Eeuo pipefail
@@ -22,9 +22,9 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 AUDIOCPP_DIR="${AUDIOCPP_DIR:-$REPO_ROOT/audio.cpp}"
 GGML_FILE="$AUDIOCPP_DIR/external/ggml/src/ggml-vulkan/ggml-vulkan.cpp"
 SP_FILE="$AUDIOCPP_DIR/external/sentencepiece/CMakeLists.txt"
-GGML_MARKER="===== BEGIN ORACLE VENDORED PATCH (RDNA1 buffer memset) ====="
-SP_MARKER="===== BEGIN ORACLE VENDORED PATCH (space-safe macro-prefix-map) ====="
-SPIRV_MARKER="===== BEGIN ORACLE VENDORED PATCH (portable SPIR-V headers) ====="
+GGML_MARKER="===== BEGIN RHETORIC VENDORED PATCH (RDNA1 buffer memset) ====="
+SP_MARKER="===== BEGIN RHETORIC VENDORED PATCH (space-safe macro-prefix-map) ====="
+SPIRV_MARKER="===== BEGIN RHETORIC VENDORED PATCH (portable SPIR-V headers) ====="
 PYTHON_BIN="${PYTHON_BIN:-python3}"
 
 if [[ ! -f "$GGML_FILE" ]]; then
@@ -47,7 +47,7 @@ raw = open(path, "rb").read()
 anchor = b"#include <vulkan/vulkan.hpp>"
 block = b"""#include <vulkan/vulkan.hpp>
 
-// ===== BEGIN ORACLE VENDORED PATCH (portable SPIR-V headers) =====
+// ===== BEGIN RHETORIC VENDORED PATCH (portable SPIR-V headers) =====
 // ggml uses the `spv::` opcode constants below; include the Khronos header
 // explicitly because Vulkan-Hpp does not provide it transitively on Linux.
 #if __has_include(<spirv/unified1/spirv.hpp>)
@@ -59,7 +59,7 @@ block = b"""#include <vulkan/vulkan.hpp>
 #else
 #    include <spirv/unified1/spirv.hpp>
 #endif
-// ===== END ORACLE VENDORED PATCH (portable SPIR-V headers) ====="""
+// ===== END RHETORIC VENDORED PATCH (portable SPIR-V headers) ====="""
 if raw.count(anchor) != 1:
     raise SystemExit(f"ANCHOR NOT FOUND or duplicated in {path}")
 open(path, "wb").write(raw.replace(anchor, block, 1))
@@ -135,7 +135,7 @@ GGML_PATCHED="$(printf '%s\n' \
   '    // RDNA1; vk_command_pool binds its queue so ggml_vk_submit follows it.' \
   "    // Vendored against ggml $(git -C "$AUDIOCPP_DIR/external/ggml" rev-parse --short HEAD 2>/dev/null || echo unknown)." \
   '    // Re-check this block after any audio.cpp/ggml update.' \
-  '    // ===== END ORACLE VENDORED PATCH (RDNA1 buffer memset) =====' \
+  '    // ===== END RHETORIC VENDORED PATCH (RDNA1 buffer memset) =====' \
   '    vk_context subctx = ggml_vk_create_temporary_context(' \
   '        dst->device->architecture == vk_device_architecture::AMD_RDNA1' \
   '            ? dst->device->compute_queue.cmd_pool' \
@@ -151,7 +151,7 @@ SP_PATCHED="  # $SP_MARKER
   # audio.cpp fails to build from checkout paths containing spaces: the
   # unquoted -fmacro-prefix-map=... flag is split on the space. Quote the
   # value so builds work from any path.
-  # ===== END ORACLE VENDORED PATCH (space-safe macro-prefix-map) =====
+  # ===== END RHETORIC VENDORED PATCH (space-safe macro-prefix-map) =====
   string(APPEND CMAKE_CXX_FLAGS \" -fmacro-prefix-map=\\\"\${CMAKE_SOURCE_DIR}/=\\\"\")"
 apply_patch "space-safe sentencepiece build fix" "$SP_MARKER" "$SP_FILE" "$SP_ORIGINAL" "$SP_PATCHED"
 

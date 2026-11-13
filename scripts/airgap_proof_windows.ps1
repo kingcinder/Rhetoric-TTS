@@ -12,7 +12,7 @@
     drive letters shift), never on the C: development install.
 #>
 param(
-    [string]$VolumeLabel = "ORACLEDATA",
+    [string]$VolumeLabel = "RHETORICDATA",
     [string]$Bundle,
     [string]$InstallRoot,
     [string]$ProofDir,
@@ -60,7 +60,7 @@ if (-not $volume -or -not $volume.DriveLetter) {
 }
 $VolumeRoot = "$($volume.DriveLetter):"
 if (-not $Bundle) { $Bundle = Join-Path $VolumeRoot "bundle" }
-if (-not $InstallRoot) { $InstallRoot = Join-Path $VolumeRoot "OracleOffline" }
+if (-not $InstallRoot) { $InstallRoot = Join-Path $VolumeRoot "RhetoricOffline" }
 if (-not $ProofDir) { $ProofDir = Join-Path $VolumeRoot "airgap" }
 if (-not $HubCache) { $HubCache = Join-Path $VolumeRoot "hfhub" }
 
@@ -121,7 +121,7 @@ $env:HF_HUB_OFFLINE = "1"
 $env:HF_HUB_DISABLE_TELEMETRY = "1"
 $env:PIP_NO_INDEX = "1"
 $env:PIP_DISABLE_PIP_VERSION_CHECK = "1"
-# The installer and its doctor run resolve `the-oracle` from a *fresh shell*
+# The installer and its doctor run resolve `rhetoric` from a *fresh shell*
 # PATH; a logon-launched process starts with a minimal PATH, so add the launcher
 # dir the installer is about to create exactly as a logged-in desktop shell would.
 $launcherDir = Join-Path $env:APPDATA "Python\Scripts"
@@ -137,7 +137,7 @@ $installSeconds = [math]::Round(((Get-Date) - $installStart).TotalSeconds, 1)
 Step "install.bat exit=$installExit elapsed=${installSeconds}s"
 Assert ($installExit -eq 0) "install.bat exited 0"
 
-Assert (Test-Path (Join-Path $InstallRoot ".oracle_offline")) "offline marker .oracle_offline written"
+Assert (Test-Path (Join-Path $InstallRoot ".rhetoric_offline")) "offline marker .rhetoric_offline written"
 Assert (Test-Path (Join-Path $InstallRoot ".venv\Scripts\python.exe")) "venv created from bundled wheels"
 
 # --- every pinned model came out of the bundle -------------------------------
@@ -153,16 +153,16 @@ foreach ($repo in $manifest.model_pins.PSObject.Properties) {
 }
 
 # --- render through the managed launcher ------------------------------------
-$launcher = Join-Path $env:APPDATA "Python\Scripts\the-oracle.cmd"
-Assert (Test-Path $launcher) "managed launcher the-oracle.cmd installed"
-# No HF_HUB_OFFLINE here: the .oracle_offline marker is what must set it.
+$launcher = Join-Path $env:APPDATA "Python\Scripts\rhetoric.cmd"
+Assert (Test-Path $launcher) "managed launcher rhetoric.cmd installed"
+# No HF_HUB_OFFLINE here: the .rhetoric_offline marker is what must set it.
 Remove-Item Env:HF_HUB_OFFLINE -ErrorAction SilentlyContinue
 
 $outdir = Join-Path $ProofDir "Output"
 New-Item -ItemType Directory -Force -Path $outdir | Out-Null
 $renderLog = Join-Path $ProofDir "render.log"
 $renderStart = Get-Date
-Step "render: the-oracle render --input cli_short.txt"
+Step "render: rhetoric render --input cli_short.txt"
 & cmd.exe /c "`"$launcher`" render --input `"$InstallRoot\Input\cli_short.txt`" --outdir `"$outdir`"" 2>&1 | Tee-Object -FilePath $renderLog
 $renderExit = $LASTEXITCODE
 $renderSeconds = [math]::Round(((Get-Date) - $renderStart).TotalSeconds, 1)

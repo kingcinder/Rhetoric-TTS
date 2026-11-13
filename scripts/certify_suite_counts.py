@@ -247,8 +247,8 @@ def assert_imports_the_tree_under_test(tree: Path, interpreter: Path) -> str:
     probe = (
         "import sys;"
         f"sys.path.insert(0, {str(tree / 'src')!r});"
-        "import pathlib, the_oracle;"
-        "print(pathlib.Path(the_oracle.__file__).resolve())"
+        "import pathlib, rhetoric;"
+        "print(pathlib.Path(rhetoric.__file__).resolve())"
     )
     completed = subprocess.run(
         [str(interpreter), "-c", probe],
@@ -261,7 +261,7 @@ def assert_imports_the_tree_under_test(tree: Path, interpreter: Path) -> str:
     resolved = (completed.stdout or "").strip().splitlines()
     if completed.returncode != 0 or not resolved:
         raise SuiteCountsError(
-            f"could not import the_oracle from {tree}: {completed.stderr.strip()[:400]}"
+            f"could not import rhetoric from {tree}: {completed.stderr.strip()[:400]}"
         )
     imported = Path(resolved[-1])
     if not imported.is_relative_to(tree.resolve()):
@@ -628,7 +628,7 @@ def main(argv: list[str] | None = None) -> int:
         # exit code for drift.
         scratch_parent.mkdir(parents=True, exist_ok=True)
     fresh_root = Path(
-        tempfile.mkdtemp(prefix="oracle-suite-counts-", dir=str(scratch_parent) if scratch_parent else None)
+        tempfile.mkdtemp(prefix="rhetoric-suite-counts-", dir=str(scratch_parent) if scratch_parent else None)
     ) / "tree"
 
     # Whether a worktree was actually added: every refusal above the add (no

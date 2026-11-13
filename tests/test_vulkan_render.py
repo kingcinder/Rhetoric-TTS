@@ -22,12 +22,12 @@ import soundfile as sf
 
 pytestmark = pytest.mark.slow
 
-from the_oracle.models.cache import CachedReference, ProjectCache
-from the_oracle.models.project import VoiceSettings
-from the_oracle.models.settings import RenderSettings, SpeakerSettings; from the_oracle.pipeline import OraclePipeline, RenderProgress, _chunk_engine_key
-from the_oracle.smoke import _SmokeEmotionClassifier, _write_reference
-from the_oracle.utils.chunking import chunk_utterance
-from the_oracle.utils.hashing import build_chunk_hash, hash_file, hash_payload
+from rhetoric.models.cache import CachedReference, ProjectCache
+from rhetoric.models.project import VoiceSettings
+from rhetoric.models.settings import RenderSettings, SpeakerSettings; from rhetoric.pipeline import RhetoricPipeline, RenderProgress, _chunk_engine_key
+from rhetoric.smoke import _SmokeEmotionClassifier, _write_reference
+from rhetoric.utils.chunking import chunk_utterance
+from rhetoric.utils.hashing import build_chunk_hash, hash_file, hash_payload
 
 VULKAN_ENGINE_VERSION = "deterministic-vulkan-v1"
 
@@ -52,7 +52,7 @@ class _FakeVulkanConditioning:
 class _DeterministicVulkanEngine:
     """Deterministic drop-in replacement for AudioCppVulkanEngine.
 
-    Injected via ``patch("the_oracle.pipeline.AudioCppVulkanEngine", ...)`` so
+    Injected via ``patch("rhetoric.pipeline.AudioCppVulkanEngine", ...)`` so
     the pipeline sees it in place of the real audio.cpp-shipping engine. It
     implements the same duck-typed surface the pipeline touches during render:
     engine_id, sample_rate, engine_version, ensure_model_ready,
@@ -189,7 +189,7 @@ class _DeterministicVulkanEngine:
 def _expected_chunk_hashes(plan, backend: str, engine_version: str) -> set[str]:
     """Recompute the stem hashes a render would build for one backend.
 
-    Mirrors the task-building loop in ``OraclePipeline.render``: chunk each
+    Mirrors the task-building loop in ``RhetoricPipeline.render``: chunk each
     utterance with ``chunk_utterance`` and hash each chunk with the backend's
     cache key, the profile's engine params, and the resolved reference hash.
     """
@@ -235,12 +235,12 @@ def test_vulkan_render_chunked_dialogue_stems_stay_in_vulkan_namespace(tmp_path:
     # tool model load) -- the same convention the doctor's deterministic smoke
     # uses. The repair pipeline still runs its regex/spelling fallbacks.
     with (
-        patch("the_oracle.pipeline.AudioCppVulkanEngine", _DeterministicVulkanEngine),
-        patch("the_oracle.pipeline.GoEmotionsClassifier", _SmokeEmotionClassifier),
-        patch("the_oracle.text_repair.grammar.GrammarCorrector._try_load_language_tool", return_value=None),
-        patch("the_oracle.text_repair.punctuation.PunctuationRestorer._try_load_punctuator", return_value=None),
+        patch("rhetoric.pipeline.AudioCppVulkanEngine", _DeterministicVulkanEngine),
+        patch("rhetoric.pipeline.GoEmotionsClassifier", _SmokeEmotionClassifier),
+        patch("rhetoric.text_repair.grammar.GrammarCorrector._try_load_language_tool", return_value=None),
+        patch("rhetoric.text_repair.punctuation.PunctuationRestorer._try_load_punctuator", return_value=None),
     ):
-        pipeline = OraclePipeline()
+        pipeline = RhetoricPipeline()
         plan = pipeline.prepare_plan(dialogue, tmp_path / "output", speaker_settings, render_settings)
         output_path = pipeline.render(plan, render_settings)
 
@@ -295,12 +295,12 @@ def test_vulkan_render_batches_all_misses_into_one_process(tmp_path: Path) -> No
     _DeterministicVulkanEngine.single_synthesize_calls = 0
 
     with (
-        patch("the_oracle.pipeline.AudioCppVulkanEngine", _DeterministicVulkanEngine),
-        patch("the_oracle.pipeline.GoEmotionsClassifier", _SmokeEmotionClassifier),
-        patch("the_oracle.text_repair.grammar.GrammarCorrector._try_load_language_tool", return_value=None),
-        patch("the_oracle.text_repair.punctuation.PunctuationRestorer._try_load_punctuator", return_value=None),
+        patch("rhetoric.pipeline.AudioCppVulkanEngine", _DeterministicVulkanEngine),
+        patch("rhetoric.pipeline.GoEmotionsClassifier", _SmokeEmotionClassifier),
+        patch("rhetoric.text_repair.grammar.GrammarCorrector._try_load_language_tool", return_value=None),
+        patch("rhetoric.text_repair.punctuation.PunctuationRestorer._try_load_punctuator", return_value=None),
     ):
-        pipeline = OraclePipeline()
+        pipeline = RhetoricPipeline()
         plan = pipeline.prepare_plan(dialogue, tmp_path / "output", speaker_settings, render_settings)
         output_path = pipeline.render(plan, render_settings)
 
@@ -347,12 +347,12 @@ def test_vulkan_render_batch_cache_hits_do_not_respawn(tmp_path: Path) -> None:
 
     def _render_once() -> None:
         with (
-            patch("the_oracle.pipeline.AudioCppVulkanEngine", _DeterministicVulkanEngine),
-            patch("the_oracle.pipeline.GoEmotionsClassifier", _SmokeEmotionClassifier),
-            patch("the_oracle.text_repair.grammar.GrammarCorrector._try_load_language_tool", return_value=None),
-            patch("the_oracle.text_repair.punctuation.PunctuationRestorer._try_load_punctuator", return_value=None),
+            patch("rhetoric.pipeline.AudioCppVulkanEngine", _DeterministicVulkanEngine),
+            patch("rhetoric.pipeline.GoEmotionsClassifier", _SmokeEmotionClassifier),
+            patch("rhetoric.text_repair.grammar.GrammarCorrector._try_load_language_tool", return_value=None),
+            patch("rhetoric.text_repair.punctuation.PunctuationRestorer._try_load_punctuator", return_value=None),
         ):
-            pipeline = OraclePipeline()
+            pipeline = RhetoricPipeline()
             plan = pipeline.prepare_plan(dialogue, tmp_path / "output", speaker_settings, render_settings)
             pipeline.render(plan, render_settings)
 
@@ -371,11 +371,11 @@ def test_vulkan_render_batch_cache_hits_do_not_respawn(tmp_path: Path) -> None:
 def test_vulkan_render_batch_cap_splits_many_stems_into_multiple_processes(
     tmp_path: Path, monkeypatch
 ) -> None:
-    """ORACLE_AUDIOCPP_MAX_BATCH caps each audio.cpp process: a render with
+    """RHETORIC_AUDIOCPP_MAX_BATCH caps each audio.cpp process: a render with
     more cache-missing stems than the cap splits into multiple batches (each
     at most the cap), the timeline records the true process/request counts,
     and all stems still land in the vulkan namespace."""
-    monkeypatch.setenv("ORACLE_AUDIOCPP_MAX_BATCH", "2")
+    monkeypatch.setenv("RHETORIC_AUDIOCPP_MAX_BATCH", "2")
     dialogue = tmp_path / "dialogue.txt"
     dialogue.write_text(LONG_DIALOGUE, encoding="utf-8")
     speaker_a = _write_reference(tmp_path / "speaker_a_ref.wav", 220.0)
@@ -394,12 +394,12 @@ def test_vulkan_render_batch_cap_splits_many_stems_into_multiple_processes(
     _DeterministicVulkanEngine.single_synthesize_calls = 0
 
     with (
-        patch("the_oracle.pipeline.AudioCppVulkanEngine", _DeterministicVulkanEngine),
-        patch("the_oracle.pipeline.GoEmotionsClassifier", _SmokeEmotionClassifier),
-        patch("the_oracle.text_repair.grammar.GrammarCorrector._try_load_language_tool", return_value=None),
-        patch("the_oracle.text_repair.punctuation.PunctuationRestorer._try_load_punctuator", return_value=None),
+        patch("rhetoric.pipeline.AudioCppVulkanEngine", _DeterministicVulkanEngine),
+        patch("rhetoric.pipeline.GoEmotionsClassifier", _SmokeEmotionClassifier),
+        patch("rhetoric.text_repair.grammar.GrammarCorrector._try_load_language_tool", return_value=None),
+        patch("rhetoric.text_repair.punctuation.PunctuationRestorer._try_load_punctuator", return_value=None),
     ):
-        pipeline = OraclePipeline()
+        pipeline = RhetoricPipeline()
         plan = pipeline.prepare_plan(dialogue, tmp_path / "output", speaker_settings, render_settings)
         output_path = pipeline.render(plan, render_settings)
 
@@ -428,7 +428,7 @@ def test_vulkan_render_batch_cap_splits_many_stems_into_multiple_processes(
 def test_vulkan_render_batch_cap_from_settings_splits_stems(tmp_path: Path) -> None:
     """The batch cap threaded through RenderSettings.audio_cpp_max_batch (the
     CLI flag / manifest field / GUI spin) must actually drive grouping -- no
-    ORACLE_AUDIOCPP_MAX_BATCH env var needed. A render with more cache-missing
+    RHETORIC_AUDIOCPP_MAX_BATCH env var needed. A render with more cache-missing
     stems than the setting splits into multiple batches, each at most the
     setting's value."""
     dialogue = tmp_path / "dialogue.txt"
@@ -451,12 +451,12 @@ def test_vulkan_render_batch_cap_from_settings_splits_stems(tmp_path: Path) -> N
     _DeterministicVulkanEngine.recorded_ctor_kwargs = []
 
     with (
-        patch("the_oracle.pipeline.AudioCppVulkanEngine", _DeterministicVulkanEngine),
-        patch("the_oracle.pipeline.GoEmotionsClassifier", _SmokeEmotionClassifier),
-        patch("the_oracle.text_repair.grammar.GrammarCorrector._try_load_language_tool", return_value=None),
-        patch("the_oracle.text_repair.punctuation.PunctuationRestorer._try_load_punctuator", return_value=None),
+        patch("rhetoric.pipeline.AudioCppVulkanEngine", _DeterministicVulkanEngine),
+        patch("rhetoric.pipeline.GoEmotionsClassifier", _SmokeEmotionClassifier),
+        patch("rhetoric.text_repair.grammar.GrammarCorrector._try_load_language_tool", return_value=None),
+        patch("rhetoric.text_repair.punctuation.PunctuationRestorer._try_load_punctuator", return_value=None),
     ):
-        pipeline = OraclePipeline()
+        pipeline = RhetoricPipeline()
         plan = pipeline.prepare_plan(dialogue, tmp_path / "output", speaker_settings, render_settings)
         output_path = pipeline.render(plan, render_settings)
 
@@ -481,7 +481,7 @@ def test_vulkan_render_emits_progress_per_request_during_batch(tmp_path: Path, m
     re-emit a duplicate 'ready' event for those tasks (no 1..N rewind)."""
     # Force one batch regardless of how many stems the fixture chunks into,
     # so the single-batch assertions below are not coupled to the cap.
-    monkeypatch.setenv("ORACLE_AUDIOCPP_MAX_BATCH", "64")
+    monkeypatch.setenv("RHETORIC_AUDIOCPP_MAX_BATCH", "64")
     dialogue = tmp_path / "dialogue.txt"
     dialogue.write_text(LONG_DIALOGUE, encoding="utf-8")
     speaker_a = _write_reference(tmp_path / "speaker_a_ref.wav", 220.0)
@@ -502,12 +502,12 @@ def test_vulkan_render_emits_progress_per_request_during_batch(tmp_path: Path, m
     progress_events: list[RenderProgress] = []
 
     with (
-        patch("the_oracle.pipeline.AudioCppVulkanEngine", _DeterministicVulkanEngine),
-        patch("the_oracle.pipeline.GoEmotionsClassifier", _SmokeEmotionClassifier),
-        patch("the_oracle.text_repair.grammar.GrammarCorrector._try_load_language_tool", return_value=None),
-        patch("the_oracle.text_repair.punctuation.PunctuationRestorer._try_load_punctuator", return_value=None),
+        patch("rhetoric.pipeline.AudioCppVulkanEngine", _DeterministicVulkanEngine),
+        patch("rhetoric.pipeline.GoEmotionsClassifier", _SmokeEmotionClassifier),
+        patch("rhetoric.text_repair.grammar.GrammarCorrector._try_load_language_tool", return_value=None),
+        patch("rhetoric.text_repair.punctuation.PunctuationRestorer._try_load_punctuator", return_value=None),
     ):
-        pipeline = OraclePipeline()
+        pipeline = RhetoricPipeline()
         plan = pipeline.prepare_plan(dialogue, tmp_path / "output", speaker_settings, render_settings)
         pipeline.render(plan, render_settings, progress_callback=progress_events.append)
 
@@ -571,12 +571,12 @@ def test_vulkan_render_mixed_cache_progress_never_rewinds(tmp_path: Path) -> Non
     progress_events: list[RenderProgress] = []
 
     with (
-        patch("the_oracle.pipeline.AudioCppVulkanEngine", _DeterministicVulkanEngine),
-        patch("the_oracle.pipeline.GoEmotionsClassifier", _SmokeEmotionClassifier),
-        patch("the_oracle.text_repair.grammar.GrammarCorrector._try_load_language_tool", return_value=None),
-        patch("the_oracle.text_repair.punctuation.PunctuationRestorer._try_load_punctuator", return_value=None),
+        patch("rhetoric.pipeline.AudioCppVulkanEngine", _DeterministicVulkanEngine),
+        patch("rhetoric.pipeline.GoEmotionsClassifier", _SmokeEmotionClassifier),
+        patch("rhetoric.text_repair.grammar.GrammarCorrector._try_load_language_tool", return_value=None),
+        patch("rhetoric.text_repair.punctuation.PunctuationRestorer._try_load_punctuator", return_value=None),
     ):
-        pipeline = OraclePipeline()
+        pipeline = RhetoricPipeline()
         plan = pipeline.prepare_plan(dialogue, tmp_path / "output", speaker_settings, render_settings)
         # Resolve reference hashes (render does this internally) so the stem
         # hashes can be computed before rendering.
@@ -615,7 +615,7 @@ def test_vulkan_render_mixed_cache_progress_never_rewinds(tmp_path: Path) -> Non
 def test_vulkan_render_forwards_device_and_threads_settings(tmp_path: Path) -> None:
     """RenderSettings.audio_cpp_device/threads/timeout/max_batch must reach
     the Vulkan engine constructor (the CLI flags and manifest fields ride
-    RenderSettings, so they work without ORACLE_AUDIOCPP_DEVICE/THREADS/
+    RenderSettings, so they work without RHETORIC_AUDIOCPP_DEVICE/THREADS/
     TIMEOUT/MAX_BATCH)."""
     dialogue = tmp_path / "dialogue.txt"
     dialogue.write_text("Speaker A: Hello from the Vulkan test.\nSpeaker B: Confirmed.\n", encoding="utf-8")
@@ -638,12 +638,12 @@ def test_vulkan_render_forwards_device_and_threads_settings(tmp_path: Path) -> N
     _DeterministicVulkanEngine.recorded_ctor_kwargs = []
 
     with (
-        patch("the_oracle.pipeline.AudioCppVulkanEngine", _DeterministicVulkanEngine),
-        patch("the_oracle.pipeline.GoEmotionsClassifier", _SmokeEmotionClassifier),
-        patch("the_oracle.text_repair.grammar.GrammarCorrector._try_load_language_tool", return_value=None),
-        patch("the_oracle.text_repair.punctuation.PunctuationRestorer._try_load_punctuator", return_value=None),
+        patch("rhetoric.pipeline.AudioCppVulkanEngine", _DeterministicVulkanEngine),
+        patch("rhetoric.pipeline.GoEmotionsClassifier", _SmokeEmotionClassifier),
+        patch("rhetoric.text_repair.grammar.GrammarCorrector._try_load_language_tool", return_value=None),
+        patch("rhetoric.text_repair.punctuation.PunctuationRestorer._try_load_punctuator", return_value=None),
     ):
-        pipeline = OraclePipeline()
+        pipeline = RhetoricPipeline()
         plan = pipeline.prepare_plan(dialogue, tmp_path / "output", speaker_settings, render_settings)
         pipeline.render(plan, render_settings)
 

@@ -56,7 +56,7 @@ _APP_GUI_PATCHED_POLICY_NAMES = frozenset(
     {
         "QMediaPlayer",
         "QAudioOutput",
-        "OraclePipeline",
+        "RhetoricPipeline",
         "ChatterboxEngine",
         "find_audiocpp_binary",
         "VulkanPreflightThread",
@@ -74,13 +74,13 @@ def _import(name: str):
 
 
 def _gui_recording_tree():
-    owner = _import("the_oracle.gui_recording")
+    owner = _import("rhetoric.gui_recording")
     source = Path(owner.__file__).read_text(encoding="utf-8")
     return owner, ast.parse(source)
 
 
 def test_patch_free_dialog_lives_in_gui_recording() -> None:
-    owner = _import("the_oracle.gui_recording")
+    owner = _import("rhetoric.gui_recording")
     for name in ("RecordStudioWorker", "RecordingStudioDialog"):
         assert hasattr(owner, name), name
     # Behavior probe so the pin cannot pass over a stub module.
@@ -94,8 +94,8 @@ def test_app_gui_delegates_the_recording_cluster_to_the_owner() -> None:
     only while app_gui.RecordingStudioDialog IS gui_recording's object — a
     wrapper or subclass would silently defeat those patches while the suite
     stayed green."""
-    owner = _import("the_oracle.gui_recording")
-    app_gui = _import("the_oracle.app_gui")
+    owner = _import("rhetoric.gui_recording")
+    app_gui = _import("rhetoric.app_gui")
     assert app_gui.RecordingStudioDialog is owner.RecordingStudioDialog
 
 
@@ -112,7 +112,7 @@ def test_moved_worker_is_dialog_only_and_never_reexported() -> None:
     assert _MOVED_WORKER in defined, (
         f"gui_recording must define {_MOVED_WORKER} — the pin went blind"
     )
-    app_gui = _import("the_oracle.app_gui")
+    app_gui = _import("rhetoric.app_gui")
     assert not hasattr(app_gui, _MOVED_WORKER), (
         f"app_gui must NOT re-export {_MOVED_WORKER}: the dialog builds its "
         "worker from gui_recording's globals, so an app_gui-level patch "
@@ -120,10 +120,10 @@ def test_moved_worker_is_dialog_only_and_never_reexported() -> None:
     )
     # And the manifest records exactly that disposition:
     moved = json.loads(MANIFEST.read_text(encoding="utf-8"))["moved_owners"][
-        "the_oracle.gui_recording"
+        "rhetoric.gui_recording"
     ]["names"]
     assert moved == [_MOVED_WORKER], (
-        "moved_owners.the_oracle.gui_recording must list exactly the "
+        "moved_owners.rhetoric.gui_recording must list exactly the "
         f"dialog-only worker; got {moved}"
     )
 
@@ -165,7 +165,7 @@ def test_main_window_never_references_the_moved_worker() -> None:
     in any form: it is the dialog's private implementation. A window-side
     reference would mean the worker moved back across the seam without the
     manifest's moved_owners record being true anymore."""
-    app_gui = _import("the_oracle.app_gui")
+    app_gui = _import("rhetoric.app_gui")
     tree = ast.parse(Path(app_gui.__file__).read_text(encoding="utf-8"))
     offenders = [
         f"line {node.lineno}"
@@ -210,7 +210,7 @@ def test_suite_patches_the_moved_worker_only_on_the_owner() -> None:
             if isinstance(target, ast.Name) and target.id == "app_gui":
                 offenders.append(f"{test_file.name}: line {node.lineno} patches app_gui.{_MOVED_WORKER}")
     assert offenders == [], (
-        "the moved worker must be patched on the_oracle.gui_recording, never "
+        "the moved worker must be patched on rhetoric.gui_recording, never "
         "app_gui:\n  " + "\n  ".join(offenders)
     )
     # Classifier vacuity, both directions:
@@ -242,7 +242,7 @@ def test_recording_dialog_constructs_only_from_app_gui_globals() -> None:
     (``gui_recording.RecordingStudioDialog``), those patches would go silent
     while the suite stayed green.
     """
-    app_gui = _import("the_oracle.app_gui")
+    app_gui = _import("rhetoric.app_gui")
     tree = ast.parse(Path(app_gui.__file__).read_text(encoding="utf-8"))
     constructions = [
         node
@@ -268,13 +268,13 @@ def test_gui_recording_imports_nothing_from_app_gui() -> None:
 
     The studio's MainWindow collaborators (the assign callback, the settings
     payload) cross the seam as values; someone "fixing" a missing name with
-    ``from the_oracle.app_gui import X`` would plant a cycle under the next
+    ``from rhetoric.app_gui import X`` would plant a cycle under the next
     slice's feet.
     """
     from tests.test_gui_import_direction import _module_root, _scan_imports
 
     _forbids_app_gui = lambda module: _module_root(module) == "app_gui"
-    owner = _import("the_oracle.gui_recording")
+    owner = _import("rhetoric.gui_recording")
     source = Path(owner.__file__).read_text(encoding="utf-8")
     scan = _scan_imports(source, forbidden=_forbids_app_gui)
     assert scan.violations == () and scan.unresolved == (), (
@@ -283,19 +283,19 @@ def test_gui_recording_imports_nothing_from_app_gui() -> None:
     )
     # Vacuity: each forbidden spelling must still trip this exact gate.
     for form in (
-        "import the_oracle.app_gui",
+        "import rhetoric.app_gui",
         "import app_gui",
-        "from the_oracle.app_gui import RecordingStudioDialog",
-        "from the_oracle import app_gui",
+        "from rhetoric.app_gui import RecordingStudioDialog",
+        "from rhetoric import app_gui",
         "from . import app_gui",
         "from .app_gui import RecordStudioWorker",
-        "importlib.import_module('the_oracle.app_gui')",
+        "importlib.import_module('rhetoric.app_gui')",
     ):
         assert _scan_imports(form, forbidden=_forbids_app_gui).violations, form
     # ...and the scan must see gui_recording's real imports (which are legal):
     assert {
-        "the_oracle.gui_utils",
-        "the_oracle.audio.recorder",
+        "rhetoric.gui_utils",
+        "rhetoric.audio.recorder",
     } <= set(scan.modules), scan.modules
 
 
@@ -308,7 +308,7 @@ def test_recording_bodies_never_resolve_app_gui_patched_policy_names() -> None:
     exception: they belong to gui_recording's namespace and the dialog tests
     patch them there (see the test-side pin below).
     """
-    owner = _import("the_oracle.gui_recording")
+    owner = _import("rhetoric.gui_recording")
     source = Path(owner.__file__).read_text(encoding="utf-8")
     tree = ast.parse(source)
     classes = {
@@ -342,7 +342,7 @@ def test_recording_bodies_never_resolve_app_gui_patched_policy_names() -> None:
     # Vacuity: the scan must flag a synthetic offender — a blind walk passes
     # green over anything.
     probe = ast.parse(
-        "class P:\n    def run(self):\n        return OraclePipeline()\n"
+        "class P:\n    def run(self):\n        return RhetoricPipeline()\n"
     ).body[0]
     flagged = [
         node.id
@@ -351,7 +351,7 @@ def test_recording_bodies_never_resolve_app_gui_patched_policy_names() -> None:
         and node.id in _APP_GUI_PATCHED_POLICY_NAMES
         and node.id not in _SANCTIONED_BARE_NAMES
     ]
-    assert flagged == ["OraclePipeline"]
+    assert flagged == ["RhetoricPipeline"]
 
 
 def test_app_gui_level_media_patches_live_only_in_the_window_fixture() -> None:
@@ -403,7 +403,7 @@ def test_app_gui_level_media_patches_live_only_in_the_window_fixture() -> None:
         if node.lineno not in fixture_lines:
             offenders.append(f"line {node.lineno}: app_gui-level media patch outside the window fixture")
     assert offenders == [], (
-        "dialog-level media fakes must patch the_oracle.gui_recording, not "
+        "dialog-level media fakes must patch rhetoric.gui_recording, not "
         "app_gui:\n  " + "\n  ".join(offenders)
     )
     assert app_gui_media_patches >= 1, (

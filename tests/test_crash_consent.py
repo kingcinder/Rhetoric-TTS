@@ -17,7 +17,7 @@ import pytest
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
-from the_oracle.crash import consent  # noqa: E402
+from rhetoric.crash import consent  # noqa: E402
 
 
 def test_missing_file_means_opted_out(tmp_path: Path) -> None:

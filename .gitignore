@@ -67,7 +67,7 @@ Profiles/**/*.json
 Profiles/.blends/
 
 # Seashells/ - curated voice references (keep .wav, ignore cache)
-Seashells/.oracle_preview/
+Seashells/.rhetoric_preview/
 Seashells/**/*.pkl
 
 # logs/ - repo-local rotating application logs (runtime-generated)
@@ -111,7 +111,7 @@ license-signing-seed
 *.signing_seed
 
 # Private release-engineering records and local crash evidence.
-Profiles/oracle_profile.json
+Profiles/rhetoric_profile.json
 crash_reports/*
 crash_hunt_captures/
 PLAN-*.md
@@ -124,8 +124,8 @@ docs/CONSUMER_CHANGELOG_DRAFT-*
 
 # The activated serial number is repo-local by design (licensing/store.py).
 # Never commit it: it is the customer's licence, and this repository is public.
-oracle_license.json
-oracle_license.json.tmp
+rhetoric_license.json
+rhetoric_license.json.tmp
 
 # EULA acceptance is repo-local runtime state (eula_acceptance.py writes it
 # into the checkout root on first run); never commit a user acceptance record.
@@ -134,7 +134,7 @@ eula_acceptance.json.tmp
 
 # Compiled license core (scripts/build_native_license.py) and Rust build output.
 crates/*/target/
-src/the_oracle/_native/*.so
-src/the_oracle/_native/*.pyd
-src/the_oracle/_native/*.dll
-src/the_oracle/_native/*.dylib
+src/rhetoric/_native/*.so
+src/rhetoric/_native/*.pyd
+src/rhetoric/_native/*.dll
+src/rhetoric/_native/*.dylib

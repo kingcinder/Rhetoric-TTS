@@ -57,22 +57,22 @@ def _run_script(
 def _env_without(*keys: str, **overrides: str) -> dict[str, str]:
     """os.environ minus the audio.cpp vars, plus overrides.
 
-    The benchmark reads ORACLE_AUDIOCPP_CLI / ORACLE_AUDIOCPP_MODEL /
-    ORACLE_AUDIOCPP_MAX_BATCH from the environment, and a dev machine may
+    The benchmark reads RHETORIC_AUDIOCPP_CLI / RHETORIC_AUDIOCPP_MODEL /
+    RHETORIC_AUDIOCPP_MAX_BATCH from the environment, and a dev machine may
     legitimately have them exported. Tests that probe the preflight guards
     must be hermetic, so those keys are always stripped.
     """
     env = {
         key: value
         for key, value in os.environ.items()
-        if key not in ("ORACLE_AUDIOCPP_CLI", "ORACLE_AUDIOCPP_MODEL", "ORACLE_AUDIOCPP_MAX_BATCH")
+        if key not in ("RHETORIC_AUDIOCPP_CLI", "RHETORIC_AUDIOCPP_MODEL", "RHETORIC_AUDIOCPP_MAX_BATCH")
     }
     env.update(overrides)
     return env
 
 
 FAKE_CLI = """#!/usr/bin/env bash
-# Minimal stand-in for the-oracle render: parses --outdir and copies a fixture
+# Minimal stand-in for rhetoric render: parses --outdir and copies a fixture
 # logs/render_timings.json into it, so the benchmark's render path runs end to
 # end without a GPU, model, or binary. FAKE_TIMINGS_FIXTURE must point at the
 # fixture JSON. All other args are recorded verbatim into
@@ -99,7 +99,7 @@ echo "fake cli: rendered into $OUTDIR"
 
 
 def _write_fake_cli(tmp_path: Path) -> Path:
-    cli = tmp_path / "fake-the-oracle"
+    cli = tmp_path / "fake-rhetoric"
     cli.write_text(FAKE_CLI, encoding="utf-8")
     cli.chmod(0o755)
     return cli
@@ -107,7 +107,7 @@ def _write_fake_cli(tmp_path: Path) -> Path:
 
 def _render_env(tmp_path: Path, fixture_json: Path, fake_cli: Path) -> dict[str, str]:
     """A hermetic environment that passes the benchmark's preflight guards:
-    a fake render CLI on PATH (via ORACLE_CLI), an executable audiocpp_cli
+    a fake render CLI on PATH (via RHETORIC_CLI), an executable audiocpp_cli
     stub, and an existing model file -- then runs the render against the
     fixture timings the fake CLI writes."""
     cli = tmp_path / "audiocpp_cli"
@@ -116,9 +116,9 @@ def _render_env(tmp_path: Path, fixture_json: Path, fake_cli: Path) -> dict[str,
     model = tmp_path / "model.gguf"
     model.write_bytes(b"stub")
     return _env_without(
-        ORACLE_CLI=str(fake_cli),
-        ORACLE_AUDIOCPP_CLI=str(cli),
-        ORACLE_AUDIOCPP_MODEL=str(model),
+        RHETORIC_CLI=str(fake_cli),
+        RHETORIC_AUDIOCPP_CLI=str(cli),
+        RHETORIC_AUDIOCPP_MODEL=str(model),
         FAKE_TIMINGS_FIXTURE=str(fixture_json),
     )
 
@@ -204,8 +204,8 @@ def test_render_mode_requires_input_and_refs(tmp_path: Path) -> None:
 
 
 def test_render_mode_preflight_requires_audio_cpp_binary(tmp_path: Path) -> None:
-    """Render mode must fail fast when ORACLE_AUDIOCPP_CLI is unset, before
-    attempting any render. ORACLE_CLI points at a real executable so the
+    """Render mode must fail fast when RHETORIC_AUDIOCPP_CLI is unset, before
+    attempting any render. RHETORIC_CLI points at a real executable so the
     preflight reaches the audio.cpp check."""
     result = _run_script(
         "--input",
@@ -216,11 +216,11 @@ def test_render_mode_preflight_requires_audio_cpp_binary(tmp_path: Path) -> None
         "a.wav",
         "--speakerB-ref",
         "b.wav",
-        env=_env_without(ORACLE_CLI="/bin/true"),
+        env=_env_without(RHETORIC_CLI="/bin/true"),
     )
 
     assert result.returncode != 0
-    assert "ORACLE_AUDIOCPP_CLI" in result.stderr
+    assert "RHETORIC_AUDIOCPP_CLI" in result.stderr
     assert "build_audio_cpp.sh" in result.stderr
 
 
@@ -237,11 +237,11 @@ def test_render_mode_preflight_requires_model_file(tmp_path: Path) -> None:
         "a.wav",
         "--speakerB-ref",
         "b.wav",
-        env=_env_without(ORACLE_CLI="/bin/true", ORACLE_AUDIOCPP_CLI=str(cli)),
+        env=_env_without(RHETORIC_CLI="/bin/true", RHETORIC_AUDIOCPP_CLI=str(cli)),
     )
 
     assert result.returncode != 0
-    assert "ORACLE_AUDIOCPP_MODEL" in result.stderr
+    assert "RHETORIC_AUDIOCPP_MODEL" in result.stderr
     assert "download_audio_cpp_model.sh" in result.stderr
 
 
@@ -309,7 +309,7 @@ def test_render_mode_runs_end_to_end_with_fake_cli(tmp_path: Path) -> None:
     # Wall-time diagnostics belong on stderr, not in the captured path.
     assert "CLI wall time" in result.stderr
     # The cap is forwarded as the CLI-threaded setting (--audio-cpp-max-batch),
-    # not the raw ORACLE_AUDIOCPP_MAX_BATCH env var.
+    # not the raw RHETORIC_AUDIOCPP_MAX_BATCH env var.
     args_files = list((tmp_path / "bench").rglob("logs/cli_args.txt"))
     assert args_files, "fake CLI never recorded its argv"
     args_text = args_files[0].read_text(encoding="utf-8")

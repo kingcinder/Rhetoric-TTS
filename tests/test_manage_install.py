@@ -17,7 +17,7 @@ MANAGE_INSTALL_PATH = SCRIPTS_DIR / "manage_install.py"
 
 
 def _load_manage_install():
-    spec = importlib.util.spec_from_file_location("oracle_manage_install", MANAGE_INSTALL_PATH)
+    spec = importlib.util.spec_from_file_location("rhetoric_manage_install", MANAGE_INSTALL_PATH)
     module = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
     spec.loader.exec_module(module)
@@ -32,13 +32,13 @@ def manage(tmp_path: Path, monkeypatch):
     # which reads the environment rather than Path.home().
     monkeypatch.setattr(module, "is_linux", lambda: True)
     monkeypatch.setattr(module, "is_windows", lambda: False)
-    # managed_launcher_path() lives in the_oracle.platform_support and reads
+    # managed_launcher_path() lives in rhetoric.platform_support and reads
     # is_windows() in ITS OWN namespace, so forcing the platform only on the
     # manage_install module left the launcher following the real platform —
     # on Windows this "Linux" fixture still produced rhetoric.cmd (hosted
     # windows suite, 2026-11-09). Patch the predicates where the launcher
     # decision is made as well (the test_platform_support.py pattern).
-    from the_oracle import platform_support
+    from rhetoric import platform_support
 
     monkeypatch.setattr(platform_support, "is_linux", lambda: True)
     monkeypatch.setattr(platform_support, "is_windows", lambda: False)
@@ -101,8 +101,8 @@ def test_install_desktop_launcher_writes_entry_and_shortcut(manage, tmp_path, mo
     assert entry.exists()
     assert shortcut.exists()
     assert manage.LINUX_DESKTOP_MARKER in entry.read_text(encoding="utf-8")
-    assert (tmp_path / "xdg" / "applications" / "the-oracle.desktop").is_file()
-    assert (tmp_path / "Desktop" / "the-oracle.desktop").is_file()
+    assert (tmp_path / "xdg" / "applications" / "rhetoric.desktop").is_file()
+    assert (tmp_path / "Desktop" / "rhetoric.desktop").is_file()
     shortcut_text = shortcut.read_text(encoding="utf-8")
     assert "Trusted=true" in shortcut_text
     assert manage.LINUX_DESKTOP_MARKER in shortcut_text
@@ -144,7 +144,7 @@ def test_install_desktop_launcher_is_windows_only_start_menu(manage, tmp_path, m
 
     launcher = tmp_path / "appdata" / "Microsoft" / "Windows" / "Start Menu" / "Programs" / "Rhetoric.cmd"
     assert launcher.exists()
-    assert (launcher.parent / "The Oracle.cmd").is_file()
+    assert (launcher.parent / "Rhetoric.cmd").is_file()
     assert "rhetoric" in launcher.read_text(encoding="utf-8")
     assert not (tmp_path / "Desktop").exists()  # no desktop shortcut on Windows
 
@@ -166,7 +166,7 @@ def test_pytorch_runtime_policy_rejects_unknown_value(manage) -> None:
 
 def test_uninstall_removes_managed_desktop_files(manage, tmp_path, monkeypatch) -> None:
     """Uninstall removes both the app-list entry and the desktop shortcut
-    (and only files carrying The Oracle's marker)."""
+    (and only files carrying Rhetoric's marker)."""
     monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path / "xdg"))
     monkeypatch.setattr(Path, "home", staticmethod(lambda: tmp_path))
     monkeypatch.setattr(manage.shutil, "rmtree", lambda _path: None)  # never delete the real venv
@@ -185,8 +185,8 @@ def test_uninstall_removes_managed_desktop_files(manage, tmp_path, monkeypatch) 
 
     assert not entry.exists()
     assert not shortcut.exists()
-    assert not (tmp_path / "xdg" / "applications" / "the-oracle.desktop").exists()
-    assert not (tmp_path / "Desktop" / "the-oracle.desktop").exists()
+    assert not (tmp_path / "xdg" / "applications" / "rhetoric.desktop").exists()
+    assert not (tmp_path / "Desktop" / "rhetoric.desktop").exists()
     assert unrelated.exists()  # unmanaged files are left alone
 
 
@@ -208,9 +208,9 @@ def test_update_rebuilds_desktop_launchers(manage, tmp_path, monkeypatch) -> Non
     entry = tmp_path / "xdg" / "applications" / "rhetoric.desktop"
     assert entry.is_file()
     assert "Name=Rhetoric" in entry.read_text(encoding="utf-8")
-    assert (tmp_path / "xdg" / "applications" / "the-oracle.desktop").is_file()
+    assert (tmp_path / "xdg" / "applications" / "rhetoric.desktop").is_file()
     assert (tmp_path / "Desktop" / "rhetoric.desktop").is_file()
-    assert (tmp_path / "Desktop" / "the-oracle.desktop").is_file()
+    assert (tmp_path / "Desktop" / "rhetoric.desktop").is_file()
 
 
 def test_update_forwards_offline_bundle_to_full_install(manage, tmp_path, monkeypatch) -> None:

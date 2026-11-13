@@ -2,7 +2,7 @@
 """Release tooling for Rhetoric.
 
 Version metadata lives in exactly one place: ``__version__`` in
-``src/the_oracle/__init__.py``. ``pyproject.toml`` declares it dynamically
+``src/rhetoric/__init__.py``. ``pyproject.toml`` declares it dynamically
 (``[tool.setuptools.dynamic]``), and the README / STATE.md release banners
 are rewritten from it by ``--sync-banners``. No other tracked file may carry
 the number — ``--check`` enforces that invariant.
@@ -83,7 +83,7 @@ _CHANGELOG_HEADING_RE = re.compile(r"^## \[(?P<version>\d+\.\d+\.\d+)\] — (?P<
 _UNRELEASED_HEADING = "## [Unreleased]"
 
 #: The single source of truth, as setuptools must read it.
-_VERSION_ATTR = "the_oracle.__version__"
+_VERSION_ATTR = "rhetoric.__version__"
 
 # Printed by the build subprocess so artifact names survive any unrelated
 # setuptools chatter on stdout.
@@ -137,7 +137,7 @@ def shipped_manifest(repo_root: Path, version: str) -> Path | None:
 
 def read_version(repo_root: Path) -> str:
     """Return the ``__version__`` literal, without importing the package."""
-    init = repo_root / "src" / "the_oracle" / "__init__.py"
+    init = repo_root / "src" / "rhetoric" / "__init__.py"
     if not init.is_file():
         return ""
     tree = ast.parse(init.read_text(encoding="utf-8"))
@@ -163,7 +163,7 @@ def pyproject_problems(repo_root: Path) -> list[str]:
     if "version" in project:
         problems.append(
             'pyproject.toml: [project] sets a version literal; declare dynamic = ["version"] '
-            "and let [tool.setuptools.dynamic] read the_oracle.__version__"
+            "and let [tool.setuptools.dynamic] read rhetoric.__version__"
         )
     if "version" not in project.get("dynamic", []):
         problems.append("pyproject.toml: [project] does not declare 'version' in dynamic")
@@ -176,7 +176,7 @@ def pyproject_problems(repo_root: Path) -> list[str]:
 
 
 #: Where a product tree keeps its license verify-key registry.
-_LICENSING_KEYS_REL = Path("src") / "the_oracle" / "licensing" / "keys.py"
+_LICENSING_KEYS_REL = Path("src") / "rhetoric" / "licensing" / "keys.py"
 
 #: RFC 8032 §7.1 published test-vector public keys. Their seeds are in the
 #: spec, so any registry entry equal to one of them is forgeable by any reader
@@ -229,7 +229,7 @@ def licensing_key_problems(repo_root: Path) -> list[str]:
         problems.append(
             "licensing: no production verify key is registered in "
             f"{_LICENSING_KEYS_REL.as_posix()}, so no licence can ever be minted "
-            "for this build. Run `python ../oracle-license-generator/license_sign.py keygen` on your "
+            "for this build. Run `python ../rhetoric-license-generator/license_sign.py keygen` on your "
             "own machine, store signing_seed_hex in your secret manager, and "
             "register ONLY verify_key_hex as a new key id."
         )
@@ -502,7 +502,7 @@ def check_report(repo_root: Path, *, today: date | None = None) -> CheckReport:
     report = CheckReport()
     version = read_version(repo_root)
     if not version:
-        report.problems.append("src/the_oracle/__init__.py: no __version__ string literal found")
+        report.problems.append("src/rhetoric/__init__.py: no __version__ string literal found")
     report.problems.extend(pyproject_problems(repo_root))
     if version:
         report.problems.extend(banner_problems(repo_root, version))
@@ -702,7 +702,7 @@ def store_release_checksums(repo_root: Path, version: str, manifest: Path) -> Pa
 
     The build folder is gitignored, so a manifest living only there can never
     verify a published artifact from a clone — whoever downloaded
-    ``the_oracle-<version>.tar.gz`` has nothing in the repository to check it
+    ``rhetoric-<version>.tar.gz`` has nothing in the repository to check it
     against. This copy is the record git carries: the manifest is written
     verbatim (byte-identical to the outdir manifest, so ``sha256sum -c`` reads
     the same file either way).
@@ -733,7 +733,7 @@ def store_release_checksums(repo_root: Path, version: str, manifest: Path) -> Pa
 def _require_version(repo_root: Path) -> str:
     version = read_version(repo_root)
     if not version:
-        raise ReleaseError("src/the_oracle/__init__.py: no __version__ string literal found")
+        raise ReleaseError("src/rhetoric/__init__.py: no __version__ string literal found")
     return version
 
 
@@ -807,7 +807,7 @@ def main(argv: list[str] | None = None) -> int:
     try:
         if args.check_packaging:
             version = read_version(repo)
-            problems = (["src/the_oracle/__init__.py: no __version__ string literal found"] if not version else [])
+            problems = (["src/rhetoric/__init__.py: no __version__ string literal found"] if not version else [])
             if version:
                 problems.extend(packaging_version_problems(repo, version))
             if problems:

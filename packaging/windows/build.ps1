@@ -22,7 +22,7 @@ try {
         $pyiArgs += @("--add-data", "$($_.FullName);THIRD_PARTY_LICENSES")
     }
     $pyiArgs += @("--add-data", "$(Join-Path $repo 'docs\release\LGPL_FULFILLMENT.md');docs\release")
-    # Mirror the spec's collect_data_files("the_oracle") and its
+    # Mirror the spec's collect_data_files("rhetoric") and its
     # root-level docs. Without the package data, the frozen bundle had
     # NO EULA.md anywhere: the first-run EULA lookup returned None,
     # run_eula_acceptance returned False without ever showing its
@@ -30,7 +30,7 @@ try {
     # profile (diagnosed in the Windows guest, 2026-11-12: copying
     # EULA.md into the install root made the same exe open the
     # "Rhetoric - License Agreement" dialog and stay alive).
-    $pyiArgs += @("--collect-data", "the_oracle")
+    $pyiArgs += @("--collect-data", "rhetoric")
     foreach ($rootDoc in @("LICENSE", "PRIVACY.md", "EULA.md", "THIRD_PARTY_NOTICES.md")) {
         $pyiArgs += @("--add-data", "$(Join-Path $repo $rootDoc);.")
     }
@@ -41,7 +41,7 @@ try {
     # again by the app's first-run dialog.
     # PyInstaller 6 onedir layout: every data lands under _internal, and
     # sys._MEIPASS points there - that is where the app looks.
-    foreach ($required in @("_internal\EULA.md", "_internal\the_oracle\EULA.md")) {
+    foreach ($required in @("_internal\EULA.md", "_internal\rhetoric\EULA.md")) {
         if (-not (Test-Path (Join-Path $dist $required))) {
             throw "Frozen bundle is missing $required - the first-run EULA gate cannot find its text"
         }

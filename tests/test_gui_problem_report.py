@@ -1,6 +1,6 @@
 """The GUI Report a Problem dialog: wiring, not pixel dressing.
 
-The dialog is Qt-presentation only; all rules live in ``the_oracle.support``.
+The dialog is Qt-presentation only; all rules live in ``rhetoric.support``.
 These tests drive the real widgets (fields, checkboxes, buttons) on an
 offscreen QApplication and pin the three outcomes the Help menu can produce:
 a saved draft, a packaged zip, and a copied issue link. Validation failures
@@ -30,7 +30,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from the_oracle import crash, gui_crash, support
+from rhetoric import crash, gui_crash, support
 
 
 @pytest.fixture(scope="module")
@@ -51,7 +51,7 @@ def _support_gate_session_current(monkeypatch):
     """The share actions are support-gated now: they need a session whose
     automated update check already found the install current. Seed that
     session state so these tests exercise the share flow itself."""
-    from the_oracle import update_service
+    from rhetoric import update_service
 
     session = update_service.UpdateSession()
     session.record(
@@ -201,7 +201,7 @@ def test_issue_is_blocked_when_updates_opted_out(parent, tmp_path: Path, monkeyp
     """The support gate in the real dialog: opting out of automated updates
     blocks the share action — nothing is copied, and the user is told
     exactly how to restore support."""
-    from the_oracle import gui_settings
+    from rhetoric import gui_settings
 
     settings_path = tmp_path / "app-settings.json"
     monkeypatch.setattr(gui_settings, "app_settings_path", lambda: settings_path)

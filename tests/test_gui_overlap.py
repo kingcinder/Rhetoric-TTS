@@ -21,8 +21,8 @@ from PySide6.QtCore import QPoint, QRect
 from PySide6.QtGui import QColor, QFontMetrics, QImage
 from PySide6.QtWidgets import QApplication, QWidget
 
-from the_oracle.gui_sections import QHSectionGroup
-from the_oracle.gui_themes import THEMES, apply_theme
+from rhetoric.gui_sections import QHSectionGroup
+from rhetoric.gui_themes import THEMES, apply_theme
 from tests.test_app_gui_profiles import _build_window
 
 # minimum (setMinimumSize), default (resize in __init__), large

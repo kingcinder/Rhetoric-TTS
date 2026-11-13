@@ -134,7 +134,7 @@ def test_with_model_builds_and_downloads_model(fake_audio_cpp: tuple[Path, Path]
     assert _expected_binary(audio_cpp).exists()
     model = _expected_model(audio_cpp)
     assert model.exists()
-    assert f'export ORACLE_AUDIOCPP_MODEL="{model}"' in result.stdout
+    assert f'export RHETORIC_AUDIOCPP_MODEL="{model}"' in result.stdout
     assert "Build and model complete" in result.stdout
 
 

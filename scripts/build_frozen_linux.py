@@ -137,7 +137,7 @@ def stage_appdir(appdir: Path, frozen_dist: Path) -> Path:
     apprun.write_text(
         "#!/bin/sh\n"
         "set -eu\n"
-        "# Per-user settings and models stay in ~/.config/the-oracle and ~/.cache;\n"
+        "# Per-user settings and models stay in ~/.config/rhetoric and ~/.cache;\n"
         "# uninstall removes this application tree only.\n"
         'HERE="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"\n'
         'exec "$HERE/usr/bin/rhetoric" "$@"\n',

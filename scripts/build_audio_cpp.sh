@@ -5,7 +5,7 @@
 # RDNA1 ggml fix (scripts/patch_audio_cpp_ggml.sh) before building.
 #
 # Requirements: GCC 13+, CMake, and the Vulkan SDK (for ENGINE_ENABLE_VULKAN).
-# The build itself is heavy; run it once and point ORACLE_AUDIOCPP_CLI at the
+# The build itself is heavy; run it once and point RHETORIC_AUDIOCPP_CLI at the
 # resulting binary.
 #
 # Pass --with-model to also fetch the Chatterbox model afterwards, so a single
@@ -140,7 +140,7 @@ Next steps:
    (use --dry-run to preview, AUDIOCPP_MODEL_PACKAGE=chatterbox_f16 to pick
    a different precision, or --overwrite to re-download)
 2. Render -- Rhetoric locates the binary and model automatically:
-     the-oracle render --input Input/cli_short.txt --outdir Output \\
+     rhetoric render --input Input/cli_short.txt --outdir Output \\
        --speakerA-ref "Seashells/generic/english_male_1.wav" \\
        --speakerB-ref "Seashells/generic/chinese_female_1.wav" \\
        --inference-backend vulkan
@@ -150,7 +150,7 @@ fi
 cat <<EOF
 
 The vendored RDNA1 fix (ggml_vk_buffer_memset on the compute queue for RDNA1)
-was applied to audio.cpp/external/ggml and is marked with ORACLE_VENDORED
+was applied to audio.cpp/external/ggml and is marked with RHETORIC_VENDORED
 comments; scripts/patch_audio_cpp_ggml.sh re-applies it idempotently and fails
 loudly on ggml version bumps. If audio.cpp still reports VK_ERROR_DEVICE_LOST,
 the Python backend surfaces it with a clear error and you can fall back to

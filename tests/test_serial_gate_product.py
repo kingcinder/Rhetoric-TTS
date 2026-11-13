@@ -5,9 +5,9 @@ from pathlib import Path
 
 import pytest
 
-from the_oracle import cli
-from the_oracle.licensing import policy, store, tokens
-from the_oracle.licensing.tokens import LicenseStatus
+from rhetoric import cli
+from rhetoric.licensing import policy, store, tokens
+from rhetoric.licensing.tokens import LicenseStatus
 from tests.licensing_fixtures import TEST_KEY_ID, TEST_SEED
 
 pytestmark = pytest.mark.usefixtures("test_license_registry")
@@ -80,7 +80,7 @@ def test_real_invalid_serial_states_refuse(status: LicenseStatus) -> None:
 def test_license_status_reports_licensed_boolean_without_edition(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys
 ) -> None:
-    from the_oracle import offline
+    from rhetoric import offline
 
     monkeypatch.setattr(offline, "repo_root", lambda: tmp_path)
     assert cli.handle_license_status() == 1
@@ -95,16 +95,16 @@ def test_license_status_reports_licensed_boolean_without_edition(
 
 
 def test_cli_functional_command_requires_serial_number(monkeypatch: pytest.MonkeyPatch, capsys) -> None:
-    monkeypatch.setattr("the_oracle.licensing.current_license", _unlicensed)
+    monkeypatch.setattr("rhetoric.licensing.current_license", _unlicensed)
     assert cli.main(["voices"]) == 1
     assert "serial number" in capsys.readouterr().err
 
 
 def test_pipeline_render_entry_requires_serial_number(monkeypatch: pytest.MonkeyPatch) -> None:
-    from the_oracle.pipeline import OraclePipeline
+    from rhetoric.pipeline import RhetoricPipeline
 
-    monkeypatch.setattr("the_oracle.licensing.current_license", _unlicensed)
-    pipeline = OraclePipeline.__new__(OraclePipeline)
+    monkeypatch.setattr("rhetoric.licensing.current_license", _unlicensed)
+    pipeline = RhetoricPipeline.__new__(RhetoricPipeline)
     with pytest.raises(policy.LicenseRequired, match="serial number"):
         pipeline.render(None, None)  # type: ignore[arg-type]
     with pytest.raises(policy.LicenseRequired, match="serial number"):
@@ -114,7 +114,7 @@ def test_pipeline_render_entry_requires_serial_number(monkeypatch: pytest.Monkey
 
 
 def test_gui_functional_entry_points_require_serial_number() -> None:
-    from the_oracle.app_gui import MainWindow
+    from rhetoric.app_gui import MainWindow
 
     class FakeWindow:
         def _require_serial(self, feature: str) -> bool:
@@ -140,9 +140,9 @@ def test_gui_functional_entry_points_require_serial_number() -> None:
 
 
 def test_ingest_entry_points_require_serial_number(monkeypatch: pytest.MonkeyPatch) -> None:
-    from the_oracle import gui_ingest_tools
+    from rhetoric import gui_ingest_tools
 
-    monkeypatch.setattr("the_oracle.licensing.current_license", _unlicensed)
+    monkeypatch.setattr("rhetoric.licensing.current_license", _unlicensed)
     with pytest.raises(policy.LicenseRequired, match="serial number"):
         gui_ingest_tools.run_ingest_transformer_check(object(), message_box_cls=object)
     with pytest.raises(policy.LicenseRequired, match="serial number"):
@@ -150,7 +150,7 @@ def test_ingest_entry_points_require_serial_number(monkeypatch: pytest.MonkeyPat
 
 
 def test_recording_capture_requires_serial_number(monkeypatch: pytest.MonkeyPatch) -> None:
-    from the_oracle import gui_recording
+    from rhetoric import gui_recording
 
     class Status:
         def __init__(self) -> None:
@@ -164,7 +164,7 @@ def test_recording_capture_requires_serial_number(monkeypatch: pytest.MonkeyPatc
         def information(_parent, _title: str, _message: str) -> None:
             return None
 
-    monkeypatch.setattr("the_oracle.licensing.current_license", _unlicensed)
+    monkeypatch.setattr("rhetoric.licensing.current_license", _unlicensed)
     monkeypatch.setattr(gui_recording, "QMessageBox", MessageBox)
     fake = gui_recording.RecordingStudioDialog.__new__(gui_recording.RecordingStudioDialog)
     fake.status = Status()
@@ -180,7 +180,7 @@ def test_every_cli_subcommand_is_explicitly_classified() -> None:
 
 
 def test_every_gui_action_is_explicitly_classified() -> None:
-    from the_oracle.app_gui import SERIAL_REQUIRED_GUI_ACTIONS, UNLICENSED_GUI_ACTIONS
+    from rhetoric.app_gui import SERIAL_REQUIRED_GUI_ACTIONS, UNLICENSED_GUI_ACTIONS
 
     assert UNLICENSED_GUI_ACTIONS.isdisjoint(SERIAL_REQUIRED_GUI_ACTIONS)
     assert UNLICENSED_GUI_ACTIONS | SERIAL_REQUIRED_GUI_ACTIONS == {
@@ -218,7 +218,7 @@ def test_every_gui_action_is_explicitly_classified() -> None:
 def test_unlicensed_gui_leaves_only_help_and_activation_actions_enabled(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    from the_oracle.app_gui import MainWindow
+    from rhetoric.app_gui import MainWindow
 
     class Action:
         def __init__(self) -> None:
@@ -258,7 +258,7 @@ def test_unlicensed_gui_leaves_only_help_and_activation_actions_enabled(
     fake.error_panel = Panel()
     fake.activate_license_action, fake.about_action, fake.report_problem_action, fake.privacy_action = actions[:4]
     fake._serial_gate_action_states = {}
-    monkeypatch.setattr("the_oracle.licensing.current_license", _unlicensed)
+    monkeypatch.setattr("rhetoric.licensing.current_license", _unlicensed)
     MainWindow._apply_serial_gate(fake)  # type: ignore[arg-type]
     assert all(action.enabled for action in actions[:4])
     assert actions[4].enabled is False
@@ -268,7 +268,7 @@ def test_unlicensed_gui_leaves_only_help_and_activation_actions_enabled(
 def test_unlicensed_startup_does_not_restore_backend_or_start_model_work(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    from the_oracle.app_gui import MainWindow
+    from rhetoric.app_gui import MainWindow
 
     class Panel:
         def append(self, _message: str) -> None:
@@ -290,7 +290,7 @@ def test_unlicensed_startup_does_not_restore_backend_or_start_model_work(
 
     fake._section_content_built = lambda _name: True
     fake._apply_remembered_backend_widgets = restore_widgets
-    monkeypatch.setattr("the_oracle.licensing.current_license", _unlicensed)
+    monkeypatch.setattr("rhetoric.licensing.current_license", _unlicensed)
     MainWindow._apply_remembered_backend(fake)  # type: ignore[arg-type]
 
     assert called is False

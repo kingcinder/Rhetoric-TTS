@@ -51,7 +51,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 from PySide6.QtWidgets import QApplication
 
-REPO_SRC = Path(__file__).resolve().parents[1] / "src" / "the_oracle"
+REPO_SRC = Path(__file__).resolve().parents[1] / "src" / "rhetoric"
 
 #: Modules whose widget-level restyles the gate covers.
 GATED_MODULES = ("gui_sections.py", "gui_cast.py", "gui_chrome.py", "gui_widgets.py")
@@ -147,7 +147,7 @@ def test_the_scanner_catches_an_ungated_call() -> None:
     import tempfile
 
     src = (
-        "from the_oracle.gui_themes import bulk_restyle\n"
+        "from rhetoric.gui_themes import bulk_restyle\n"
         "def ungated(w):\n"
         "    w.setStyleSheet('color: red')\n"
         "def gated(w):\n"
@@ -186,9 +186,9 @@ def test_the_construction_calls_find_the_gate_open_at_runtime(
     the panel's seven captioned PerceptualSlider captions) plus a LivePanel
     (the gui_chrome header) while tracing QWidget.setStyleSheet, and observe
     the real gate from inside every call."""
-    from the_oracle import gui_themes
-    from the_oracle.gui_cast import SpeakerGroup, _CastRow
-    from the_oracle.gui_chrome import LivePanel
+    from rhetoric import gui_themes
+    from rhetoric.gui_cast import SpeakerGroup, _CastRow
+    from rhetoric.gui_chrome import LivePanel
     from PySide6.QtWidgets import QWidget
 
     import inspect

@@ -19,9 +19,9 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 
 def test_windows_build_collects_package_data_and_root_eula() -> None:
     build = (REPO_ROOT / "packaging" / "windows" / "build.ps1").read_text(encoding="utf-8")
-    # The Linux spec's collect_data_files("the_oracle") is where the
+    # The Linux spec's collect_data_files("rhetoric") is where the
     # packaged EULA.md comes from; the Windows build must mirror it.
-    assert "--collect-data" in build and "the_oracle" in build
+    assert "--collect-data" in build and "rhetoric" in build
     # The spec's root-level docs, including the fallback EULA copy.
     for doc in ("LICENSE", "PRIVACY.md", "EULA.md", "THIRD_PARTY_NOTICES.md"):
         assert doc in build

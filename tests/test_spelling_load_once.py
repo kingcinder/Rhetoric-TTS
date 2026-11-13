@@ -2,7 +2,7 @@
 
 cProfile over the deterministic smoke render (2026-09-28): the 19 MB
 frequency-dictionary pickle is deserialized in ~0.39s and the smoke run
-constructs OraclePipeline twice — 0.79s of a 2.31s run (34%) paying for the
+constructs RhetoricPipeline twice — 0.79s of a 2.31s run (34%) paying for the
 same read-only object. The loaded dictionary is read-only after load
 (``lookup()`` is the only post-load use; ``_verbosity`` is set at load), so
 a process-level memo is behavior-identical while cutting every construction
@@ -23,7 +23,7 @@ import pytest
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
-from the_oracle.text_repair import spelling
+from rhetoric.text_repair import spelling
 
 
 @pytest.fixture(autouse=True)

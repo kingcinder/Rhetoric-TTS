@@ -4,7 +4,7 @@ The script's whole value is in three properties, so those are what is pinned:
 that a *path* difference is structural while a difference of substance is not,
 that the comparison cannot be widened into uselessness by one broad entry, and
 that the documented entry points it probes are really runnable -- which is how
-the `./oracle` regression below was found.
+the `./rhetoric` regression below was found.
 
 The slow end-to-end run (both legs, full suite) is deliberately not repeated
 here; it takes minutes and is the script's own job. What is exercised is every
@@ -40,12 +40,12 @@ def _load(name: str, filename: str):
 
 @pytest.fixture(scope="module")
 def acceptance():
-    return _load("oracle_fresh_clone_acceptance", "fresh_clone_acceptance.py")
+    return _load("rhetoric_fresh_clone_acceptance", "fresh_clone_acceptance.py")
 
 
 @pytest.fixture(scope="module")
 def idempotence():
-    return _load("oracle_doctor_idempotence_for_acceptance", "doctor_idempotence.py")
+    return _load("rhetoric_doctor_idempotence_for_acceptance", "doctor_idempotence.py")
 
 
 # --- the delta comparison -------------------------------------------------------
@@ -196,7 +196,7 @@ def test_the_skip_audit_block_is_not_counted_twice(acceptance) -> None:
 
 
 def test_no_counts_at_all_is_an_error_rather_than_a_zero_result() -> None:
-    acceptance = _load("oracle_fresh_clone_acceptance_inline", "fresh_clone_acceptance.py")
+    acceptance = _load("rhetoric_fresh_clone_acceptance_inline", "fresh_clone_acceptance.py")
 
     assert not any(acceptance.parse_pytest_summary("pytest: command not found").values())
 
@@ -241,10 +241,10 @@ def test_the_readme_documents_commands_this_test_can_see() -> None:
 
 
 def test_every_documented_command_is_executable() -> None:
-    """The defect this pass found: ``./oracle`` was tracked 100644.
+    """The defect this pass found: ``./rhetoric`` was tracked 100644.
 
     A file the documentation invokes directly has to carry the executable bit,
-    or ``./oracle install`` -- the README's first instruction -- dies with
+    or ``./rhetoric install`` -- the README's first instruction -- dies with
     "Permission denied" (exit 126) on a fresh clone.
 
     Both halves are asserted, and neither is skipped, so this holds in either
@@ -298,7 +298,7 @@ def test_the_dispatch_matrix_covers_every_root_wrapper(acceptance) -> None:
 
 
 def test_the_matrix_checks_an_alias_rather_than_only_identities(acceptance) -> None:
-    """`oracle start` must reach `run`; an identity-only matrix proves less."""
+    """`rhetoric start` must reach `run`; an identity-only matrix proves less."""
     rows = {(script, args, expected) for script, args, expected in acceptance.WRAPPER_MATRIX}
     aliases = [row for row in rows if row[1] and row[1][0] != row[2]]
 
@@ -314,7 +314,7 @@ def test_a_tree_whose_code_does_not_load_is_refused(acceptance, tmp_path: Path) 
 
     The trap this guards is concrete: this interpreter has the package installed
     in editable mode pointing at the working tree, so a tree with an empty
-    ``src`` still resolves ``the_oracle`` -- to the *wrong* tree. That must be a
+    ``src`` still resolves ``rhetoric`` -- to the *wrong* tree. That must be a
     refusal, not a green report about code that never ran.
     """
     empty = tmp_path / "empty"

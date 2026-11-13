@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from the_oracle.ingest_transformer import (
+from rhetoric.ingest_transformer import (
     analyze_folder,
     analyze_input_file,
     apply_folder_fixes,
@@ -129,7 +129,7 @@ def test_apply_folder_fixes_writes_backups_and_is_idempotent(tmp_path: Path) -> 
 
 
 def test_batch_fix_round_trips_through_real_ingester(tmp_path: Path) -> None:
-    from the_oracle.text_ingest import TextIngestor
+    from rhetoric.text_ingest import TextIngestor
 
     (tmp_path / "messy.txt").write_text("A - Hello there.\nB - Hi back.\n", encoding="utf-8")
 

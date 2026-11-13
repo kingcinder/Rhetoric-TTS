@@ -1,10 +1,10 @@
 from unittest.mock import patch
 
-from the_oracle.models.project import Utterance, VoiceSettings
-from the_oracle.models.settings import RenderSettings, SpeakerSettings; from the_oracle.pipeline import OraclePipeline
-from the_oracle.smoke import _SmokeEmotionClassifier, _write_reference
-from the_oracle.speaker_attribution.assign import SpeakerAttributor
-from the_oracle.speaker_attribution.heuristics import (
+from rhetoric.models.project import Utterance, VoiceSettings
+from rhetoric.models.settings import RenderSettings, SpeakerSettings; from rhetoric.pipeline import RhetoricPipeline
+from rhetoric.smoke import _SmokeEmotionClassifier, _write_reference
+from rhetoric.speaker_attribution.assign import SpeakerAttributor
+from rhetoric.speaker_attribution.heuristics import (
     MAX_SPEAKERS,
     DualSpeakerAttributor,
     canonical_speaker_label,
@@ -207,8 +207,8 @@ def test_pipeline_auto_provisions_voices_for_detected_cast(tmp_path) -> None:
         "A": SpeakerSettings(reference_path=str(ref), voice_settings=VoiceSettings()),
         "B": SpeakerSettings(reference_path=str(ref), voice_settings=VoiceSettings()),
     }
-    with patch("the_oracle.pipeline.GoEmotionsClassifier", _SmokeEmotionClassifier):
-        pipeline = OraclePipeline()
+    with patch("rhetoric.pipeline.GoEmotionsClassifier", _SmokeEmotionClassifier):
+        pipeline = RhetoricPipeline()
         plan = pipeline.prepare_plan(source, tmp_path / "out", speakers, settings)
 
     assert [u.speaker for u in plan.utterances] == ["A", "B", "C", "A", "D", "B"]
@@ -237,8 +237,8 @@ def test_pipeline_monologue_uses_single_narrator_voice(tmp_path) -> None:
     speakers = {
         "A": SpeakerSettings(reference_path=str(ref), voice_settings=VoiceSettings()),
     }
-    with patch("the_oracle.pipeline.GoEmotionsClassifier", _SmokeEmotionClassifier):
-        pipeline = OraclePipeline()
+    with patch("rhetoric.pipeline.GoEmotionsClassifier", _SmokeEmotionClassifier):
+        pipeline = RhetoricPipeline()
         plan = pipeline.prepare_plan(source, tmp_path / "out", speakers, settings)
 
     assert all(u.speaker == "A" for u in plan.utterances)
@@ -266,7 +266,7 @@ def test_binary_clustering_is_deterministic_and_vectorized() -> None:
 def test_anchor_propagation_matches_reference_voices() -> None:
     """Anchor-driven assignment still separates the anchored voices via the
     vectorized cosine path."""
-    from the_oracle.speaker_attribution.heuristics import AnchorAssignments
+    from rhetoric.speaker_attribution.heuristics import AnchorAssignments
 
     lines = [
         "I love the ocean and the open sky",

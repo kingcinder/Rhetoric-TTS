@@ -7,7 +7,7 @@ import json
 import sys
 from pathlib import Path
 
-from the_oracle.smoke import run_deterministic_smoke_render, smoke_output_problem
+from rhetoric.smoke import run_deterministic_smoke_render, smoke_output_problem
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -21,7 +21,7 @@ def main(argv: list[str] | None = None) -> int:
     # Entry-point arm (2026-10-08 audit standard): this process drives the
     # deterministic engines and the FLAC export path natively. Consent-aware,
     # idempotent, fail-closed — same contract as cli.main and launch_gui.
-    from the_oracle.crash import handlers as crash_handlers
+    from rhetoric.crash import handlers as crash_handlers
 
     crash_handlers.install()
     crash_handlers.arm_native_capture()

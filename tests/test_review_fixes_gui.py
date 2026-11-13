@@ -30,13 +30,13 @@ from pathlib import Path
 
 import pytest
 
-from the_oracle import gui_settings, gui_utils
-from the_oracle.gui_settings import (
+from rhetoric import gui_settings, gui_utils
+from rhetoric.gui_settings import (
     load_gui_settings,
     load_recent_reference_paths,
     save_gui_settings,
 )
-from the_oracle.gui_utils import (
+from rhetoric.gui_utils import (
     MAX_CAST_SPEAKERS,
     CastModel,
     kill_process_tree,
@@ -71,7 +71,7 @@ requires_qt = pytest.mark.skipif(
 
 
 def test_max_cast_speakers_matches_engine():
-    heuristics = pytest.importorskip("the_oracle.speaker_attribution.heuristics")
+    heuristics = pytest.importorskip("rhetoric.speaker_attribution.heuristics")
     assert MAX_CAST_SPEAKERS == heuristics.MAX_SPEAKERS
 
 
@@ -274,7 +274,7 @@ def test_load_recent_reference_paths_missing_returns_empty(tmp_path, monkeypatch
 
 
 def test_load_recent_reference_paths_round_trip(tmp_path, monkeypatch):
-    from the_oracle.gui_settings import remember_recent_reference_path
+    from rhetoric.gui_settings import remember_recent_reference_path
 
     _point_recent_refs_at(tmp_path, monkeypatch)
     remember_recent_reference_path("/tmp/voice.wav")

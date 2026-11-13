@@ -2,7 +2,7 @@
 
 1. Activation and verification perform ZERO network I/O — proven with
    outbound connections forbidden.
-2. Importing ``the_oracle.licensing`` never imports a heavyweight/ML
+2. Importing ``rhetoric.licensing`` never imports a heavyweight/ML
    dependency — the import-discipline pin, proven by module-delta.
 3. The package source imports no network module at all — the architectural
    pin that makes "no phone-home" a structural fact, not a behavior.
@@ -32,7 +32,7 @@ import pytest
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
-from the_oracle.licensing import keys, store, tokens  # noqa: E402
+from rhetoric.licensing import keys, store, tokens  # noqa: E402
 from tests.licensing_fixtures import TEST_KEY_ID, TEST_PUBLIC_KEY, TEST_SEED  # noqa: E402
 
 #: Every test here verifies through the INJECTED test-only registry — the
@@ -101,7 +101,7 @@ def test_activation_and_verification_perform_no_network_io(tmp_path: Path, no_ne
     token = tokens.mint(PAYLOAD, SEED)
     assert store.save_token(tmp_path, token, verify_before_save=_verifier()).state == "saved"
 
-    from the_oracle.licensing import current_license
+    from rhetoric.licensing import current_license
 
     status = current_license(tmp_path)
     assert status.ok and status.state == "valid"
@@ -109,7 +109,7 @@ def test_activation_and_verification_perform_no_network_io(tmp_path: Path, no_ne
 
 
 def test_verification_of_a_bad_token_also_needs_no_network(tmp_path: Path, no_network) -> None:
-    from the_oracle.licensing import current_license
+    from rhetoric.licensing import current_license
 
     store.store_path(tmp_path).write_text("{broken", encoding="utf-8")
     status = current_license(tmp_path)
@@ -124,7 +124,7 @@ def test_importing_licensing_never_imports_ml_dependencies(monkeypatch) -> None:
 
     The re-import is undone before returning, and that is load-bearing rather
     than tidy: re-executing the package installs **fresh** module objects in
-    ``sys.modules``, while every module that imported ``the_oracle.licensing``
+    ``sys.modules``, while every module that imported ``rhetoric.licensing``
     earlier keeps a reference to the old ones. The registry injection this
     suite relies on patches the module it looks up at test time, so leaving the
     fresh copies in place would leave that patch attached to a module the
@@ -135,16 +135,16 @@ def test_importing_licensing_never_imports_ml_dependencies(monkeypatch) -> None:
     saved = {
         name: module
         for name, module in sys.modules.items()
-        if name.startswith("the_oracle.licensing")
+        if name.startswith("rhetoric.licensing")
     }
-    import the_oracle as oracle_package
+    import rhetoric as rhetoric_package
 
-    saved_parent = getattr(oracle_package, "licensing", None)
+    saved_parent = getattr(rhetoric_package, "licensing", None)
     for name in saved:
         del sys.modules[name]
     try:
         before = set(sys.modules)
-        import the_oracle.licensing  # noqa: F401
+        import rhetoric.licensing  # noqa: F401
 
         added = set(sys.modules) - before
         offenders = sorted(
@@ -156,11 +156,11 @@ def test_importing_licensing_never_imports_ml_dependencies(monkeypatch) -> None:
     finally:
         # Drop the fresh copies and put the original objects back, so one
         # canonical module object per name survives for the rest of the session.
-        for name in [n for n in sys.modules if n.startswith("the_oracle.licensing")]:
+        for name in [n for n in sys.modules if n.startswith("rhetoric.licensing")]:
             del sys.modules[name]
         sys.modules.update(saved)
         if saved_parent is not None:
-            oracle_package.licensing = saved_parent
+            rhetoric_package.licensing = saved_parent
 
 
 def test_package_imports_no_network_modules() -> None:
@@ -178,7 +178,7 @@ def test_package_imports_no_network_modules() -> None:
 
 
 def test_expired_remedy_never_suggests_going_online(tmp_path: Path) -> None:
-    from the_oracle.licensing import current_license
+    from rhetoric.licensing import current_license
 
     # Written directly: the save gate refuses expired tokens, but an install
     # whose perpetual-looking token aged past its exp holds exactly this.

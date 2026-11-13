@@ -18,8 +18,8 @@ import pytest
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
-from the_oracle import crash  # noqa: E402
-from the_oracle.crash import bundle, consent, handlers  # noqa: E402
+from rhetoric import crash  # noqa: E402
+from rhetoric.crash import bundle, consent, handlers  # noqa: E402
 
 LOG_FILE = "fake.log"
 
@@ -101,13 +101,13 @@ def test_threading_hook_captures_with_thread_name(wired: Path) -> None:
     except RuntimeError:
         args = threading.ExceptHookArgs(
             (RuntimeError, RuntimeError("thread boom"), sys.exc_info()[2],
-             threading.Thread(target=lambda: None, name="oracle-worker")),
+             threading.Thread(target=lambda: None, name="rhetoric-worker")),
         )
     handlers._threading_excepthook(args)
     records = crash.list_records(wired)
     assert len(records) == 1
     record = json.loads(records[0].read_text(encoding="utf-8"))
-    assert record["thread"] == "oracle-worker"
+    assert record["thread"] == "rhetoric-worker"
     assert record["exception"]["message"] == "thread boom"
 
 

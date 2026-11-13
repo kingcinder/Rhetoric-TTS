@@ -2,8 +2,8 @@
 
 from pathlib import Path
 
-from the_oracle.smoke import _write_reference
-from the_oracle.voice_catalog import (
+from rhetoric.smoke import _write_reference
+from rhetoric.voice_catalog import (
     blend_voice_choices,
     default_voice_choices,
     remove_blend_voice,
@@ -81,7 +81,7 @@ def test_corrupt_catalog_is_tolerated(tmp_path: Path) -> None:
 
 def test_default_voice_choices_append_saved_blends_after_files(tmp_path: Path) -> None:
     repo = tmp_path / "repo"
-    seashell = repo / "Seashells" / "oracle.wav"
+    seashell = repo / "Seashells" / "rhetoric.wav"
     seashell.parent.mkdir(parents=True, exist_ok=True)
     seashell.write_bytes(b"RIFF")
     clip_a = _write_reference(repo / "voice_a.wav", 220.0)

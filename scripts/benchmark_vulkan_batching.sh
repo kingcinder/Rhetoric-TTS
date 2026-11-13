@@ -30,14 +30,14 @@
 #   --no-stems         forward --no-stems to the render (skip stem exports)
 #   -h | --help
 #
-# Environment: ORACLE_AUDIOCPP_CLI (built audiocpp_cli; required to render),
-# ORACLE_AUDIOCPP_MODEL (chatterbox GGUF path; required to render). The
+# Environment: RHETORIC_AUDIOCPP_CLI (built audiocpp_cli; required to render),
+# RHETORIC_AUDIOCPP_MODEL (chatterbox GGUF path; required to render). The
 # per-process batch cap is set via --max-batch and forwarded to the CLI as
 # --audio-cpp-max-batch (the same knob the GUI and saved projects use).
 set -Eeuo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-ORACLE_CLI="${ORACLE_CLI:-the-oracle}"
+RHETORIC_CLI="${RHETORIC_CLI:-rhetoric}"
 
 INPUT=""
 OUTDIR="$REPO_ROOT/Output/benchmark"
@@ -210,17 +210,17 @@ if [[ -z "$INPUT" || -z "$SPEAKER_A" || -z "$SPEAKER_B" ]]; then
   exit 1
 fi
 
-if ! command -v "$ORACLE_CLI" >/dev/null 2>&1; then
-  echo "ERROR: $ORACLE_CLI is not on PATH (set ORACLE_CLI if it is elsewhere)." >&2
+if ! command -v "$RHETORIC_CLI" >/dev/null 2>&1; then
+  echo "ERROR: $RHETORIC_CLI is not on PATH (set RHETORIC_CLI if it is elsewhere)." >&2
   exit 1
 fi
-if [[ -z "${ORACLE_AUDIOCPP_CLI:-}" || ! -x "$ORACLE_AUDIOCPP_CLI" ]]; then
-  echo "ERROR: ORACLE_AUDIOCPP_CLI is unset or not executable." >&2
+if [[ -z "${RHETORIC_AUDIOCPP_CLI:-}" || ! -x "$RHETORIC_AUDIOCPP_CLI" ]]; then
+  echo "ERROR: RHETORIC_AUDIOCPP_CLI is unset or not executable." >&2
   echo "Build it first with scripts/build_audio_cpp.sh" >&2
   exit 1
 fi
-if [[ -z "${ORACLE_AUDIOCPP_MODEL:-}" || ! -f "$ORACLE_AUDIOCPP_MODEL" ]]; then
-  echo "ERROR: ORACLE_AUDIOCPP_MODEL is unset or the file is missing." >&2
+if [[ -z "${RHETORIC_AUDIOCPP_MODEL:-}" || ! -f "$RHETORIC_AUDIOCPP_MODEL" ]]; then
+  echo "ERROR: RHETORIC_AUDIOCPP_MODEL is unset or the file is missing." >&2
   echo "Fetch it first with scripts/download_audio_cpp_model.sh" >&2
   exit 1
 fi
@@ -247,7 +247,7 @@ run_render() {
   echo "[bench] rendering with --audio-cpp-max-batch=$cap into $run_dir" >&2
   local start_s end_s
   start_s="$(now_ns)"
-  "$ORACLE_CLI" render \
+  "$RHETORIC_CLI" render \
     --input "$INPUT" \
     --outdir "$run_dir" \
     --speakerA-ref "$SPEAKER_A" \

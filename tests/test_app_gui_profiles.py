@@ -10,11 +10,11 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QApplication, QMessageBox
 
-from the_oracle.app_paths import OraclePaths, default_output_filename, ensure_repo_default_paths
-from the_oracle.models.project import RenderPlan, Utterance, VoiceProfile, VoiceSettings
-from the_oracle.models.settings import RenderSettings, SpeakerSettings; 
-from the_oracle.gui_settings import load_app_settings, save_app_settings
-from the_oracle.project_manifest import build_saved_project
+from rhetoric.app_paths import RhetoricPaths, default_output_filename, ensure_repo_default_paths
+from rhetoric.models.project import RenderPlan, Utterance, VoiceProfile, VoiceSettings
+from rhetoric.models.settings import RenderSettings, SpeakerSettings; 
+from rhetoric.gui_settings import load_app_settings, save_app_settings
+from rhetoric.project_manifest import build_saved_project
 
 pytestmark = pytest.mark.slow
 
@@ -218,7 +218,7 @@ def qt_app():
     yield app
 
 
-def _minimal_plan(paths: OraclePaths | None) -> RenderPlan:
+def _minimal_plan(paths: RhetoricPaths | None) -> RenderPlan:
     profile_a = VoiceProfile(name="Speaker A", speaker="A", reference_audio=[], engine_params=VoiceSettings())
     profile_b = VoiceProfile(name="Speaker B", speaker="B", reference_audio=[], engine_params=VoiceSettings())
     return RenderPlan(
@@ -246,12 +246,12 @@ def _build_window(
     previous session's saved workspace) that the lazy-section work pins need
     exactly that: settings on disk, then a fresh window reading them.
     """
-    import the_oracle.app_gui as app_gui
+    import rhetoric.app_gui as app_gui
 
     paths = ensure_repo_default_paths(tmp_path / "repo")
     monkeypatch.setattr(app_gui, "QAudioOutput", _FakeAudioOutput)
     monkeypatch.setattr(app_gui, "QMediaPlayer", _FakeMediaPlayer)
-    monkeypatch.setattr(app_gui, "OraclePipeline", _FakePipeline)
+    monkeypatch.setattr(app_gui, "RhetoricPipeline", _FakePipeline)
     monkeypatch.setattr(app_gui, "ChatterboxEngine", _FakeChatterboxEngine)
     monkeypatch.setattr(app_gui, "VulkanDeviceProbeThread", _FakeVulkanProbeThread)
     monkeypatch.setattr(app_gui, "VulkanPreflightThread", _FakeVulkanPreflightThread)
@@ -267,12 +267,12 @@ def _build_window(
     model_file = tmp_path / "chatterbox-model"
     model_file.write_text("model", encoding="utf-8")
     monkeypatch.setattr(app_gui, "find_audiocpp_binary", lambda: tmp_path / "audiocpp_cli")
-    monkeypatch.setenv("ORACLE_AUDIOCPP_MODEL", str(model_file))
+    monkeypatch.setenv("RHETORIC_AUDIOCPP_MODEL", str(model_file))
     # Isolate the app-level settings file (remembered backend + audio.cpp
     # paths) so tests never read or write the developer's real config.
     isolate_user_config(monkeypatch, tmp_path / "config")
     if preseed_app_settings is not None:
-        from the_oracle.gui_settings import save_app_settings
+        from rhetoric.gui_settings import save_app_settings
 
         save_app_settings(preseed_app_settings)
     window = app_gui.MainWindow()
@@ -298,7 +298,7 @@ def test_gui_pipeline_uses_native_safe_analysis_dependencies(
     loaded from the Qt process on this Ubuntu desktop; the GUI uses the local
     deterministic fallbacks instead.
     """
-    import the_oracle.app_gui as app_gui
+    import rhetoric.app_gui as app_gui
 
     window, _paths = _build_window(monkeypatch, tmp_path)
     try:
@@ -308,7 +308,7 @@ def test_gui_pipeline_uses_native_safe_analysis_dependencies(
             def __init__(self, **kwargs) -> None:
                 captured.update(kwargs)
 
-        monkeypatch.setattr(app_gui, "OraclePipeline", _RecordingPipeline)
+        monkeypatch.setattr(app_gui, "RhetoricPipeline", _RecordingPipeline)
         window.pipeline = None
         window._pipeline()
 
@@ -333,8 +333,8 @@ def test_analyze_click_builds_review_plan_with_gui_safe_pipeline(
     population. This catches the former Ubuntu/Qt crash path without loading a
     TTS model or rendering audio.
     """
-    import the_oracle.app_gui as app_gui
-    from the_oracle.pipeline import OraclePipeline as ProductionPipeline
+    import rhetoric.app_gui as app_gui
+    from rhetoric.pipeline import RhetoricPipeline as ProductionPipeline
 
     window, _paths = _build_window(monkeypatch, tmp_path)
     input_path = tmp_path / "dialogue.txt"
@@ -518,7 +518,7 @@ def test_input_browse_defaults_to_repo_input_dir_on_fresh_use(qt_app, monkeypatc
             captured["start_dir"] = start_dir
             return ("", "")
 
-        monkeypatch.setattr("the_oracle.app_gui.QFileDialog.getOpenFileName", fake_get_open_file_name)
+        monkeypatch.setattr("rhetoric.app_gui.QFileDialog.getOpenFileName", fake_get_open_file_name)
         window.input_path.clear()
 
         window._pick_input()
@@ -573,7 +573,7 @@ def test_inference_wizard_first_launch_is_scheduled_and_replay_actions_exist(qt_
 
 
 def test_inference_wizard_selection_applies_to_real_pickers(qt_app, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
-    import the_oracle.app_gui as app_gui
+    import rhetoric.app_gui as app_gui
 
     cuda_info = app_gui.CUDADeviceInfo(
         index=0,
@@ -629,7 +629,7 @@ def test_last_used_input_is_persisted_when_typed(qt_app, monkeypatch: pytest.Mon
 
 
 def test_generic_output_warning_setting_round_trips(qt_app, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
-    import the_oracle.app_gui as app_gui
+    import rhetoric.app_gui as app_gui
     window, _paths = _build_window(monkeypatch, tmp_path)
     try:
         window.output_filename_warning_action.setChecked(False)
@@ -829,13 +829,13 @@ def test_vulkan_selection_auto_starts_setup_when_prerequisites_missing(qt_app, m
     """Selecting Vulkan without audiocpp_cli / the model kicks off the
     automatic CPU→GPU setup (instead of only warning) so the switch completes
     by itself rather than failing deep in the render worker."""
-    import the_oracle.app_gui as app_gui
+    import rhetoric.app_gui as app_gui
 
     window, _paths = _build_window(monkeypatch, tmp_path)
     try:
         # Break the (default-configured) Vulkan setup.
         monkeypatch.setattr(app_gui, "find_audiocpp_binary", lambda: None)
-        monkeypatch.delenv("ORACLE_AUDIOCPP_MODEL", raising=False)
+        monkeypatch.delenv("RHETORIC_AUDIOCPP_MODEL", raising=False)
         vulkan_index = window.inference_backend_combo.findData("vulkan")
         window.inference_backend_combo.setCurrentIndex(vulkan_index)
 
@@ -864,14 +864,14 @@ def test_vulkan_selection_no_warning_when_configured(qt_app, monkeypatch: pytest
 
 
 def test_vulkan_selection_auto_starts_setup_when_model_file_missing(qt_app, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
-    """A stale ORACLE_AUDIOCPP_MODEL pointing at a deleted file still triggers
+    """A stale RHETORIC_AUDIOCPP_MODEL pointing at a deleted file still triggers
     the automatic setup (the exists() check), even when audiocpp_cli resolves."""
-    import the_oracle.app_gui as app_gui
+    import rhetoric.app_gui as app_gui
 
     window, _paths = _build_window(monkeypatch, tmp_path)
     try:
         # audiocpp_cli still resolves; only the model file is gone.
-        monkeypatch.setenv("ORACLE_AUDIOCPP_MODEL", str(tmp_path / "deleted-model"))
+        monkeypatch.setenv("RHETORIC_AUDIOCPP_MODEL", str(tmp_path / "deleted-model"))
         assert not (tmp_path / "deleted-model").exists()
         vulkan_index = window.inference_backend_combo.findData("vulkan")
         window.inference_backend_combo.setCurrentIndex(vulkan_index)
@@ -888,7 +888,7 @@ def test_render_project_queues_setup_when_vulkan_unconfigured(qt_app, monkeypatc
     """Render with an unconfigured Vulkan backend starts the automatic setup
     and queues the render (no worker yet) instead of blocking with a manual-
     instructions warning; the render fires once setup completes."""
-    import the_oracle.app_gui as app_gui
+    import rhetoric.app_gui as app_gui
 
     window, paths = _build_window(monkeypatch, tmp_path)
     try:
@@ -898,7 +898,7 @@ def test_render_project_queues_setup_when_vulkan_unconfigured(qt_app, monkeypatc
         window.input_path.setText(str(tmp_path / "dialogue.txt"))
         window.output_name.setText("chapter")
         monkeypatch.setattr(app_gui, "find_audiocpp_binary", lambda: None)
-        monkeypatch.delenv("ORACLE_AUDIOCPP_MODEL", raising=False)
+        monkeypatch.delenv("RHETORIC_AUDIOCPP_MODEL", raising=False)
         window.inference_backend_combo.setCurrentIndex(window.inference_backend_combo.findData("vulkan"))
 
         dialogs: list[str] = []
@@ -923,7 +923,7 @@ def test_vulkan_setup_completion_starts_queued_render(qt_app, monkeypatch: pytes
     """The core promise: when setup completes, the queued render fires by
     itself (render_project() re-enters and a worker starts) instead of leaving
     the user to click Render again."""
-    import the_oracle.app_gui as app_gui
+    import rhetoric.app_gui as app_gui
 
     window, paths = _build_window(monkeypatch, tmp_path)
     try:
@@ -933,7 +933,7 @@ def test_vulkan_setup_completion_starts_queued_render(qt_app, monkeypatch: pytes
         window.input_path.setText(str(tmp_path / "dialogue.txt"))
         window.output_name.setText("chapter")
         monkeypatch.setattr(app_gui, "find_audiocpp_binary", lambda: None)
-        monkeypatch.delenv("ORACLE_AUDIOCPP_MODEL", raising=False)
+        monkeypatch.delenv("RHETORIC_AUDIOCPP_MODEL", raising=False)
         window.inference_backend_combo.setCurrentIndex(window.inference_backend_combo.findData("vulkan"))
         monkeypatch.setattr(
             app_gui.QMessageBox,
@@ -950,7 +950,7 @@ def test_vulkan_setup_completion_starts_queued_render(qt_app, monkeypatch: pytes
         model_file = tmp_path / "chatterbox-model"
         model_file.write_text("model", encoding="utf-8")
         monkeypatch.setattr(app_gui, "find_audiocpp_binary", lambda: tmp_path / "audiocpp_cli")
-        monkeypatch.setenv("ORACLE_AUDIOCPP_MODEL", str(model_file))
+        monkeypatch.setenv("RHETORIC_AUDIOCPP_MODEL", str(model_file))
 
         class _SetupResult:
             ok = True
@@ -974,7 +974,7 @@ def test_vulkan_setup_failure_clears_queue_and_surfaces_error(
 ) -> None:
     """A failed setup clears the queued render/preview and surfaces the error
     visibly, and re-allows a later attempt (no silent queue-forever)."""
-    import the_oracle.app_gui as app_gui
+    import rhetoric.app_gui as app_gui
 
     window, _paths = _build_window(monkeypatch, tmp_path)
     try:
@@ -1003,14 +1003,14 @@ def test_vulkan_preflight_queues_behind_running_setup(qt_app, monkeypatch: pytes
     a manual-scripts dialog: no preflight thread spawns yet, a friendly
     setup-in-progress dialog is shown, and the queued flag is set so the test
     fires on its own once setup completes."""
-    import the_oracle.app_gui as app_gui
+    import rhetoric.app_gui as app_gui
 
     window, _paths = _build_window(monkeypatch, tmp_path)
     try:
         # Break the (default-configured) Vulkan setup, then select Vulkan so
         # the selection-time auto-setup thread starts and is still running.
         monkeypatch.setattr(app_gui, "find_audiocpp_binary", lambda: None)
-        monkeypatch.delenv("ORACLE_AUDIOCPP_MODEL", raising=False)
+        monkeypatch.delenv("RHETORIC_AUDIOCPP_MODEL", raising=False)
         window.inference_backend_combo.setCurrentIndex(window.inference_backend_combo.findData("vulkan"))
         assert window._vulkan_setup_thread is not None
 
@@ -1035,7 +1035,7 @@ def test_vulkan_setup_completion_runs_queued_preflight(qt_app, monkeypatch: pyte
     setup completion fires the preflight on its own (a preflight thread starts
     and the queue flag clears) — the promise that picking GPU needs no extra
     steps or extra clicks."""
-    import the_oracle.app_gui as app_gui
+    import rhetoric.app_gui as app_gui
 
     window, _paths = _build_window(monkeypatch, tmp_path)
     try:
@@ -1045,7 +1045,7 @@ def test_vulkan_setup_completion_runs_queued_preflight(qt_app, monkeypatch: pyte
         model_file = tmp_path / "chatterbox-model"
         model_file.write_text("model", encoding="utf-8")
         monkeypatch.setattr(app_gui, "find_audiocpp_binary", lambda: tmp_path / "audiocpp_cli")
-        monkeypatch.setenv("ORACLE_AUDIOCPP_MODEL", str(model_file))
+        monkeypatch.setenv("RHETORIC_AUDIOCPP_MODEL", str(model_file))
 
         class _SetupResult:
             ok = True
@@ -1080,12 +1080,12 @@ def test_vulkan_preflight_double_click_queues_once(qt_app, monkeypatch: pytest.M
     """Double-clicking Test Vulkan Backend while setup is running queues the
     preflight exactly once: the second click is a log line, not a second
     dialog or a second queue entry."""
-    import the_oracle.app_gui as app_gui
+    import rhetoric.app_gui as app_gui
 
     window, _paths = _build_window(monkeypatch, tmp_path)
     try:
         monkeypatch.setattr(app_gui, "find_audiocpp_binary", lambda: None)
-        monkeypatch.delenv("ORACLE_AUDIOCPP_MODEL", raising=False)
+        monkeypatch.delenv("RHETORIC_AUDIOCPP_MODEL", raising=False)
         window.inference_backend_combo.setCurrentIndex(window.inference_backend_combo.findData("vulkan"))
         assert window._vulkan_setup_thread is not None
 
@@ -1107,13 +1107,13 @@ def test_vulkan_preflight_from_pytorch_backend_starts_setup(qt_app, monkeypatch:
     missing) still starts the automatic setup and queues the preflight — the
     button is not gated on Vulkan being selected, so validating the GPU path
     never demands manual wiring."""
-    import the_oracle.app_gui as app_gui
+    import rhetoric.app_gui as app_gui
 
     window, _paths = _build_window(monkeypatch, tmp_path)
     try:
         assert window.inference_backend_combo.currentData() == "pytorch"
         monkeypatch.setattr(app_gui, "find_audiocpp_binary", lambda: None)
-        monkeypatch.delenv("ORACLE_AUDIOCPP_MODEL", raising=False)
+        monkeypatch.delenv("RHETORIC_AUDIOCPP_MODEL", raising=False)
 
         infos: list[str] = []
         monkeypatch.setattr(app_gui.QMessageBox, "information", lambda _parent, _title, message: infos.append(message))
@@ -1129,7 +1129,7 @@ def test_vulkan_preflight_from_pytorch_backend_starts_setup(qt_app, monkeypatch:
 
 
 def test_render_project_proceeds_when_vulkan_configured(qt_app, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
-    import the_oracle.app_gui as app_gui
+    import rhetoric.app_gui as app_gui
 
     window, paths = _build_window(monkeypatch, tmp_path)
     try:
@@ -1312,7 +1312,7 @@ def test_audio_cpp_knobs_restored_from_project_manifest(qt_app, monkeypatch: pyt
 def test_preview_guards_stale_knobs_on_pytorch_backend(qt_app, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     """The preview path must mirror _render_settings: stale knob values set
     while Vulkan was selected are forwarded as None once PyTorch is active."""
-    import the_oracle.app_gui as app_gui
+    import rhetoric.app_gui as app_gui
 
     window, paths = _build_window(monkeypatch, tmp_path)
     try:
@@ -1359,7 +1359,7 @@ def test_preview_guards_stale_knobs_on_pytorch_backend(qt_app, monkeypatch: pyte
 
 
 def test_preview_worker_forwards_audio_cpp_knobs(monkeypatch: pytest.MonkeyPatch) -> None:
-    import the_oracle.app_gui as app_gui
+    import rhetoric.app_gui as app_gui
 
     class _RecordingPipeline:
         def __init__(self) -> None:
@@ -1429,7 +1429,7 @@ def test_vulkan_preflight_thread_forwards_selected_device_index(qt_app, monkeypa
 
 
 def test_vulkan_preflight_completion_reports_gpu(qt_app, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
-    import the_oracle.app_gui as app_gui
+    import rhetoric.app_gui as app_gui
 
     window, _paths = _build_window(monkeypatch, tmp_path)
     try:
@@ -1445,7 +1445,7 @@ def test_vulkan_preflight_completion_reports_gpu(qt_app, monkeypatch: pytest.Mon
 
 
 def test_vulkan_preflight_failure_surfaces_message(qt_app, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
-    import the_oracle.app_gui as app_gui
+    import rhetoric.app_gui as app_gui
 
     window, _paths = _build_window(monkeypatch, tmp_path)
     try:
@@ -1490,12 +1490,12 @@ def test_close_event_waits_for_vulkan_preflight_thread(qt_app, monkeypatch: pyte
 
 def test_vulkan_preflight_report_builds_gpu_report(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     """The report names the selected device and lists what audio.cpp sees."""
-    import the_oracle.app_gui as app_gui
+    import rhetoric.app_gui as app_gui
 
     model_file = tmp_path / "chatterbox-model"
     model_file.write_text("model", encoding="utf-8")
     monkeypatch.setattr(app_gui, "find_audiocpp_binary", lambda: tmp_path / "audiocpp_cli")
-    monkeypatch.setenv("ORACLE_AUDIOCPP_MODEL", str(model_file))
+    monkeypatch.setenv("RHETORIC_AUDIOCPP_MODEL", str(model_file))
 
     class _FakeEngine:
         def __init__(self, device_index=None) -> None:
@@ -1519,12 +1519,12 @@ def test_vulkan_preflight_report_builds_gpu_report(monkeypatch: pytest.MonkeyPat
 
 
 def test_vulkan_preflight_report_auto_device_when_none_selected(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
-    import the_oracle.app_gui as app_gui
+    import rhetoric.app_gui as app_gui
 
     model_file = tmp_path / "chatterbox-model"
     model_file.write_text("model", encoding="utf-8")
     monkeypatch.setattr(app_gui, "find_audiocpp_binary", lambda: tmp_path / "audiocpp_cli")
-    monkeypatch.setenv("ORACLE_AUDIOCPP_MODEL", str(model_file))
+    monkeypatch.setenv("RHETORIC_AUDIOCPP_MODEL", str(model_file))
 
     class _FakeEngine:
         def __init__(self, device_index=None) -> None:
@@ -1544,12 +1544,12 @@ def test_vulkan_preflight_report_auto_device_when_none_selected(monkeypatch: pyt
 def test_vulkan_preflight_report_raises_when_no_devices(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     """A zero-device --list-devices result fails the preflight instead of
     reporting a misleading success, since rendering would fail."""
-    import the_oracle.app_gui as app_gui
+    import rhetoric.app_gui as app_gui
 
     model_file = tmp_path / "chatterbox-model"
     model_file.write_text("model", encoding="utf-8")
     monkeypatch.setattr(app_gui, "find_audiocpp_binary", lambda: tmp_path / "audiocpp_cli")
-    monkeypatch.setenv("ORACLE_AUDIOCPP_MODEL", str(model_file))
+    monkeypatch.setenv("RHETORIC_AUDIOCPP_MODEL", str(model_file))
 
     class _NoDevicesEngine:
         def __init__(self, device_index=None) -> None:
@@ -1567,17 +1567,17 @@ def test_vulkan_preflight_report_raises_when_no_devices(monkeypatch: pytest.Monk
 def test_vulkan_preflight_report_raises_when_prerequisites_missing(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     """A missing binary/model makes the preflight fail with a clear error
     instead of probing devices."""
-    import the_oracle.app_gui as app_gui
+    import rhetoric.app_gui as app_gui
 
     monkeypatch.setattr(app_gui, "find_audiocpp_binary", lambda: None)
-    monkeypatch.delenv("ORACLE_AUDIOCPP_MODEL", raising=False)
+    monkeypatch.delenv("RHETORIC_AUDIOCPP_MODEL", raising=False)
 
     with pytest.raises(app_gui.AudioCppUnavailableError, match="audiocpp_cli is not built"):
         app_gui._vulkan_preflight_report(None)
 
 
 def test_vulkan_preflight_thread_emits_report(monkeypatch: pytest.MonkeyPatch) -> None:
-    import the_oracle.app_gui as app_gui
+    import rhetoric.app_gui as app_gui
 
     captured: dict[str, str] = {}
     monkeypatch.setattr(app_gui, "_vulkan_preflight_report", lambda device_index: f"report for device {device_index}")
@@ -1593,7 +1593,7 @@ def test_vulkan_preflight_thread_emits_report(monkeypatch: pytest.MonkeyPatch) -
 
 
 def test_vulkan_preflight_thread_emits_failed_on_error(monkeypatch: pytest.MonkeyPatch) -> None:
-    import the_oracle.app_gui as app_gui
+    import rhetoric.app_gui as app_gui
 
     captured: dict[str, str] = {}
 
@@ -1615,7 +1615,7 @@ def test_vulkan_preflight_thread_emits_failed_on_error(monkeypatch: pytest.Monke
 def test_settings_menu_download_vulkan_model_action_starts_background_download(qt_app, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     """Settings -> Download Vulkan Model... starts the background thread and
     disables the action while it runs, without blocking the UI."""
-    import the_oracle.app_gui as app_gui
+    import rhetoric.app_gui as app_gui
 
     window, _paths = _build_window(monkeypatch, tmp_path)
     try:
@@ -1634,7 +1634,7 @@ def test_settings_menu_download_vulkan_model_action_starts_background_download(q
 
 
 def test_download_vulkan_model_guard_when_script_missing(qt_app, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
-    import the_oracle.app_gui as app_gui
+    import rhetoric.app_gui as app_gui
 
     window, _paths = _build_window(monkeypatch, tmp_path)
     try:
@@ -1655,7 +1655,7 @@ def test_download_vulkan_model_guard_when_script_missing(qt_app, monkeypatch: py
 
 
 def test_vulkan_model_download_completion_sets_env_and_reports_path(qt_app, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
-    import the_oracle.app_gui as app_gui
+    import rhetoric.app_gui as app_gui
 
     window, _paths = _build_window(monkeypatch, tmp_path)
     try:
@@ -1666,16 +1666,16 @@ def test_vulkan_model_download_completion_sets_env_and_reports_path(qt_app, monk
         # _handle_vulkan_model_downloaded mutates the process env directly;
         # record the pre-existing value so monkeypatch restores it on teardown
         # and this test cannot pollute later tests (e.g. vulkan_backend's
-        # missing-model check) with a now-configured ORACLE_AUDIOCPP_MODEL.
-        monkeypatch.setenv("ORACLE_AUDIOCPP_MODEL", os.environ.get("ORACLE_AUDIOCPP_MODEL", ""))
+        # missing-model check) with a now-configured RHETORIC_AUDIOCPP_MODEL.
+        monkeypatch.setenv("RHETORIC_AUDIOCPP_MODEL", os.environ.get("RHETORIC_AUDIOCPP_MODEL", ""))
 
         window._handle_vulkan_model_downloaded(str(model_file))
 
-        assert os.environ.get("ORACLE_AUDIOCPP_MODEL") == str(model_file)
+        assert os.environ.get("RHETORIC_AUDIOCPP_MODEL") == str(model_file)
         # The error panel carries the unquoted session value; the dialog shows
         # the exact export line the user can persist in their shell profile.
-        assert f"ORACLE_AUDIOCPP_MODEL={model_file}" in window.error_panel.toPlainText()
-        assert infos and f'export ORACLE_AUDIOCPP_MODEL="{model_file}"' in infos[0]
+        assert f"RHETORIC_AUDIOCPP_MODEL={model_file}" in window.error_panel.toPlainText()
+        assert infos and f'export RHETORIC_AUDIOCPP_MODEL="{model_file}"' in infos[0]
         # The prerequisite warning clears once the model exists for the session.
         assert window.vulkan_prerequisite_warning.isHidden()
     finally:
@@ -1683,7 +1683,7 @@ def test_vulkan_model_download_completion_sets_env_and_reports_path(qt_app, monk
 
 
 def test_vulkan_model_download_failure_surfaces_message(qt_app, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
-    import the_oracle.app_gui as app_gui
+    import rhetoric.app_gui as app_gui
 
     window, _paths = _build_window(monkeypatch, tmp_path)
     try:
@@ -1698,20 +1698,20 @@ def test_vulkan_model_download_failure_surfaces_message(qt_app, monkeypatch: pyt
         window.close()
 
 
-def test_parse_oracle_model_path_extracts_export_line() -> None:
-    import the_oracle.app_gui as app_gui
+def test_parse_rhetoric_model_path_extracts_export_line() -> None:
+    import rhetoric.app_gui as app_gui
 
     sample = (
         "Chatterbox model installed: /tmp/audio.cpp/models/Chatterbox-GGUF/chatterbox-q8_0.gguf\n\n"
         "Point Rhetoric at it and render on the Vulkan backend:\n\n"
-        '    export ORACLE_AUDIOCPP_MODEL="/tmp/audio.cpp/models/Chatterbox-GGUF/chatterbox-q8_0.gguf"\n'
-        '    export ORACLE_AUDIOCPP_CLI="..."\n'
+        '    export RHETORIC_AUDIOCPP_MODEL="/tmp/audio.cpp/models/Chatterbox-GGUF/chatterbox-q8_0.gguf"\n'
+        '    export RHETORIC_AUDIOCPP_CLI="..."\n'
     )
     assert (
-        app_gui._parse_oracle_model_path(sample)
+        app_gui._parse_rhetoric_model_path(sample)
         == "/tmp/audio.cpp/models/Chatterbox-GGUF/chatterbox-q8_0.gguf"
     )
-    assert app_gui._parse_oracle_model_path("no export line here") == ""
+    assert app_gui._parse_rhetoric_model_path("no export line here") == ""
 
 
 class _FakePopen:
@@ -1749,7 +1749,7 @@ def _fake_popen(stdout: str = "", stderr: str = "", returncode: int = 0):
 
 
 def test_model_download_thread_emits_completed_with_parsed_path(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
-    import the_oracle.app_gui as app_gui
+    import rhetoric.app_gui as app_gui
 
     script = tmp_path / "download_audio_cpp_model.sh"
     script.write_text("#!/usr/bin/env bash\n", encoding="utf-8")
@@ -1757,7 +1757,7 @@ def test_model_download_thread_emits_completed_with_parsed_path(monkeypatch: pyt
     monkeypatch.setattr(
         app_gui.subprocess,
         "Popen",
-        _fake_popen(stdout='Chatterbox model installed\n\nexport ORACLE_AUDIOCPP_MODEL="/tmp/model.gguf"\n'),
+        _fake_popen(stdout='Chatterbox model installed\n\nexport RHETORIC_AUDIOCPP_MODEL="/tmp/model.gguf"\n'),
     )
 
     thread = app_gui.ModelDownloadThread(script)
@@ -1769,7 +1769,7 @@ def test_model_download_thread_emits_completed_with_parsed_path(monkeypatch: pyt
 
 
 def test_model_download_thread_emits_failed_on_script_error(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
-    import the_oracle.app_gui as app_gui
+    import rhetoric.app_gui as app_gui
 
     script = tmp_path / "download_audio_cpp_model.sh"
     script.write_text("#!/usr/bin/env bash\n", encoding="utf-8")
@@ -1809,12 +1809,12 @@ def test_close_event_waits_for_model_download_thread(qt_app, monkeypatch: pytest
 
 
 def test_prewarm_thread_skips_heavy_backend_init(monkeypatch: pytest.MonkeyPatch) -> None:
-    import the_oracle.app_gui as app_gui
+    import rhetoric.app_gui as app_gui
 
     def fail(*_args, **_kwargs):
         raise AssertionError("heavy backend init should not run during startup prewarm")
 
-    monkeypatch.setattr(app_gui, "OraclePipeline", fail)
+    monkeypatch.setattr(app_gui, "RhetoricPipeline", fail)
     monkeypatch.setattr(app_gui, "ChatterboxEngine", fail)
 
     thread = app_gui.PrewarmThread(device="cpu")
@@ -1874,13 +1874,13 @@ def test_remembered_vulkan_backend_restored_on_launch(qt_app, monkeypatch: pytes
         # Register the env keys for restoration: _apply_remembered_backend
         # writes them directly, and monkeypatch must restore the pre-test
         # values on teardown so the session env never leaks into other tests.
-        monkeypatch.setenv("ORACLE_AUDIOCPP_CLI", os.environ.get("ORACLE_AUDIOCPP_CLI", ""))
-        monkeypatch.setenv("ORACLE_AUDIOCPP_MODEL", os.environ.get("ORACLE_AUDIOCPP_MODEL", ""))
+        monkeypatch.setenv("RHETORIC_AUDIOCPP_CLI", os.environ.get("RHETORIC_AUDIOCPP_CLI", ""))
+        monkeypatch.setenv("RHETORIC_AUDIOCPP_MODEL", os.environ.get("RHETORIC_AUDIOCPP_MODEL", ""))
         window._apply_remembered_backend()
 
         assert window.inference_backend_combo.currentData() == "vulkan"
-        assert os.environ.get("ORACLE_AUDIOCPP_CLI") == str(cli)
-        assert os.environ.get("ORACLE_AUDIOCPP_MODEL") == str(model)
+        assert os.environ.get("RHETORIC_AUDIOCPP_CLI") == str(cli)
+        assert os.environ.get("RHETORIC_AUDIOCPP_MODEL") == str(model)
         assert window._audio_cpp_device_value() == 0
         assert window._audio_cpp_threads_value() == 6
         assert window._audio_cpp_timeout_value() == 120
@@ -1903,11 +1903,11 @@ def test_remembered_backend_disabled_stays_pytorch(qt_app, monkeypatch: pytest.M
 
     window, _paths = _build_window(monkeypatch, tmp_path)
     try:
-        before_model = os.environ.get("ORACLE_AUDIOCPP_MODEL")
+        before_model = os.environ.get("RHETORIC_AUDIOCPP_MODEL")
         window._apply_remembered_backend()
 
         assert window.inference_backend_combo.currentData() == "pytorch"
-        assert os.environ.get("ORACLE_AUDIOCPP_MODEL") == before_model
+        assert os.environ.get("RHETORIC_AUDIOCPP_MODEL") == before_model
     finally:
         window.close()
 
@@ -1929,13 +1929,13 @@ def test_remembered_backend_stale_model_path_not_applied(qt_app, monkeypatch: py
     try:
         # Guard the CLI env key for restoration (the model key is already
         # monkeypatched by _build_window and restored on teardown).
-        monkeypatch.setenv("ORACLE_AUDIOCPP_CLI", os.environ.get("ORACLE_AUDIOCPP_CLI", ""))
+        monkeypatch.setenv("RHETORIC_AUDIOCPP_CLI", os.environ.get("RHETORIC_AUDIOCPP_CLI", ""))
         window._apply_remembered_backend()
 
         # The stale model path must not be applied; the fixture's valid model
         # env (set by _build_window) is left untouched.
-        assert os.environ.get("ORACLE_AUDIOCPP_MODEL") == str(tmp_path / "chatterbox-model")
-        assert os.environ.get("ORACLE_AUDIOCPP_CLI") == str(cli)
+        assert os.environ.get("RHETORIC_AUDIOCPP_MODEL") == str(tmp_path / "chatterbox-model")
+        assert os.environ.get("RHETORIC_AUDIOCPP_CLI") == str(cli)
         assert window.inference_backend_combo.currentData() == "vulkan"
         assert "no longer exists" in window.error_panel.toPlainText()
     finally:
@@ -1943,7 +1943,7 @@ def test_remembered_backend_stale_model_path_not_applied(qt_app, monkeypatch: py
 
 
 def test_cuda_device_selection_wires_into_render_and_persists(qt_app, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
-    import the_oracle.app_gui as app_gui
+    import rhetoric.app_gui as app_gui
 
     cuda_info = app_gui.CUDADeviceInfo(
         index=1,
@@ -2013,7 +2013,7 @@ def test_setup_completion_persists_resolved_paths(qt_app, monkeypatch: pytest.Mo
     """When the automatic setup finishes, the resolved audiocpp_cli and model
     paths are persisted so a later launch can restore them without re-running
     the build/download."""
-    import the_oracle.app_gui as app_gui
+    import rhetoric.app_gui as app_gui
 
     window, _paths = _build_window(monkeypatch, tmp_path)
     try:
@@ -2090,7 +2090,7 @@ def test_vulkan_setup_completion_starts_queued_preview(qt_app, monkeypatch: pyte
     """The preview promise: a preview clicked while the Vulkan setup runs is
     remembered with its row and fires by itself when setup completes — the
     worker starts and the preview progress dialog appears, no second click."""
-    import the_oracle.app_gui as app_gui
+    import rhetoric.app_gui as app_gui
 
     window, paths = _build_window(monkeypatch, tmp_path)
     try:
@@ -2100,7 +2100,7 @@ def test_vulkan_setup_completion_starts_queued_preview(qt_app, monkeypatch: pyte
         window.inference_backend_combo.setCurrentIndex(window.inference_backend_combo.findData("vulkan"))
         # Break the prerequisites so previewing queues instead of starting.
         monkeypatch.setattr(app_gui, "find_audiocpp_binary", lambda: None)
-        monkeypatch.delenv("ORACLE_AUDIOCPP_MODEL", raising=False)
+        monkeypatch.delenv("RHETORIC_AUDIOCPP_MODEL", raising=False)
         monkeypatch.setattr(app_gui.QMessageBox, "information", lambda *_args, **_kwargs: None)
 
         window.preview_utterance(0)
@@ -2113,7 +2113,7 @@ def test_vulkan_setup_completion_starts_queued_preview(qt_app, monkeypatch: pyte
         model_file = tmp_path / "chatterbox-model"
         model_file.write_text("model", encoding="utf-8")
         monkeypatch.setattr(app_gui, "find_audiocpp_binary", lambda: tmp_path / "audiocpp_cli")
-        monkeypatch.setenv("ORACLE_AUDIOCPP_MODEL", str(model_file))
+        monkeypatch.setenv("RHETORIC_AUDIOCPP_MODEL", str(model_file))
         monkeypatch.setattr(app_gui, "PreviewWorker", _FakePreviewWorker)
 
         class _SetupResult:
@@ -2138,7 +2138,7 @@ def test_vulkan_setup_completion_drops_queued_preview_when_render_queued(
     """If both a preview and a full render were queued behind the setup, the
     render wins (they cannot run concurrently) and the preview queue is
     dropped cleanly — no stale flag or stray preview worker."""
-    import the_oracle.app_gui as app_gui
+    import rhetoric.app_gui as app_gui
 
     window, paths = _build_window(monkeypatch, tmp_path)
     try:
@@ -2149,7 +2149,7 @@ def test_vulkan_setup_completion_drops_queued_preview_when_render_queued(
         window.output_name.setText("chapter")
         window.inference_backend_combo.setCurrentIndex(window.inference_backend_combo.findData("vulkan"))
         monkeypatch.setattr(app_gui, "find_audiocpp_binary", lambda: None)
-        monkeypatch.delenv("ORACLE_AUDIOCPP_MODEL", raising=False)
+        monkeypatch.delenv("RHETORIC_AUDIOCPP_MODEL", raising=False)
         monkeypatch.setattr(app_gui.QMessageBox, "information", lambda *_args, **_kwargs: None)
 
         window.preview_utterance(0)
@@ -2161,7 +2161,7 @@ def test_vulkan_setup_completion_drops_queued_preview_when_render_queued(
         model_file = tmp_path / "chatterbox-model"
         model_file.write_text("model", encoding="utf-8")
         monkeypatch.setattr(app_gui, "find_audiocpp_binary", lambda: tmp_path / "audiocpp_cli")
-        monkeypatch.setenv("ORACLE_AUDIOCPP_MODEL", str(model_file))
+        monkeypatch.setenv("RHETORIC_AUDIOCPP_MODEL", str(model_file))
         monkeypatch.setattr(app_gui, "RenderWorker", _FakeRenderWorker)
         monkeypatch.setattr(app_gui, "PreviewWorker", _FakePreviewWorker)
 
@@ -2186,9 +2186,9 @@ def test_save_blend_as_voice_creates_named_picker_voice(
     tmp_path: Path,
 ) -> None:
     """Saving a blend produces a catalog entry and a Saved Blends picker section."""
-    import the_oracle.app_gui as app_gui
-    from the_oracle.smoke import _write_reference
-    from the_oracle.voice_catalog import VoiceChoice, blend_voice_choices
+    import rhetoric.app_gui as app_gui
+    from rhetoric.smoke import _write_reference
+    from rhetoric.voice_catalog import VoiceChoice, blend_voice_choices
 
     ref_a = _write_reference(tmp_path / "ref_a.wav", 220.0)
     ref_b = _write_reference(tmp_path / "ref_b.wav", 440.0)
@@ -2239,8 +2239,8 @@ def test_save_blend_as_voice_requires_base_and_target(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
-    import the_oracle.app_gui as app_gui
-    from the_oracle.voice_catalog import blend_voice_choices
+    import rhetoric.app_gui as app_gui
+    from rhetoric.voice_catalog import blend_voice_choices
 
     monkeypatch.setattr(app_gui, "default_voice_choices", lambda _repo_root, **_kwargs: [])
     monkeypatch.setattr(app_gui.QMessageBox, "information", lambda *_args, **_kwargs: None)
@@ -2291,7 +2291,7 @@ def test_manage_cast_opens_dialog_from_real_main_window(
     qt_app, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     """The main-stage Manage Cast action must snapshot the real window state."""
-    from the_oracle import gui_cast
+    from rhetoric import gui_cast
 
     window, _paths = _build_window(monkeypatch, tmp_path)
     opened = []

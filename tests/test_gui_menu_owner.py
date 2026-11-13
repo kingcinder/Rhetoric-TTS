@@ -1,7 +1,7 @@
 """Ownership tests for the menu-bar extraction (gui_menu.py).
 
 Extraction slice 12 (2026-10-10) moved ``MainWindow._build_menu`` — the
-campaign's biggest remaining method — into ``the_oracle.gui_menu`` as the
+campaign's biggest remaining method — into ``rhetoric.gui_menu`` as the
 module-level :func:`build_menu`, with two seams both deliberate and both
 mutation-proven on a real window during the slice: widgets, actions and
 callbacks ride ``main_window`` (the gui_ingest_tools direction rule), and
@@ -19,7 +19,7 @@ owner-side shape those files do not:
    function; app_gui holds NO module-level binding for it (the slice-10
    function-local delegate convention), so an app_gui-level patch is a quiet
    no-op and gui_menu is the single patch point, exactly what
-   ``moved_owners.the_oracle.gui_menu`` records.
+   ``moved_owners.rhetoric.gui_menu`` records.
 2. THE DELEGATE PASSES THE BARE THEMES NAME — app_gui's ``_build_menu`` body
    resolves ``THEMES`` from app_gui's own globals at call time
    (``build_menu(self, themes=THEMES)``). A captured or owner-resolved
@@ -35,7 +35,7 @@ owner-side shape those files do not:
    (``QAction``; the census deliberately does not list it) plus its own
    parameters — anything else colliding with an app_gui census name is an
    offender to inject across the call boundary.
-6. THE MANIFEST RECORD — ``moved_owners.the_oracle.gui_menu`` lists exactly
+6. THE MANIFEST RECORD — ``moved_owners.rhetoric.gui_menu`` lists exactly
    ``build_menu``, and gui_menu defines exactly that one function as its
    public surface: a helper defined here without being registered would make
    the ownership record silently incomplete.
@@ -64,7 +64,7 @@ from PySide6.QtWidgets import QMainWindow
 REPO_ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = REPO_ROOT / "scripts" / "patch_surface_manifest.json"
 
-_OWNER = "the_oracle.gui_menu"
+_OWNER = "rhetoric.gui_menu"
 _OWNER_NAME = "build_menu"
 
 #: Every attribute the moved body must SET on ``main_window``: the 25 public
@@ -112,7 +112,7 @@ _MOVED_BODY_ASSIGNMENTS = (
 #: smaller scan.
 _APP_GUI_PATCHED_POLICY_NAMES = frozenset(
     {
-        "OraclePipeline",
+        "RhetoricPipeline",
         "ChatterboxEngine",
         "RenderWorker",
         "PreviewWorker",
@@ -176,7 +176,7 @@ def test_app_gui_holds_no_module_level_binding_for_the_owner() -> None:
     binding of any form (assignment, import, import-from). A module-level
     re-export would invite app_gui-level patches that are silent no-ops for
     the moved body — the exact shape the moved-owners record forbids."""
-    app_gui = _import("the_oracle.app_gui")
+    app_gui = _import("rhetoric.app_gui")
     assert not hasattr(app_gui, _OWNER_NAME), (
         "app_gui must NOT re-export build_menu: MainWindow reaches the menu "
         "bar through the _build_menu delegate's function-local import, so a "
@@ -185,7 +185,7 @@ def test_app_gui_holds_no_module_level_binding_for_the_owner() -> None:
     )
     tree = ast.parse(Path(app_gui.__file__).read_text(encoding="utf-8"))
     # No import/import-from/assignment of the name at module top level in ANY
-    # spelling (the_oracle.gui_menu, .gui_menu, alias included).
+    # spelling (rhetoric.gui_menu, .gui_menu, alias included).
     offenders = []
     for node in tree.body:
         if isinstance(node, ast.Import):
@@ -215,7 +215,7 @@ def test_delegate_resolves_themes_bare_from_app_gui_globals() -> None:
     body that resolved the mapping another way (qualified lookup, captured
     object, owner-imported THEMES) would go deaf to app_gui-level rebinds —
     the seam the VULKAN preflight seam pins as ``find_audiocpp_binary``."""
-    app_gui = _import("the_oracle.app_gui")
+    app_gui = _import("rhetoric.app_gui")
     source = Path(app_gui.__file__).read_text(encoding="utf-8")
     tree = ast.parse(source)
     main_window = next(
@@ -288,7 +288,7 @@ def test_moved_body_resolves_no_app_gui_patched_name_as_a_bare_global() -> None:
     assert len(_APP_GUI_PATCHED_POLICY_NAMES) >= _MIN_CENSUS_NAMES, (
         "the scan's census copy collapsed — fix the names list, not this pin"
     )
-    app_gui = _import("the_oracle.app_gui")
+    app_gui = _import("rhetoric.app_gui")
     del app_gui  # the census is derived from the SUITE, not from app_gui's own source
     literal_targets: set[str] = set()
     for test_file in (REPO_ROOT / "tests").glob("test_*.py"):
@@ -302,7 +302,7 @@ def test_moved_body_resolves_no_app_gui_patched_name_as_a_bare_global() -> None:
                 if len(args) >= 2 and isinstance(args[1], ast.Constant) and isinstance(args[1].value, str):
                     target = args[0]
                     spelled = None
-                    if isinstance(target, ast.Name) and target.id in {"app_gui", "the_oracle"}:
+                    if isinstance(target, ast.Name) and target.id in {"app_gui", "rhetoric"}:
                         spelled = "app_gui"
                     elif isinstance(target, ast.Attribute):
                         spelled = getattr(target.value, "id", None)
@@ -338,7 +338,7 @@ def test_suite_never_patches_app_gui_build_menu() -> None:
     ``app_gui.build_menu`` cannot exist (the delegate imports function-
     locally), so an app_gui-level monkeypatch of it would be a silent no-op:
     a suite test doing that looks green while patching a name the moved body
-    never reads. Any menu patch belongs on ``the_oracle.gui_menu`` — the
+    never reads. Any menu patch belongs on ``rhetoric.gui_menu`` — the
     moved-owner record's designed spelling, and the only place the patch
     intercepts.
     """
@@ -351,14 +351,14 @@ def test_suite_never_patches_app_gui_build_menu() -> None:
             # word for it elsewhere.
             continue
         text = test_file.read_text(encoding="utf-8")
-        if '"app_gui.build_menu"' in text or "the_oracle.app_gui.build_menu" in text:
+        if '"app_gui.build_menu"' in text or "rhetoric.app_gui.build_menu" in text:
             offenders.append(test_file.name + " (literal path patch)")
         if 'setattr(app_gui, "build_menu"' in text:
             offenders.append(test_file.name + " (setattr(app_gui, ...))")
     assert offenders == [], (
         f"tests patch app_gui.build_menu: {offenders} — the owner function is "
         "imported function-locally inside _build_menu, so an app_gui-level "
-        "patch is a silent no-op. Patch the_oracle.gui_menu.build_menu instead"
+        "patch is a silent no-op. Patch rhetoric.gui_menu.build_menu instead"
     )
 
 
@@ -499,7 +499,7 @@ def _stub_mapping() -> dict:
 def test_build_menu_is_self_sufficient_on_the_injected_mapping() -> None:
     from PySide6.QtWidgets import QMenu
 
-    from the_oracle.gui_menu import build_menu
+    from rhetoric.gui_menu import build_menu
 
     window = _StubWindow()
     build_menu(window, themes=_stub_mapping())
@@ -521,7 +521,7 @@ def test_build_menu_is_self_sufficient_on_the_injected_mapping() -> None:
 
 
 def test_build_menu_assignments_land_on_the_window() -> None:
-    from the_oracle.gui_menu import build_menu
+    from rhetoric.gui_menu import build_menu
 
     window = _StubWindow()
     build_menu(window, themes=_stub_mapping())

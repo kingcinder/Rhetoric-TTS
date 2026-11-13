@@ -47,7 +47,7 @@ from typing import Any
 from tests.test_app_gui_patch_surface import load_payload_policy
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-APP_GUI = REPO_ROOT / "src" / "the_oracle" / "app_gui.py"
+APP_GUI = REPO_ROOT / "src" / "rhetoric" / "app_gui.py"
 
 #: The record itself — one validated read at collection, shared by both nets.
 _PAYLOAD_POLICY: dict[str, Any] = load_payload_policy()
@@ -134,7 +134,7 @@ def test_payload_policy_record_is_live_in_the_window() -> None:
         f"known floor is {_MIN_SANCTIONED}. The record went blind — fix the "
         "record, not this assertion."
     )
-    assert "the_oracle.gui_settings" in POLICY_OWNERS, (
+    assert "rhetoric.gui_settings" in POLICY_OWNERS, (
         "the record lost gui_settings as the payload policy owner"
     )
     assert len(SCHEMA_KEYS) >= 17, (

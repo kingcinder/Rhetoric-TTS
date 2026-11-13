@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from the_oracle.audio.export_srt import format_timestamp, utterances_to_srt, write_srt
-from the_oracle.models.project import Utterance
+from rhetoric.audio.export_srt import format_timestamp, utterances_to_srt, write_srt
+from rhetoric.models.project import Utterance
 
 
 def test_format_timestamp_seconds_to_srt_clock() -> None:

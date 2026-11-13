@@ -7,9 +7,9 @@ import pytest
 
 pytestmark = pytest.mark.slow
 
-from the_oracle.models.cache import ProjectCache
-from the_oracle.models.project import Utterance, VoiceSettings
-from the_oracle.pipeline import (
+from rhetoric.models.cache import ProjectCache
+from rhetoric.models.project import Utterance, VoiceSettings
+from rhetoric.pipeline import (
     SynthesisTask,
     synthesize_task,
     _run_tasks_with_worker_pool,
@@ -17,9 +17,9 @@ from the_oracle.pipeline import (
     _worker_process_task,
     _worker_reset,
 )
-from the_oracle.smoke import _DeterministicChatterboxEngine, _write_reference
-from the_oracle.tts_engines.chatterbox_engine import ChatterboxConditioning
-from the_oracle.utils.hashing import build_chunk_hash
+from rhetoric.smoke import _DeterministicChatterboxEngine, _write_reference
+from rhetoric.tts_engines.chatterbox_engine import ChatterboxConditioning
+from rhetoric.utils.hashing import build_chunk_hash
 
 
 def _prepare_synthesis_task_helpers(
@@ -140,7 +140,7 @@ def test_chatterbox_engine_seed_seeds_torch_rng(monkeypatch) -> None:
     sampling bit-reproducible across runs."""
     from unittest.mock import Mock
 
-    from the_oracle.tts_engines.chatterbox_engine import ChatterboxEngine
+    from rhetoric.tts_engines.chatterbox_engine import ChatterboxEngine
 
     engine = ChatterboxEngine(seed=99)
     seeded_values: list[int] = []
@@ -168,7 +168,7 @@ def test_chatterbox_engine_seed_seeds_torch_rng(monkeypatch) -> None:
 def test_chatterbox_engine_without_seed_does_not_seed(monkeypatch) -> None:
     from unittest.mock import Mock
 
-    from the_oracle.tts_engines.chatterbox_engine import ChatterboxEngine
+    from rhetoric.tts_engines.chatterbox_engine import ChatterboxEngine
 
     engine = ChatterboxEngine()
     seeded_values: list[int] = []

@@ -34,7 +34,7 @@ The contract this file pins:
    all: the moved ``open_cast_manager`` builds the dialog, and the dialog
    builds its rows, from gui_cast's globals, so an app_gui-level patch of
    either would be a silent no-op. Both are listed in
-   ``moved_owners.the_oracle.gui_cast``, MainWindow never references either
+   ``moved_owners.rhetoric.gui_cast``, MainWindow never references either
    in any form, and any suite-side patch must target gui_cast — the designed
    spelling — never app_gui.
 4. THE TEN DELEGATES + THE FOUR INJECTIONS — each cast-bar method stays in
@@ -124,7 +124,7 @@ _INJECTED_NAMES = frozenset(
 #: are deliberately absent: they are gui_cast-owned reads by design.
 _APP_GUI_PATCHED_POLICY_NAMES = frozenset(
     {
-        "OraclePipeline",
+        "RhetoricPipeline",
         "ChatterboxEngine",
         "RenderWorker",
         "PreviewWorker",
@@ -147,7 +147,7 @@ def _import(name: str):
 
 
 def _gui_cast_tree():
-    owner = _import("the_oracle.gui_cast")
+    owner = _import("rhetoric.gui_cast")
     source = Path(owner.__file__).read_text(encoding="utf-8")
     return owner, ast.parse(source)
 
@@ -180,8 +180,8 @@ def test_app_gui_reimports_the_cluster_as_identical_objects() -> None:
     bare names in app_gui's globals, so app_gui-level class patches intercept
     only while app_gui.X IS gui_cast.X — a wrapper or subclass would silently
     defeat them while the suite stayed green."""
-    owner = _import("the_oracle.gui_cast")
-    app_gui = _import("the_oracle.app_gui")
+    owner = _import("rhetoric.gui_cast")
+    app_gui = _import("rhetoric.app_gui")
     for name in _REEXPORTED_CLUSTER:
         assert getattr(app_gui, name) is getattr(owner, name), (
             f"app_gui.{name} must be the gui_cast object itself"
@@ -194,7 +194,7 @@ def test_main_window_constructs_speaker_groups_from_bare_names_only() -> None:
     too. A qualified ``gui_cast.X`` lookup would go deaf to app_gui-level
     patches. ``CastManagementDialog`` is deliberately absent: the cast-bar
     slice moved its last app_gui constructor into gui_cast."""
-    app_gui = _import("the_oracle.app_gui")
+    app_gui = _import("rhetoric.app_gui")
     tree = ast.parse(Path(app_gui.__file__).read_text(encoding="utf-8"))
     sites = [
         node
@@ -224,12 +224,12 @@ def test_gui_cast_imports_nothing_from_app_gui() -> None:
     """No import cycle and no seam bypass: gui_cast must never reach back
     into app_gui — in ANY spelling. The main window crosses the seam as a
     value (the ``main_window`` parameter); someone "fixing" a missing name
-    with ``from the_oracle.app_gui import X`` would plant a cycle under the
+    with ``from rhetoric.app_gui import X`` would plant a cycle under the
     next slice's feet."""
     from tests.test_gui_import_direction import _module_root, _scan_imports
 
     _forbids_app_gui = lambda module: _module_root(module) == "app_gui"  # noqa: E731
-    owner = _import("the_oracle.gui_cast")
+    owner = _import("rhetoric.gui_cast")
     source = Path(owner.__file__).read_text(encoding="utf-8")
     scan = _scan_imports(source, forbidden=_forbids_app_gui)
     assert scan.violations == () and scan.unresolved == (), (
@@ -238,24 +238,24 @@ def test_gui_cast_imports_nothing_from_app_gui() -> None:
     )
     # Vacuity: each forbidden spelling must still trip this exact gate.
     for form in (
-        "import the_oracle.app_gui",
+        "import rhetoric.app_gui",
         "import app_gui",
-        "from the_oracle.app_gui import CastManagementDialog",
-        "from the_oracle import app_gui",
+        "from rhetoric.app_gui import CastManagementDialog",
+        "from rhetoric import app_gui",
         "from . import app_gui",
         "from .app_gui import SpeakerGroup",
-        "importlib.import_module('the_oracle.app_gui')",
+        "importlib.import_module('rhetoric.app_gui')",
     ):
         assert _scan_imports(form, forbidden=_forbids_app_gui).violations, form
     # ...and the scan must see gui_cast's real imports (which are legal):
     assert {
-        "the_oracle.gui_sections",
-        "the_oracle.gui_settings",
-        "the_oracle.gui_utils",
-        "the_oracle.gui_widgets",
-        "the_oracle.models.project",
-        "the_oracle.models.settings",
-        "the_oracle.voice_catalog",
+        "rhetoric.gui_sections",
+        "rhetoric.gui_settings",
+        "rhetoric.gui_utils",
+        "rhetoric.gui_widgets",
+        "rhetoric.models.project",
+        "rhetoric.models.settings",
+        "rhetoric.voice_catalog",
     } <= set(scan.modules), scan.modules
 
 
@@ -269,7 +269,7 @@ def test_moved_worker_is_dialog_only_and_never_reexported() -> None:
     assert _MOVED_WORKER in defined, (
         f"gui_cast must define {_MOVED_WORKER} — the pin went blind"
     )
-    app_gui = _import("the_oracle.app_gui")
+    app_gui = _import("rhetoric.app_gui")
     assert not hasattr(app_gui, _MOVED_WORKER), (
         "app_gui must NOT re-export _CastRow: the dialog builds rows from "
         "gui_cast's globals, so an app_gui-level patch would be a silent no-op"
@@ -277,10 +277,10 @@ def test_moved_worker_is_dialog_only_and_never_reexported() -> None:
     # And the manifest records exactly that disposition: the row widget and
     # (since the cast-bar slice) the modal dialog.
     moved = json.loads(MANIFEST.read_text(encoding="utf-8"))["moved_owners"][
-        "the_oracle.gui_cast"
+        "rhetoric.gui_cast"
     ]["names"]
     assert moved == [_MOVED_WORKER, _MOVED_DIALOG], (
-        "moved_owners.the_oracle.gui_cast must list exactly the two names no "
+        "moved_owners.rhetoric.gui_cast must list exactly the two names no "
         "app_gui site reads at runtime; the split-readership names stay in "
         f"PARTIAL_OWNED, got {moved}"
     )
@@ -323,7 +323,7 @@ def test_main_window_never_references_the_moved_worker() -> None:
     in any form: the row widget is the dialog's private implementation. A
     window-side reference would mean rows moved back across the seam without
     the manifest's moved_owners record being true anymore."""
-    app_gui = _import("the_oracle.app_gui")
+    app_gui = _import("rhetoric.app_gui")
     tree = ast.parse(Path(app_gui.__file__).read_text(encoding="utf-8"))
     offenders = [
         f"line {node.lineno}"
@@ -368,7 +368,7 @@ def test_suite_patches_the_moved_worker_only_on_the_owner() -> None:
             if isinstance(target, ast.Name) and target.id == "app_gui":
                 offenders.append(f"{test_file.name}: line {node.lineno} patches app_gui.{_MOVED_WORKER}")
     assert offenders == [], (
-        "the moved worker must be patched on the_oracle.gui_cast, never "
+        "the moved worker must be patched on rhetoric.gui_cast, never "
         "app_gui:\n  " + "\n  ".join(offenders)
     )
     # Classifier vacuity, both directions:
@@ -403,7 +403,7 @@ def test_the_moved_dialog_has_no_app_gui_name_and_no_window_reference() -> None:
     assert _MOVED_DIALOG in defined, (
         f"gui_cast must define {_MOVED_DIALOG} — the pin went blind"
     )
-    app_gui = _import("the_oracle.app_gui")
+    app_gui = _import("rhetoric.app_gui")
     assert not hasattr(app_gui, _MOVED_DIALOG), (
         f"app_gui must NOT re-export {_MOVED_DIALOG}: the moved "
         "open_cast_manager constructs it from gui_cast's globals, so an "
@@ -427,7 +427,7 @@ def test_every_cast_bar_method_is_a_function_local_import_delegate() -> None:
     therefore holds no module-level binding for any of the ten — an
     app_gui-level patch is a silent no-op and gui_cast is the single patch
     point, which is what makes the manifest's listing literal."""
-    app_gui = _import("the_oracle.app_gui")
+    app_gui = _import("rhetoric.app_gui")
     tree = ast.parse(Path(app_gui.__file__).read_text(encoding="utf-8"))
     window = next(
         node
@@ -446,10 +446,10 @@ def test_every_cast_bar_method_is_a_function_local_import_delegate() -> None:
         local_imports = [
             f"{node.module}.{alias.name}"
             for node in ast.walk(methods[name])
-            if isinstance(node, ast.ImportFrom) and node.module == "the_oracle.gui_cast"
+            if isinstance(node, ast.ImportFrom) and node.module == "rhetoric.gui_cast"
             for alias in node.names
         ]
-        assert f"the_oracle.gui_cast.{name}" in local_imports, (
+        assert f"rhetoric.gui_cast.{name}" in local_imports, (
             f"{name} must import its owner function FUNCTION-LOCALLY "
             f"(found {local_imports})"
         )
@@ -470,7 +470,7 @@ def test_the_four_injection_names_cross_the_boundary_and_never_sit_in_gui_cast()
     for name in _CLUSTER_METHODS:
         assert name in funcs, f"gui_cast lost the {name} owner function"
 
-    app_gui = _import("the_oracle.app_gui")
+    app_gui = _import("rhetoric.app_gui")
     app_source = Path(app_gui.__file__).read_text(encoding="utf-8")
     app_tree = ast.parse(app_source)
     app_window = next(
@@ -543,7 +543,7 @@ class _StubWindow:
         pass
 
     def _all_speaker_groups(self) -> dict[str, object]:
-        from the_oracle.gui_cast import _all_speaker_groups
+        from rhetoric.gui_cast import _all_speaker_groups
 
         return _all_speaker_groups(self)
 
@@ -553,7 +553,7 @@ class _StubWindow:
     def _sync_extra_speaker_groups(self, speakers) -> None:
         # Mirror the real window: route through the app_gui delegate so the
         # seam probe exercises the injection exactly as production does.
-        app_gui = _import("the_oracle.app_gui")
+        app_gui = _import("rhetoric.app_gui")
         app_gui.MainWindow._sync_extra_speaker_groups(self, speakers)
 
     def _refresh_cast_bar(self) -> None:
@@ -626,7 +626,7 @@ def test_the_moved_bodies_use_the_collaborators_they_are_handed() -> None:
     PARTIAL_OWNED ones outright — the split is the design, not the test's
     target). What this test can pin without perturbing the census is that the
     injection, once made, is what runs."""
-    owner = _import("the_oracle.gui_cast")
+    owner = _import("rhetoric.gui_cast")
     window = _StubWindow()
 
     built: list[str] = []
@@ -694,8 +694,8 @@ def test_the_moved_cast_dialog_construction_resolves_gui_cast_globals(monkeypatc
     — the designed spelling (patching it at app_gui is impossible: there is
     no name) — is what the moved ``open_cast_manager`` constructs, driven
     through the app_gui delegate so the whole path is exercised."""
-    owner = _import("the_oracle.gui_cast")
-    app_gui = _import("the_oracle.app_gui")
+    owner = _import("rhetoric.gui_cast")
+    app_gui = _import("rhetoric.app_gui")
     built: list[object] = []
 
     class FakeDialog:
@@ -749,11 +749,11 @@ def test_cast_bodies_never_resolve_app_gui_patched_policy_names() -> None:
     # Vacuity: a blind walk passes green over anything — the scan must flag a
     # synthetic offender.
     probe = ast.parse(
-        "class P:\n    def run(self):\n        return OraclePipeline()\n"
+        "class P:\n    def run(self):\n        return RhetoricPipeline()\n"
     ).body[0]
     flagged = [
         node.id
         for node in ast.walk(probe)
         if isinstance(node, ast.Name) and node.id in _APP_GUI_PATCHED_POLICY_NAMES
     ]
-    assert flagged == ["OraclePipeline"]
+    assert flagged == ["RhetoricPipeline"]

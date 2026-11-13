@@ -6,7 +6,7 @@ from pathlib import Path
 from PyInstaller.utils.hooks import collect_data_files
 
 repo = Path(SPECPATH).parents[1]
-datas = collect_data_files("the_oracle")
+datas = collect_data_files("rhetoric")
 datas.extend(
     [
         (str(repo / "LICENSE"), "."),

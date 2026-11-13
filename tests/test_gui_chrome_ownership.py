@@ -1,7 +1,7 @@
 """Ownership tests for the gui_chrome slice — the Live sidebar chrome.
 
 ``LivePanel`` and the Live column's section chrome moved from ``app_gui`` to
-``the_oracle.gui_chrome`` (2026-09-21 extraction slice). The safety nets each
+``rhetoric.gui_chrome`` (2026-09-21 extraction slice). The safety nets each
 slice relies on (``test_app_gui_patch_surface``, ``test_payload_policy_ownership``)
 ran green as this slice's pre-flight gates; these tests pin the slice itself.
 
@@ -11,7 +11,7 @@ Four contracts keep the move honest:
    defines a competing ``LivePanel``.
 2. RE-EXPORT — ``app_gui.LivePanel`` IS ``gui_chrome.LivePanel``, so
    MainWindow's construction, the two progress handlers that drive it, and the
-   existing ``from the_oracle.app_gui import LivePanel`` test import keep
+   existing ``from rhetoric.app_gui import LivePanel`` test import keep
    resolving exactly as before.
 3. ASSEMBLY — MainWindow's Live column comes from ``gui_chrome``'s
    ``build_live_section`` (the collapsible/resizable section chrome), while the
@@ -40,8 +40,8 @@ import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SRC = REPO_ROOT / "src"
-APP_GUI = SRC / "the_oracle" / "app_gui.py"
-GUI_CHROME = SRC / "the_oracle" / "gui_chrome.py"
+APP_GUI = SRC / "rhetoric" / "app_gui.py"
+GUI_CHROME = SRC / "rhetoric" / "gui_chrome.py"
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
@@ -112,8 +112,8 @@ def test_app_gui_reexports_the_gui_chrome_names() -> None:
     MainWindow constructs it from app_gui globals — both require the identical
     object, not a lookalike.
     """
-    import the_oracle.app_gui as app_gui
-    import the_oracle.gui_chrome as gui_chrome
+    import rhetoric.app_gui as app_gui
+    import rhetoric.gui_chrome as gui_chrome
 
     assert app_gui.LivePanel is gui_chrome.LivePanel
     assert app_gui.build_live_section is gui_chrome.build_live_section
@@ -491,8 +491,8 @@ def test_build_live_section_wraps_the_panel_in_section_chrome() -> None:
     panel, with the Live column's narrow floor."""
     from PySide6.QtWidgets import QApplication
 
-    from the_oracle.gui_chrome import LivePanel, build_live_section
-    from the_oracle.gui_sections import QHSectionGroup
+    from rhetoric.gui_chrome import LivePanel, build_live_section
+    from rhetoric.gui_sections import QHSectionGroup
 
     QApplication.instance() or QApplication([])
 
@@ -516,8 +516,8 @@ def test_live_column_updates_through_the_wrapped_panel() -> None:
     progress mirror still updates and still resets."""
     from PySide6.QtWidgets import QApplication
 
-    from the_oracle.gui_chrome import LivePanel, build_live_section
-    from the_oracle.pipeline import RenderProgress
+    from rhetoric.gui_chrome import LivePanel, build_live_section
+    from rhetoric.pipeline import RenderProgress
 
     QApplication.instance() or QApplication([])
 

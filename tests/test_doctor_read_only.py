@@ -152,7 +152,7 @@ def test_snapshot_of_this_repository_is_not_vacuous() -> None:
     snapshot = repo_tree_snapshot(REPO_ROOT)
 
     assert len(snapshot) > 100
-    assert "src/the_oracle/cli.py" in snapshot
+    assert "src/rhetoric/cli.py" in snapshot
     assert "scripts/doctor.py" in snapshot
 
 

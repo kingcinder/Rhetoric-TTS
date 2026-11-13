@@ -5,7 +5,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).parents[1]
-PUBLIC_TEXT = re.compile(r"\bThe Oracle\b|\bOracle TTS\b|Oracle alpha license", re.IGNORECASE)
+PUBLIC_TEXT = re.compile(r"\bRhetoric\b|\bRhetoric TTS\b|Rhetoric alpha license", re.IGNORECASE)
 
 
 def _customer_text_files() -> list[Path]:
@@ -43,7 +43,7 @@ def test_customer_facing_text_uses_rhetoric_brand() -> None:
         for line_number, line in enumerate(text.splitlines(), start=1):
             if PUBLIC_TEXT.search(line):
                 findings.append(f"{path.relative_to(ROOT)}:{line_number}: {line.strip()}")
-    assert not findings, "Customer-facing Oracle branding remains:\n" + "\n".join(findings)
+    assert not findings, "Customer-facing Rhetoric branding remains:\n" + "\n".join(findings)
 
 
 def test_python_string_literals_do_not_expose_the_former_product_name() -> None:
@@ -61,8 +61,8 @@ def test_python_string_literals_do_not_expose_the_former_product_name() -> None:
         for node in ast.walk(tree):
             if isinstance(node, ast.Constant) and isinstance(node.value, str) and id(node) not in docstrings:
                 # These are persistent internal marker/command names, not product copy.
-                if node.value in {"the-oracle", ".oracle-portable"} or node.value.startswith((".oracle-render-", ".oracle-preview-")):
+                if node.value in {"rhetoric", ".rhetoric-portable"} or node.value.startswith((".rhetoric-render-", ".rhetoric-preview-")):
                     continue
-                if re.search(r"\bOracle\b", node.value, re.IGNORECASE):
+                if re.search(r"\bRhetoric\b", node.value, re.IGNORECASE):
                     findings.append(f"{path.relative_to(ROOT)}:{node.lineno}: {node.value}")
-    assert not findings, "Customer-visible Oracle strings remain:\n" + "\n".join(findings)
+    assert not findings, "Customer-visible Rhetoric strings remain:\n" + "\n".join(findings)

@@ -9,7 +9,7 @@ from pathlib import Path
 from scripts.patch_chatterbox_metadata import _replace_metadata
 
 
-def test_chatterbox_metadata_matches_the_audited_oracle_stack(tmp_path: Path) -> None:
+def test_chatterbox_metadata_matches_the_audited_rhetoric_stack(tmp_path: Path) -> None:
     dist_info = tmp_path / "chatterbox_tts-0.1.7.dist-info"
     dist_info.mkdir()
     metadata = dist_info / "METADATA"
@@ -29,7 +29,7 @@ def test_chatterbox_metadata_matches_the_audited_oracle_stack(tmp_path: Path) ->
     _replace_metadata(dist_info)
 
     content = metadata.read_bytes()
-    assert b"Version: 0.1.7+oracle1" in content
+    assert b"Version: 0.1.7+rhetoric1" in content
     assert b"Requires-Dist: transformers==5.20.0" in content
     assert b"Requires-Dist: diffusers==0.38.0" in content
     assert b"Requires-Dist: safetensors==0.8.0" in content

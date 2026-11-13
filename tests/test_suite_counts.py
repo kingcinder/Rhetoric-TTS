@@ -40,12 +40,12 @@ def _load(name: str, filename: str):
 
 @pytest.fixture(scope="module")
 def counts():
-    return _load("oracle_certify_suite_counts", "certify_suite_counts.py")
+    return _load("rhetoric_certify_suite_counts", "certify_suite_counts.py")
 
 
 @pytest.fixture(scope="module")
 def acceptance():
-    return _load("oracle_fresh_clone_acceptance_for_counts", "fresh_clone_acceptance.py")
+    return _load("rhetoric_fresh_clone_acceptance_for_counts", "fresh_clone_acceptance.py")
 
 
 def _entry(**overrides) -> dict:
@@ -422,7 +422,7 @@ def test_both_fresh_tree_checks_refuse_a_tree_that_does_not_load_its_own_code(
     """Two scripts assert the same thing about the same trap; they must agree.
 
     This interpreter has the package installed editable against the working tree,
-    so an empty ``src`` still resolves ``the_oracle`` -- to the wrong tree. Both
+    so an empty ``src`` still resolves ``rhetoric`` -- to the wrong tree. Both
     scripts have to refuse that rather than report numbers for code that never ran.
     """
     empty = tmp_path / "empty"

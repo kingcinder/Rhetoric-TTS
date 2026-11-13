@@ -85,7 +85,7 @@ def _load(name: str, filename: str):
 
 @pytest.fixture(scope="module")
 def idempotence():
-    return _load("oracle_doctor_idempotence_for_history", "doctor_idempotence.py")
+    return _load("rhetoric_doctor_idempotence_for_history", "doctor_idempotence.py")
 
 
 def _doctor_report() -> dict:

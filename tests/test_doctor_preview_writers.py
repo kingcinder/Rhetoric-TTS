@@ -1,7 +1,7 @@
 """Tests for the doctor's preview-cache audit (scripts/doctor.py).
 
 The writer-manifest net (``tests/test_stem_cache_write_path.py``) pins the
-SOURCE side of preview ownership: ``OraclePipeline.render_preview`` alone
+SOURCE side of preview ownership: ``RhetoricPipeline.render_preview`` alone
 writes preview audio, naming every file through ``ProjectCache.preview_path``
 (``preview_<alnum-speaker>_<index>.wav`` inside the project's ``previews/``
 directory). The doctor's check is the DISK side: it scans every project
@@ -142,7 +142,7 @@ def test_every_preview_path_output_satisfies_the_recognizer() -> None:
     If the naming scheme ever changes in the writer, this fails here — before
     the doctor's disk audit starts flagging the gated owner's own files.
     """
-    from the_oracle.models.cache import ProjectCache
+    from rhetoric.models.cache import ProjectCache
 
     cache = ProjectCache.__new__(ProjectCache)  # no mkdir side effects
     cache.project_dir = Path("/unused")
@@ -158,7 +158,7 @@ def test_every_preview_path_output_satisfies_the_recognizer() -> None:
 
 def test_recognizer_rejects_near_miss_shapes() -> None:
     """Shapes a foreign writer could plausibly produce must not pass."""
-    from the_oracle.models.cache import ProjectCache
+    from rhetoric.models.cache import ProjectCache
 
     for name in (
         "ab12cd34.wav",  # a stem hash

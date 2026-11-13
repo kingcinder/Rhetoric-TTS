@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from the_oracle import vulkan_prebuilt
+from rhetoric import vulkan_prebuilt
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -21,7 +21,7 @@ BINARY_NAME = "audiocpp_cli.exe" if sys.platform == "win32" else "audiocpp_cli"
 
 def _load_packager():
     spec = importlib.util.spec_from_file_location(
-        "oracle_package_vulkan_binary", REPO_ROOT / "scripts" / "package_vulkan_binary.py"
+        "rhetoric_package_vulkan_binary", REPO_ROOT / "scripts" / "package_vulkan_binary.py"
     )
     assert spec and spec.loader
     module = importlib.util.module_from_spec(spec)

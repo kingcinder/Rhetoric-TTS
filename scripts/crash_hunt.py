@@ -49,7 +49,7 @@ def _render_command(backend: str = "pytorch") -> list[str]:
     command = [
         sys.executable,
         "-m",
-        "the_oracle.cli",
+        "rhetoric.cli",
         "render",
         "--input",
         str(REPO_ROOT / "Input" / "What is, reality.txt"),
@@ -63,7 +63,7 @@ def _render_command(backend: str = "pytorch") -> list[str]:
 
 def _vulkan_available() -> bool:
     try:
-        from the_oracle.tts_engines.vulkan_backend import find_audiocpp_binary
+        from rhetoric.tts_engines.vulkan_backend import find_audiocpp_binary
 
         return bool(find_audiocpp_binary())
     except Exception:
@@ -89,9 +89,9 @@ import contextlib
 import io
 import json
 
-from the_oracle import crash
-from the_oracle.crash import handlers
-from the_oracle.offline import repo_root
+from rhetoric import crash
+from rhetoric.crash import handlers
+from rhetoric.offline import repo_root
 
 consent = crash.read_consent(repo_root())
 
@@ -107,7 +107,7 @@ def _arming_spy(root_arg=None):
 
 handlers.arm_native_capture = _arming_spy
 
-from the_oracle import cli
+from rhetoric import cli
 
 sink = io.StringIO()
 rc = None
@@ -157,7 +157,7 @@ def _capture_readiness(root: Path) -> dict:
 def _run_acceptance(outdir: Path) -> int:
     """The plan's hard gate: 5x pytorch, 3x vulkan (or explicit skip), 3x GUI,
     zero non-zero exits and zero new crash records."""
-    from the_oracle import crash
+    from rhetoric import crash
 
     root = REPO_ROOT
     records_before = set(crash.list_records(root))
@@ -204,7 +204,7 @@ def _run_acceptance(outdir: Path) -> int:
 
 def harvest_crash_records(root: Path, before: set) -> list[str]:
     """Paths (as strings) of crash records that appeared since the snapshot."""
-    from the_oracle import crash
+    from rhetoric import crash
 
     return [str(p) for p in crash.list_records(root) if p not in before]
 
@@ -300,7 +300,7 @@ def _gui_env() -> dict[str, str]:
 
 
 def _gui_command() -> list[str]:
-    return [sys.executable, "-m", "the_oracle.cli", "gui"]
+    return [sys.executable, "-m", "rhetoric.cli", "gui"]
 
 
 def _gui_child(timing_file: Path, baseline_mtime: int | None, timeout_s: float) -> int:
@@ -367,7 +367,7 @@ def _run_gui_once(timing_dir: Path, timeout_s: float = 120.0) -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Reproduce and classify Oracle crashes.")
+    parser = argparse.ArgumentParser(description="Reproduce and classify Rhetoric crashes.")
     parser.add_argument("--runs", type=int, default=5)
     parser.add_argument("--outdir", default=str(REPO_ROOT / "build" / "crash_hunt"))
     parser.add_argument("--mode", choices=("render", "gui", "acceptance"), default="render")

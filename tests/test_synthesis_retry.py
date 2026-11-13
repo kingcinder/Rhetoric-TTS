@@ -1,6 +1,6 @@
 """The one-shot hiccup retry: a rejected generation self-heals once, then fails loudly.
 
-The engine output gate (:func:`the_oracle.utils.audio.sanitize_engine_audio`)
+The engine output gate (:func:`rhetoric.utils.audio.sanitize_engine_audio`)
 recognizes Chatterbox's degenerate-generation pathologies — flat silence, a DC
 tone, NaNs, empty output. Before the retry existed, one such hiccup failed the
 whole utterance (and on the batched Vulkan path, the whole batch). The design
@@ -21,11 +21,11 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from the_oracle.models.project import VoiceSettings
-from the_oracle.tts_engines import vulkan_backend as vb
-from the_oracle.tts_engines.chatterbox_engine import ChatterboxEngine
-from the_oracle.tts_engines.vulkan_backend import AudioCppVulkanEngine
-from the_oracle.utils.audio import DegenerateEngineOutput, sanitize_engine_audio
+from rhetoric.models.project import VoiceSettings
+from rhetoric.tts_engines import vulkan_backend as vb
+from rhetoric.tts_engines.chatterbox_engine import ChatterboxEngine
+from rhetoric.tts_engines.vulkan_backend import AudioCppVulkanEngine
+from rhetoric.utils.audio import DegenerateEngineOutput, sanitize_engine_audio
 
 
 def _speech_like(seconds: float = 0.2, rate: int = 24000) -> np.ndarray:
@@ -146,7 +146,7 @@ def test_vulkan_single_retry_uses_fresh_seed(tmp_path, monkeypatch) -> None:
     calls = {"n": 0}
 
     def fake_once(self, text, conditioning, settings, seed=vb._USE_CONFIGURED_SEED):
-        from the_oracle.tts_engines import vulkan_backend as vb
+        from rhetoric.tts_engines import vulkan_backend as vb
 
         resolved = engine.seed if seed is vb._USE_CONFIGURED_SEED else seed
         seeds_in_commands.append(resolved)

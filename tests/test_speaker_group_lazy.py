@@ -28,7 +28,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 from PySide6.QtWidgets import QApplication, QComboBox, QLineEdit, QWidget
 
-from the_oracle.gui_cast import SpeakerGroup
+from rhetoric.gui_cast import SpeakerGroup
 
 
 @pytest.fixture(scope="module")

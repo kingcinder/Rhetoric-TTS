@@ -1,9 +1,9 @@
 """Tests for pinned model revisions and the offline install bundle.
 
 Covers:
-  * the_oracle.models.pins: every pin is a real 40-char hex commit SHA.
+  * rhetoric.models.pins: every pin is a real 40-char hex commit SHA.
   * scripts/download_models.py: helper-model revisions match the central pins.
-  * the_oracle.tts_engines.chatterbox_engine: turbo download uses the pinned revision.
+  * rhetoric.tts_engines.chatterbox_engine: turbo download uses the pinned revision.
   * scripts/manage_install.py: --offline-bundle plumbing — pip gets
     --no-index/--find-links, models seed into the HF cache with refs/main
     pointed at the pins, the managed wrappers export HF_HUB_OFFLINE=1 on
@@ -42,20 +42,20 @@ def _load_script_module(name: str, filename: str):
 
 @pytest.fixture()
 def manage_install():
-    return _load_script_module("oracle_manage_install_offline", "manage_install.py")
+    return _load_script_module("rhetoric_manage_install_offline", "manage_install.py")
 
 
 @pytest.fixture()
 def bundle_builder():
-    return _load_script_module("oracle_build_offline_bundle", "build_offline_bundle.py")
+    return _load_script_module("rhetoric_build_offline_bundle", "build_offline_bundle.py")
 
 
 @pytest.fixture()
 def download_models(monkeypatch):
     """Load scripts/download_models.py with the heavy chatterbox engine stubbed."""
-    tts_pkg = types.ModuleType("the_oracle.tts_engines")
+    tts_pkg = types.ModuleType("rhetoric.tts_engines")
     tts_pkg.__path__ = []  # type: ignore[attr-defined]
-    engine_mod = types.ModuleType("the_oracle.tts_engines.chatterbox_engine")
+    engine_mod = types.ModuleType("rhetoric.tts_engines.chatterbox_engine")
 
     class FakeChatterboxEngine:
         def __init__(self, *args, **kwargs):
@@ -65,16 +65,16 @@ def download_models(monkeypatch):
             pass
 
     engine_mod.ChatterboxEngine = FakeChatterboxEngine
-    monkeypatch.setitem(sys.modules, "the_oracle.tts_engines", tts_pkg)
-    monkeypatch.setitem(sys.modules, "the_oracle.tts_engines.chatterbox_engine", engine_mod)
-    return _load_script_module("oracle_download_models_offline", "download_models.py")
+    monkeypatch.setitem(sys.modules, "rhetoric.tts_engines", tts_pkg)
+    monkeypatch.setitem(sys.modules, "rhetoric.tts_engines.chatterbox_engine", engine_mod)
+    return _load_script_module("rhetoric_download_models_offline", "download_models.py")
 
 
 # --- central pins ------------------------------------------------------------
 
 
 def test_model_pins_are_real_commit_shas() -> None:
-    from the_oracle.models.pins import MODEL_PINS
+    from rhetoric.models.pins import MODEL_PINS
 
     assert len(MODEL_PINS) >= 4
     for repo_id, sha in MODEL_PINS.items():
@@ -83,7 +83,7 @@ def test_model_pins_are_real_commit_shas() -> None:
 
 
 def test_download_models_revisions_match_central_pins(download_models) -> None:
-    from the_oracle.models.pins import MODEL_PINS
+    from rhetoric.models.pins import MODEL_PINS
 
     for name, repo_id in download_models.HF_MODELS.items():
         assert download_models.HF_MODEL_REVISIONS[name] == MODEL_PINS[repo_id]
@@ -95,15 +95,15 @@ def _stub_chatterbox_engine_imports(monkeypatch) -> None:
 
     for name in ("numpy", "huggingface_hub", "huggingface_hub.errors", "huggingface_hub.utils"):
         monkeypatch.setitem(sys.modules, name, mock.MagicMock())
-    cache_mod = types.ModuleType("the_oracle.models.cache")
+    cache_mod = types.ModuleType("rhetoric.models.cache")
     cache_mod.CachedReference = object
     cache_mod.ProjectCache = object
-    project_mod = types.ModuleType("the_oracle.models.project")
+    project_mod = types.ModuleType("rhetoric.models.project")
     project_mod.VoiceSettings = object
     project_mod.strip_pain_point_markers = lambda s: s
-    platform_mod = types.ModuleType("the_oracle.platform_support")
+    platform_mod = types.ModuleType("rhetoric.platform_support")
     platform_mod.repo_python_display = lambda: "python"
-    hashing_mod = types.ModuleType("the_oracle.utils.hashing")
+    hashing_mod = types.ModuleType("rhetoric.utils.hashing")
     hashing_mod.hash_payload = lambda *a, **k: "hash"
     for mod in (cache_mod, project_mod, platform_mod, hashing_mod):
         monkeypatch.setitem(sys.modules, mod.__name__, mod)
@@ -111,7 +111,7 @@ def _stub_chatterbox_engine_imports(monkeypatch) -> None:
 
 def test_turbo_revision_is_pinned(monkeypatch) -> None:
     _stub_chatterbox_engine_imports(monkeypatch)
-    from the_oracle.models.pins import MODEL_PINS, TURBO_REPO_ID
+    from rhetoric.models.pins import MODEL_PINS, TURBO_REPO_ID
 
     # Load under a UNIQUE module name: exec-ing the engine under the real
     # module's name while numpy/huggingface_hub are stubbed would poison the
@@ -119,8 +119,8 @@ def test_turbo_revision_is_pinned(monkeypatch) -> None:
     # for every later test in the process. The pin constants do not depend on
     # the stubs, so a private alias module is sufficient here.
     spec = importlib.util.spec_from_file_location(
-        "oracle_test_chatterbox_engine_pins",
-        REPO_ROOT / "src" / "the_oracle" / "tts_engines" / "chatterbox_engine.py",
+        "rhetoric_test_chatterbox_engine_pins",
+        REPO_ROOT / "src" / "rhetoric" / "tts_engines" / "chatterbox_engine.py",
     )
     module = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
@@ -188,7 +188,7 @@ def _make_fake_bundle_cache(bundle: Path, pins: dict[str, str]) -> None:
 def test_seed_offline_models_points_refs_main_at_pins(
     manage_install, tmp_path: Path, monkeypatch
 ) -> None:
-    from the_oracle.models.pins import MODEL_PINS
+    from rhetoric.models.pins import MODEL_PINS
 
     bundle = tmp_path / "bundle"
     _make_fake_bundle_cache(bundle, MODEL_PINS)
@@ -216,7 +216,7 @@ def test_seed_offline_models_missing_model_fails(manage_install, tmp_path: Path,
 def test_write_offline_marker(manage_install, tmp_path: Path, monkeypatch) -> None:
     bundle = tmp_path / "bundle"
     bundle.mkdir()
-    (bundle / "manifest.json").write_text(json.dumps({"app": "the-oracle"}), encoding="utf-8")
+    (bundle / "manifest.json").write_text(json.dumps({"app": "rhetoric"}), encoding="utf-8")
     fake_root = tmp_path / "repo"
     fake_root.mkdir()
     monkeypatch.setattr(manage_install, "REPO_ROOT", fake_root)
@@ -225,7 +225,7 @@ def test_write_offline_marker(manage_install, tmp_path: Path, monkeypatch) -> No
 
     marker = fake_root / manage_install.OFFLINE_MARKER_FILENAME
     assert marker.is_file()
-    assert "the-oracle" in marker.read_text(encoding="utf-8")
+    assert "rhetoric" in marker.read_text(encoding="utf-8")
 
 
 # --- wrappers export HF_HUB_OFFLINE ------------------------------------------
@@ -272,8 +272,8 @@ def _load_chatterbox_engine_module(monkeypatch):
     monkeypatch.setitem(sys.modules, "huggingface_hub.errors", hf_errors)
     monkeypatch.setitem(sys.modules, "huggingface_hub.utils", hf_utils)
     spec = importlib.util.spec_from_file_location(
-        "oracle_test_chatterbox_engine",
-        REPO_ROOT / "src" / "the_oracle" / "tts_engines" / "chatterbox_engine.py",
+        "rhetoric_test_chatterbox_engine",
+        REPO_ROOT / "src" / "rhetoric" / "tts_engines" / "chatterbox_engine.py",
     )
     module = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
@@ -310,7 +310,7 @@ def _stub_chatterbox_variant(monkeypatch, dotted: str, cls_name: str, calls: lis
     ("multilingual", "chatterbox.mtl_tts", "ChatterboxMultilingualTTS"),
 ])
 def test_chatterbox_variants_load_from_pinned_local_snapshot(monkeypatch, variant, dotted, cls_name) -> None:
-    from the_oracle.models.pins import CHATTERBOX_REPO, MODEL_PINS
+    from rhetoric.models.pins import CHATTERBOX_REPO, MODEL_PINS
 
     engine_mod = _load_chatterbox_engine_module(monkeypatch)
     calls: list = []

@@ -10,8 +10,8 @@ from pathlib import Path
 
 import pytest
 
-from the_oracle import gui_settings
-from the_oracle.support import gate
+from rhetoric import gui_settings
+from rhetoric.support import gate
 
 
 # --- settings normalization under hostile payloads ---

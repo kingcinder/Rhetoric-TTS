@@ -38,21 +38,21 @@ def _load(name: str, filename: str):
 
 @pytest.fixture()
 def smoke():
-    return _load("oracle_windows_install_smoke", "windows_install_smoke.py")
+    return _load("rhetoric_windows_install_smoke", "windows_install_smoke.py")
 
 
 @pytest.fixture()
 def layout(smoke, tmp_path: Path, monkeypatch):
     """A layout whose paths are the *Windows* ones, on any host."""
-    manage = _load("oracle_manage_install_for_layout", "manage_install.py")
-    from the_oracle import platform_support
+    manage = _load("rhetoric_manage_install_for_layout", "manage_install.py")
+    from rhetoric import platform_support
 
     monkeypatch.setattr(manage, "is_windows", lambda: True)
     monkeypatch.setattr(manage, "is_linux", lambda: False)
     monkeypatch.setattr(platform_support, "is_windows", lambda: True)
     monkeypatch.setattr(platform_support, "is_linux", lambda: False)
 
-    profile = tmp_path / "oracle smoke profile"
+    profile = tmp_path / "rhetoric smoke profile"
     profile.mkdir()
     return smoke.make_layout(profile, profile / "hf", profile / "pip-cache", manage=manage)
 
@@ -118,8 +118,8 @@ def test_layout_does_not_leak_the_temp_profile_into_the_environment(
     run that needs it: the profile is deleted when the test ends, so a later
     test that resolves an APPDATA-derived path gets a dangling one.
     """
-    manage = _load("oracle_manage_install_for_leak", "manage_install.py")
-    from the_oracle import platform_support
+    manage = _load("rhetoric_manage_install_for_leak", "manage_install.py")
+    from rhetoric import platform_support
 
     monkeypatch.setattr(manage, "is_windows", lambda: True)
     monkeypatch.setattr(platform_support, "is_windows", lambda: True)
@@ -136,8 +136,8 @@ def test_layout_does_not_leak_the_temp_profile_into_the_environment(
 
 def test_layout_agrees_with_the_installer_module(smoke, tmp_path: Path, monkeypatch) -> None:
     """A drift check: the smoke must not invent its own location rules."""
-    manage = _load("oracle_manage_install_for_agreement", "manage_install.py")
-    from the_oracle import platform_support
+    manage = _load("rhetoric_manage_install_for_agreement", "manage_install.py")
+    from rhetoric import platform_support
 
     monkeypatch.setattr(manage, "is_windows", lambda: True)
     monkeypatch.setattr(platform_support, "is_windows", lambda: True)
@@ -278,10 +278,10 @@ def test_workflow_runs_the_windows_install_smoke() -> None:
     assert "actions/cache@v4" in uses
 
     cache = next(step for step in steps if step.get("uses") == "actions/cache@v4")
-    assert "${{ runner.temp }}/oracle-smoke/hf" in cache["with"]["path"]
+    assert "${{ runner.temp }}/rhetoric-smoke/hf" in cache["with"]["path"]
     # The cache key follows the pins, so a revision bump can never reuse a stale
     # checkpoint.
-    assert "hashFiles('src/the_oracle/models/pins.py')" in cache["with"]["key"]
+    assert "hashFiles('src/rhetoric/models/pins.py')" in cache["with"]["key"]
 
     ffmpeg = next(step for step in steps if step.get("name") == "Ensure ffmpeg Is Available")
     assert ffmpeg["shell"] == "pwsh"
@@ -302,9 +302,9 @@ def test_workflow_runs_the_windows_install_smoke() -> None:
     )
     # Exact flag/value pairs: a renamed or dropped flag must fail here rather
     # than silently leaving the model cache outside CI's cache step.
-    assert r'--profile "${{ runner.temp }}\oracle smoke profile"' in invocation
-    assert r'--hf-home "${{ runner.temp }}\oracle-smoke\hf"' in invocation
-    assert r'--pip-cache "${{ runner.temp }}\oracle-smoke\pip-cache"' in invocation
+    assert r'--profile "${{ runner.temp }}\rhetoric smoke profile"' in invocation
+    assert r'--hf-home "${{ runner.temp }}\rhetoric-smoke\hf"' in invocation
+    assert r'--pip-cache "${{ runner.temp }}\rhetoric-smoke\pip-cache"' in invocation
     # A space in the profile path is deliberate: quoting must survive it.
     assert " " in invocation.split("--profile ")[1].split('"')[1]
     # PowerShell line continuations must be well formed, or the step runs

@@ -8,7 +8,7 @@ no network access, on Linux or Windows:
         manifest.json          # pins, versions, platform wheel sets
         repo.tar.gz            # git archive of the built commit
         hf_cache/              # pre-downloaded HF hub cache (models--<org>--<name>/),
-                               # every model pinned to the_oracle.models.pins
+                               # every model pinned to rhetoric.models.pins
         wheels/
             linux/             # every wheel the installer needs on Linux
             windows/           # every wheel the installer needs on Windows
@@ -23,7 +23,7 @@ and the managed launcher then runs with HF_HUB_OFFLINE=1 so no model fetch
 can ever touch the network.
 
 Usage:
-    python3 scripts/build_offline_bundle.py --output dist/oracle-offline-bundle
+    python3 scripts/build_offline_bundle.py --output dist/rhetoric-offline-bundle
     python3 scripts/build_offline_bundle.py --output dist/bundle --platform windows --pytorch cpu
 """
 
@@ -49,7 +49,7 @@ for candidate in (str(SRC_ROOT), str(REPO_ROOT / "scripts")):
     if candidate not in sys.path:
         sys.path.insert(0, candidate)
 
-from the_oracle.models.pins import (  # noqa: E402
+from rhetoric.models.pins import (  # noqa: E402
     CHATTERBOX_MULTILINGUAL_PATTERNS,
     CHATTERBOX_REPO,
     CHATTERBOX_STANDARD_PATTERNS,
@@ -509,10 +509,10 @@ def write_launchers(bundle_dir: Path) -> None:
         "# Offline install of Rhetoric from this bundle. No network needed.\n"
         "set -Eeuo pipefail\n"
         'BUNDLE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"\n'
-        'INSTALL_ROOT="${1:-$HOME/The_Oracle_TTS}"\n'
+        'INSTALL_ROOT="${1:-$HOME/The_Rhetoric_TTS}"\n'
         'mkdir -p "$INSTALL_ROOT"\n'
         'tar -xzf "$BUNDLE_DIR/repo.tar.gz" -C "$INSTALL_ROOT"\n'
-        'exec "$INSTALL_ROOT/install_oracle_tts.sh" --offline-bundle "$BUNDLE_DIR"\n',
+        'exec "$INSTALL_ROOT/install_rhetoric.sh" --offline-bundle "$BUNDLE_DIR"\n',
         encoding="utf-8",
     )
     (bundle_dir / "install.bat").write_text(
@@ -523,10 +523,10 @@ def write_launchers(bundle_dir: Path) -> None:
         # --offline-bundle argument does not end in a backslash-quote, which
         # PowerShell reads as an escaped quote and mangles the path with.
         'if "%BUNDLE_DIR:~-1%"=="\\" set "BUNDLE_DIR=%BUNDLE_DIR:~0,-1%"\r\n'
-        'if "%~1"=="" ( set "INSTALL_ROOT=%USERPROFILE%\\The_Oracle_TTS" ) else ( set "INSTALL_ROOT=%~1" )\r\n'
+        'if "%~1"=="" ( set "INSTALL_ROOT=%USERPROFILE%\\The_Rhetoric_TTS" ) else ( set "INSTALL_ROOT=%~1" )\r\n'
         'mkdir "%INSTALL_ROOT%" 2>nul\r\n'
         'tar -xzf "%BUNDLE_DIR%\\repo.tar.gz" -C "%INSTALL_ROOT%"\r\n'
-        'powershell -ExecutionPolicy Bypass -File "%INSTALL_ROOT%\\install_oracle_tts.ps1" --offline-bundle "%BUNDLE_DIR%"\r\n',
+        'powershell -ExecutionPolicy Bypass -File "%INSTALL_ROOT%\\install_rhetoric.ps1" --offline-bundle "%BUNDLE_DIR%"\r\n',
         encoding="utf-8",
     )
     (bundle_dir / "install.sh").chmod(0o755)
@@ -593,7 +593,7 @@ def main(argv: list[str] | None = None) -> int:
     write_launchers(bundle_dir)
 
     manifest = {
-        "app": "the-oracle",
+        "app": "rhetoric",
         "repo_commit": commit,
         "built_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
         "model_pins": dict(MODEL_PINS),

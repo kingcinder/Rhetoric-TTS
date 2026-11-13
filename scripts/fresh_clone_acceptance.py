@@ -159,7 +159,7 @@ EXPECTED_DELTAS: dict[str, str] = {
 }
 
 #: Every entry point the documentation tells a user to run directly, and the
-#: ``manage_install.py`` subcommand each must reach. ``oracle start`` is here
+#: ``manage_install.py`` subcommand each must reach. ``rhetoric start`` is here
 #: because it is an alias the manager translates to ``run`` -- a row that only
 #: proves an identity mapping would not catch the translation breaking.
 WRAPPER_MATRIX: tuple[tuple[str, tuple[str, ...], str], ...] = (
@@ -167,20 +167,20 @@ WRAPPER_MATRIX: tuple[tuple[str, tuple[str, ...], str], ...] = (
     ("./rhetoric", ("start", "--help"), "run"),
     ("./rhetoric", ("install", "--help"), "install"),
     ("./rhetoric", ("uninstall", "--help"), "uninstall"),
-    ("./oracle", ("doctor", "--help"), "doctor"),
-    ("./oracle", ("start", "--help"), "run"),
-    ("./oracle", ("install", "--help"), "install"),
-    ("./oracle", ("uninstall", "--help"), "uninstall"),
+    ("./rhetoric", ("doctor", "--help"), "doctor"),
+    ("./rhetoric", ("start", "--help"), "run"),
+    ("./rhetoric", ("install", "--help"), "install"),
+    ("./rhetoric", ("uninstall", "--help"), "uninstall"),
     ("./bootstrap_rhetoric.sh", ("--help",), "bootstrap"),
     ("./install_rhetoric.sh", ("--help",), "install"),
     ("./doctor_rhetoric.sh", ("--help",), "doctor"),
     ("./run_rhetoric.sh", ("--help",), "run"),
     ("./uninstall_rhetoric.sh", ("--help",), "uninstall"),
-    ("./bootstrap_oracle_tts.sh", ("--help",), "bootstrap"),
-    ("./install_oracle_tts.sh", ("--help",), "install"),
-    ("./doctor_oracle_tts.sh", ("--help",), "doctor"),
-    ("./run_oracle_tts.sh", ("--help",), "run"),
-    ("./uninstall_oracle_tts.sh", ("--help",), "uninstall"),
+    ("./bootstrap_rhetoric.sh", ("--help",), "bootstrap"),
+    ("./install_rhetoric.sh", ("--help",), "install"),
+    ("./doctor_rhetoric.sh", ("--help",), "doctor"),
+    ("./run_rhetoric.sh", ("--help",), "run"),
+    ("./uninstall_rhetoric.sh", ("--help",), "uninstall"),
 )
 
 #: ``manage_install.py doctor`` flags the gate is exercised with in both trees.
@@ -321,8 +321,8 @@ def assert_imports_the_tree_under_test(tree: Path, interpreter: Path) -> str:
     probe = (
         "import sys;"
         f"sys.path.insert(0, {str(tree / 'src')!r});"
-        "import pathlib, the_oracle;"
-        "print(pathlib.Path(the_oracle.__file__).resolve())"
+        "import pathlib, rhetoric;"
+        "print(pathlib.Path(rhetoric.__file__).resolve())"
     )
     completed = subprocess.run(
         [str(interpreter), "-c", probe],
@@ -335,7 +335,7 @@ def assert_imports_the_tree_under_test(tree: Path, interpreter: Path) -> str:
     resolved = (completed.stdout or "").strip().splitlines()
     if completed.returncode != 0 or not resolved:
         raise AcceptanceError(
-            f"could not import the_oracle from {tree}: {completed.stderr.strip()[:400]}"
+            f"could not import rhetoric from {tree}: {completed.stderr.strip()[:400]}"
         )
     imported = Path(resolved[-1])
     if not imported.is_relative_to(tree.resolve()):
@@ -657,7 +657,7 @@ def main(argv: list[str] | None = None) -> int:
 
     scratch_parent = args.scratch.expanduser().resolve() if args.scratch else None
     fresh_root = Path(
-        tempfile.mkdtemp(prefix="oracle-fresh-acceptance-", dir=str(scratch_parent) if scratch_parent else None)
+        tempfile.mkdtemp(prefix="rhetoric-fresh-acceptance-", dir=str(scratch_parent) if scratch_parent else None)
     ) / "tree"
     extra_args = tuple(args.pytest_args.split())
     try:

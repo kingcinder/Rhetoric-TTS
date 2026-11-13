@@ -340,9 +340,9 @@ def isolate_user_config(monkeypatch, config_dir) -> None:
     """Point the platform config root at ``config_dir`` for one test.
 
     ``XDG_CONFIG_HOME`` is only the POSIX config root: on Windows
-    :func:`the_oracle.platform_support.user_config_root` reads ``%APPDATA%``
+    :func:`rhetoric.platform_support.user_config_root` reads ``%APPDATA%``
     instead. Patching just ``XDG_CONFIG_HOME`` therefore still lets Windows
-    tests read and *write* the developer's real ``%APPDATA%\\the_oracle``
+    tests read and *write* the developer's real ``%APPDATA%\\rhetoric``
     settings — and leak state between test files (e.g. a remembered backend
     flag written by one file breaking another file's defaults test). Patch
     both roots so the suite is hermetic on every platform.

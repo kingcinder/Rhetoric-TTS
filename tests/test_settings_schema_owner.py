@@ -21,7 +21,7 @@ SETTINGS_CLASSES = ("RenderSettings", "SpeakerSettings")
 
 
 def _owner():
-    return importlib.import_module("the_oracle.models.settings")
+    return importlib.import_module("rhetoric.models.settings")
 
 
 def test_owner_defines_both_settings_classes() -> None:
@@ -32,25 +32,25 @@ def test_owner_defines_both_settings_classes() -> None:
 
 def test_pipeline_reexports_are_the_same_objects() -> None:
     owner = _owner()
-    pipeline = importlib.import_module("the_oracle.pipeline")
+    pipeline = importlib.import_module("rhetoric.pipeline")
     for name in SETTINGS_CLASSES:
         assert getattr(pipeline, name) is getattr(owner, name), name
 
 
 def test_settings_modules_import_from_the_owner_not_the_engine() -> None:
     """The point of the move: gui_settings/project_manifest must not go through pipeline."""
-    for module_name in ("the_oracle.gui_settings", "the_oracle.project_manifest"):
+    for module_name in ("rhetoric.gui_settings", "rhetoric.project_manifest"):
         module = importlib.import_module(module_name)
         source = Path(module.__file__).read_text(encoding="utf-8")
-        assert "from the_oracle.models.settings import" in source, module_name
+        assert "from rhetoric.models.settings import" in source, module_name
         assert "pipeline import" not in source, module_name
 
 
 def test_settings_module_never_imports_the_engine() -> None:
     """The owner module must stay engine-free: importing it must not import pipeline."""
     script = (
-        "import sys; import the_oracle.models.settings; "
-        "assert 'the_oracle.pipeline' not in sys.modules; print('ok')"
+        "import sys; import rhetoric.models.settings; "
+        "assert 'rhetoric.pipeline' not in sys.modules; print('ok')"
     )
     result = subprocess.run(
         [sys.executable, "-c", script],

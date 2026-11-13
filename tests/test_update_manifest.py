@@ -14,7 +14,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 
 def _load():
     spec = importlib.util.spec_from_file_location(
-        "oracle_check_update_manifest", REPO_ROOT / "scripts" / "check_update_manifest.py"
+        "rhetoric_check_update_manifest", REPO_ROOT / "scripts" / "check_update_manifest.py"
     )
     assert spec and spec.loader
     module = importlib.util.module_from_spec(spec)
@@ -25,7 +25,7 @@ def _load():
 
 def test_verify_manifest_artifact_and_report_update(tmp_path: Path) -> None:
     checker = _load()
-    artifact = tmp_path / "the-oracle-1.5.0.AppImage"
+    artifact = tmp_path / "rhetoric-1.5.0.AppImage"
     artifact.write_bytes(b"verified artifact")
     digest = hashlib.sha256(artifact.read_bytes()).hexdigest()
     manifest = tmp_path / "update-manifest.json"
@@ -49,7 +49,7 @@ def test_verify_manifest_artifact_and_report_update(tmp_path: Path) -> None:
 
 def test_verify_manifest_rejects_changed_artifact(tmp_path: Path) -> None:
     checker = _load()
-    artifact = tmp_path / "the-oracle.AppImage"
+    artifact = tmp_path / "rhetoric.AppImage"
     artifact.write_bytes(b"changed")
     payload = {
         "format": 1,

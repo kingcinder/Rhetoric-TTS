@@ -31,13 +31,13 @@ def main() -> int:
     # builds the REAL MainWindow and touches QMediaPlayer in-process — the
     # exact crash classes in crash-evidence §A — without ever passing through
     # cli.main's install+arm. Idempotent; fails closed without consent.
-    from the_oracle.crash import handlers as crash_handlers
+    from rhetoric.crash import handlers as crash_handlers
 
     crash_handlers.arm_native_capture()
     from PySide6.QtWidgets import QApplication
 
-    from the_oracle import gui_crash
-    from the_oracle.app_gui import MainWindow
+    from rhetoric import gui_crash
+    from rhetoric.app_gui import MainWindow
 
     # Unattended-harness bypass: the startup crash-review / first-run consent
     # flow ends in a MODAL dialog (gui_crash.maybe_run_startup_flow ->

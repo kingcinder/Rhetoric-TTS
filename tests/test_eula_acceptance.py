@@ -13,7 +13,7 @@ import pytest
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
-from the_oracle import eula_acceptance  # noqa: E402
+from rhetoric import eula_acceptance  # noqa: E402
 
 
 @pytest.fixture()
@@ -60,7 +60,7 @@ def test_missing_eula_is_never_accepted(tmp_path: Path, monkeypatch: pytest.Monk
 def test_packaged_eula_matches_root_copy() -> None:
     """The copy shipped inside the package must equal the repo-root EULA."""
     packaged = eula_acceptance.eula_path(REPO_ROOT / "nonexistent")
-    assert packaged.parent == REPO_ROOT / "src" / "the_oracle"
+    assert packaged.parent == REPO_ROOT / "src" / "rhetoric"
     assert packaged.read_bytes() == (REPO_ROOT / "EULA.md").read_bytes()
 
 
@@ -78,8 +78,8 @@ def test_frozen_bundle_eula_found_via_meipass(tmp_path: Path, monkeypatch: pytes
     import hashlib
 
     bundle = tmp_path / "bundle"
-    (bundle / "the_oracle").mkdir(parents=True)
-    (bundle / "the_oracle" / eula_acceptance.EULA_FILENAME).write_text("Frozen EULA\n", encoding="utf-8")
+    (bundle / "rhetoric").mkdir(parents=True)
+    (bundle / "rhetoric" / eula_acceptance.EULA_FILENAME).write_text("Frozen EULA\n", encoding="utf-8")
     monkeypatch.setattr(sys, "_MEIPASS", str(bundle), raising=False)
     monkeypatch.setattr(eula_acceptance, "__file__", str(tmp_path / "archive" / "eula_acceptance.py"))
     current = eula_acceptance.eula_text_and_digest(tmp_path / "nowhere")

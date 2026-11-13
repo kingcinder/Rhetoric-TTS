@@ -1,7 +1,7 @@
 """The slice-12 THEMES seam, promoted from an ephemeral probe (2026-10-10).
 
 Extraction slice 12 moved ``MainWindow._build_menu`` into
-``the_oracle.gui_menu``. The one non-widget dependency of that moved body is
+``rhetoric.gui_menu``. The one non-widget dependency of that moved body is
 the theme mapping, so ``build_menu`` takes it as a required keyword-only
 parameter and app_gui's delegate resolves it from app_gui's own globals
 (``build_menu(self, themes=THEMES)``). That is the slice's deliberate seam: a
@@ -35,8 +35,8 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 from PySide6.QtWidgets import QApplication, QMenu
 
-import the_oracle.app_gui as app_gui
-from the_oracle.gui_themes import THEMES
+import rhetoric.app_gui as app_gui
+from rhetoric.gui_themes import THEMES
 from tests.test_app_gui_profiles import _build_window
 
 # A key no real theme can carry, plus the display name its tokens put on the
@@ -75,7 +75,7 @@ def _sentinel_mapping() -> dict:
     """
     mapping = dict(THEMES)
     mapping[SENTINEL_KEY] = replace(
-        THEMES["oracle_dark"],
+        THEMES["rhetoric_dark"],
         key=SENTINEL_KEY,
         name=SENTINEL_NAME,
         description="synthetic theme carried by the THEMES seam test",

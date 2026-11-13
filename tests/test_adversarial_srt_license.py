@@ -12,8 +12,8 @@ import re
 
 import pytest
 
-from the_oracle import srt_ingest
-from the_oracle.licensing import tokens
+from rhetoric import srt_ingest
+from rhetoric.licensing import tokens
 
 
 def test_reversed_and_overlapping_cues_never_produce_bad_pauses():
@@ -59,7 +59,7 @@ def test_many_cues_parse_completely():
     "ORACLE1",
     "ORACLE1.",
     "ORACLE1..",
-    "ORACLE2.aaaa.bbbb",
+    "RHETORIC2.aaaa.bbbb",
     "ORACLE1.!!!.???",
     # Length-capped at 16k: pytest puts the node id (parameter included)
     # in the PYTEST_CURRENT_TEST environment variable, and Windows rejects

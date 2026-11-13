@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from the_oracle.ingest_transformer import (
+from rhetoric.ingest_transformer import (
     RULE_LABELS,
     analyze_input_file,
     analyze_text,
@@ -14,7 +14,7 @@ from the_oracle.ingest_transformer import (
     transform_text,
     transform_text_detailed,
 )
-from the_oracle.text_ingest import TextIngestor
+from rhetoric.text_ingest import TextIngestor
 
 
 # ----------------------------------------------------------------------------
@@ -185,7 +185,7 @@ def test_bundled_inputs_are_issue_free() -> None:
 
 
 def test_transform_text_detailed_reports_rule_per_line() -> None:
-    from the_oracle.ingest_transformer import transform_text_detailed
+    from rhetoric.ingest_transformer import transform_text_detailed
 
     text = (
         "[Speaker A]: Hello there.\n"
@@ -204,7 +204,7 @@ def test_transform_text_detailed_reports_rule_per_line() -> None:
 
 
 def test_transform_text_detailed_dash_and_bullet_rules() -> None:
-    from the_oracle.ingest_transformer import transform_text_detailed
+    from rhetoric.ingest_transformer import transform_text_detailed
 
     # "- A - Hello there." resolves through the dash rule (the bullet is
     # stripped first, then the dash branch matches); a bullet over an
@@ -218,7 +218,7 @@ def test_transform_text_detailed_dash_and_bullet_rules() -> None:
 
 
 def test_labeled_diff_labels_each_rule_exactly() -> None:
-    from the_oracle.ingest_transformer import labeled_fixed_diff, transform_text_detailed
+    from rhetoric.ingest_transformer import labeled_fixed_diff, transform_text_detailed
 
     original = "[A]: Greetings.\nA - Hello there.\n"
     fixed, fixes = transform_text_detailed(original)
@@ -232,7 +232,7 @@ def test_labeled_diff_labels_each_rule_exactly() -> None:
 def test_labeled_diff_identical_lines_labeled_individually() -> None:
     """Two identical source lines fixed by different rules get their own
     labels — attribution is positional, not text-matched."""
-    from the_oracle.ingest_transformer import labeled_fixed_diff, transform_text_detailed
+    from rhetoric.ingest_transformer import labeled_fixed_diff, transform_text_detailed
 
     original = "[A]: Hello.\n[B]: Hello.\n"
     fixed, fixes = transform_text_detailed(original)
@@ -243,7 +243,7 @@ def test_labeled_diff_identical_lines_labeled_individually() -> None:
 
 
 def test_rule_label_falls_back_to_raw_name() -> None:
-    from the_oracle.ingest_transformer import rule_label
+    from rhetoric.ingest_transformer import rule_label
 
     assert rule_label("dash") == "dash/pipe separator"
     assert rule_label("mystery") == "mystery"
@@ -268,7 +268,7 @@ Julia: Agreed.
 
 
 def test_analyze_input_file_flags_valid_srt(tmp_path: Path) -> None:
-    from the_oracle.ingest_transformer import analyze_input_file
+    from rhetoric.ingest_transformer import analyze_input_file
 
     target = tmp_path / "movie.srt"
     target.write_text(_SRT_SAMPLE, encoding="utf-8")
@@ -281,7 +281,7 @@ def test_analyze_input_file_flags_valid_srt(tmp_path: Path) -> None:
 
 
 def test_analyze_input_file_ignores_non_srt_text(tmp_path: Path) -> None:
-    from the_oracle.ingest_transformer import analyze_input_file
+    from rhetoric.ingest_transformer import analyze_input_file
 
     # A .txt file whose content is a dialogue script is not subtitles even
     # if it contains an arrow.
@@ -292,8 +292,8 @@ def test_analyze_input_file_ignores_non_srt_text(tmp_path: Path) -> None:
 
 def test_fix_input_file_converts_srt_to_script_not_in_place(tmp_path: Path) -> None:
     """The subtitle file itself is never rewritten; the script is sibling .srt.txt."""
-    from the_oracle.ingest_transformer import fix_input_file
-    from the_oracle.text_ingest import TextIngestor
+    from rhetoric.ingest_transformer import fix_input_file
+    from rhetoric.text_ingest import TextIngestor
 
     target = tmp_path / "movie.srt"
     target.write_text(_SRT_SAMPLE, encoding="utf-8")
@@ -315,7 +315,7 @@ def test_fix_input_file_converts_srt_to_script_not_in_place(tmp_path: Path) -> N
 
 
 def test_srt_transform_is_idempotent_and_script_is_clean(tmp_path: Path) -> None:
-    from the_oracle.ingest_transformer import analyze_input_file, transform_text_detailed
+    from rhetoric.ingest_transformer import analyze_input_file, transform_text_detailed
 
     fixed, fixes = transform_text_detailed(_SRT_SAMPLE)
     assert [fix.rule for fix in fixes] == ["srt"]
@@ -329,7 +329,7 @@ def test_srt_transform_is_idempotent_and_script_is_clean(tmp_path: Path) -> None
 
 
 def test_batch_folder_includes_srt_files(tmp_path: Path) -> None:
-    from the_oracle.ingest_transformer import analyze_folder, preview_folder_fixes
+    from rhetoric.ingest_transformer import analyze_folder, preview_folder_fixes
 
     (tmp_path / "movie.srt").write_text(_SRT_SAMPLE, encoding="utf-8")
     (tmp_path / "clean.txt").write_text("A: fine.\n", encoding="utf-8")
@@ -371,7 +371,7 @@ def test_fix_input_file_writes_vtt_txt_script(tmp_path) -> None:
 
 
 def test_analyze_folder_includes_vtt(tmp_path) -> None:
-    from the_oracle.ingest_transformer import apply_folder_fixes, preview_folder_fixes
+    from rhetoric.ingest_transformer import apply_folder_fixes, preview_folder_fixes
     (tmp_path / "a.vtt").write_text(
         "WEBVTT\n\n00:00:01.000 --> 00:00:04.000\n<v Winston>The party is tonight.\n",
         encoding="utf-8",
@@ -411,7 +411,7 @@ def test_transform_exclude_nothing_matches_default() -> None:
 
 
 def test_preview_folder_fixes_honors_exclude_rules(tmp_path) -> None:
-    from the_oracle.ingest_transformer import preview_folder_fixes
+    from rhetoric.ingest_transformer import preview_folder_fixes
 
     (tmp_path / "a.txt").write_text("[A]: Hello.\n[2024-01-01 10:00] B: Hi.\n", encoding="utf-8")
     (tmp_path / "b.txt").write_text("C. Period style.\n", encoding="utf-8")
@@ -431,7 +431,7 @@ def test_preview_folder_fixes_honors_exclude_rules(tmp_path) -> None:
 
 
 def test_rule_color_is_stable_and_distinct() -> None:
-    from the_oracle.ingest_transformer import rule_color
+    from rhetoric.ingest_transformer import rule_color
 
     # Known rules have curated colors, stable across calls.
     assert rule_color("dash") == rule_color("dash")
@@ -441,7 +441,7 @@ def test_rule_color_is_stable_and_distinct() -> None:
 
 
 def test_rule_color_covers_every_labelled_rule() -> None:
-    from the_oracle.ingest_transformer import RULE_COLORS, rule_label
+    from rhetoric.ingest_transformer import RULE_COLORS, rule_label
 
     for rule in RULE_LABELS:
         assert rule in RULE_COLORS, f"no curated color for rule '{rule}'"
@@ -453,7 +453,7 @@ def test_rule_color_covers_every_labelled_rule() -> None:
 
 def test_unbracketed_timestamp_prefixes_are_fixed() -> None:
     """Chat exports also use bare '2024-01-01 10:00 Speaker: text' lines."""
-    from the_oracle.ingest_transformer import transform_text_detailed
+    from rhetoric.ingest_transformer import transform_text_detailed
 
     cases = [
         "2024-01-01 10:00 Speaker A: Timestamped.\n",
@@ -472,7 +472,7 @@ def test_unbracketed_timestamp_prefixes_are_fixed() -> None:
 
 def test_unbracketed_timestamp_prose_is_untouched() -> None:
     """Prose that merely starts with a time or date is never rewritten."""
-    from the_oracle.ingest_transformer import transform_text_detailed
+    from rhetoric.ingest_transformer import transform_text_detailed
 
     prose = [
         "10:00 AM - The next morning was cold.\n",
@@ -489,7 +489,7 @@ def test_unbracketed_timestamp_detected_by_analyze_and_fixable_via_cli_path() ->
     """analyze_text must agree with transform_text on the unbracketed form,
     so check-input/fix-folder surface the issue instead of silently
     'fixing' it on render."""
-    from the_oracle.ingest_transformer import analyze_text, transform_text_detailed
+    from rhetoric.ingest_transformer import analyze_text, transform_text_detailed
 
     text = "2024-01-01 10:00 Speaker A: Timestamped turn.\n10:00 AM Speaker B: Bare time turn.\n"
     issues = analyze_text(text)
@@ -565,7 +565,7 @@ def test_real_fixture_end_to_end_check_input_reports_clean(
     to stderr, and no fix is offered."""
     import argparse
 
-    from the_oracle.cli import handle_check_input
+    from rhetoric.cli import handle_check_input
 
     target = tmp_path / "stream.txt"
     target.write_text(stream_fixture_text, encoding="utf-8")

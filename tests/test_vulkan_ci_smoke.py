@@ -20,7 +20,7 @@ from pathlib import Path
 import pytest
 import yaml
 
-from the_oracle.tts_engines import vulkan_backend
+from rhetoric.tts_engines import vulkan_backend
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS_DIR = REPO_ROOT / "scripts"
@@ -29,7 +29,7 @@ WORKFLOW = REPO_ROOT / ".github" / "workflows" / "ci.yml"
 
 @pytest.fixture()
 def smoke():
-    spec = importlib.util.spec_from_file_location("oracle_vulkan_ci_smoke", SCRIPTS_DIR / "vulkan_ci_smoke.py")
+    spec = importlib.util.spec_from_file_location("rhetoric_vulkan_ci_smoke", SCRIPTS_DIR / "vulkan_ci_smoke.py")
     module = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
     sys.modules[spec.name] = module
@@ -135,18 +135,18 @@ def test_the_suite_is_run_with_skips_disallowed(smoke, monkeypatch) -> None:
 
     smoke.run_suite(strict=True, extra_args=("-q",))
 
-    assert recorder.calls[0]["env"]["ORACLE_FAIL_ON_SKIP"] == "1"
+    assert recorder.calls[0]["env"]["RHETORIC_FAIL_ON_SKIP"] == "1"
     assert recorder.calls[0]["argv"] == [sys.executable, "-m", "pytest", "-q"]
 
 
 def test_allow_skips_leaves_the_variable_unset(smoke, monkeypatch) -> None:
     recorder = _Recorder()
     monkeypatch.setattr(smoke.subprocess, "run", recorder)
-    monkeypatch.delenv("ORACLE_FAIL_ON_SKIP", raising=False)
+    monkeypatch.delenv("RHETORIC_FAIL_ON_SKIP", raising=False)
 
     smoke.run_suite(strict=False, extra_args=("-q",))
 
-    assert "ORACLE_FAIL_ON_SKIP" not in recorder.calls[0]["env"]
+    assert "RHETORIC_FAIL_ON_SKIP" not in recorder.calls[0]["env"]
 
 
 def test_a_failing_suite_is_reported_as_a_failure(smoke, monkeypatch) -> None:

@@ -1,6 +1,6 @@
 """The offline guarantee, per model-loading entry point.
 
-An offline install writes ``.oracle_offline`` in the repo root and seeds the
+An offline install writes ``.rhetoric_offline`` in the repo root and seeds the
 pinned models into the local Hugging Face cache. Every process that resolves a
 model must then resolve it locally: no network attempt, and a fast, clear
 failure when the cache cannot satisfy the request.
@@ -51,7 +51,7 @@ def script_module():
 
 @pytest.fixture()
 def offline_module():
-    from the_oracle import offline
+    from rhetoric import offline
 
     return offline
 
@@ -63,7 +63,7 @@ def licensed_offline_install(offline_install):
     The entry points are product-key gated; these tests cover offline wiring,
     not licensing, so the gate has to pass before the code under test runs.
     """
-    from the_oracle.licensing import store, tokens
+    from rhetoric.licensing import store, tokens
     from tests.licensing_fixtures import TEST_SEED, payload
 
     token = tokens.mint(payload(), TEST_SEED)
@@ -131,7 +131,7 @@ def no_network(monkeypatch):
 @pytest.fixture()
 def seeded_cache(tmp_path, monkeypatch):
     """A hub cache in the layout the installer seeds: snapshots/<sha> + refs/main."""
-    from the_oracle.models.pins import (
+    from rhetoric.models.pins import (
         CHATTERBOX_REPO,
         GO_EMOTIONS_REPO,
         TURBO_REPO_ID,
@@ -194,8 +194,8 @@ def test_apply_corrects_an_already_imported_huggingface_hub(offline_install, off
 
 
 def test_cli_render_entry_point_enables_offline_mode(licensed_offline_install, monkeypatch, tmp_path) -> None:
-    """`the-oracle render` must have offline mode on by the time it renders."""
-    from the_oracle import cli
+    """`rhetoric render` must have offline mode on by the time it renders."""
+    from rhetoric import cli
 
     seen: list = []
 
@@ -215,7 +215,7 @@ def test_cli_render_entry_point_enables_offline_mode(licensed_offline_install, m
             seen.append(os.environ.get("HF_HUB_OFFLINE"))
             return self.output
 
-    monkeypatch.setattr("the_oracle.cli.OraclePipeline", lambda: _RecordingPipeline())
+    monkeypatch.setattr("rhetoric.cli.RhetoricPipeline", lambda: _RecordingPipeline())
 
     status = cli.main(
         [
@@ -235,8 +235,8 @@ def test_cli_render_entry_point_enables_offline_mode(licensed_offline_install, m
 
 
 def test_cli_gui_entry_point_enables_offline_mode(licensed_offline_install, monkeypatch) -> None:
-    """`the-oracle gui` (and the desktop entries that exec it) likewise."""
-    from the_oracle import app_gui, cli
+    """`rhetoric gui` (and the desktop entries that exec it) likewise."""
+    from rhetoric import app_gui, cli
 
     seen: list = []
     monkeypatch.setattr(app_gui, "launch_gui", lambda: seen.append(os.environ.get("HF_HUB_OFFLINE")))
@@ -247,7 +247,7 @@ def test_cli_gui_entry_point_enables_offline_mode(licensed_offline_install, monk
 
 def test_doctor_entry_point_probes_inherit_offline_mode(offline_install, monkeypatch, tmp_path, script_module) -> None:
     """The doctor constructs the Chatterbox model, so its probes must be offline."""
-    doctor = script_module("oracle_doctor_offline", "doctor.py")
+    doctor = script_module("rhetoric_doctor_offline", "doctor.py")
 
     seen: list = []
 
@@ -268,7 +268,7 @@ def test_real_engine_smoke_entry_point_enables_offline_mode(
     """`scripts/real_engine_smoke.py` renders with the real model."""
     import huggingface_hub
 
-    from the_oracle import real_engine_smoke
+    from rhetoric import real_engine_smoke
 
     seen: list = []
 
@@ -286,7 +286,7 @@ def test_real_engine_smoke_entry_point_enables_offline_mode(
 
 def test_manage_install_run_path_uses_the_shared_owner(offline_install, monkeypatch, script_module, offline_module) -> None:
     """The installer's run action resolves the marker through the one owner."""
-    manage = script_module("oracle_manage_install_offline_guarantee", "manage_install.py")
+    manage = script_module("rhetoric_manage_install_offline_guarantee", "manage_install.py")
     entrypoint = manage.venv_entrypoint_path(offline_install, "rhetoric")
     entrypoint.parent.mkdir(parents=True, exist_ok=True)
     entrypoint.write_text("#!/bin/sh\n", encoding="utf-8")
@@ -314,20 +314,20 @@ def test_manage_install_run_path_uses_the_shared_owner(offline_install, monkeypa
 def test_entry_points_leave_offline_mode_off_without_the_marker(
     online_install, monkeypatch, tmp_path, script_module
 ) -> None:
-    from the_oracle.licensing import store, tokens
+    from rhetoric.licensing import store, tokens
     from tests.licensing_fixtures import TEST_SEED, payload
 
     result = store.save_token(online_install, tokens.mint(payload(), TEST_SEED), verify_before_save=lambda t: tokens.verify_token(t))
     assert result.state == "saved", result
     """The control: no marker, no forcing."""
-    from the_oracle import cli, real_engine_smoke
+    from rhetoric import cli, real_engine_smoke
 
-    from the_oracle import app_gui
+    from rhetoric import app_gui
 
     launched: list = []
     monkeypatch.setattr(app_gui, "launch_gui", lambda: launched.append(True))
     monkeypatch.setattr(real_engine_smoke, "run_real_engine_smoke", lambda **_kwargs: _FakeSmokeResult())
-    doctor = script_module("oracle_doctor_no_marker", "doctor.py")
+    doctor = script_module("rhetoric_doctor_no_marker", "doctor.py")
 
     class _RecordingDoctor:
         def __init__(self) -> None:
@@ -382,12 +382,12 @@ def guard(self, address):
 socket.socket.connect = guard
 
 from pathlib import Path
-from the_oracle import offline
+from rhetoric import offline
 
 applied = offline.apply_offline_environment(sys.argv[1])   # before ANY model import
 
-from the_oracle.models.pins import GO_EMOTIONS_REPO, pin_for
-from the_oracle.tts_engines.chatterbox_engine import download_chatterbox_repo, download_turbo_checkpoint
+from rhetoric.models.pins import GO_EMOTIONS_REPO, pin_for
+from rhetoric.tts_engines.chatterbox_engine import download_chatterbox_repo, download_turbo_checkpoint
 from transformers.utils import cached_file
 
 payload = {
@@ -406,7 +406,7 @@ def test_seeded_cache_resolves_every_loader_without_network(
     offline_install, seeded_cache, tmp_path
 ) -> None:
     """With the marker present, every loader resolves inside the seeded cache."""
-    from the_oracle.models.pins import CHATTERBOX_REPO, GO_EMOTIONS_REPO, TURBO_REPO_ID
+    from rhetoric.models.pins import CHATTERBOX_REPO, GO_EMOTIONS_REPO, TURBO_REPO_ID
 
     probe = tmp_path / "seeded_probe.py"
     probe.write_text(_SEEDED_CACHE_PROBE, encoding="utf-8")
@@ -458,7 +458,7 @@ def test_unseeded_model_fails_fast_instead_of_reaching_out(
 
     started = time.perf_counter()
     with pytest.raises(Exception) as excinfo:  # noqa: PT011 - the type is asserted
-        hf_hub_download(repo_id="oracle-tests/model-that-is-not-seeded", filename="weights.safetensors")
+        hf_hub_download(repo_id="rhetoric-tests/model-that-is-not-seeded", filename="weights.safetensors")
     elapsed = time.perf_counter() - started
 
     assert "NotFound" in type(excinfo.value).__name__, type(excinfo.value).__name__
@@ -475,7 +475,7 @@ def _fresh_crash_modules():
     The fresh import is SCOPED to this helper: the previous sys.modules
     entries (and the parent package's ``crash`` attribute) are restored
     afterwards. Without that, every module holding a collection-time
-    reference — any test file's ``from the_oracle.crash import handlers``,
+    reference — any test file's ``from rhetoric.crash import handlers``,
     or cli.py's lazy imports once bound — keeps referencing the discarded
     objects while later lazy imports get the fresh ones: two handlers
     modules, two _STATE dicts, one of them invisible (caught 2026-10-08 by
@@ -486,24 +486,24 @@ def _fresh_crash_modules():
     """
     import sys
 
-    saved = {n: sys.modules[n] for n in list(sys.modules) if n.startswith("the_oracle.crash")}
+    saved = {n: sys.modules[n] for n in list(sys.modules) if n.startswith("rhetoric.crash")}
     for name in saved:
         del sys.modules[name]
     try:
-        import the_oracle.crash  # noqa: F401
-        import the_oracle.crash.handlers  # noqa: F401
+        import rhetoric.crash  # noqa: F401
+        import rhetoric.crash.handlers  # noqa: F401
 
-        import the_oracle.crash.bundle as bundle
-        import the_oracle.crash.consent as consent
-        import the_oracle.crash.handlers as handlers
-        import the_oracle.crash.record as record
-        import the_oracle.crash.sanitize as sanitize
+        import rhetoric.crash.bundle as bundle
+        import rhetoric.crash.consent as consent
+        import rhetoric.crash.handlers as handlers
+        import rhetoric.crash.record as record
+        import rhetoric.crash.sanitize as sanitize
     finally:
         sys.modules.update(saved)
-        if "the_oracle.crash" in saved:
-            import the_oracle as parent
+        if "rhetoric.crash" in saved:
+            import rhetoric as parent
 
-            parent.crash = saved["the_oracle.crash"]
+            parent.crash = saved["rhetoric.crash"]
 
     return bundle, consent, handlers, record, sanitize
 
@@ -532,7 +532,7 @@ def test_crash_capture_performs_no_network_io(tmp_path, no_network) -> None:
 
 
 def test_importing_crash_never_imports_heavyweight_modules() -> None:
-    """CRASH §8.2: importing the_oracle.crash must not ADD torch/huggingface/
+    """CRASH §8.2: importing rhetoric.crash must not ADD torch/huggingface/
     ML modules to sys.modules (module-delta, same technique as licensing)."""
     before = set(sys.modules)
     _bundle, _consent, _handlers, _record, _sanitize = _fresh_crash_modules()

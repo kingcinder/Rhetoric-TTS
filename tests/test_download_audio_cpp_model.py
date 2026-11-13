@@ -115,7 +115,7 @@ def test_script_installs_model_and_prints_export_line(fake_audio_cpp: Path) -> N
     assert result.returncode == 0, result.stdout + result.stderr
     expected = fake_audio_cpp / "models" / "Chatterbox-GGUF" / "chatterbox-q8_0.gguf"
     assert expected.exists()
-    assert f'export ORACLE_AUDIOCPP_MODEL="{expected}"' in result.stdout
+    assert f'export RHETORIC_AUDIOCPP_MODEL="{expected}"' in result.stdout
 
 
 def test_script_prints_correct_line_when_model_package_override(fake_audio_cpp: Path) -> None:
@@ -126,7 +126,7 @@ def test_script_prints_correct_line_when_model_package_override(fake_audio_cpp: 
 
     assert result.returncode == 0, result.stdout + result.stderr
     expected = fake_audio_cpp / "models" / "Chatterbox-GGUF" / "chatterbox-f16.gguf"
-    assert f'export ORACLE_AUDIOCPP_MODEL="{expected}"' in result.stdout
+    assert f'export RHETORIC_AUDIOCPP_MODEL="{expected}"' in result.stdout
     assert expected.exists()
 
 

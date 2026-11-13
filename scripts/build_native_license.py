@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Build the compiled license core and install it beside the licensing package.
 
-The Rust crate lives in ``crates/rhetoric_native``; ``the_oracle._native`` loads
+The Rust crate lives in ``crates/rhetoric_native``; ``rhetoric._native`` loads
 the artifact as ``rhetoric_native``. Two build kinds exist:
 
 * ``--dev`` (the default) compiles with ``--features test-keys``, which embeds
@@ -26,7 +26,7 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 CRATE_DIR = REPO_ROOT / "crates" / "rhetoric_native"
-PACKAGE_DIR = REPO_ROOT / "src" / "the_oracle" / "_native"
+PACKAGE_DIR = REPO_ROOT / "src" / "rhetoric" / "_native"
 
 #: Modules whose bytes are hashed into the compiled manifest. They are the
 #: files that carry the license gates themselves: patching a gate changes a
@@ -70,7 +70,7 @@ def _artifact_names() -> tuple[str, str]:
 def write_manifest(package_root: Path, output: Path) -> Path:
     """Write a sha256sum-style manifest for :data:`PROTECTED_MODULES`.
 
-    ``package_root`` is the installed ``the_oracle`` directory. Entries are
+    ``package_root`` is the installed ``rhetoric`` directory. Entries are
     relative to it because the runtime hands that same directory to the core,
     which reads and hashes the files itself — a patched install cannot simply
     report the digests it prefers.
@@ -110,7 +110,7 @@ def build(*, release: bool, attest: bool) -> Path:
     manifest: Path | None = None
     if attest:
         manifest = write_manifest(
-            REPO_ROOT / "src" / "the_oracle",
+            REPO_ROOT / "src" / "rhetoric",
             CRATE_DIR / "target" / "integrity-manifest.txt",
         )
         environment["RHETORIC_ATTEST_MANIFEST"] = str(manifest)
@@ -154,7 +154,7 @@ def status() -> int:
     print(f"compiled license core installed: {artifact.relative_to(REPO_ROOT)}")
     try:
         sys.path.insert(0, str(REPO_ROOT / "src"))
-        from the_oracle import _native
+        from rhetoric import _native
 
         if _native.attestation_enforced():
             print("attestation: enforced")

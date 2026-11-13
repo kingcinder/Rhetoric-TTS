@@ -18,7 +18,7 @@ DOCTOR_PATH = REPO_ROOT / "scripts" / "doctor.py"
 
 
 def _load_doctor():
-    spec = importlib.util.spec_from_file_location("oracle_doctor_pins", DOCTOR_PATH)
+    spec = importlib.util.spec_from_file_location("rhetoric_doctor_pins", DOCTOR_PATH)
     module = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
     spec.loader.exec_module(module)
@@ -173,7 +173,7 @@ def test_check_is_wired_into_the_report_and_gate() -> None:
 def _load_script(name: str):
     """Import a scripts/ module by path (they are entry points, not a package)."""
     spec = importlib.util.spec_from_file_location(
-        f"oracle_{name.removesuffix('.py')}", REPO_ROOT / "scripts" / name
+        f"rhetoric_{name.removesuffix('.py')}", REPO_ROOT / "scripts" / name
     )
     module = importlib.util.module_from_spec(spec)
     assert spec.loader is not None

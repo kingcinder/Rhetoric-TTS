@@ -27,8 +27,8 @@ import pytest
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
-from the_oracle import _ed25519  # noqa: E402
-from the_oracle.licensing import keys, machine, tokens  # noqa: E402
+from rhetoric import _ed25519  # noqa: E402
+from rhetoric.licensing import keys, machine, tokens  # noqa: E402
 from tests.licensing_fixtures import (  # noqa: E402
     TEST_KEY_ID,
     TEST_PUBLIC_KEY,

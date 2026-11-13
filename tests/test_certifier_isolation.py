@@ -36,7 +36,7 @@ CERTIFIERS = (SCRIPTS_DIR / "certify_gui.py", SCRIPTS_DIR / "certify_theme_switc
 @pytest.fixture(scope="module")
 def isolation():
     """The helper, imported by path — the idiom this repo's tests use."""
-    spec = importlib.util.spec_from_file_location("oracle_certifier_isolation", HELPER_PATH)
+    spec = importlib.util.spec_from_file_location("rhetoric_certifier_isolation", HELPER_PATH)
     assert spec is not None and spec.loader is not None
     module = importlib.util.module_from_spec(spec)
     sys.modules[spec.name] = module
@@ -71,7 +71,7 @@ def test_the_helper_redirects_both_config_variables(isolation, config_env) -> No
     platform's real config root readable and writable. Asserted through that
     reader as well as against the names, which is the claim that matters.
     """
-    from the_oracle.platform_support import user_config_root
+    from rhetoric.platform_support import user_config_root
 
     # Spelled out here rather than read off THROWAWAY_ENV_VARS: a loop over that
     # tuple would keep passing after a variable was dropped from it, which is
@@ -100,27 +100,27 @@ def test_the_helper_is_package_free(isolation) -> None:
     """It has to be importable BEFORE the config root exists.
 
     That is the ordering rule the certifiers' pins depend on: if importing this
-    module pulled in ``the_oracle``, the redirect would necessarily happen after
+    module pulled in ``rhetoric``, the redirect would necessarily happen after
     the package was imported. Proven in a fresh interpreter, because this test
-    process has ``the_oracle`` loaded for other reasons — and the module's own
+    process has ``rhetoric`` loaded for other reasons — and the module's own
     prose is allowed to name the package, since the rule it documents is about
     that package; what must stay absent is an import of it.
     """
     code = (
         f"import sys; sys.path.insert(0, {str(SCRIPTS_DIR)!r});"
         " import certifier_isolation;"
-        " print('the_oracle' in sys.modules)"
+        " print('rhetoric' in sys.modules)"
     )
     proc = subprocess.run(
         [sys.executable, "-c", code], cwd=REPO_ROOT, capture_output=True, text=True, timeout=120
     )
     assert proc.returncode == 0, proc.stderr
     assert proc.stdout.strip() == "False", (
-        "importing the isolation helper pulled in the_oracle, so the config "
+        "importing the isolation helper pulled in rhetoric, so the config "
         "redirect cannot precede the package import"
     )
     source = HELPER_PATH.read_text(encoding="utf-8")
-    assert not re.search(r"^(?:from|import) the_oracle", source, re.MULTILINE), (
+    assert not re.search(r"^(?:from|import) rhetoric", source, re.MULTILINE), (
         "the helper imports the package it must be importable without"
     )
 
@@ -129,7 +129,7 @@ def test_reap_removes_the_root_and_an_absent_root_is_success(isolation, config_e
     """Idempotent on purpose: teardown reaps, then the atexit hook reaps again."""
     root = isolation.isolated_config_root("probe_reap_", attempts=1, pause=0.0)
     assert Path(root).is_dir()
-    marker = Path(root) / "the_oracle" / "app_settings.json"
+    marker = Path(root) / "rhetoric" / "app_settings.json"
     marker.parent.mkdir(parents=True)
     marker.write_text("{}", encoding="utf-8")
 
@@ -256,8 +256,8 @@ def test_both_certifiers_use_the_helper_instead_of_a_copy(script: Path) -> None:
 def test_each_certifier_keeps_its_own_root_prefix() -> None:
     """A leaked root has to name the sweep that leaked it."""
     prefixes = {
-        "certify_gui.py": "oracle_gui_cert_cfg_",
-        "certify_theme_switch.py": "oracle_theme_switch_cfg_",
+        "certify_gui.py": "rhetoric_gui_cert_cfg_",
+        "certify_theme_switch.py": "rhetoric_theme_switch_cfg_",
     }
     for name, prefix in prefixes.items():
         source = (SCRIPTS_DIR / name).read_text(encoding="utf-8")
