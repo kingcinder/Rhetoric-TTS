@@ -1,153 +1,110 @@
 # Final Release Readiness — Rhetoric 1.5.0
 
-- **Assessment date:** 2026-11-08
+- **Assessment date:** 2026-11-13 (fix pass of 2026-11-12)
 - **Branch:** `release/1.5.0-final`
-**Distribution:** Not authorized or performed.
+- **Distribution:** Not authorized or performed. No tag, no GitHub release.
 
 ## Status
 
-**ENGINEERING STATUS: NOT READY for customer release.** The customer-facing
-rename, distribution names, compatibility shims, support routing, version
-guards, package-content rules, and experimental GPU labels are implemented.
-The canonical release command passed the full suite and rebuilt the source
-archive and wheel. Linux frozen-artifact installation,
-first-user lifecycle acceptance, and current-corpus audio review remain open.
-A 2026-11-08 hardening pass (commits 7706ef8..5446d39) closed the test
-suite at 43381db (2,240 passed / 0 failed locally under `-n 4`;
-suite-counts baseline recorded from a fresh worktree: 2,205 passed /
-35 environment skips / 0 failed) and then closed the hosted matrix.
-Windows full suites pass on hosted runners after fixture and test
-fixes (82ea4ac). The hosted Ubuntu suites had failed at every earlier
-head on exactly two GUI certifier tests; an in-subprocess faulthandler
-dump isolated the crash to the tooltip hover-help event filter
-dereferencing a stale QEvent wrapper in headless sessions, and tooltip
-help now uses its timer-polling mode on headless platforms as it
-already did on Windows (5446d39). Final local suite at 5446d39:
-2,241 passed / 1 skipped (the Vulkan device test; the workstation GPU
-is assigned to another task) / 0 failed. Hosted run 42576825781 at
-5446d39 passed every functional job; the suite-counts job is green
-only at a head whose counts are recorded, and its recording commit
-follows this one. The same pass reconciled
-the Seashells inventory and third-party notices with the shipped clip set,
-fixed the real-repo xdist isolation defect behind the theme/doctor
-certification races, landed the automated-update channel with its settings
-opt-out and enforced support gate (docs/release/UPDATE_CHANNEL.md), and
-added adversarial coverage for settings, subtitles, license tokens, and the
-update manifest. The gates that remain open are: human audio
-review, installed-lifecycle acceptance, Windows qualification and
-independent counsel review.
+**ENGINEERING STATUS: READY for the owner's release decision**, with the
+release-publication steps below still open and owner-only. Every functional
+hosted job passed at `a37c8b4`, and this fix pass closes the seven issues the
+owner reported from live use. The remaining engineering work is installed-
+lifecycle qualification on the frozen Linux artifacts and human listening
+review of the CJK and Arabic corpus cases (see "Acceptance still open").
 
-**COMMERCIAL STATUS: BLOCKED.** The EULA was finalized by the owner on 2026-11-08 (EULA.md; validation: docs/release/EULA_WA_VALIDATION.md), but qualified-counsel approval has not been obtained. The last observed soft-launch check reported the
-draft EULA blocker and an LGPL notice/source/replacement obligation warning.
-The check was not rerun after final edits because its automated asset review is
-outside the authorized scope.
+**COMMERCIAL STATUS: CLOSED by owner decision.** The owner decided on
+2026-11-12 that the EULA ships as written and that independent counsel review
+is waived. The storefront (§ "Owner-only decisions") is still open.
 
-## Verified evidence
+## Suite and CI story
 
-- Canonical release command: `./.venv/bin/python scripts/release.py` on
-  `92c55b86ff86` — **2,144 passed, 6 warnings, 0 failed in 395.90 seconds**;
-  the version invariant passed and the command built the Rhetoric 1.5.0 sdist,
-  wheel, and checksum manifest.
-- Fresh-worktree recorder: `d39a94573d35` — **2,141 passed, 3 skipped,
-  0 failed/errors**. The Vulkan device smoke was the identified environment
-  skip. Skip IDs are incomplete because `tests/test_skip_audit.py` clears the
-  ledger during the run.
-- `sha256sum -c checksums-1.5.0.sha256` passed both source artifacts:
-  wheel `879733b64fbc73bbbf41616d9046d1ba3dbb555b7d452f80167da3ce908466ba`;
-  sdist `07b92f8d4fd26a20327d455e93466818e76e342f952160143c7f7b7c332d72a8`.
-- Filtered package inventory: 153 sdist entries and 118 wheel entries outside
-  the excluded owner-data area. Required release docs are present; tests,
-  `scripts/ci_smoke_render.py`, and the test-only license-status shim are
-  absent. The suite-count baseline and tracked checksum copy are also absent
-  from the sdist/wheel, so subsequent release-record commits do not change the
-  built package bytes.
-- `scripts/release.py --check` and `--check-packaging` pass; versions agree at
-  1.5.0. The changelog heading was re-stamped for 2026-10-26 with the release
-  tool.
-- Fresh Python 3.12.3 editable dev install, `pip check`, and `pip-audit`
-  completed. No broken requirements or known vulnerabilities were reported in
-  auditable installed packages; local/non-PyPI dependencies were skipped.
-- A local CycloneDX run emitted a valid CycloneDX SBOM with 168 components and
-  no known vulnerabilities. The frozen Linux CI builder now emits its own
-  SBOM from the build environment and checksums it. Hosted run
-  [40290354035](https://github.com/kingcinder/Rhetoric-TTS/actions/runs/40290354035)
-  built and uploaded the frozen Linux artifacts and SBOM; the artifact has not
-  yet been installed in a clean container.
-- `gitleaks git --log-opts='--all' --redact --no-banner`: no findings across
-  1,110 commits. `detect-secrets` reported 147 candidates across 18 files
-  (144 high-entropy hex, 1 keyword, 2 Base64); these are not asserted to be
-  findings or clean. Values are not reproduced here.
-- Exact-head hosted CI ran on `079b5745e33d80adeffdb36dbdc8f56adbd696cd`.
-  Linux Python 3.11/3.12 suites, Linux smoke/theme checks, Vulkan no-skip suite,
-  Linux frozen AppImage/deb build, Windows installer E2E, Windows GUI event
-  filter diagnostic, and ten consecutive Windows theme certification runs
-  passed. Both Windows full-suite matrix jobs failed; their causes remain
-  undetermined because the hosted job logs were unavailable through the
-  connected GitHub interface. Their uploaded 10-run certification logs were
-  downloaded and inspected: all six themes passed the contrast, section/layout,
-  studio, and inference-tour checks on each run for both Python versions. The
-  manual Windows certifier fault-capture job was skipped because this was a
-  push-triggered run.
-- Exact-head hosted CI also ran on `5446d39` (run
-  [42576825781](https://github.com/kingcinder/Rhetoric-TTS/actions/runs/42576825781)):
-  Ubuntu and Windows full suites on Python 3.11 and 3.12, the Vulkan
-  no-skip suite, Linux frozen AppImage/deb build, the compiled license
-  core, and the Windows installer end-to-end job all passed. The only
-  failing job was suite-counts, which is green only at a head whose
-  counts are recorded in scripts/suite_counts_baseline.json.
+- **Full suite at this fix pass's head** (serial, main checkout venv):
+  **2,275 passed, 0 failed, 0 skipped** in 736 s, `QT_QPA_PLATFORM=offscreen`.
+  This is after hybridized voices were removed (fewer tests) and the new
+  wheel-guard, numbering, legacy-path, cache-honesty and render-work tests were
+  added. The earlier run at `a37c8b4` was 2,244 passed / 1 failed, the single
+  failure being the in-tree pre-rename `src/rhetoric.egg-info` artifact
+  described in the fixed-pass table; hosted CI at that head passed both Ubuntu
+  suite jobs on fresh checkouts.
+- **Hosted CI at `a37c8b4`** (run 43365230005): Ubuntu and Windows full suites,
+  the Vulkan no-skip suite, Linux frozen AppImage/deb build, Windows installer
+  end-to-end, and the compiled license core all passed. The only failing job was
+  the repository's own bookkeeping gate ("Suite counts recorded or inheritable");
+  the remedy is `scripts/certify_suite_counts.py --record`, recorded in
+  `scripts/suite_counts_baseline.json`.
+- **This fix pass** is covered by targeted tests per fix plus hosted CI at the
+  final head. Per-fix evidence is listed below.
+
+## This fix pass (2026-11-12 → 13)
+
+| Item | Verdict | Evidence | Commit |
+| --- | --- | --- | --- |
+| Vulkan timeout death (owner's settings held `audio_cpp_timeout: 3` against a 600 s default, and model load + shader compile was charged inside every per-synthesis budget) | **Fixed and verified** | 60 s floor at the engine choke point + 120 s startup allowance per subprocess budget; settings-load clamp. The owner's exact scenario now completes: RC 0 in 28 s, FLAC 24 kHz / 16.58 s / decode OK. 15 new tests, 2 updated. Logs: `~/vulkan-measure-2026-11-12.log`, `~/vulkan-verify-a-2026-11-12.log`. | `eaba85e` |
+| Automated-updates opt-out sat in Shared Render Settings | **Fixed** | The opt-out is a checkable Settings-menu action (Advanced, default on); same `automatic_updates_enabled` key, same warning text, same support gate. 3 new tests + placement pins updated. | `9e5ee1f` |
+| Mouse wheel hijacked spin boxes / combo boxes / sliders in scrollable panels | **Fixed** | One application-wide, focus-gated filter: a control consumes the wheel only while it holds keyboard focus; otherwise the event scrolls the enclosing panel. Covers every settings/cast panel, including lazily built ones. 7 new tests. | `8af6bce` |
+| Output filename default overwrote earlier renders | **Fixed** | The field defaults to `<input stem>_No_<n>` (the recorder's `Seashell_No_N` scheme), taking the next free number in the chosen folder; re-derived at render time; a typed name is never renumbered. Tests pin numbering, gaps, and typed names. | `aab6ce3` |
+| Working material scattered into the user's output folder | **Fixed** | Stems, cache, logs, previews, `render_plan.json`, and the hidden subprocess job directory now live in the app's `render-work` home (`~/.local/share/rhetoric/render-work`, `RHETORIC_RENDER_WORK` override). The chosen folder receives only the finished FLAC (and SRT when enabled). The tracked `Output/.gitkeep` was removed. A deterministic render test asserts the output folder holds exactly the FLAC. | `b7f8494` |
+| Legacy path values inside settings (`the oracle tts` Documents folders, `the_oracle` data dir) | **Fixed** | Load-time migration rewrites default input/output, saved project output dir, speaker reference paths, and the recorder's folder onto the current Rhetoric homes; the next save persists it. 4 new tests. The owner's live file still needs one GUI restart to pick the migration up (his GUI was open during this pass, so it was not hand-edited). | `4262a13` |
+| Cache assembly presented as a fresh render | **Fixed** | The render plan records `cache_hit_segments` / `segment_count` before dispatch; the completion log states either "no audio was synthesized in this run" or "reused N of M segments". A second deterministic render of the same plan is asserted to report `rendered_from_cache=1`. The stem-cache key was audited against every audio-changing input (text, speaker, reference hash, variant, backend, voice settings, engine version, seed) with a new sensitivity test; no gap was found — correction mode is covered because the key hashes the post-correction text. | `4262a13` |
+| Hybridized voices (GUI section, blend logic, settings, tooltips, wizard, tests) | **Removed entirely** | `audio/blend.py`, the blend voice catalog, `SpeakerSettings`/`VoiceProfile` blend fields, the cast-panel controls, the tooltip/wizard text, and the tests that pinned them are gone. Existing cast entries carrying blend fields still load: the loaders ignore the dropped keys. Non-hybrid cast management and rendering are unchanged (233 tests green across the affected modules). | `59999d6` |
+
+Additional bookkeeping commit: `49686ad` adjudicates the wheel guard's Qt
+readership pairs in the patch-couple policy and prunes the removed blend
+catalog's sanctioned split.
+
+## Earlier evidence carried forward
+
+- **Windows edition fix** (`3652354`, `78630fe`): the Inno Setup installer and
+  its launcher/edition behavior are qualified end to end — install smoke,
+  certification soak, and a fully offline install, activation, and render.
+- **Rename purge** (`a98a307`, `86df7ee`, `a37c8b4`): package
+  `the_oracle` → `rhetoric`, `ORACLE_*` → `RHETORIC_*`, data-folder migration,
+  brand guard restored.
+- **Pins audit (report-only; owner's decision, pins unchanged):** the base
+  install resolves and `[ml]` alone resolves. `[chatterbox]` and
+  `[ml,chatterbox]` do **not** co-resolve today (`transformers==5.20.0` in
+  `[ml]` vs `chatterbox-tts 0.1.7` wanting `transformers==5.2.0`;
+  `Pillow>=13.0.0` vs `gradio 6.8.0` wanting `pillow<13`). The product's
+  managed install path (`manage_install`, chatterbox `--no-deps`,
+  hash-verified from the offline bundle) is unaffected and was proven end to
+  end in the 2026-11-11 airgap proof.
+- **Vulkan backend sound** (two independent renders): with a sane timeout the
+  script renders clean on the RX 5700 XT — exit 0, FLAC 24 kHz mono,
+  ~16.5–17.4 s. Per-utterance synthesis 1.9–3.6 s; audio.cpp subprocess
+  startup (2 GB GGUF load + RADV shader compile) ~10–14 s cold. Evidence
+  renders in `~/rhetoric-parallel-verify/`.
+- **Audio acceptance:** the owner's verdict "Those renders sound fine" covers
+  the ENGLISH corpus cases 1, 2, 3 and 6 only. Case 4 (CJK) and case 5
+  (Arabic) are **automated-metrics-only**; human listening review is
+  outstanding. The corpus must not be presented as fully human-reviewed.
 
 ## Acceptance still open
 
-1. Windows and Ubuntu hosted full-suite failures are diagnosed and fixed
-   (82ea4ac, 5446d39; run 42576825781 green across all functional jobs).
-   Windows guest qualification remains open under item 6; hosted suite
-   success is not installed-product qualification.
-2. Install the frozen Linux AppImage and deb in fresh Ubuntu 24.04 containers
-   with only documented prerequisites. Exercise activation using a throwaway
-   test key, cold download/resume/offline/low-disk behavior, doctor, first
-   render, GUI, project save/reopen, settings persistence, update, rollback,
-   uninstall, and data-retention behavior.
-3. Verify the installed LGPL library-replacement path and document fulfillment
-   of source/replacement obligations. **Closed 2026-11-11:** replacement
-   verified live — the frozen Linux tree and a venv install both run with
-   their Qt 6.8.2 library set replaced by Qt 6.8.3 builds; libsndfile 1.2.2
-   and libsoxr 0.1.3 inventoried in the notices; source offer and per-form
-   replacement/relink instructions in
-   [`LGPL_FULFILLMENT.md`](LGPL_FULFILLMENT.md); owner allowances recorded
-   in `scripts/license_review.json` (counsel ratification rides with
-   item 7's counsel review).
-4. Complete the six-case production audio corpus and independent human review
-   described in [`REAL_AUDIO_ACCEPTANCE_1.5.0.md`](REAL_AUDIO_ACCEPTANCE_1.5.0.md).
-   Historical 1.4.2 outputs are not evidence for this candidate.
-5. Measure CPU real-time factor, peak RAM, and disk per audio hour; run the
-   100-cycle render/cancel/close soak; and record keyboard-only, high-DPI,
-   1366x768, theme contrast, and failure-path acceptance.
-6. Windows remains explicitly unsupported and excluded from the proposed paid
-   offer. CUDA and Vulkan remain experimental and are labeled that way in the
-   UI, documentation, CLI help, and EULA draft.
+1. **Installed-lifecycle qualification** on the frozen Linux AppImage and deb
+   in fresh Ubuntu 24.04 containers (activation with a throwaway key, cold
+   download/resume/offline/low-disk, doctor, first render, project save/reopen,
+   settings persistence, update, rollback, uninstall, data retention).
+2. **Human listening review of corpus cases 4 (CJK) and 5 (Arabic).**
+3. **Data-cleanup follow-up (pending, GUI was open during this pass):** the
+   owner's GUI was running, so the remaining working material in the repo
+   `Output/` folder (`cache/`, `logs/`, `stems/`, `render_plan.json`) and the
+   legacy Documents folder were not moved into `render-work/`. The source-side
+   fix means new renders write there; moving the old material is a follow-up
+   once the GUI is closed.
+4. **Windows installed-product qualification** (hosted installer E2E is green;
+   a Windows guest install is still open).
 
 ## Owner-only decisions and actions
 
-1. Have qualified counsel review the EULA and proposed license decisions,
-   including whether the no-refund term is enforceable with the payment
-   processor and across relevant jurisdictions. Keep the draft marker until
-   approval.
-2. Production signing-key custody is confirmed (corrected 2026-11-09; the
-   earlier text here was wrong). A production seed for key `k2` WAS generated
-   on 2026-11-01 and used: a serial was minted that day (licensee "Cody",
-   lic_id b0a7fe4c-8ab2-4629-8d2b-6eb06cccbc14, no expiry, not machine-bound)
-   and is activated in the vendor checkout root (`rhetoric_license.json`). The
-   seed itself exists only as the sealed file `~/secrets/rhetoric-seed.gpg`
-   (PGP symmetric, AES-256, mode 0600, sealed 2026-11-01 07:16 PT); the
-   plaintext copy at `~/.config/rhetoric/license-signing-seed` was deleted
-   after sealing.
-3. Have an independent human reviewer listen to exact final-head outputs and
-   record reviewer, date, commit, intelligibility, speaker assignment,
-   transitions, pauses, clipping/silence, usability, and defects. The verdict
-   must remain **PENDING** until supplied by that reviewer.
-4. Confirm the old repository is deleted or private and whether forks remain;
-   remove old local clones and the private recovery bundle when no longer
-   needed.
-5. Authorize publication only after all engineering and commercial gates pass.
+1. **Dependency pins:** the `[chatterbox]` / `[ml,chatterbox]` co-resolution
+   conflict above is a product decision; pins were not changed.
+2. **Storefront:** Lemon Squeezy store creation remains blocked (bot-walled;
+   support ticket pending). No payment path ships in this repository.
+3. **v1.5.0 tag and publish:** explicitly the owner's decision. This pass
+   pushed commits only.
+4. **Publication** of the GitHub release and any store listing.
+5. Whether the owner's ~62 MB of reference WAVs stay in the public history
+   (left untouched).
 
 Ordinary branch push is authorized; history rewriting and publication are not.

@@ -319,7 +319,7 @@ the local repair workflow can be used.
 
 ### First-run inference setup and tutorial
 
-On the first launch after installation, Rhetoric opens a non-modal **Inference Setup & Tour**. It inventories NVIDIA devices through PyTorch and `nvidia-smi`, reports each card's name/VRAM/runtime status, disables cards that are below the 4 GiB Chatterbox suitability floor, and leaves CPU/system DRAM as the guaranteed fallback. It also explains that AMD GPUs cannot use CUDA and that Vulkan/audio.cpp is the separate GPU path. The Continue button advances through a dependency-ordered tour: hardware discovery, backend choice, input/output, model and correction behavior, voice character, timing, hybrid voices, and finally Analyze/Preview/Render. The tutorial highlights the live control and positions itself beside it so its explanation and the control's tooltip remain readable.
+On the first launch after installation, Rhetoric opens a non-modal **Inference Setup & Tour**. It inventories NVIDIA devices through PyTorch and `nvidia-smi`, reports each card's name/VRAM/runtime status, disables cards that are below the 4 GiB Chatterbox suitability floor, and leaves CPU/system DRAM as the guaranteed fallback. It also explains that AMD GPUs cannot use CUDA and that Vulkan/audio.cpp is the separate GPU path. The Continue button advances through a dependency-ordered tour: hardware discovery, backend choice, input/output, model and correction behavior, voice character, timing, and finally Analyze/Preview/Render. The tutorial highlights the live control and positions itself beside it so its explanation and the control's tooltip remain readable.
 
 After completion, use **Settings → Replay Setup & Tutorial** to replay the **Entire Setup & Tutorial**, **Hardware Discovery Only**, or **Main GUI Tour Only**. The selected PyTorch CPU/CUDA device or Vulkan backend is applied to the real inference picker and persisted with the existing Remember GPU/CPU choice setting. A skipped first-run tour can be replayed from the same menu at any time. The first-run page also sets independent default Input and Output folders; its checkboxes control whether those folder choices persist, while the last-used input file remains remembered separately.
 
@@ -482,10 +482,13 @@ Optional environment knobs:
   `audiocpp_cli --backend vulkan --list-devices` (or the doctor).
 - `RHETORIC_AUDIOCPP_THREADS=<n>` — pass `--threads <n>` to audio.cpp
   (default is 4).
-- `RHETORIC_AUDIOCPP_TIMEOUT=<seconds>` — per-synthesis timeout (default 600).
-  A batched render scales this by its request count (one `--request-sequence`
-  process synthesizes N utterances, so it gets N x the per-synthesis timeout)
-  so long renders are not killed just because they are one long subprocess.
+- `RHETORIC_AUDIOCPP_TIMEOUT=<seconds>` — per-synthesis timeout (default 600,
+  minimum 60). Values below 60 s are raised to 60 s: a subprocess must load the
+  model and compile RADV shaders before its first utterance, and warm
+  synthesis alone is 2–4 s. A batched render scales this by its request count
+  (one `--request-sequence` process synthesizes N utterances, so it gets N x
+  the per-synthesis timeout) plus a fixed 120 s startup allowance, so long
+  renders are not killed just because they are one long subprocess.
 - `RHETORIC_AUDIOCPP_MAX_BATCH=<n>` — maximum cache-missing stems per
   `--request-sequence` subprocess (default 32). An enormous render is split
   into several processes at this cap, and a failed batch only takes down its
@@ -575,8 +578,9 @@ guessing at a blind 0-15 index range. A stale saved device index that is no
 longer detected is kept as an explicit `Device N: (not detected)` row (never
 silently changed), and the label under the picker lists everything audio.cpp
 sees. The **Vulkan Timeout (s)** spin sets the per-synthesis timeout
-(equivalent of `RHETORIC_AUDIOCPP_TIMEOUT`, default 600), with 0 meaning
-"Default (600s)". The **Vulkan Max Batch** spin sets the requests-per-
+(equivalent of `RHETORIC_AUDIOCPP_TIMEOUT`, default 600, minimum 60), with 0
+meaning "Default (600s)"; the spin's tooltip states the floor and the backend
+raises sub-floor values rather than failing every synthesis. The **Vulkan Max Batch** spin sets the requests-per-
 subprocess cap (equivalent of `RHETORIC_AUDIOCPP_MAX_BATCH`, default 32), with
 0 meaning "Default (32)". These values are persisted in the same
 profiles/templates and manifests, so a GUI session needs no environment
@@ -614,8 +618,10 @@ silently.
 
 - `Input/` sample dialogue files (place new dialogue sources here)
 - `Seashells/` repo-local reference voice clips
-- `Profiles/` voice profiles and saved blends (runtime-generated, gitignored)
-- `Output/` rendered audio, stems, and caches (runtime-generated, gitignored)
+- `Profiles/` voice profiles (runtime-generated, gitignored)
+- `Output/` rendered audio only (runtime-generated, gitignored); stems, caches,
+  logs, previews, and render plans live in the app's `render-work` folder
+  (`~/.local/share/rhetoric/render-work/` on Linux)
 - `user_settings/` GUI settings persistence (runtime-generated, gitignored)
 - `release_artifacts/` release-script output (generated, gitignored)
 - `release_checksums/` each release's sha256 manifest, tracked so a published
@@ -676,7 +682,7 @@ fast run must not be possible without them. What stays behind the marker is the
 model-heavy work and the sweeps that cost minutes. `tests/test_fast_subset.py`
 holds that contract by asking pytest's own collector what the subset keeps.
 
-## Generic Voices And Voice Blending
+## Generic Voices
 
 **Generic voices.** The repo ships a small bundled generic voice library under
 `Seashells/generic/` (male and female narrator references copied from
@@ -686,25 +692,8 @@ voice picker under **Default Voices**, so a render never needs a custom
 recording. Drop your own neutral recordings into `Seashells/generic/` to
 extend the library.
 
-**Voice blending.** Chatterbox conditions each speaker on one reference
-payload, so combining two voices works by deriving a single **blended
-reference clip** from two sources. In each speaker panel: pick a second clip
-under **Blend With Voice**, choose how strongly the base voice dominates with
-**Base Voice Presence** (0–100%), and pick a **Blend Mode**: `Mix`
-(weight-averaged), `Alternate` (the two clips take turns), or `Layer` (base
-voice with the second underneath). The blend is deterministic and cached by
-its inputs' content hashes, so a given (base, target, weight, mode) always
-renders the same voice, on both the PyTorch and Vulkan backends, and stem
-caches re-key automatically when the blend changes. Blend settings round-trip
-through saved projects and GUI settings profiles.
-
-**Saving blends as named voices.** **Save Blend As...** next to the blend
-picker saves the current combination as a named voice that appears under
-**Saved Blends** in every speaker panel's picker, right alongside the bundled
-generic voices — so a favorite blend becomes a one-click voice like any
-other. Saved blends live in `Profiles/blend_voices.json` (user-generated,
-gitignored) with deterministic clips in `Profiles/.blends/`; saving the same
-name again replaces the entry.
+Each speaker is conditioned on exactly one reference clip. To change a voice,
+pick a different clip (or record one); there is no second-voice blending.
 
 ## Product Notes
 
@@ -712,7 +701,10 @@ name again replaces the entry.
 - Multilingual mode requires the multilingual Chatterbox variant and a real language code.
 - Turbo is optional and lower-latency, but not the default backend.
 - Better voice quality comes from stronger local reference clips, not from a separate packaged voice library.
-- Voice blending (combining two references into one conditioning clip) is supported; see "Generic Voices And Voice Blending" above.
+- There is no hybrid/second-voice blending: each speaker uses one reference clip.
+- **Output folder:** the chosen folder receives only the finished audio (and the `.srt` when subtitles are enabled). Stems, caches, logs, previews, and render plans live in the app's `render-work` folder, so the output folder never fills with working material.
+- **Output filename:** loading a script proposes `<script>_No_<n>` with the next free number in the output folder, so a render never silently overwrites an earlier one. Typing a name always uses that name.
+- **Automatic updates:** on by default. The opt-out is a checkable action in the Settings menu, and turning it off also disables the support/bug-report gate until updates are re-enabled and the install is current.
 - **Correction Mode → Verbatim (no changes)** passes the source text through exactly as written — no spelling, grammar, or punctuation edits — so narration is always faithful to the file. (The TTS engine applies its own required text normalization internally, identically on both backends.)
 
 ## Licensing
