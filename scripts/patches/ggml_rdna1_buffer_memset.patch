@@ -1,5 +1,5 @@
 diff --git a/external/ggml/src/ggml-vulkan/ggml-vulkan.cpp b/external/ggml/src/ggml-vulkan/ggml-vulkan.cpp
-index 334651a..08858f1 100644
+index 334651a..9e6a70b 100644
 --- a/external/ggml/src/ggml-vulkan/ggml-vulkan.cpp
 +++ b/external/ggml/src/ggml-vulkan/ggml-vulkan.cpp
 @@ -7313,7 +7313,18 @@ static void ggml_vk_buffer_memset(vk_buffer& dst, size_t offset, uint32_t c, siz

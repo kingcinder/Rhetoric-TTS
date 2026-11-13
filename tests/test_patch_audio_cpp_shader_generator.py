@@ -131,11 +131,16 @@ def _tree(tmp_path: Path) -> Path:
     )
     gpu = root / "audio.cpp" / "external" / "ggml" / "src" / "ggml-vulkan"
     (gpu / "vulkan-shaders").mkdir(parents=True)
-    (gpu / "ggml-vulkan.cpp").write_text(GGML_MINIMAL, encoding="utf-8")
-    (gpu / "vulkan-shaders" / "vulkan-shaders-gen.cpp").write_text(GENERATOR_MINIMAL, encoding="utf-8")
+    # The pinned tree uses CRLF; a fixture in LF would hide a line-ending mistake
+    # in a committed artifact, so keep the endings the real files have.
+    for path, text in (
+        (gpu / "ggml-vulkan.cpp", GGML_MINIMAL),
+        (gpu / "vulkan-shaders" / "vulkan-shaders-gen.cpp", GENERATOR_MINIMAL),
+    ):
+        path.write_bytes(text.replace("\n", "\r\n").encode("utf-8"))
     sp = root / "audio.cpp" / "external" / "sentencepiece"
     sp.mkdir(parents=True)
-    (sp / "CMakeLists.txt").write_text(SENTENCEPIECE_CMAKE, encoding="utf-8")
+    (sp / "CMakeLists.txt").write_bytes(SENTENCEPIECE_CMAKE.replace("\n", "\r\n").encode("utf-8"))
     return root
 
 
@@ -247,18 +252,25 @@ _DIFF_HEADER = (
 
 # The RDNA1 block records the ggml commit it was vendored against. The fixture
 # tree is not a git checkout, so the script writes "unknown" there; compare the
-# shape, not the sha.
-_VENDOR_NOTE = re.compile(r"^(\s*// Vendored against ggml) \S+\.$")
+# shape, not the sha. Everything else on the line, including its CR, is compared
+# exactly -- a stale artifact can differ only in line endings.
+_VENDOR_NOTE = re.compile(r"(\s*// Vendored against ggml) \S+\.")
 
 
 def _normalise(line: str) -> str:
-    return _VENDOR_NOTE.sub(r"\1 <pinned>.", line.rstrip())
+    return _VENDOR_NOTE.sub(r"\1 <pinned>", line)
+
+
+def _read_exact(path: Path) -> str:
+    """Read text without newline translation, so CRLF stays visible."""
+    return path.read_bytes().decode("utf-8")
 
 
 def _artifact_changes(text: str) -> tuple[list[str], list[str]]:
     added: list[str] = []
     removed: list[str] = []
-    for line in text.splitlines():
+    # Split on "\n" (not splitlines()) so a trailing CR stays on the line.
+    for line in text.split("\n"):
         if line.startswith(_DIFF_HEADER):
             continue
         if line.startswith("+"):
@@ -269,7 +281,7 @@ def _artifact_changes(text: str) -> tuple[list[str], list[str]]:
 
 
 def _applied_changes(before: str, after: str) -> tuple[list[str], list[str]]:
-    before_lines, after_lines = before.splitlines(), after.splitlines()
+    before_lines, after_lines = before.split("\n"), after.split("\n")
     added: list[str] = []
     removed: list[str] = []
     matcher = difflib.SequenceMatcher(None, before_lines, after_lines)
@@ -285,18 +297,18 @@ def test_the_committed_artifacts_match_a_fresh_application(tmp_path: Path) -> No
     """A changed edit must not land with a stale patch artifact: regenerate with
     `scripts/patch_audio_cpp_ggml.sh` and commit the artifact it rewrites."""
     root = _tree(tmp_path)
-    before = {rel: (root / "audio.cpp" / rel).read_text(encoding="utf-8") for rel in ARTIFACTS}
+    # read_text() translates CRLF to LF, which would hide an artifact written with
+    # the wrong line endings; read the bytes instead.
+    before = {rel: _read_exact(root / "audio.cpp" / rel) for rel in ARTIFACTS}
 
     completed = _run(root)
     assert completed.returncode == 0, completed.stderr + completed.stdout
 
     drifted = []
     for rel, artifact in ARTIFACTS.items():
-        after = (root / "audio.cpp" / rel).read_text(encoding="utf-8")
+        after = _read_exact(root / "audio.cpp" / rel)
         applied_added, applied_removed = _applied_changes(before[rel], after)
-        artifact_added, artifact_removed = _artifact_changes(
-            (REPO_ROOT / artifact).read_text(encoding="utf-8")
-        )
+        artifact_added, artifact_removed = _artifact_changes(_read_exact(REPO_ROOT / artifact))
         if sorted(applied_added) != sorted(artifact_added):
             missing = sorted(set(applied_added) - set(artifact_added))
             stale = sorted(set(artifact_added) - set(applied_added))
