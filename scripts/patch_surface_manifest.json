@@ -207,8 +207,7 @@
       "gui_cast.py": {
         "QDialog": "documented split (slice 9): CastManagementDialog subclasses QDialog resolving from gui_cast globals; the app_gui-level QDialog fakes (ingest preview/batch tests) target app_gui-resident dialogs, which still resolve from app_gui globals",
         "QMessageBox": "documented split (slice 9): the cast-full popup resolves from gui_cast globals; the ingest tests' app_gui-level QMessageBox fakes target app_gui-resident popups",
-        "blend_voice_choices": "documented split (slice 9): the cast dialog's picker refresh resolves the voice catalogs from gui_cast globals; app_gui-level rebinds cover app_gui's remaining picker call sites",
-        "default_voice_choices": "documented split (slice 9): same as blend_voice_choices — both modules have call sites and each resolves its own binding",
+        "default_voice_choices": "documented split (slice 9): both modules have picker call sites and each resolves its own binding",
         "load_recent_reference_paths": "documented split (slice 9): recents feed both modules' pickers; app_gui-level rebinds cover app_gui's sites while the cast dialog reads gui_cast's binding"
       },
       "gui_settings.py": {
@@ -219,6 +218,11 @@
       }
     },
     "latent_split_readership": {
+      "gui_wheel.py": {
+        "QApplication": "QApplication: PySide6 import held by both sides (the guard forwards the wheel through QApplication.sendEvent and is installed on the app); an app_gui-level rebind would miss gui_wheel.py's use - inject or repoint at gui_wheel.py if a flow ever needs it; the census net escalates this pair automatically.",
+        "QComboBox": "QComboBox: PySide6 import held by both sides (the guard's wheel-editing control tuple names it); an app_gui-level rebind would miss gui_wheel.py's use - inject or repoint at gui_wheel.py if a flow ever needs it; the census net escalates this pair automatically.",
+        "QWidget": "QWidget: PySide6 import held by both sides (the guard's isinstance check and scroll-area walk read it); an app_gui-level rebind would miss gui_wheel.py's use - inject or repoint at gui_wheel.py if a flow ever needs it; the census net escalates this pair automatically."
+      },
       "gui_cast.py": {
         "Path": "Path: stdlib import held by both sides; an app_gui-level rebind would miss gui_cast.py's uses - repoint at gui_cast.py if a flow ever needs it; the census net escalates this pair automatically.",
         "QComboBox": "QComboBox: PySide6 import held by both sides; an app_gui-level rebind would miss gui_cast.py's uses - inject or repoint at gui_cast.py if a flow ever needs it; the census net escalates this pair automatically.",
@@ -323,9 +327,9 @@
         "DEFAULT_THEME": "DEFAULT_THEME lives in gui_themes.py and app_gui re-imports it; an app_gui-level rebind covers only app_gui's reads - rebind at gui_themes.py for both sides.",
         "normalize_theme_key": "normalize_theme_key is DEFINED in gui_themes.py (the theme owner) and read by app_gui.apply_theme, which maps a pre-rename persisted theme key (oracle_light/oracle_dark) onto the current key before delegating; an app_gui-level rebind covers only app_gui's read - rebind at gui_themes.py for both sides."
       },
-    "gui_tooltips.py": {
-      "QApplication": "QApplication: PySide6 import held by both sides; an app_gui-level rebind would miss gui_tooltips.py's uses - inject or repoint at gui_tooltips.py if a flow ever needs it; the census net escalates this pair automatically.",
-      "QWidget": "QWidget: PySide6 import held by both sides, read at runtime by gui_tooltips.py's tooltip-owner sweep (findChildren(QWidget) / isinstance(root, QWidget)) and by app_gui's own widget code; an app_gui-level rebind would miss the sweep's reads - inject or repoint at gui_tooltips.py if a flow ever needs it; the census net escalates this pair automatically.",
+      "gui_tooltips.py": {
+        "QApplication": "QApplication: PySide6 import held by both sides; an app_gui-level rebind would miss gui_tooltips.py's uses - inject or repoint at gui_tooltips.py if a flow ever needs it; the census net escalates this pair automatically.",
+        "QWidget": "QWidget: PySide6 import held by both sides, read at runtime by gui_tooltips.py's tooltip-owner sweep (findChildren(QWidget) / isinstance(root, QWidget)) and by app_gui's own widget code; an app_gui-level rebind would miss the sweep's reads - inject or repoint at gui_tooltips.py if a flow ever needs it; the census net escalates this pair automatically.",
         "QTimer": "QTimer: PySide6 import held by both sides; an app_gui-level rebind would miss gui_tooltips.py's uses - inject or repoint at gui_tooltips.py if a flow ever needs it; the census net escalates this pair automatically.",
         "Qt": "Qt: PySide6 import held by both sides; an app_gui-level rebind would miss gui_tooltips.py's uses - inject or repoint at gui_tooltips.py if a flow ever needs it; the census net escalates this pair automatically."
       },
