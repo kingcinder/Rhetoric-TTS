@@ -397,7 +397,10 @@ def _normalize_audio_cpp_timeout(value: Any) -> int | None:
 
     None / missing means "the engine's default (600s)"; anything non-numeric
     or non-positive is replaced with None so a hand-edited file cannot produce
-    an invalid RenderSettings at load time.
+    an invalid RenderSettings at load time. A positive value below the
+    engine's minimum per-synthesis timeout is raised to that minimum: a
+    smaller budget cannot survive one cold audio.cpp start, so honoring it
+    literally would only reproduce the N x timeout batch death.
     """
     if value is None:
         return None
@@ -405,7 +408,11 @@ def _normalize_audio_cpp_timeout(value: Any) -> int | None:
         parsed = int(value)
     except (TypeError, ValueError):
         return None
-    return parsed if parsed >= 1 else None
+    if parsed < 1:
+        return None
+    from rhetoric.tts_engines.vulkan_backend import MIN_SYNTHESIS_TIMEOUT_SECONDS
+
+    return max(parsed, int(MIN_SYNTHESIS_TIMEOUT_SECONDS))
 
 
 def _normalize_audio_cpp_max_batch(value: Any) -> int | None:

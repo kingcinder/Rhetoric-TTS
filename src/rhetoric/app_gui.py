@@ -858,7 +858,9 @@ class MainWindow(QMainWindow):
         self.audio_cpp_timeout_spin.setToolTip(
             "Per-synthesis timeout in seconds passed to audio.cpp. Default (0) uses "
             "audio.cpp's 600s; the value is equivalent to RHETORIC_AUDIOCPP_TIMEOUT "
-            "but needs no environment variable."
+            "but needs no environment variable. Values under the engine's 60s "
+            "minimum are raised to that minimum: a smaller budget cannot survive "
+            "one cold audio.cpp start."
         )
         self.audio_cpp_max_batch_spin = QSpinBox()
         self.audio_cpp_max_batch_spin.setRange(0, 1024)

@@ -75,6 +75,25 @@ _USE_CONFIGURED_SEED = object()
 # over via _last_sample_rate), so the downstream FLAC pipeline is always right.
 DEFAULT_SAMPLE_RATE = 24000
 
+# The smallest per-synthesis timeout the engine will honor, however the value
+# arrives (constructor, settings file, or RHETORIC_AUDIOCPP_TIMEOUT). One warm
+# synthesis of a short utterance on the reference GPU already takes ~3s, and a
+# budget below this floor -- a stale 3s persisted in saved settings is the
+# observed case -- makes every chunk die on the per-synthesis timeout without
+# a single synthesis finishing (the batch of N then fails after N x timeout).
+# 60s is ~17x the slowest measured warm synthesis (3.6s, RX 5700 XT,
+# 2026-11-12) while still failing a genuinely wedged synthesis in a minute.
+MIN_SYNTHESIS_TIMEOUT_SECONDS = 60.0
+
+# Fixed budget added to every audio.cpp subprocess on top of its
+# per-synthesis budget(s). Each fresh process reloads the multi-GB GGUF and
+# recompiles its Vulkan shaders before the first request runs; that cold
+# start is initialization, not synthesis, so it is never charged against a
+# per-synthesis timeout. Measured cold start on the reference machine is
+# ~10-14s (2GB model + RADV shader compile, 2026-11-12); 120s covers slower
+# disks and machines with an order of magnitude to spare.
+STARTUP_ALLOWANCE_SECONDS = 120.0
+
 def _synthesis_timeout_seconds() -> float:
     # Parsed lazily so a malformed RHETORIC_AUDIOCPP_TIMEOUT env value cannot
     # crash the module at import time. Clamped to a positive value: a
@@ -296,6 +315,7 @@ class AudioCppVulkanEngine:
         self._device_index_override = device_index
         self._threads_override = threads
         self._timeout_override = timeout
+        self._timeout_floor_warned = False
         self._batch_limit_override = batch_limit
         self._seed_override = seed
         self._binary: Path | None = None
@@ -321,10 +341,36 @@ class AudioCppVulkanEngine:
     @property
     def timeout(self) -> float:
         """Per-synthesis timeout in seconds: constructor arg wins over
-        ``RHETORIC_AUDIOCPP_TIMEOUT``; the env default is 600."""
+        ``RHETORIC_AUDIOCPP_TIMEOUT``; the env default is 600. The result is
+        never below ``MIN_SYNTHESIS_TIMEOUT_SECONDS``: a smaller budget
+        cannot survive one synthesis on this backend, so it is raised to
+        the floor (the raise is logged once) instead of failing every
+        chunk."""
         if self._timeout_override is not None:
-            return float(self._timeout_override)
-        return _synthesis_timeout_seconds()
+            return self._clamp_timeout(float(self._timeout_override))
+        return self._clamp_timeout(_synthesis_timeout_seconds())
+
+    def _clamp_timeout(self, value: float) -> float:
+        if value >= MIN_SYNTHESIS_TIMEOUT_SECONDS:
+            return value
+        if not self._timeout_floor_warned:
+            self._timeout_floor_warned = True
+            LOGGER.warning(
+                "audio.cpp per-synthesis timeout %gs is below the %gs "
+                "minimum this backend can meet; using %gs. Raise it with "
+                "RHETORIC_AUDIOCPP_TIMEOUT / --audio-cpp-timeout if longer "
+                "utterances need more.",
+                value,
+                MIN_SYNTHESIS_TIMEOUT_SECONDS,
+                MIN_SYNTHESIS_TIMEOUT_SECONDS,
+            )
+        return MIN_SYNTHESIS_TIMEOUT_SECONDS
+
+    def _batch_timeout(self, count: int) -> float:
+        """Budget for one ``--request-sequence`` subprocess: the fixed
+        startup allowance (charged once per process) plus one per-synthesis
+        timeout per request."""
+        return STARTUP_ALLOWANCE_SECONDS + self.timeout * max(1, count)
 
     @property
     def batch_limit(self) -> int:
@@ -760,8 +806,9 @@ class AudioCppVulkanEngine:
             # The per-synthesis timeout (default 600s) bounds ONE utterance;
             # a batch of N requests legitimately needs N times the headroom,
             # otherwise long renders would time out as one subprocess even
-            # though every individual utterance was fast.
-            batch_timeout = self.timeout * max(1, len(entries))
+            # though every individual utterance was fast. The fixed startup
+            # allowance covers the process's model load + shader compile.
+            batch_timeout = self._batch_timeout(len(entries))
             if on_request_complete is not None:
                 completed = self._run_batch_command_streaming(
                     command, out_dir, len(entries), on_request_complete, batch_timeout
@@ -925,10 +972,13 @@ class AudioCppVulkanEngine:
     ) -> subprocess.CompletedProcess[str]:
         """Run one audio.cpp invocation, honoring ``self.timeout`` by default.
 
-        ``timeout`` overrides it for a specific call (the batch path passes a
-        per-synthesis timeout scaled by request count, since a single
+        The default budget is the per-synthesis timeout plus the fixed
+        startup allowance: a fresh process reloads the model and recompiles
+        its shaders before synthesizing, and that init time is not
+        synthesis. ``timeout`` overrides the budget outright for a specific
+        call (the batch path passes its own scaled budget, since a single
         ``--request-sequence`` process synthesizes many utterances)."""
-        effective = self.timeout if timeout is None else timeout
+        effective = (STARTUP_ALLOWANCE_SECONDS + self.timeout) if timeout is None else timeout
         try:
             return subprocess.run(
                 command,

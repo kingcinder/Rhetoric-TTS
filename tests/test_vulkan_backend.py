@@ -28,6 +28,7 @@ from rhetoric.pipeline import (
 from rhetoric.utils.hashing import build_chunk_hash, hash_file
 import rhetoric.tts_engines.vulkan_backend as vulkan_backend
 from rhetoric.tts_engines.vulkan_backend import (
+    STARTUP_ALLOWANCE_SECONDS,
     AudioCppUnavailableError,
     AudioCppVulkanEngine,
     RDNA1VulkanError,
@@ -399,19 +400,20 @@ def test_constructor_timeout_wins_over_env_and_feeds_run_command(tmp_path: Path,
     engine = _engine_with_fake_binary(tmp_path, timeout=90)
     assert engine.timeout == 90
 
-    monkeypatch.setenv("RHETORIC_AUDIOCPP_TIMEOUT", "30")
+    monkeypatch.setenv("RHETORIC_AUDIOCPP_TIMEOUT", "300")
     assert engine.timeout == 90  # constructor wins
 
     # The env var is honored when no constructor override is given.
     engine2 = _engine_with_fake_binary(tmp_path)
-    assert engine2.timeout == 30
+    assert engine2.timeout == 300
 
     # Default without env override is 600.
     monkeypatch.delenv("RHETORIC_AUDIOCPP_TIMEOUT", raising=False)
     engine3 = _engine_with_fake_binary(tmp_path)
     assert engine3.timeout == 600
 
-    # _run_command passes self.timeout to subprocess.run.
+    # _run_command's default budget is self.timeout plus the fixed startup
+    # allowance (model load + shader compile are not synthesis).
     recorded: dict[str, float] = {}
 
     def recording_run(command, **kwargs):
@@ -423,7 +425,7 @@ def test_constructor_timeout_wins_over_env_and_feeds_run_command(tmp_path: Path,
     sf.write(reference, np.zeros(2400, dtype=np.float32), 24000)
     conditioning = VulkanConditioning(cache_id="c1", reference_path=reference, speaker="A")
     engine._run_command([str(engine.binary)])
-    assert recorded["timeout"] == 90
+    assert recorded["timeout"] == 90 + STARTUP_ALLOWANCE_SECONDS
 
 
 def test_list_devices_parses_audio_cpp_output(tmp_path: Path, monkeypatch) -> None:
@@ -508,10 +510,11 @@ def test_synthesize_batch_runs_one_process_for_many_utterances(tmp_path: Path, m
     recorded: dict[str, object] = {}
 
     def fake_run(command: list[str], **kwargs) -> subprocess.CompletedProcess[str]:
-        # The batch passes a scaled timeout (per-synthesis timeout x request
-        # count); the fake must accept it. Computed from the engine so the
-        # assertion is hermetic even when RHETORIC_AUDIOCPP_TIMEOUT is exported.
-        assert kwargs.get("timeout") == engine.timeout * 2
+        # The batch passes its scaled budget (startup allowance +
+        # per-synthesis timeout x request count); the fake must accept it.
+        # Computed from the engine so the assertion is hermetic even when
+        # RHETORIC_AUDIOCPP_TIMEOUT is exported.
+        assert kwargs.get("timeout") == engine._batch_timeout(2)
         recorded["command"] = command
         sequence_path = Path(command[command.index("--request-sequence") + 1])
         out_dir = Path(command[command.index("--out-dir") + 1])
