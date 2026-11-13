@@ -23,6 +23,8 @@ freshly built widgets.
 
 from __future__ import annotations
 
+from rhetoric.gui_wheel import WheelSlider
+
 import warnings
 from collections.abc import Callable
 
@@ -96,7 +98,7 @@ class QHSectionGroup(QGroupBox):
 
         self._size_slider: QSlider | None = None
         if resizable:
-            self._size_slider = QSlider(Qt.Orientation.Horizontal, self)
+            self._size_slider = WheelSlider(Qt.Orientation.Horizontal, self)
             self._size_slider.setRange(10, 100)
             self._size_slider.setValue(50)
             self._size_slider.setFixedWidth(90)

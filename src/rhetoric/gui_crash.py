@@ -20,6 +20,8 @@ import-time Qt construction.
 
 from __future__ import annotations
 
+from rhetoric.gui_wheel import WheelComboBox
+
 import json
 from pathlib import Path
 
@@ -367,10 +369,10 @@ def run_problem_report_dialog(
     title_edit = QLineEdit()
     title_edit.setObjectName("title")
     title_edit.setPlaceholderText("Render stops at the last line")
-    area_combo = QComboBox()
+    area_combo = WheelComboBox()
     area_combo.setObjectName("area")
     area_combo.addItems(list(AREAS))
-    severity_combo = QComboBox()
+    severity_combo = WheelComboBox()
     severity_combo.setObjectName("severity")
     severity_combo.addItems(list(SEVERITIES))
     severity_combo.setCurrentText("normal")

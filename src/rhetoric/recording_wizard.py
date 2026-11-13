@@ -9,6 +9,8 @@ or finishes, so abandoning it never leaves half-applied settings behind.
 
 from __future__ import annotations
 
+from rhetoric.gui_wheel import WheelComboBox
+
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
@@ -135,9 +137,9 @@ class RecordingStudioSetupWizard(QDialog):
         self.setup_box = QWidget()
         form = QFormLayout(self.setup_box)
         form.setContentsMargins(0, 0, 0, 0)
-        self.mic_picker = QComboBox()
-        self.rate_picker = QComboBox()
-        self.script_picker = QComboBox()
+        self.mic_picker = WheelComboBox()
+        self.rate_picker = WheelComboBox()
+        self.script_picker = WheelComboBox()
         self.folder_edit = QLineEdit()
         self.folder_edit.setReadOnly(True)
         self.name_edit = QLineEdit()

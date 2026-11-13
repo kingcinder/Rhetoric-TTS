@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from rhetoric.gui_wheel import WheelSpinBox, WheelComboBox
+
 from dataclasses import replace
 from functools import partial
 from pathlib import Path
@@ -101,7 +103,6 @@ from rhetoric.gui_themes import DEFAULT_THEME, THEMES, apply_theme, normalize_th
 # and the owner module is the single patch point, exactly as their
 # moved_owners listings record (rule 1).
 from rhetoric.gui_tooltips import install_ctrl_hover_help
-from rhetoric.gui_wheel import install_wheel_focus_guard
 from rhetoric.inference_wizard import InferenceSetupWizard
 from rhetoric.recording_wizard import RecordingStudioSetupWizard
 from rhetoric.gui_widgets import PerceptualSlider
@@ -370,7 +371,6 @@ class MainWindow(QMainWindow):
         # One application-wide filter: wheel events edit a spin box / combo box
         # / slider only while that control holds keyboard focus; otherwise the
         # wheel scrolls the enclosing panel (gui_wheel.py).
-        install_wheel_focus_guard(QApplication.instance())
         self._register_ctrl_help_descriptions()
         self._apply_serial_gate()
         self._mark_startup("mainwindow_init_end")
@@ -409,7 +409,6 @@ class MainWindow(QMainWindow):
         entry[0].ensure_content()
         # A lazily built section creates its widgets after the window's first
         # attach pass, so cover the new controls too.
-        install_wheel_focus_guard(QApplication.instance())
         return object.__getattribute__(self, name)
 
     def _write_startup_timeline(self) -> None:
@@ -738,10 +737,10 @@ class MainWindow(QMainWindow):
         layout.addWidget(scroll)
         scroll.setWidget(content)
         self._project_settings_form = form  # kept so Ctrl+hover help can register row labels
-        self.variant_combo = QComboBox()
+        self.variant_combo = WheelComboBox()
         self.variant_combo.addItems(list(SUPPORTED_VARIANTS))
         self.variant_combo.currentTextChanged.connect(self._refresh_language_options)
-        self.correction_mode_combo = QComboBox()
+        self.correction_mode_combo = WheelComboBox()
         for label, value in CORRECTION_MODE_OPTIONS:
             self.correction_mode_combo.addItem(label, value)
         self.correction_mode_combo.setToolTip(
@@ -753,7 +752,7 @@ class MainWindow(QMainWindow):
             "backends)."
         )
         self._set_correction_mode(RenderSettings().correction_mode)
-        self.loudness_combo = QComboBox()
+        self.loudness_combo = WheelComboBox()
         self.loudness_combo.addItems(["off", "light", "medium"])
         self.loudness_combo.setCurrentText(RenderSettings().loudness_preset)
         self.loudness_combo.setToolTip(
@@ -763,7 +762,7 @@ class MainWindow(QMainWindow):
             "broadcast-ish level. Applied once to the assembled audio, after "
             "all synthesis and crossfading."
         )
-        self.crossfade_spin = QSpinBox()
+        self.crossfade_spin = WheelSpinBox()
         self.crossfade_spin.setRange(0, 500)
         self.crossfade_spin.setValue(RenderSettings().crossfade_ms)
         self.crossfade_spin.setToolTip(
@@ -782,11 +781,11 @@ class MainWindow(QMainWindow):
             "per-line attribution. Use this to read a book aloud as a single "
             "narrator instead of a cast of characters."
         )
-        self.inference_backend_combo = QComboBox()
+        self.inference_backend_combo = WheelComboBox()
         self.inference_backend_combo.addItem("PyTorch", "pytorch")
         self.inference_backend_combo.addItem("Vulkan (experimental audio.cpp)", "vulkan")
         self.inference_backend_combo.setCurrentIndex(0)
-        self.pytorch_device_combo = QComboBox()
+        self.pytorch_device_combo = WheelComboBox()
         self.pytorch_device_combo.addItem("CPU / system DRAM", "cpu")
         for device in self._cuda_devices:
             self.pytorch_device_combo.addItem(f"{device.label} — CUDA experimental", f"cuda:{device.index}")
@@ -827,7 +826,7 @@ class MainWindow(QMainWindow):
         # QLabel#warning, so no hardcoded amber can fight a dark theme).
         self.vulkan_prerequisite_warning.setObjectName("warning")
         self.vulkan_prerequisite_warning.hide()
-        self.audio_cpp_device_combo = QComboBox()
+        self.audio_cpp_device_combo = WheelComboBox()
         self.audio_cpp_device_combo.addItem("Auto (audio.cpp default)", None)
         self.audio_cpp_device_combo.setToolTip(
             "Vulkan device passed to audio.cpp as --device <N> on multi-GPU "
@@ -844,7 +843,7 @@ class MainWindow(QMainWindow):
             "The dropdown lists them by name; picking one is equivalent to "
             "RHETORIC_AUDIOCPP_DEVICE."
         )
-        self.audio_cpp_threads_spin = QSpinBox()
+        self.audio_cpp_threads_spin = WheelSpinBox()
         self.audio_cpp_threads_spin.setRange(0, 128)
         self.audio_cpp_threads_spin.setValue(0)
         self.audio_cpp_threads_spin.setSpecialValueText("Default (audio.cpp's own)")
@@ -853,7 +852,7 @@ class MainWindow(QMainWindow):
             "audio.cpp decide; the value is equivalent to RHETORIC_AUDIOCPP_THREADS "
             "but needs no environment variable."
         )
-        self.audio_cpp_timeout_spin = QSpinBox()
+        self.audio_cpp_timeout_spin = WheelSpinBox()
         self.audio_cpp_timeout_spin.setRange(0, 3600)
         self.audio_cpp_timeout_spin.setValue(0)
         self.audio_cpp_timeout_spin.setSpecialValueText("Default (600s)")
@@ -864,7 +863,7 @@ class MainWindow(QMainWindow):
             "minimum are raised to that minimum: a smaller budget cannot survive "
             "one cold audio.cpp start."
         )
-        self.audio_cpp_max_batch_spin = QSpinBox()
+        self.audio_cpp_max_batch_spin = WheelSpinBox()
         self.audio_cpp_max_batch_spin.setRange(0, 1024)
         self.audio_cpp_max_batch_spin.setValue(0)
         self.audio_cpp_max_batch_spin.setSpecialValueText("Default (32)")
@@ -3674,7 +3673,7 @@ class MainWindow(QMainWindow):
             # the display until the next repopulate.
             index_item.setFlags(index_item.flags() & ~Qt.ItemIsEditable)
             self.table.setItem(row, 0, index_item)
-            speaker_combo = QComboBox()
+            speaker_combo = WheelComboBox()
             speakers = sorted(set(self._cast) | {item.speaker for item in plan.utterances})
             speaker_combo.addItems(speakers or ["A", "B"])
             speaker_combo.setCurrentText(utterance.speaker)
@@ -3704,14 +3703,14 @@ class MainWindow(QMainWindow):
             self.table.setCellWidget(row, 8, control)
 
     def _create_row_action(self, row: int) -> QComboBox:
-        control = QComboBox()
+        control = WheelComboBox()
         control.addItems(["+/-", "Extra", "Remove"])
         control.setMaximumWidth(80)
         control.currentIndexChanged.connect(lambda idx, r=row, c=control: self._handle_row_action(idx, r, c))
         return control
 
     def _create_emotion_combo(self, value: str) -> QComboBox:
-        combo = QComboBox()
+        combo = WheelComboBox()
         for emotion in SUPPORTED_EMOTIONS:
             combo.addItem(emotion, emotion)
         if value and value not in SUPPORTED_EMOTIONS:

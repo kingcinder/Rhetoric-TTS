@@ -3,9 +3,14 @@
 The owner's report: wheeling over a spin box / combo box / slider in a
 scrollable settings panel changed the control's value instead of scrolling the
 view, and the view often would not scroll at all until the user clicked off the
-control. The guard in rhetoric.gui_wheel fixes that globally; these tests pin
-both halves of the rule (unfocused control => view scrolls, value untouched;
-focused control => the control keeps the wheel).
+control. ``rhetoric.gui_wheel`` fixes that by making the controls ignore an
+unfocused wheel, which Qt propagates to the enclosing scroll area.
+
+These tests pin both halves of the rule (unfocused control => view scrolls,
+value untouched; focused control => the control keeps the wheel), and that a
+plain label is untouched. They also pin the implementation choice: no event
+filter is installed anywhere, because an application-wide filter crashed hosted
+runners inside Qt's filter dispatch.
 """
 
 from __future__ import annotations
@@ -14,17 +19,17 @@ import pytest
 from PySide6.QtCore import QPoint, QPointF, Qt
 from PySide6.QtGui import QWheelEvent
 from PySide6.QtWidgets import (
+    QAbstractSpinBox,
     QApplication,
     QComboBox,
     QLabel,
     QScrollArea,
     QSlider,
-    QSpinBox,
     QVBoxLayout,
     QWidget,
 )
 
-from rhetoric.gui_wheel import WheelFocusGuard, install_wheel_focus_guard
+from rhetoric.gui_wheel import WheelComboBox, WheelSlider, WheelSpinBox
 
 
 @pytest.fixture(scope="module")
@@ -54,13 +59,13 @@ def panel(qt_app):
     scroll.setWidgetResizable(True)
     content = QWidget()
     layout = QVBoxLayout(content)
-    spin = QSpinBox()
+    spin = WheelSpinBox()
     spin.setRange(0, 100)
     spin.setValue(50)
-    combo = QComboBox()
+    combo = WheelComboBox()
     combo.addItems(["first", "second", "third"])
     combo.setCurrentIndex(1)
-    slider = QSlider(Qt.Orientation.Horizontal)
+    slider = WheelSlider(Qt.Orientation.Horizontal)
     slider.setRange(0, 100)
     slider.setValue(50)
     layout.addWidget(spin)
@@ -83,13 +88,8 @@ def panel(qt_app):
     scroll.deleteLater()
 
 
-@pytest.fixture()
-def guard(qt_app):
-    return install_wheel_focus_guard(qt_app)
-
-
-def test_unfocused_spin_box_does_not_change_value(qt_app, panel, guard):
-    scroll, spin, _combo, _slider = panel
+def test_unfocused_spin_box_does_not_change_value(qt_app, panel):
+    _scroll, spin, _combo, _slider = panel
     assert not spin.hasFocus()
 
     QApplication.sendEvent(spin, _wheel(spin))
@@ -97,17 +97,18 @@ def test_unfocused_spin_box_does_not_change_value(qt_app, panel, guard):
     assert spin.value() == 50
 
 
-def test_unfocused_control_scrolls_the_view(qt_app, panel, guard):
+def test_unfocused_control_scrolls_the_view(qt_app, panel):
     scroll, spin, _combo, _slider = panel
     scroll.verticalScrollBar().setValue(0)
 
     QApplication.sendEvent(spin, _wheel(spin))
     QApplication.processEvents()
 
+    # Qt propagates the ignored wheel to the scroll area, which scrolls down.
     assert scroll.verticalScrollBar().value() > 0
 
 
-def test_unfocused_combo_box_does_not_change_selection(qt_app, panel, guard):
+def test_unfocused_combo_box_does_not_change_selection(qt_app, panel):
     _scroll, _spin, combo, _slider = panel
 
     QApplication.sendEvent(combo, _wheel(combo, steps=120))
@@ -115,7 +116,7 @@ def test_unfocused_combo_box_does_not_change_selection(qt_app, panel, guard):
     assert combo.currentIndex() == 1
 
 
-def test_unfocused_slider_does_not_change_value(qt_app, panel, guard):
+def test_unfocused_slider_does_not_change_value(qt_app, panel):
     _scroll, _spin, _combo, slider = panel
 
     QApplication.sendEvent(slider, _wheel(slider, steps=120))
@@ -123,7 +124,7 @@ def test_unfocused_slider_does_not_change_value(qt_app, panel, guard):
     assert slider.value() == 50
 
 
-def test_focused_spin_box_keeps_the_wheel(qt_app, panel, guard):
+def test_focused_spin_box_keeps_the_wheel(qt_app, panel):
     scroll, spin, _combo, _slider = panel
     scroll.activateWindow()
     spin.setFocus(Qt.FocusReason.OtherFocusReason)
@@ -135,17 +136,17 @@ def test_focused_spin_box_keeps_the_wheel(qt_app, panel, guard):
     assert spin.value() == 51
 
 
-def test_guard_is_installed_once_per_application(qt_app):
-    first = install_wheel_focus_guard(qt_app)
-    second = install_wheel_focus_guard(qt_app)
-    assert first is second
-    assert isinstance(first, WheelFocusGuard)
+def test_the_controls_are_the_plain_qt_types(qt_app, panel):
+    _scroll, spin, combo, slider = panel
+    assert isinstance(spin, QAbstractSpinBox)
+    assert isinstance(combo, QComboBox)
+    assert isinstance(slider, QSlider)
 
 
-def test_non_editing_widgets_are_left_alone(qt_app, panel, guard):
-    scroll, _spin, _combo, _slider = panel
-    label = scroll.widget().findChildren(QLabel)[0]
+def test_no_event_filter_is_installed_on_the_application(qt_app):
+    """The filter route crashed Qt's dispatch on hosted runners; nothing may
+    silently reintroduce an application-wide filter for wheel routing."""
+    from rhetoric import gui_wheel
 
-    # A plain label neither edits nor blocks: Qt scrolls the view itself and
-    # the guard must not interfere.
-    assert guard.eventFilter(label, _wheel(label)) is False
+    assert not hasattr(gui_wheel, "install_wheel_focus_guard")
+    assert not [name for name in dir(gui_wheel) if "Filter" in name]

@@ -10,6 +10,8 @@ that drive the old spin boxes keep working unchanged.
 
 from __future__ import annotations
 
+from rhetoric.gui_wheel import WheelSlider
+
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QSlider, QVBoxLayout, QWidget
 
@@ -46,7 +48,7 @@ class PerceptualSlider(QWidget):
         self._suffix = suffix
         self._int_mode = int_mode
 
-        self._slider = QSlider(Qt.Orientation.Horizontal, self)
+        self._slider = WheelSlider(Qt.Orientation.Horizontal, self)
         self._slider.setAccessibleName(accessible_name)
         self._slider.setAccessibleDescription(caption)
         self._slider.setRange(0, _TICKS)

@@ -8,6 +8,8 @@ features that depend on them.
 
 from __future__ import annotations
 
+from rhetoric.gui_wheel import WheelComboBox
+
 from dataclasses import dataclass
 from typing import Callable
 
@@ -146,7 +148,7 @@ class InferenceSetupWizard(QDialog):
         self.selection_box = QWidget()
         selection_form = QFormLayout(self.selection_box)
         selection_form.setContentsMargins(0, 0, 0, 0)
-        self.backend_picker = QComboBox()
+        self.backend_picker = WheelComboBox()
         self.backend_picker.addItem("PyTorch (Chatterbox)", "pytorch")
         # Vulkan is an audio.cpp backend, not Torch's experimental Vulkan
         # backend. It must remain selectable even when torch.backends.vulkan
@@ -162,7 +164,7 @@ class InferenceSetupWizard(QDialog):
                 + " The main window will offer automatic setup if its binary or model is missing.",
                 Qt.ItemDataRole.ToolTipRole,
             )
-        self.device_picker = QComboBox()
+        self.device_picker = WheelComboBox()
         self.device_picker.addItem("CPU / system DRAM", "cpu")
         current_device = getattr(getattr(main_window, "pytorch_device_combo", None), "currentData", lambda: "cpu")()
         for device in self.devices:

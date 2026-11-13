@@ -223,7 +223,6 @@
       },
       "gui_cast.py": {
         "Path": "Path: stdlib import held by both sides; an app_gui-level rebind would miss gui_cast.py's uses - repoint at gui_cast.py if a flow ever needs it; the census net escalates this pair automatically.",
-        "QComboBox": "QComboBox: PySide6 import held by both sides; an app_gui-level rebind would miss gui_cast.py's uses - inject or repoint at gui_cast.py if a flow ever needs it; the census net escalates this pair automatically.",
         "QFileDialog": "QFileDialog: PySide6 import held by both sides; an app_gui-level rebind would miss gui_cast.py's uses - inject or repoint at gui_cast.py if a flow ever needs it; the census net escalates this pair automatically.",
         "QFormLayout": "QFormLayout: PySide6 import held by both sides; an app_gui-level rebind would miss gui_cast.py's uses - inject or repoint at gui_cast.py if a flow ever needs it; the census net escalates this pair automatically.",
         "QHBoxLayout": "QHBoxLayout: PySide6 import held by both sides; an app_gui-level rebind would miss gui_cast.py's uses - inject or repoint at gui_cast.py if a flow ever needs it; the census net escalates this pair automatically.",
@@ -237,7 +236,8 @@
         "SpeakerGroup": "SpeakerGroup lives in gui_cast.py and app_gui re-imports it; an app_gui-level rebind covers only app_gui's reads - rebind at gui_cast.py for both sides.",
         "VoiceSettings": "VoiceSettings is imported by both sides from rhetoric.models.project; an app_gui-level rebind would miss gui_cast.py's reads - repoint at gui_cast.py (or rebind rhetoric.models.project) if a flow ever needs it.",
         "_apply_speaker_settings_to_group": "_apply_speaker_settings_to_group lives in gui_cast.py and app_gui re-imports it; an app_gui-level rebind covers only app_gui's reads - rebind at gui_cast.py for both sides.",
-        "_speaker_settings_from_group": "_speaker_settings_from_group lives in gui_cast.py and app_gui re-imports it; an app_gui-level rebind covers only app_gui's reads - rebind at gui_cast.py for both sides."
+        "_speaker_settings_from_group": "_speaker_settings_from_group lives in gui_cast.py and app_gui re-imports it; an app_gui-level rebind covers only app_gui's reads - rebind at gui_cast.py for both sides.",
+        "WheelComboBox": "WheelComboBox: PySide6 subclass imported by both sides (the panel builds this control; app_gui builds the same class elsewhere); an app_gui-level rebind would miss gui_cast.py's use - inject or repoint at gui_cast.py if a flow ever needs it; the census net escalates this pair automatically."
       },
       "gui_chrome.py": {
         "QHSectionGroup": "QHSectionGroup is imported by both sides from rhetoric.gui_sections; an app_gui-level rebind would miss gui_chrome.py's reads - repoint at gui_chrome.py (or rebind rhetoric.gui_sections) if a flow ever needs it.",
@@ -249,14 +249,14 @@
       "gui_crash.py": {
         "QApplication": "QApplication: PySide6 import held by both sides (the bug-report dialog's clipboard fallback reads it); app_gui-level rebinds would miss gui_crash.py's use - inject or repoint at gui_crash.py if a flow ever needs it; the census net escalates this pair automatically.",
         "QCheckBox": "QCheckBox: PySide6 import held by both sides (the bug-report dialog's crash/diagnostics toggles read it); app_gui-level rebinds would miss gui_crash.py's uses - inject or repoint at gui_crash.py if a flow ever needs it; the census net escalates this pair automatically.",
-        "QComboBox": "QComboBox: PySide6 import held by both sides (the bug-report dialog's area/severity pickers read it); app_gui-level rebinds would miss gui_crash.py's uses - inject or repoint at gui_crash.py if a flow ever needs it; the census net escalates this pair automatically.",
         "QFormLayout": "QFormLayout: PySide6 import held by both sides (the bug-report dialog's field layout reads it); app_gui-level rebinds would miss gui_crash.py's uses - inject or repoint at gui_crash.py if a flow ever needs it; the census net escalates this pair automatically.",
         "QHBoxLayout": "QHBoxLayout: PySide6 import held by both sides; an app_gui-level rebind would miss gui_crash.py's uses - inject or repoint at gui_crash.py if a flow ever needs it; the census net escalates this pair automatically.",
         "QLineEdit": "QLineEdit: PySide6 import held by both sides (the bug-report dialog's text fields read it); app_gui-level rebinds would miss gui_crash.py's uses - inject or repoint at gui_crash.py if a flow ever needs it; the census net escalates this pair automatically.",
         "QLabel": "QLabel: PySide6 import held by both sides; an app_gui-level rebind would miss gui_crash.py's uses - inject or repoint at gui_crash.py if a flow ever needs it; the census net escalates this pair automatically.",
         "QPushButton": "QPushButton: PySide6 import held by both sides; an app_gui-level rebind would miss gui_crash.py's uses - inject or repoint at gui_crash.py if a flow ever needs it; the census net escalates this pair automatically.",
         "QVBoxLayout": "QVBoxLayout: PySide6 import held by both sides; an app_gui-level rebind would miss gui_crash.py's uses - inject or repoint at gui_crash.py if a flow ever needs it; the census net escalates this pair automatically.",
-        "json": "json: stdlib import held by both sides; an app_gui-level rebind would miss gui_crash.py's uses - repoint at gui_crash.py if a flow ever needs it; the census net escalates this pair automatically."
+        "json": "json: stdlib import held by both sides; an app_gui-level rebind would miss gui_crash.py's uses - repoint at gui_crash.py if a flow ever needs it; the census net escalates this pair automatically.",
+        "WheelComboBox": "WheelComboBox: PySide6 subclass imported by both sides (the panel builds this control; app_gui builds the same class elsewhere); an app_gui-level rebind would miss gui_crash.py's use - inject or repoint at gui_crash.py if a flow ever needs it; the census net escalates this pair automatically."
       },
       "gui_ingest.py": {
         "Path": "Path: stdlib import held by both sides; an app_gui-level rebind would miss gui_ingest.py's uses - repoint at gui_ingest.py if a flow ever needs it; the census net escalates this pair automatically.",
@@ -283,17 +283,17 @@
       "gui_recording.py": {
         "Path": "Path: stdlib import held by both sides; an app_gui-level rebind would miss gui_recording.py's uses - repoint at gui_recording.py if a flow ever needs it; the census net escalates this pair automatically.",
         "QCheckBox": "QCheckBox: PySide6 import held by both sides; an app_gui-level rebind would miss gui_recording.py's uses - inject or repoint at gui_recording.py if a flow ever needs it; the census net escalates this pair automatically.",
-        "QComboBox": "QComboBox: PySide6 import held by both sides; an app_gui-level rebind would miss gui_recording.py's uses - inject or repoint at gui_recording.py if a flow ever needs it; the census net escalates this pair automatically.",
         "QFormLayout": "QFormLayout: PySide6 import held by both sides; an app_gui-level rebind would miss gui_recording.py's uses - inject or repoint at gui_recording.py if a flow ever needs it; the census net escalates this pair automatically.",
         "QHBoxLayout": "QHBoxLayout: PySide6 import held by both sides; an app_gui-level rebind would miss gui_recording.py's uses - inject or repoint at gui_recording.py if a flow ever needs it; the census net escalates this pair automatically.",
         "QLabel": "QLabel: PySide6 import held by both sides; an app_gui-level rebind would miss gui_recording.py's uses - inject or repoint at gui_recording.py if a flow ever needs it; the census net escalates this pair automatically.",
         "QLineEdit": "QLineEdit: PySide6 import held by both sides; an app_gui-level rebind would miss gui_recording.py's uses - inject or repoint at gui_recording.py if a flow ever needs it; the census net escalates this pair automatically.",
         "QPushButton": "QPushButton: PySide6 import held by both sides; an app_gui-level rebind would miss gui_recording.py's uses - inject or repoint at gui_recording.py if a flow ever needs it; the census net escalates this pair automatically.",
-        "QSpinBox": "QSpinBox: PySide6 import held by both sides; an app_gui-level rebind would miss gui_recording.py's uses - inject or repoint at gui_recording.py if a flow ever needs it; the census net escalates this pair automatically.",
         "QTimer": "QTimer: PySide6 import held by both sides; an app_gui-level rebind would miss gui_recording.py's uses - inject or repoint at gui_recording.py if a flow ever needs it; the census net escalates this pair automatically.",
         "QUrl": "QUrl: PySide6 import held by both sides; an app_gui-level rebind would miss gui_recording.py's uses - inject or repoint at gui_recording.py if a flow ever needs it; the census net escalates this pair automatically.",
         "QVBoxLayout": "QVBoxLayout: PySide6 import held by both sides; an app_gui-level rebind would miss gui_recording.py's uses - inject or repoint at gui_recording.py if a flow ever needs it; the census net escalates this pair automatically.",
-        "threading": "threading: stdlib import held by both sides; an app_gui-level rebind would miss gui_recording.py's uses - repoint at gui_recording.py if a flow ever needs it; the census net escalates this pair automatically."
+        "threading": "threading: stdlib import held by both sides; an app_gui-level rebind would miss gui_recording.py's uses - repoint at gui_recording.py if a flow ever needs it; the census net escalates this pair automatically.",
+        "WheelComboBox": "WheelComboBox: PySide6 subclass imported by both sides (the panel builds this control; app_gui builds the same class elsewhere); an app_gui-level rebind would miss gui_recording.py's use - inject or repoint at gui_recording.py if a flow ever needs it; the census net escalates this pair automatically.",
+        "WheelSpinBox": "WheelSpinBox: PySide6 subclass imported by both sides (the panel builds this control; app_gui builds the same class elsewhere); an app_gui-level rebind would miss gui_recording.py's use - inject or repoint at gui_recording.py if a flow ever needs it; the census net escalates this pair automatically."
       },
       "gui_render.py": {
         "Path": "Path: stdlib import held by both sides; an app_gui-level rebind would miss gui_render.py's uses - repoint at gui_render.py if a flow ever needs it; the census net escalates this pair automatically.",

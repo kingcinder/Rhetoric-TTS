@@ -34,6 +34,8 @@ direction stays one-way (``app_gui -> gui_* -> pipeline/models``).
 
 from __future__ import annotations
 
+from rhetoric.gui_wheel import WheelSpinBox, WheelComboBox
+
 import threading
 from pathlib import Path
 from typing import Callable
@@ -137,9 +139,9 @@ class RecordingStudioDialog(QDialog):
         self._name_edited = False
         self._player: QMediaPlayer | None = None
 
-        self.script_combo = QComboBox()
+        self.script_combo = WheelComboBox()
         self.script_combo.currentIndexChanged.connect(self._load_script)
-        self.font_spin = QSpinBox()
+        self.font_spin = WheelSpinBox()
         self.font_spin.setRange(8, 48)
         self.font_spin.setValue(16)
         self.font_spin.valueChanged.connect(self._update_prompt_font)
@@ -151,11 +153,11 @@ class RecordingStudioDialog(QDialog):
         self._update_prompt_font()
 
         # --- capture row ---
-        self.mic_combo = QComboBox()
+        self.mic_combo = WheelComboBox()
         self.mic_combo.currentIndexChanged.connect(self._on_mic_selected)
-        self.rate_combo = QComboBox()
+        self.rate_combo = WheelComboBox()
         self.rate_combo.setEnabled(False)
-        self.outdir_combo = QComboBox()
+        self.outdir_combo = WheelComboBox()
         self.outdir_combo.setEditable(True)
         self.outdir_combo.addItem(str(self.voice_dir), str(self.voice_dir))
         self.outdir_combo.setEnabled(False)
@@ -202,7 +204,7 @@ class RecordingStudioDialog(QDialog):
         self.play_button.setEnabled(False)
         self.play_button.setToolTip("Play the last saved take again.")
         self.play_button.clicked.connect(self._play_take)
-        self.assign_speaker_combo = QComboBox()
+        self.assign_speaker_combo = WheelComboBox()
         self.assign_speaker_combo.setToolTip(
             "Which speaker's voice to point at the Seashell you just recorded "
             "(the voice pickers refresh automatically)."

@@ -38,6 +38,8 @@ parameter), per the gui_recording precedent.
 
 from __future__ import annotations
 
+from rhetoric.gui_wheel import WheelComboBox
+
 from pathlib import Path
 from typing import Callable
 
@@ -107,7 +109,7 @@ class SpeakerGroup(QHSectionGroup):
         perceptual sliders). Runs eagerly at construction unless the group
         was created with ``lazy=True``."""
         self.reference_path = QLineEdit()
-        self.reference_picker = QComboBox()
+        self.reference_picker = WheelComboBox()
         # activated alone (not currentIndexChanged): a user pick fires BOTH
         # signals, and connecting both made _pick_audio() run twice — two
         # stacked modal file dialogs. activated also covers the
@@ -142,7 +144,7 @@ class SpeakerGroup(QHSectionGroup):
             self.save_voice_button.clicked.connect(lambda: self._process_voice_clicked(False))
             self.save_voice_as_button.clicked.connect(lambda: self._process_voice_clicked(True))
 
-        self.language_combo = QComboBox()
+        self.language_combo = WheelComboBox()
         # Perceptual voice-modulation sliders: the scale and caption say what
         # the change SOUNDS like. Values still map onto the exact engine ranges
         # the spin boxes used, so profiles/projects/manifests are unchanged.
