@@ -219,9 +219,7 @@
     },
     "latent_split_readership": {
       "gui_wheel.py": {
-        "QApplication": "QApplication: PySide6 import held by both sides (the guard forwards the wheel through QApplication.sendEvent and is installed on the app); an app_gui-level rebind would miss gui_wheel.py's use - inject or repoint at gui_wheel.py if a flow ever needs it; the census net escalates this pair automatically.",
-        "QComboBox": "QComboBox: PySide6 import held by both sides (the guard's wheel-editing control tuple names it); an app_gui-level rebind would miss gui_wheel.py's use - inject or repoint at gui_wheel.py if a flow ever needs it; the census net escalates this pair automatically.",
-        "QWidget": "QWidget: PySide6 import held by both sides (the guard's isinstance check and scroll-area walk read it); an app_gui-level rebind would miss gui_wheel.py's use - inject or repoint at gui_wheel.py if a flow ever needs it; the census net escalates this pair automatically."
+        "QComboBox": "QComboBox: PySide6 import held by both sides (the guard's wheel-editing control tuple names it); an app_gui-level rebind would miss gui_wheel.py's use - inject or repoint at gui_wheel.py if a flow ever needs it; the census net escalates this pair automatically."
       },
       "gui_cast.py": {
         "Path": "Path: stdlib import held by both sides; an app_gui-level rebind would miss gui_cast.py's uses - repoint at gui_cast.py if a flow ever needs it; the census net escalates this pair automatically.",

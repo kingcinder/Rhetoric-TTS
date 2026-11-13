@@ -407,6 +407,9 @@ class MainWindow(QMainWindow):
         if entry is None:
             raise AttributeError(f"{type(self).__name__!r} object has no attribute {name!r}")
         entry[0].ensure_content()
+        # A lazily built section creates its widgets after the window's first
+        # attach pass, so cover the new controls too.
+        install_wheel_focus_guard(QApplication.instance())
         return object.__getattribute__(self, name)
 
     def _write_startup_timeline(self) -> None:

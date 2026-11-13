@@ -20,10 +20,8 @@ from PySide6.QtCore import QEvent, QObject
 from PySide6.QtWidgets import (
     QAbstractScrollArea,
     QAbstractSpinBox,
-    QApplication,
     QComboBox,
     QSlider,
-    QWidget,
 )
 
 #: Controls that silently change their value under a wheel. ``QSlider`` is
@@ -34,7 +32,7 @@ _WHEEL_EDITING_TYPES = (QAbstractSpinBox, QComboBox, QSlider)
 _GUARD: "WheelFocusGuard | None" = None
 
 
-def _enclosing_scroll_area(widget: QWidget) -> QAbstractScrollArea | None:
+def _enclosing_scroll_area(widget) -> QAbstractScrollArea | None:
     """The nearest scrollable ancestor of ``widget``, if any."""
     parent = widget.parentWidget()
     while parent is not None:
@@ -83,17 +81,33 @@ class WheelFocusGuard(QObject):
             return False
 
 
-def install_wheel_focus_guard(app: QApplication | None) -> WheelFocusGuard | None:
-    """Install the wheel guard once per application and return it.
+def install_wheel_focus_guard(app) -> WheelFocusGuard | None:
+    """Attach the wheel guard to every editing control that exists now.
 
-    Idempotent: the same application keeps its existing guard. A different
-    QApplication (a fresh test session) gets a new guard.
+    Deliberately NOT an application-wide event filter. Qt dispatches every
+    event of every object through an application filter, including events for
+    objects whose C++ side is already gone, and a hosted runner segfaulted
+    inside that dispatch while a window was being built. Attaching to the
+    controls themselves keeps the decision identical while the filter only ever
+    sees events addressed to a live control it was installed on.
+
+    Idempotent: a widget is attached once, and the same guard object serves the
+    whole application (a fresh QApplication gets a fresh guard). Call it again
+    after building widgets later than the window (lazy sections, dialogs).
     """
     if app is None:
         return None
     global _GUARD
-    if _GUARD is not None and _GUARD.parent() is app:
-        return _GUARD
-    _GUARD = WheelFocusGuard(app)
-    app.installEventFilter(_GUARD)
+    if _GUARD is None or not shiboken6.isValid(_GUARD):
+        _GUARD = WheelFocusGuard()
+    for widget in app.allWidgets():
+        try:
+            if not isinstance(widget, _WHEEL_EDITING_TYPES):
+                continue
+            if widget.property("_rhetoricWheelGuard"):
+                continue
+            widget.setProperty("_rhetoricWheelGuard", True)
+            widget.installEventFilter(_GUARD)
+        except RuntimeError:
+            continue
     return _GUARD
