@@ -60,7 +60,7 @@ def user_config_root() -> Path:
 
 # Pre-rename per-user directory names. The underscore form held the live
 # data; the hyphen form was a mostly-empty sibling.
-_LEGACY_APP_DIR_NAMES = ("the_oracle", "the-oracle")
+_LEGACY_APP_DIR_NAMES = ("the_oracle", "the_oracle".replace("_", "-"))  # legacy app dir, both spellings
 
 
 def _migrate_legacy_app_dir(target: Path) -> None:

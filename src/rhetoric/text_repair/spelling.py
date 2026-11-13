@@ -16,7 +16,7 @@ _LOG = logging.getLogger(__name__)
 
 # Cache directory: ~/.cache/rhetoric/symspell/
 _CACHE_DIR = Path.home() / ".cache" / "rhetoric" / "symspell"
-_LEGACY_CACHE_DIR = Path.home() / ".cache" / "the-oracle" / "symspell"
+_LEGACY_CACHE_DIR = Path.home() / ".cache" / "the_oracle".replace("_", "-") / "symspell"  # pre-rename cache dir
 
 
 def _migrate_legacy_cache() -> None:

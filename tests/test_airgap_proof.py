@@ -385,5 +385,5 @@ def test_the_guest_script_asserts_the_air_gap_and_the_render() -> None:
     assert "Resolve-DnsName" in text
     assert "install.bat" in text
     assert "refs\\main" in text
-    assert "the-oracle.cmd" in text
+    assert "rhetoric.cmd" in text
     assert "*.flac" in text

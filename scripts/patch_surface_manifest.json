@@ -322,7 +322,8 @@
         "save_gui_settings": "save_gui_settings lives in gui_settings.py and app_gui re-imports it; an app_gui-level rebind covers only app_gui's reads - rebind at gui_settings.py for both sides."
       },
       "gui_themes.py": {
-        "DEFAULT_THEME": "DEFAULT_THEME lives in gui_themes.py and app_gui re-imports it; an app_gui-level rebind covers only app_gui's reads - rebind at gui_themes.py for both sides."
+        "DEFAULT_THEME": "DEFAULT_THEME lives in gui_themes.py and app_gui re-imports it; an app_gui-level rebind covers only app_gui's reads - rebind at gui_themes.py for both sides.",
+        "normalize_theme_key": "normalize_theme_key is DEFINED in gui_themes.py (the theme owner) and read by app_gui.apply_theme, which maps a pre-rename persisted theme key (oracle_light/oracle_dark) onto the current key before delegating; an app_gui-level rebind covers only app_gui's read - rebind at gui_themes.py for both sides."
       },
     "gui_tooltips.py": {
       "QApplication": "QApplication: PySide6 import held by both sides; an app_gui-level rebind would miss gui_tooltips.py's uses - inject or repoint at gui_tooltips.py if a flow ever needs it; the census net escalates this pair automatically.",

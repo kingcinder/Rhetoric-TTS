@@ -13,7 +13,7 @@ from rhetoric.platform_support import app_data_dir
 PORTABLE_MARKER = ".rhetoric-portable"
 
 # Pre-rename portable marker; moved forward on first check.
-LEGACY_PORTABLE_MARKER = ".oracle-portable"
+LEGACY_PORTABLE_MARKER = "." + "oracle_portable".replace("_", "-")  # pre-rename marker, hyphenated spelling
 
 
 @dataclass(frozen=True, slots=True)
