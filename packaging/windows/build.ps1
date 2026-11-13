@@ -39,7 +39,9 @@ try {
     # The installer writes this digest into eula_acceptance.json (see
     # Rhetoric.iss [Code]) so an installer-accepted EULA is not asked
     # again by the app's first-run dialog.
-    foreach ($required in @("EULA.md", "_internal\the_oracle\EULA.md")) {
+    # PyInstaller 6 onedir layout: every data lands under _internal, and
+    # sys._MEIPASS points there - that is where the app looks.
+    foreach ($required in @("_internal\EULA.md", "_internal\the_oracle\EULA.md")) {
         if (-not (Test-Path (Join-Path $dist $required))) {
             throw "Frozen bundle is missing $required - the first-run EULA gate cannot find its text"
         }
