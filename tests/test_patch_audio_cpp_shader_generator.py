@@ -153,8 +153,14 @@ def test_the_generator_patch_is_applied_and_idempotent(tmp_path: Path) -> None:
         "shader compile latch: catch",
         "shader compile latch: embed",
         "shader compile latch: exit",
+        # One exhausted window means the shortage is not a burst, so the rest of
+        # the shaders fail at once instead of each waiting a minute.
+        "fork retry: stall flag",
+        "fork retry: stay bounded",
+        "fork retry: remember the stall",
     ):
         assert marker in patched
+    assert "rhetoric_fork_stalled = true;" in patched
 
     second = _run(root)
     assert second.returncode == 0, second.stderr + second.stdout

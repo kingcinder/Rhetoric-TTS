@@ -1,5 +1,5 @@
 diff --git a/external/ggml/src/ggml-vulkan/vulkan-shaders/vulkan-shaders-gen.cpp b/external/ggml/src/ggml-vulkan/vulkan-shaders/vulkan-shaders-gen.cpp
-index 7295ef1..1a60b75 100644
+index 7295ef1..09d2db5 100644
 --- a/external/ggml/src/ggml-vulkan/vulkan-shaders/vulkan-shaders-gen.cpp
 +++ b/external/ggml/src/ggml-vulkan/vulkan-shaders/vulkan-shaders-gen.cpp
 @@ -7,6 +7,9 @@
@@ -12,7 +12,20 @@ index 7295ef1..1a60b75 100644
  #include <mutex>
  #include <future>
  #include <queue>
-@@ -138,6 +141,20 @@ void execute_command(std::vector<std::string>& command, std::string& stdout_str,
+@@ -33,6 +36,12 @@
+ #define ASYNCIO_CONCURRENCY 64
+ 
+ std::mutex lock;
++
++// ===== BEGIN RHETORIC VENDORED PATCH (fork retry: stall flag) =====
++// Set once a fork has used up its whole retry window: the shortage is then
++// not a transient burst, so later shaders must not each wait a minute more.
++static bool rhetoric_fork_stalled = false;
++// ===== END RHETORIC VENDORED PATCH (fork retry: stall flag) =====
+ std::vector<std::pair<std::string, std::string>> shader_fnames;
+ std::locale c_locale("C");
+ 
+@@ -138,7 +147,35 @@ void execute_command(std::vector<std::string>& command, std::string& stdout_str,
      }
  
      pid_t pid = fork();
@@ -26,14 +39,29 @@ index 7295ef1..1a60b75 100644
 +        if (errno != EAGAIN && errno != ENOMEM) {
 +            break;
 +        }
++        // ===== BEGIN RHETORIC VENDORED PATCH (fork retry: stay bounded) =====
++        {
++            std::lock_guard<std::mutex> rhetoric_guard(lock);
++            if (rhetoric_fork_stalled) {
++                break;
++            }
++        }
++        // ===== END RHETORIC VENDORED PATCH (fork retry: stay bounded) =====
 +        std::this_thread::sleep_for(std::chrono::milliseconds(250));
 +        pid = fork();
 +    }
 +    // ===== END RHETORIC VENDORED PATCH (shader fork retry) =====
      if (pid < 0) {
++        // ===== BEGIN RHETORIC VENDORED PATCH (fork retry: remember the stall) =====
++        {
++            std::lock_guard<std::mutex> rhetoric_guard(lock);
++            rhetoric_fork_stalled = true;
++        }
++        // ===== END RHETORIC VENDORED PATCH (fork retry: remember the stall) =====
          std::cerr << strerror(errno) << "\n";
          throw std::runtime_error("Failed to fork process");
-@@ -302,6 +319,12 @@ static uint32_t compile_count = 0;
+     }
+@@ -302,6 +339,12 @@ static uint32_t compile_count = 0;
  static std::mutex compile_count_mutex;
  static std::condition_variable compile_count_cond;
  static bool generate_dep_file = true;
@@ -46,7 +74,7 @@ index 7295ef1..1a60b75 100644
  
  void decrement_compile_count(uint32_t * count) {
      if (count) {
-@@ -373,6 +396,12 @@ void string_to_spv_func(std::string name, std::string in_path, std::string out_p
+@@ -373,6 +416,12 @@ void string_to_spv_func(std::string name, std::string in_path, std::string out_p
  
          execute_command(cmd, stdout_str, stderr_str);
          if (!stderr_str.empty()) {
@@ -59,7 +87,7 @@ index 7295ef1..1a60b75 100644
              std::cerr << "cannot compile " << name << "\n\n";
              for (const auto& part : cmd) {
                  std::cerr << part << " ";
-@@ -396,6 +425,12 @@ void string_to_spv_func(std::string name, std::string in_path, std::string out_p
+@@ -396,6 +445,12 @@ void string_to_spv_func(std::string name, std::string in_path, std::string out_p
          std::lock_guard<std::mutex> guard(lock);
          shader_fnames.push_back(std::make_pair(name, out_path));
      } catch (const std::exception& e) {
@@ -72,7 +100,7 @@ index 7295ef1..1a60b75 100644
          std::cerr << "Error executing command for " << name << ": " << e.what() << std::endl;
      }
  }
-@@ -1038,6 +1073,12 @@ void write_output_files() {
+@@ -1038,6 +1093,12 @@ void write_output_files() {
          if (input_filepath != "") {
              std::string data = read_binary_file(path);
              if (data.empty()) {
@@ -85,7 +113,7 @@ index 7295ef1..1a60b75 100644
                  continue;
              }
  
-@@ -1184,5 +1225,16 @@ int main(int argc, char** argv) {
+@@ -1184,5 +1245,16 @@ int main(int argc, char** argv) {
  
      write_output_files();
  
@@ -94,7 +122,7 @@ index 7295ef1..1a60b75 100644
 +    // linker would report an undefined matmul_id_subgroup_* symbol much later,
 +    // far from the shader that actually failed.
 +    if (rhetoric_shader_compile_failed) {
-+        std::cerr << "a Vulkan shader failed to compile or embed; refusing to write" 
++        std::cerr << "a Vulkan shader failed to compile or embed; refusing to write "
 +                     "a shader pair with missing definitions" << std::endl;
 +        return 1;
 +    }

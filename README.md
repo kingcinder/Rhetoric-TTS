@@ -611,7 +611,9 @@ and documented as reviewable artifacts in `scripts/patches/`:
   runs up to 16 `glslc` processes at once) is waited out instead of dropping
   that shader, and a shader that still fails to compile or embed now stops the
   generator with a message instead of leaving a symbol undefined for the linker
-  to find minutes later.
+  to find minutes later. The wait is bounded per generator rather than per
+  shader: once one shader has used its window, the shortage is not a burst, so
+  the rest fail immediately instead of each stalling for a minute.
 
 The patch script is idempotent and is invoked automatically by
 `scripts/build_audio_cpp.sh` before compiling. If audio.cpp still reports

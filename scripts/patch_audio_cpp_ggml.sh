@@ -18,7 +18,10 @@
 #   that shader from the generated .cpp, and carried on, so the gap surfaced
 #   much later as `undefined reference to matmul_id_subgroup_*` at link time.
 #   Retry the fork with a bounded wait, and fail the generator instead of
-#   emitting a header/cpp pair with missing definitions.
+#   emitting a header/cpp pair with missing definitions. The wait is bounded
+#   per generator, not per shader: once one shader uses up its window the
+#   shortage is not a burst, so the rest fail at once instead of each waiting
+#   another minute (882 shaders would otherwise stall for an hour).
 #
 # All patches are idempotent (no-op when their RHETORIC_VENDORED marker is
 # present) and FAIL LOUDLY if the source changes shape on an audio.cpp/ggml
@@ -299,6 +302,68 @@ SH_EXIT_PATCHED="$(printf '%s\n' \
   '    // ===== END RHETORIC VENDORED PATCH (shader compile latch: exit) =====')"
 apply_patch "shader compile latch exit" "$SH_MARKER_EXIT" "$SHADERS_GEN_FILE" \
   "$SH_EXIT_ORIGINAL" "$SH_EXIT_PATCHED"
+
+SH_MARKER_STALL_DECL="===== BEGIN RHETORIC VENDORED PATCH (fork retry: stall flag) ====="
+SH_MARKER_STALL_WAIT="===== BEGIN RHETORIC VENDORED PATCH (fork retry: stay bounded) ====="
+SH_MARKER_STALL_SET="===== BEGIN RHETORIC VENDORED PATCH (fork retry: remember the stall) ====="
+
+SH_STALL_DECL_ORIGINAL="$(printf '%s\n' 'std::mutex lock;')"
+SH_STALL_DECL_PATCHED="$(printf '%s\n' \
+  'std::mutex lock;' \
+  '' \
+  "// $SH_MARKER_STALL_DECL" \
+  '// Set once a fork has used up its whole retry window: the shortage is then' \
+  '// not a transient burst, so later shaders must not each wait a minute more.' \
+  'static bool rhetoric_fork_stalled = false;' \
+  '// ===== END RHETORIC VENDORED PATCH (fork retry: stall flag) =====')"
+apply_patch "fork retry stall flag" "$SH_MARKER_STALL_DECL" "$SHADERS_GEN_FILE" \
+  "$SH_STALL_DECL_ORIGINAL" "$SH_STALL_DECL_PATCHED"
+
+SH_STALL_WAIT_ORIGINAL="$(printf '%s\n' \
+  '    for (int rhetoric_fork_attempt = 0; pid < 0 && rhetoric_fork_attempt < 240; ++rhetoric_fork_attempt) {' \
+  '        if (errno != EAGAIN && errno != ENOMEM) {' \
+  '            break;' \
+  '        }' \
+  '        std::this_thread::sleep_for(std::chrono::milliseconds(250));' \
+  '        pid = fork();' \
+  '    }')"
+SH_STALL_WAIT_PATCHED="$(printf '%s\n' \
+  '    for (int rhetoric_fork_attempt = 0; pid < 0 && rhetoric_fork_attempt < 240; ++rhetoric_fork_attempt) {' \
+  '        if (errno != EAGAIN && errno != ENOMEM) {' \
+  '            break;' \
+  '        }' \
+  "        // $SH_MARKER_STALL_WAIT" \
+  '        {' \
+  '            std::lock_guard<std::mutex> rhetoric_guard(lock);' \
+  '            if (rhetoric_fork_stalled) {' \
+  '                break;' \
+  '            }' \
+  '        }' \
+  '        // ===== END RHETORIC VENDORED PATCH (fork retry: stay bounded) =====' \
+  '        std::this_thread::sleep_for(std::chrono::milliseconds(250));' \
+  '        pid = fork();' \
+  '    }')"
+apply_patch "fork retry bounded wait" "$SH_MARKER_STALL_WAIT" "$SHADERS_GEN_FILE" \
+  "$SH_STALL_WAIT_ORIGINAL" "$SH_STALL_WAIT_PATCHED"
+
+SH_STALL_SET_ORIGINAL="$(printf '%s\n' \
+  '    if (pid < 0) {' \
+  '        std::cerr << strerror(errno) << "\n";' \
+  '        throw std::runtime_error("Failed to fork process");' \
+  '    }')"
+SH_STALL_SET_PATCHED="$(printf '%s\n' \
+  '    if (pid < 0) {' \
+  "        // $SH_MARKER_STALL_SET" \
+  '        {' \
+  '            std::lock_guard<std::mutex> rhetoric_guard(lock);' \
+  '            rhetoric_fork_stalled = true;' \
+  '        }' \
+  '        // ===== END RHETORIC VENDORED PATCH (fork retry: remember the stall) =====' \
+  '        std::cerr << strerror(errno) << "\n";' \
+  '        throw std::runtime_error("Failed to fork process");' \
+  '    }')"
+apply_patch "fork retry stall latch" "$SH_MARKER_STALL_SET" "$SHADERS_GEN_FILE" \
+  "$SH_STALL_SET_ORIGINAL" "$SH_STALL_SET_PATCHED"
 
 # Regenerate the reviewable patch artifacts so they always match what is applied.
 mkdir -p "$REPO_ROOT/scripts/patches"
