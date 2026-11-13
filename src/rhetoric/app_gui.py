@@ -1107,6 +1107,11 @@ class MainWindow(QMainWindow):
             path = self._convert_subtitle_input(path)
             if not path:
                 return
+            # A newly loaded script re-arms the auto filename: the field goes
+            # back to "input stem + next free number" unless the user types a
+            # name afterwards. Loading a different script is a fresh naming
+            # decision, not an edit of the previous one.
+            self._output_name_edited = False
             self.input_path.setText(path)
             # A picked file becomes the remembered default for future sessions
             # (settled before setText's textChanged side effects finish).
@@ -1157,10 +1162,19 @@ class MainWindow(QMainWindow):
         # Typing in the output-folder field must not touch the filesystem:
         # no directory is created here. The folder is created lazily (with
         # errors surfaced) when a render or analysis actually needs it.
-        if not self.output_name.text().strip():
-            default_name = default_output_filename(self.input_path.text() or "")
-            if not self._output_name_edited:
-                self.output_name.setText(default_name)
+        #
+        # The auto name is re-derived whenever the input file or the output
+        # folder changes: it is the input stem plus the next free _No_N
+        # number in that folder, so a loaded script never proposes a name that
+        # would overwrite an existing render. Only an unedited field is
+        # rewritten; anything the user typed always wins.
+        if self._output_name_edited:
+            return
+        default_name = default_output_filename(
+            self.input_path.text() or "", self.outdir_path.text() or ""
+        )
+        if default_name and default_name != self.output_name.text():
+            self.output_name.setText(default_name)
 
     def _ensure_outdir_exists(self, path: str | Path) -> Path:
         """Create the output folder lazily, right before it is needed.
@@ -3982,6 +3996,15 @@ class MainWindow(QMainWindow):
             return
         try:
             self._sync_plan_from_table()
+            if not self._output_name_edited:
+                # Re-derive right before rendering: files may have appeared in
+                # the folder since the script was loaded, and the displayed
+                # name must be the name this render writes.
+                self.output_name.setText(
+                    default_output_filename(
+                        self.input_path.text(), self.outdir_path.text()
+                    )
+                )
             output_filename = resolve_output_filename(
                 self.input_path.text(),
                 self.outdir_path.text(),
@@ -4004,12 +4027,25 @@ class MainWindow(QMainWindow):
         )
         auto_name = default_output_filename(self.input_path.text())
         current_output_name = normalize_output_filename(self.output_name.text())
+        # The auto name carries a per-folder _No_N counter, so compare the
+        # input-derived prefix rather than the exact numbered filename.
+        auto_prefix = Path(auto_name).stem.split("_No_")[0] if auto_name else ""
+        resolved_prefix = (
+            Path(resolved_default_name).stem.split("_No_")[0]
+            if resolved_default_name
+            else ""
+        )
+        current_prefix = (
+            Path(current_output_name).stem.split("_No_")[0]
+            if current_output_name
+            else ""
+        )
         if (
             self.output_filename_warning_enabled
             and not self._output_name_edited
-            and resolved_default_name
-            and resolved_default_name == auto_name
-            and current_output_name in {"", auto_name}
+            and auto_prefix
+            and resolved_prefix == auto_prefix
+            and current_prefix in {"", auto_prefix}
         ):
             warning = QMessageBox(self)
             warning.setIcon(QMessageBox.Icon.Warning)

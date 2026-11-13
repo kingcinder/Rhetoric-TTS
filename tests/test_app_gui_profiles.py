@@ -478,7 +478,7 @@ def test_custom_output_folder_autofills_filename(qt_app, monkeypatch: pytest.Mon
         window.input_path.setText(str(input_file))
         window.outdir_path.setText(str(custom_output))
 
-        expected = default_output_filename(input_file)
+        expected = default_output_filename(input_file, custom_output)
         assert window.output_name.text() == expected
         window.output_name.setText("modified")
         window.outdir_path.setText(str(custom_output))
@@ -487,7 +487,29 @@ def test_custom_output_folder_autofills_filename(qt_app, monkeypatch: pytest.Mon
         window.close()
 
 
-def test_custom_output_folder_requires_filename(qt_app, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+def test_loading_a_script_never_proposes_an_existing_output_name(qt_app, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    window, paths = _build_window(monkeypatch, tmp_path)
+    try:
+        input_file = tmp_path / "dialogue.txt"
+        input_file.write_text("Line 1\nLine 2\n")
+        custom_output = tmp_path / "custom_output"
+        custom_output.mkdir()
+        (custom_output / "dialogue_No_1.flac").write_bytes(b"earlier render")
+
+        window.input_path.setText(str(input_file))
+        window.outdir_path.setText(str(custom_output))
+
+        assert window.output_name.text() == "dialogue_No_2.flac"
+        # A name the user then types is respected, not renumbered.
+        window.output_name.setText("my take")
+        window.outdir_path.setText(str(custom_output))
+        assert window.output_name.text() == "my take"
+    finally:
+        window.close()
+
+
+def test_cleared_filename_refills_from_input_stem_in_any_folder(qt_app, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """A custom output folder still gets the input-derived numbered default."""
     window, paths = _build_window(monkeypatch, tmp_path)
     try:
         custom_output = tmp_path / "custom_output"
@@ -496,15 +518,11 @@ def test_custom_output_folder_requires_filename(qt_app, monkeypatch: pytest.Monk
         window.input_path.setText(str(tmp_path / "dialogue.txt"))
         window.outdir_path.setText(str(custom_output))
         window.output_name.clear()
+        window._output_name_edited = False
 
-        def fail(*args, **kwargs):
-            raise RuntimeError(args[2])
+        window._handle_outdir_changed()
 
-        monkeypatch.setattr(QMessageBox, "critical", fail)
-
-        with pytest.raises(RuntimeError) as excinfo:
-            window.render_project()
-        assert "Choose an output filename" in str(excinfo.value)
+        assert window.output_name.text() == "dialogue_No_1.flac"
     finally:
         window.close()
 

@@ -51,7 +51,35 @@ def test_output_filename_resolution_uses_default_input_stem_only_for_default_out
     input_path = tmp_path / "story.md"
 
     assert normalize_output_filename("chapter_one") == "chapter_one.flac"
-    assert default_output_filename(input_path) == "story.flac"
-    assert resolve_output_filename(input_path, default_output_dir, default_output_dir, "") == "story.flac"
+    # The auto name is the input stem plus the next free _No_N number, matching
+    # the recorder's Seashell_No_N scheme.
+    assert default_output_filename(input_path) == "story_No_1.flac"
+    assert resolve_output_filename(input_path, default_output_dir, default_output_dir, "") == "story_No_1.flac"
     assert resolve_output_filename(input_path, custom_output_dir, default_output_dir, "") == ""
     assert resolve_output_filename(input_path, custom_output_dir, default_output_dir, "custom_name") == "custom_name.flac"
+
+
+def test_default_output_filename_increments_past_existing_renders(tmp_path: Path) -> None:
+    output_dir = tmp_path / "Output"
+    output_dir.mkdir()
+    input_path = tmp_path / "story.md"
+
+    assert default_output_filename(input_path, output_dir) == "story_No_1.flac"
+    (output_dir / "story_No_1.flac").write_bytes(b"first render")
+    assert default_output_filename(input_path, output_dir) == "story_No_2.flac"
+    (output_dir / "story_No_2.flac").write_bytes(b"second render")
+    assert default_output_filename(input_path, output_dir) == "story_No_3.flac"
+    # A gap is not skipped over: the counter stops at the first free number.
+    (output_dir / "story_No_4.flac").write_bytes(b"fourth render")
+    assert default_output_filename(input_path, output_dir) == "story_No_3.flac"
+
+
+def test_an_explicit_output_name_is_never_replaced(tmp_path: Path) -> None:
+    default_output_dir = tmp_path / "Output"
+    custom_output_dir = tmp_path / "Elsewhere"
+    input_path = tmp_path / "story.md"
+
+    assert (
+        resolve_output_filename(input_path, custom_output_dir, default_output_dir, "chapter one")
+        == "chapter one.flac"
+    )

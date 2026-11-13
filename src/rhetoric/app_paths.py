@@ -87,10 +87,30 @@ def normalize_output_filename(value: str) -> str:
     return f"{stem}.flac" if stem else ""
 
 
-def default_output_filename(input_path: str | Path) -> str:
+def default_output_filename(
+    input_path: str | Path,
+    output_dir: str | Path | None = None,
+) -> str:
+    """The auto-derived output name for a loaded script.
+
+    The input file's stem plus the next free ``_No_N`` number -- the recorder's
+    established ``Seashell_No_N`` counter. The number is chosen against the
+    chosen output folder, so loading a script never proposes a name that would
+    silently overwrite an earlier render (two renders of the same script land
+    side by side instead). A name the user typed is never replaced by this
+    helper; callers only apply it while the filename field is unedited.
+    """
     candidate = Path(str(input_path).strip())
     stem = candidate.stem.strip()
-    return f"{stem}.flac" if stem else ""
+    if not stem:
+        return ""
+    number = 1
+    folder_text = str(output_dir).strip() if output_dir is not None else ""
+    if folder_text:
+        folder = Path(folder_text).expanduser()
+        while (folder / f"{stem}_No_{number}.flac").exists():
+            number += 1
+    return f"{stem}_No_{number}.flac"
 
 
 def resolve_output_filename(
@@ -103,5 +123,5 @@ def resolve_output_filename(
     if normalized:
         return normalized
     if Path(output_dir).expanduser().resolve() == Path(default_output_dir).expanduser().resolve():
-        return default_output_filename(input_path)
+        return default_output_filename(input_path, output_dir)
     return ""
