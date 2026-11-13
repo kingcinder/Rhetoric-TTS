@@ -135,9 +135,14 @@ jobs:
       - name: Run Test Suite (Linux)
         if: runner.os == 'Linux'
         shell: bash
+        env:
+          # A native abort must leave a Python stack in the log; without this a
+          # SIGSEGV/SIGBUS in Qt or torch kills pytest with no frames at all.
+          PYTHONFAULTHANDLER: "1"
         run: |
           set -o pipefail
           mkdir -p ci-test-logs
+          { free -m; df -h /tmp /dev/shm; } | tee ci-test-logs/resources-before.txt
           ./.venv/bin/pytest 2>&1 | tee ci-test-logs/pytest.txt
 
       - name: Run Test Suite (Windows)
