@@ -507,12 +507,34 @@
       ],
       "skipped_ids_complete": false
     },
+    "a1e8964ce4ee15a95a6f81f43a2d4e1260c8fce8": {
+      "errors": 0,
+      "exit_code": 0,
+      "failed": 0,
+      "passed": 2240,
+      "skipped": 35,
+      "skipped_ids": [
+        "tests/test_vulkan_backend.py::test_vulkan_backend_smoke_requires_device"
+      ],
+      "skipped_ids_complete": false
+    },
     "a2002a950a0472d03074b01ec45d038d942bfc04": {
       "errors": 0,
       "exit_code": 0,
       "failed": 0,
       "passed": 1922,
       "skipped": 3,
+      "skipped_ids": [
+        "tests/test_vulkan_backend.py::test_vulkan_backend_smoke_requires_device"
+      ],
+      "skipped_ids_complete": false
+    },
+    "a37c8b4bd6eabe83c1666fa6d567b7374eb5f581": {
+      "errors": 0,
+      "exit_code": 0,
+      "failed": 0,
+      "passed": 2210,
+      "skipped": 35,
       "skipped_ids": [
         "tests/test_vulkan_backend.py::test_vulkan_backend_smoke_requires_device"
       ],
