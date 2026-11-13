@@ -1,4 +1,4 @@
-"""Experimental Windows frozen application entry point."""
+"""Windows frozen application entry point."""
 
 from the_oracle.app_gui import launch_gui
 

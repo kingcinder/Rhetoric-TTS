@@ -11,6 +11,7 @@ import datetime as dt
 import hashlib
 import json
 import os
+import sys
 from pathlib import Path
 
 ACCEPTANCE_FILENAME = "eula_acceptance.json"
@@ -22,7 +23,20 @@ def eula_path(root: str | Path) -> Path:
 
     The packaged copy (next to this module) is authoritative, so an installed
     wheel always has it. ``root`` is the fallback for a bare checkout layout.
+
+    In a PyInstaller frozen build ``__file__`` is a pseudo-path inside the
+    bundle archive, not a real file, so the packaged check misses even when
+    the data was collected. The real bundle base is ``sys._MEIPASS``: check
+    the collected package location and the bundle root there first.
     """
+    meipass = getattr(sys, "_MEIPASS", None)
+    if meipass:
+        for candidate in (
+            Path(meipass) / "the_oracle" / EULA_FILENAME,
+            Path(meipass) / EULA_FILENAME,
+        ):
+            if candidate.is_file():
+                return candidate
     packaged = Path(__file__).resolve().parent / EULA_FILENAME
     if packaged.is_file():
         return packaged

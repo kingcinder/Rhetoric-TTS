@@ -70,3 +70,20 @@ def test_record_stores_digest_of_current_text(root: Path) -> None:
     _text, digest = eula_acceptance.eula_text_and_digest(root)
     assert stored["eula_sha256"] == digest
     assert os.path.exists(path)
+
+
+def test_frozen_bundle_eula_found_via_meipass(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """In a PyInstaller build __file__ is a pseudo-path; the bundle base
+    (sys._MEIPASS) is where the collected EULA text actually lives."""
+    import hashlib
+
+    bundle = tmp_path / "bundle"
+    (bundle / "the_oracle").mkdir(parents=True)
+    (bundle / "the_oracle" / eula_acceptance.EULA_FILENAME).write_text("Frozen EULA\n", encoding="utf-8")
+    monkeypatch.setattr(sys, "_MEIPASS", str(bundle), raising=False)
+    monkeypatch.setattr(eula_acceptance, "__file__", str(tmp_path / "archive" / "eula_acceptance.py"))
+    current = eula_acceptance.eula_text_and_digest(tmp_path / "nowhere")
+    assert current is not None
+    text, digest = current
+    assert text == "Frozen EULA\n"
+    assert digest == hashlib.sha256(b"Frozen EULA\n").hexdigest()
