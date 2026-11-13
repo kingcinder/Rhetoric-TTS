@@ -143,6 +143,22 @@ jobs:
           { free -m; df -h /tmp /dev/shm; } | tee ci-test-logs/resources-before.txt
           ./.venv/bin/pytest 2>&1 | tee ci-test-logs/pytest.txt
 
+      # The headroom print above is a before-picture, taken while the box is
+      # healthy. SIGBUS is an mmap, disk or tmpfs failure, so a crash needs the
+      # state at the moment it happened: this runs only after a failed step and
+      # lands in the same artifact directory the failure upload collects.
+      - name: Post-Crash Headroom (Linux)
+        # Linux only: `free` is not on the Windows runners, and their suite step
+        # has no SIGBUS history to explain.
+        if: failure() && runner.os == 'Linux'
+        shell: bash
+        run: |
+          mkdir -p ci-test-logs
+          # Every probe is best-effort: this step must never mask the failure it
+          # describes, and a runner without /dev/shm must still report RAM.
+          { free -m || true; df -h /tmp /dev/shm || true; } 2>&1 \
+            | tee ci-test-logs/resources-after.txt
+
       - name: Run Test Suite (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
