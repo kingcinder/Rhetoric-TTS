@@ -77,10 +77,15 @@ static bool generate_dep_file = true;
 
 void string_to_spv_func(std::string name, std::string in_path, std::string out_path) {
     std::string stdout_str, stderr_str;
+    std::vector<std::string> cmd;
     try {
         execute_command(cmd, stdout_str, stderr_str);
         if (!stderr_str.empty()) {
             std::cerr << "cannot compile " << name << "\\n\\n";
+            for (const auto& part : cmd) {
+                std::cerr << part << " ";
+            }
+            std::cerr << "\\n\\n" << stderr_str << std::endl;
             return;
         }
         std::lock_guard<std::mutex> guard(lock);
@@ -100,6 +105,13 @@ void write_output_files() {
             }
             src << name;
         }
+    }
+
+    if (input_filepath == "") {
+        write_file_if_changed(target_hpp, hdr.str());
+    }
+    if (target_cpp != "") {
+        write_binary_file(target_cpp, src.str());
     }
 }
 
@@ -153,23 +165,35 @@ def test_the_generator_patch_is_applied_and_idempotent(tmp_path: Path) -> None:
     assert "RHETORIC VENDORED PATCH (shader fork retry)" in patched
     assert "std::this_thread::sleep_for(std::chrono::milliseconds(250));" in patched
     assert "#include <chrono>" in patched
-    # And a shader that still fails cannot become a silent hole in the archive.
+    # The wait is bounded per generator, not per shader: 40 x 250ms, and the
+    # compile latch it then sets stops every other waiter immediately.
+    assert "rhetoric_fork_attempt < 40" in patched
+    assert "rhetoric_fork_stalled" not in patched, "one flag is enough; the latch already covers this"
+    # A shader that still fails cannot become a silent hole in the archive.
     assert "rhetoric_shader_compile_failed = true;" in patched
     assert "refusing to write" in patched
+    # glslc warns on stderr as well, and upstream dropped the shader on any
+    # output there. The patch keeps the text for diagnosis but removes the early
+    # return; a failed compile is caught by the empty embed below.
+    assert "shader compile: stderr is not fatal" in patched
+    assert "cannot compile " not in patched
+    assert (
+        '            std::cerr << "\\n\\n" << stderr_str << std::endl;\n            return;'
+        not in patched
+    )
     for marker in (
         "shader compile latch: declaration",
-        "shader compile latch: stderr",
         "shader compile latch: catch",
         "shader compile latch: embed",
         "shader compile latch: exit",
-        # One exhausted window means the shortage is not a burst, so the rest of
-        # the shaders fail at once instead of each waiting a minute.
-        "fork retry: stall flag",
-        "fork retry: stay bounded",
-        "fork retry: remember the stall",
     ):
         assert marker in patched
-    assert "rhetoric_fork_stalled = true;" in patched
+    # "refusing to write" has to come before the writes, or a failed run still
+    # leaves a partial shader pair behind; main turns the latch into exit code 1.
+    assert patched.index("refusing to write") < patched.index("write_file_if_changed(target_hpp")
+    assert patched.index("refusing to write") < patched.index("write_binary_file(target_cpp")
+    assert "shader compile latch: exit code" in patched
+    assert "    write_output_files();\n\n    // ===== BEGIN RHETORIC VENDORED PATCH (shader compile latch: exit code)" in patched
 
     second = _run(root)
     assert second.returncode == 0, second.stderr + second.stdout

@@ -177,10 +177,11 @@ apply_patch "space-safe sentencepiece build fix" "$SP_MARKER" "$SP_FILE" "$SP_OR
 SH_MARKER_CHRONO="===== BEGIN RHETORIC VENDORED PATCH (shader chrono include) ====="
 SH_MARKER_FORK="===== BEGIN RHETORIC VENDORED PATCH (shader fork retry) ====="
 SH_MARKER_DECL="===== BEGIN RHETORIC VENDORED PATCH (shader compile latch: declaration) ====="
-SH_MARKER_STDERR="===== BEGIN RHETORIC VENDORED PATCH (shader compile latch: stderr) ====="
+SH_MARKER_STDERR="===== BEGIN RHETORIC VENDORED PATCH (shader compile: stderr is not fatal) ====="
 SH_MARKER_CATCH="===== BEGIN RHETORIC VENDORED PATCH (shader compile latch: catch) ====="
 SH_MARKER_EMBED="===== BEGIN RHETORIC VENDORED PATCH (shader compile latch: embed) ====="
 SH_MARKER_EXIT="===== BEGIN RHETORIC VENDORED PATCH (shader compile latch: exit) ====="
+SH_MARKER_STATUS="===== BEGIN RHETORIC VENDORED PATCH (shader compile latch: exit code) ====="
 
 SH_INCLUDES_ORIGINAL="$(printf '%s\n' \
   '#include <thread>' \
@@ -207,10 +208,18 @@ SH_FORK_PATCHED="$(printf '%s\n' \
   '    // CI runner the pids cgroup limit makes fork() fail with EAGAIN; the old' \
   '    // code threw, the caller logged and dropped that shader, and the gap only' \
   '    // surfaced much later as undefined matmul_id_subgroup_* at link time.' \
-  '    // Wait for a slot instead of losing the shader.' \
-  '    for (int rhetoric_fork_attempt = 0; pid < 0 && rhetoric_fork_attempt < 240; ++rhetoric_fork_attempt) {' \
+  '    // Wait up to 10s (40 x 250ms) for a slot instead of losing the shader. A' \
+  '    // shader that uses the whole window means the shortage is not a burst, and' \
+  '    // the compile latch it then sets stops every other wait immediately.' \
+  '    for (int rhetoric_fork_attempt = 0; pid < 0 && rhetoric_fork_attempt < 40; ++rhetoric_fork_attempt) {' \
   '        if (errno != EAGAIN && errno != ENOMEM) {' \
   '            break;' \
+  '        }' \
+  '        {' \
+  '            std::lock_guard<std::mutex> rhetoric_guard(lock);' \
+  '            if (rhetoric_shader_compile_failed) {' \
+  '                break;' \
+  '            }' \
   '        }' \
   '        std::this_thread::sleep_for(std::chrono::milliseconds(250));' \
   '        pid = fork();' \
@@ -223,31 +232,50 @@ SH_FORK_PATCHED="$(printf '%s\n' \
 apply_patch "shader fork retry" "$SH_MARKER_FORK" "$SHADERS_GEN_FILE" \
   "$SH_FORK_ORIGINAL" "$SH_FORK_PATCHED"
 
-SH_DECL_ORIGINAL="$(printf '%s\n' 'static bool generate_dep_file = true;')"
+# Declared next to the mutex that guards it, which is above execute_command: the
+# retry loop reads the flag, so the declaration has to precede it.
+SH_DECL_ORIGINAL="$(printf '%s\n' 'std::mutex lock;')"
 SH_DECL_PATCHED="$(printf '%s\n' \
-  'static bool generate_dep_file = true;' \
+  'std::mutex lock;' \
+  '' \
   "// $SH_MARKER_DECL" \
   '// A shader that failed to compile used to be dropped silently: the generated' \
   '// .cpp lacked its definitions while the header still declared them, so the' \
   '// build failed far away at link time. Latch it and fail the generator.' \
+  '// glslc writes no .spv when it fails, so an empty embed is the failure test;' \
+  '// its exit status is not consulted and warnings on stderr are not fatal.' \
   'static bool rhetoric_shader_compile_failed = false;' \
   '// ===== END RHETORIC VENDORED PATCH (shader compile latch: declaration) =====')"
 apply_patch "shader compile latch declaration" "$SH_MARKER_DECL" "$SHADERS_GEN_FILE" \
   "$SH_DECL_ORIGINAL" "$SH_DECL_PATCHED"
 
+# Upstream treats any stderr output as a compile failure and drops the shader.
+# glslc reports warnings there too, so keep the text for diagnosis but let the
+# .spv decide: a warning must not lose a shader, and a failed compile writes no
+# binary, which the embed latch below turns into a hard failure.
 SH_STDERR_ORIGINAL="$(printf '%s\n' \
   '        if (!stderr_str.empty()) {' \
-  '            std::cerr << "cannot compile " << name << "\n\n";')"
+  '            std::cerr << "cannot compile " << name << "\n\n";' \
+  '            for (const auto& part : cmd) {' \
+  '                std::cerr << part << " ";' \
+  '            }' \
+  '            std::cerr << "\n\n" << stderr_str << std::endl;' \
+  '            return;' \
+  '        }')"
 SH_STDERR_PATCHED="$(printf '%s\n' \
   '        if (!stderr_str.empty()) {' \
   "            // $SH_MARKER_STDERR" \
-  '            {' \
-  '                std::lock_guard<std::mutex> rhetoric_guard(lock);' \
-  '                rhetoric_shader_compile_failed = true;' \
+  '            // glslc writes warnings to stderr as well, so text here does not' \
+  '            // mean the shader failed. Print it and carry on; the embed step' \
+  '            // rejects a missing .spv, which glslc writes only on success.' \
+  '            std::cerr << "glslc wrote to stderr for " << name << "\n\n";' \
+  '            for (const auto& part : cmd) {' \
+  '                std::cerr << part << " ";' \
   '            }' \
-  '            // ===== END RHETORIC VENDORED PATCH (shader compile latch: stderr) =====' \
-  '            std::cerr << "cannot compile " << name << "\n\n";')"
-apply_patch "shader compile latch on stderr" "$SH_MARKER_STDERR" "$SHADERS_GEN_FILE" \
+  '            std::cerr << "\n\n" << stderr_str << std::endl;' \
+  '            // ===== END RHETORIC VENDORED PATCH (shader compile: stderr is not fatal) =====' \
+  '        }')"
+apply_patch "shader compile: stderr is not fatal" "$SH_MARKER_STDERR" "$SHADERS_GEN_FILE" \
   "$SH_STDERR_ORIGINAL" "$SH_STDERR_PATCHED"
 
 SH_CATCH_ORIGINAL="$(printf '%s\n' \
@@ -286,10 +314,17 @@ SH_EMBED_PATCHED="$(printf '%s\n' \
 apply_patch "shader compile latch on empty embed" "$SH_MARKER_EMBED" "$SHADERS_GEN_FILE" \
   "$SH_EMBED_ORIGINAL" "$SH_EMBED_PATCHED"
 
-SH_EXIT_ORIGINAL="$(printf '%s\n' '    write_output_files();')"
+# The check sits inside write_output_files, just before it writes: a failed shader
+# leaves no partial pair behind, and main still turns the latch into exit code 1.
+SH_EXIT_ORIGINAL="$(printf '%s\n' \
+  '    if (input_filepath == "") {' \
+  '        write_file_if_changed(target_hpp, hdr.str());' \
+  '    }' \
+  '    if (target_cpp != "") {' \
+  '        write_binary_file(target_cpp, src.str());' \
+  '    }' \
+  '}')"
 SH_EXIT_PATCHED="$(printf '%s\n' \
-  '    write_output_files();' \
-  '' \
   "    // $SH_MARKER_EXIT" \
   '    // Refuse to emit a header/cpp pair with shader definitions missing: the' \
   '    // linker would report an undefined matmul_id_subgroup_* symbol much later,' \
@@ -297,73 +332,32 @@ SH_EXIT_PATCHED="$(printf '%s\n' \
   '    if (rhetoric_shader_compile_failed) {' \
   '        std::cerr << "a Vulkan shader failed to compile or embed; refusing to write "' \
   '                     "a shader pair with missing definitions" << std::endl;' \
-  '        return 1;' \
+  '        return;' \
   '    }' \
-  '    // ===== END RHETORIC VENDORED PATCH (shader compile latch: exit) =====')"
+  '    // ===== END RHETORIC VENDORED PATCH (shader compile latch: exit) =====' \
+  '    if (input_filepath == "") {' \
+  '        write_file_if_changed(target_hpp, hdr.str());' \
+  '    }' \
+  '    if (target_cpp != "") {' \
+  '        write_binary_file(target_cpp, src.str());' \
+  '    }' \
+  '}')"
 apply_patch "shader compile latch exit" "$SH_MARKER_EXIT" "$SHADERS_GEN_FILE" \
   "$SH_EXIT_ORIGINAL" "$SH_EXIT_PATCHED"
 
-SH_MARKER_STALL_DECL="===== BEGIN RHETORIC VENDORED PATCH (fork retry: stall flag) ====="
-SH_MARKER_STALL_WAIT="===== BEGIN RHETORIC VENDORED PATCH (fork retry: stay bounded) ====="
-SH_MARKER_STALL_SET="===== BEGIN RHETORIC VENDORED PATCH (fork retry: remember the stall) ====="
-
-SH_STALL_DECL_ORIGINAL="$(printf '%s\n' 'std::mutex lock;')"
-SH_STALL_DECL_PATCHED="$(printf '%s\n' \
-  'std::mutex lock;' \
+SH_STATUS_ORIGINAL="$(printf '%s\n' '    write_output_files();')"
+SH_STATUS_PATCHED="$(printf '%s\n' \
+  '    write_output_files();' \
   '' \
-  "// $SH_MARKER_STALL_DECL" \
-  '// Set once a fork has used up its whole retry window: the shortage is then' \
-  '// not a transient burst, so later shaders must not each wait a minute more.' \
-  'static bool rhetoric_fork_stalled = false;' \
-  '// ===== END RHETORIC VENDORED PATCH (fork retry: stall flag) =====')"
-apply_patch "fork retry stall flag" "$SH_MARKER_STALL_DECL" "$SHADERS_GEN_FILE" \
-  "$SH_STALL_DECL_ORIGINAL" "$SH_STALL_DECL_PATCHED"
-
-SH_STALL_WAIT_ORIGINAL="$(printf '%s\n' \
-  '    for (int rhetoric_fork_attempt = 0; pid < 0 && rhetoric_fork_attempt < 240; ++rhetoric_fork_attempt) {' \
-  '        if (errno != EAGAIN && errno != ENOMEM) {' \
-  '            break;' \
-  '        }' \
-  '        std::this_thread::sleep_for(std::chrono::milliseconds(250));' \
-  '        pid = fork();' \
-  '    }')"
-SH_STALL_WAIT_PATCHED="$(printf '%s\n' \
-  '    for (int rhetoric_fork_attempt = 0; pid < 0 && rhetoric_fork_attempt < 240; ++rhetoric_fork_attempt) {' \
-  '        if (errno != EAGAIN && errno != ENOMEM) {' \
-  '            break;' \
-  '        }' \
-  "        // $SH_MARKER_STALL_WAIT" \
-  '        {' \
-  '            std::lock_guard<std::mutex> rhetoric_guard(lock);' \
-  '            if (rhetoric_fork_stalled) {' \
-  '                break;' \
-  '            }' \
-  '        }' \
-  '        // ===== END RHETORIC VENDORED PATCH (fork retry: stay bounded) =====' \
-  '        std::this_thread::sleep_for(std::chrono::milliseconds(250));' \
-  '        pid = fork();' \
-  '    }')"
-apply_patch "fork retry bounded wait" "$SH_MARKER_STALL_WAIT" "$SHADERS_GEN_FILE" \
-  "$SH_STALL_WAIT_ORIGINAL" "$SH_STALL_WAIT_PATCHED"
-
-SH_STALL_SET_ORIGINAL="$(printf '%s\n' \
-  '    if (pid < 0) {' \
-  '        std::cerr << strerror(errno) << "\n";' \
-  '        throw std::runtime_error("Failed to fork process");' \
-  '    }')"
-SH_STALL_SET_PATCHED="$(printf '%s\n' \
-  '    if (pid < 0) {' \
-  "        // $SH_MARKER_STALL_SET" \
-  '        {' \
-  '            std::lock_guard<std::mutex> rhetoric_guard(lock);' \
-  '            rhetoric_fork_stalled = true;' \
-  '        }' \
-  '        // ===== END RHETORIC VENDORED PATCH (fork retry: remember the stall) =====' \
-  '        std::cerr << strerror(errno) << "\n";' \
-  '        throw std::runtime_error("Failed to fork process");' \
-  '    }')"
-apply_patch "fork retry stall latch" "$SH_MARKER_STALL_SET" "$SHADERS_GEN_FILE" \
-  "$SH_STALL_SET_ORIGINAL" "$SH_STALL_SET_PATCHED"
+  "    // $SH_MARKER_STATUS" \
+  '    // write_output_files() reports the failure above and writes nothing; the' \
+  '    // build has to stop here rather than compile an incomplete translation unit.' \
+  '    if (rhetoric_shader_compile_failed) {' \
+  '        return 1;' \
+  '    }' \
+  '    // ===== END RHETORIC VENDORED PATCH (shader compile latch: exit code) =====')"
+apply_patch "shader compile latch exit code" "$SH_MARKER_STATUS" "$SHADERS_GEN_FILE" \
+  "$SH_STATUS_ORIGINAL" "$SH_STATUS_PATCHED"
 
 # Regenerate the reviewable patch artifacts so they always match what is applied.
 mkdir -p "$REPO_ROOT/scripts/patches"

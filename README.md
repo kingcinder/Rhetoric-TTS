@@ -608,12 +608,13 @@ and documented as reviewable artifacts in `scripts/patches/`:
   spaces (required for the repository's own directory).
 - `ggml_shader_compile_robustness.patch` — makes the Vulkan shader generator
   deterministic under load: a `fork()` that fails with `EAGAIN` (the generator
-  runs up to 16 `glslc` processes at once) is waited out instead of dropping
-  that shader, and a shader that still fails to compile or embed now stops the
-  generator with a message instead of leaving a symbol undefined for the linker
-  to find minutes later. The wait is bounded per generator rather than per
-  shader: once one shader has used its window, the shortage is not a burst, so
-  the rest fail immediately instead of each stalling for a minute.
+  runs up to 16 `glslc` processes at once) is waited out for up to 10 seconds
+  instead of dropping that shader, and a shader that produced no `.spv` -- the
+  file `glslc` writes only on success -- stops the generator before it emits a
+  header/cpp pair, instead of leaving a symbol undefined for the linker to find
+  minutes later. The wait is bounded per generator rather than per shader: once
+  one shader has used its whole window the shortage is not a burst, so the rest
+  fail at once. Anything `glslc` writes to stderr is reported, not fatal.
 
 The patch script is idempotent and is invoked automatically by
 `scripts/build_audio_cpp.sh` before compiling. If audio.cpp still reports
