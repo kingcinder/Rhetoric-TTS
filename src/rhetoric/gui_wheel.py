@@ -52,9 +52,14 @@ class WheelFocusGuard(QObject):
         # segfaults, which is how this crashed a hosted runner during window
         # construction.
         try:
+            # Validity before ANY C++ call: Qt can dispatch a filter with a
+            # receiver or an event whose object is already destroyed, and
+            # touching one is an access violation, not a Python exception.
+            if not shiboken6.isValid(event):
+                return False
             if event.type() != QEvent.Type.Wheel:
                 return False
-            if not shiboken6.isValid(obj) or not shiboken6.isValid(event):
+            if not shiboken6.isValid(obj):
                 return False
             if not isinstance(obj, _WHEEL_EDITING_TYPES):
                 return False
