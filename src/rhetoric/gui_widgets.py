@@ -10,12 +10,11 @@ that drive the old spin boxes keep working unchanged.
 
 from __future__ import annotations
 
-from rhetoric.gui_wheel import WheelSlider
-
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QSlider, QVBoxLayout, QWidget
 
 from rhetoric.gui_themes import bulk_restyle
+from rhetoric.gui_wheel import WheelSlider
 
 # 10k internal ticks: ms/% domains round-trip exactly and 2-decimal float
 # knobs (e.g. temperature 0.8 on 0.1-1.5) land on exact readbacks, so saving a

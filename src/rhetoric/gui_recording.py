@@ -34,8 +34,6 @@ direction stays one-way (``app_gui -> gui_* -> pipeline/models``).
 
 from __future__ import annotations
 
-from rhetoric.gui_wheel import WheelSpinBox, WheelComboBox
-
 import threading
 from pathlib import Path
 from typing import Callable
@@ -63,6 +61,7 @@ from PySide6.QtWidgets import (
 from rhetoric.audio import recorder
 from rhetoric.audio.voice_effects import process_voice_audio
 from rhetoric.gui_utils import recording_target_path, sanitize_recording_filename
+from rhetoric.gui_wheel import WheelSpinBox, WheelComboBox
 from rhetoric.gui_widgets import PerceptualSlider
 
 

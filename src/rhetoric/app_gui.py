@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from rhetoric.gui_wheel import WheelSpinBox, WheelComboBox
-
 from dataclasses import replace
 from functools import partial
 from pathlib import Path
@@ -103,6 +101,7 @@ from rhetoric.gui_themes import DEFAULT_THEME, THEMES, apply_theme, normalize_th
 # and the owner module is the single patch point, exactly as their
 # moved_owners listings record (rule 1).
 from rhetoric.gui_tooltips import install_ctrl_hover_help
+from rhetoric.gui_wheel import WheelSpinBox, WheelComboBox
 from rhetoric.inference_wizard import InferenceSetupWizard
 from rhetoric.recording_wizard import RecordingStudioSetupWizard
 from rhetoric.gui_widgets import PerceptualSlider

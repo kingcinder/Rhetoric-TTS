@@ -1,54 +1,49 @@
 """Wheel routing for scrollable panels: the view scrolls unless a control has focus.
 
-Qt delivers a wheel event to the widget under the cursor. A spin box, combo box
-or slider accepts that event, so the control's value changes and the enclosing
-scroll area never moves -- the "mouse wheel hijack" the owner reported.
+Qt delivers a wheel event to the widget under the cursor, and a spin box, combo
+box or slider accepts it, so the control's value changes and the enclosing
+panel never moves -- the hijack the owner reported. These subclasses invert
+that: an unfocused control passes the wheel to the enclosing scroll area, and a
+focused one keeps it, because a focused control is being edited deliberately.
 
-The rule is implemented by the control, not by an event filter: an unfocused
-control ignores the wheel, and Qt then propagates it to the enclosing scroll
-area, which is what the gesture meant. A focused control keeps the event,
-because a focused control is being edited deliberately.
-
-Event filters were tried first and abandoned: an application-wide filter (and
-then a per-widget one) crashed both hosted platforms with an access violation
-inside the filter dispatch while windows were being built and torn down. The
-subclass route touches no dispatch machinery at all -- only the controls this
-application constructs.
+The rule lives in the control rather than in an event filter: application-wide
+and per-widget filters both crashed Qt's dispatch on hosted runners while
+windows were built and torn down. The GUI constructs only these classes; no
+plain ``QSpinBox``, ``QComboBox`` or ``QSlider`` remains in ``src/rhetoric``.
 """
 
 from __future__ import annotations
 
 from PySide6.QtGui import QWheelEvent
-from PySide6.QtWidgets import (
-    QAbstractScrollArea,
-    QComboBox,
-    QDoubleSpinBox,
-    QSlider,
-    QSpinBox,
-)
+from PySide6.QtWidgets import QAbstractScrollArea, QComboBox, QSlider, QSpinBox
 
 
-class _FocusGatedWheel:
-    """Mixin: keep the wheel only while focused, else let the panel have it."""
+class _WheelScrollsPanel:
+    """Mixin: keep the wheel while focused, otherwise hand it to the panel."""
 
-    def wheelEvent(self, event: QWheelEvent) -> None:  # noqa: N802 - Qt's name
+    def wheelEvent(self, event: QWheelEvent) -> None:  # noqa: N802 (Qt casing)
         if self.hasFocus():  # type: ignore[attr-defined]
             super().wheelEvent(event)  # type: ignore[misc]
+            return
+        panel = self._enclosing_scroll_area()  # type: ignore[attr-defined]
+        if panel is None:
+            event.ignore()
+            return
+        # Scroll the panel here rather than ignoring the event: Qt only retries
+        # an ignored wheel higher up the tree for a platform-delivered event,
+        # and letting the panel handle it would add its scroll-lines setting on
+        # top of the delta the user actually produced. angleDelta carries
+        # notched wheels; pixelDelta carries smooth touchpads.
+        delta = event.angleDelta().y() or event.pixelDelta().y()
+        if delta:
+            bar = panel.verticalScrollBar()
+            bar.setValue(bar.value() - delta)
+            event.accept()
         else:
-            # Scroll the enclosing view directly. Qt's own propagation of an
-            # ignored wheel is only reliable for platform-delivered events, and
-            # the behaviour must be identical for a synthetic one.
-            area = self._enclosing_scroll_area()
-            delta = event.angleDelta().y()
-            if area is not None and delta:
-                bar = area.verticalScrollBar()
-                bar.setValue(bar.value() - delta)
-                event.accept()
-            else:
-                event.ignore()
+            event.ignore()
 
     def _enclosing_scroll_area(self) -> QAbstractScrollArea | None:
-        parent = self.parentWidget()  # type: ignore[attr-defined]
+        parent = self.parentWidget()
         while parent is not None:
             if isinstance(parent, QAbstractScrollArea):
                 return parent
@@ -56,17 +51,13 @@ class _FocusGatedWheel:
         return None
 
 
-class WheelSpinBox(_FocusGatedWheel, QSpinBox):
+class WheelSpinBox(_WheelScrollsPanel, QSpinBox):
     """``QSpinBox`` whose wheel scrolls the panel unless the box has focus."""
 
 
-class WheelDoubleSpinBox(_FocusGatedWheel, QDoubleSpinBox):
-    """``QDoubleSpinBox`` whose wheel scrolls the panel unless it has focus."""
-
-
-class WheelComboBox(_FocusGatedWheel, QComboBox):
+class WheelComboBox(_WheelScrollsPanel, QComboBox):
     """``QComboBox`` whose wheel scrolls the panel unless the box has focus."""
 
 
-class WheelSlider(_FocusGatedWheel, QSlider):
+class WheelSlider(_WheelScrollsPanel, QSlider):
     """``QSlider`` whose wheel scrolls the panel unless the slider has focus."""

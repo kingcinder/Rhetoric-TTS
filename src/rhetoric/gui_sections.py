@@ -23,8 +23,6 @@ freshly built widgets.
 
 from __future__ import annotations
 
-from rhetoric.gui_wheel import WheelSlider
-
 import warnings
 from collections.abc import Callable
 
@@ -33,6 +31,7 @@ from PySide6.QtGui import QFontMetrics
 from PySide6.QtWidgets import QGroupBox, QSlider, QToolButton, QWidget
 
 from rhetoric.gui_themes import bulk_restyle
+from rhetoric.gui_wheel import WheelSlider
 
 COLLAPSE_TOOLTIP = (
     "Collapse / Expand: hides this section's controls without discarding them; "

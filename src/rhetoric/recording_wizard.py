@@ -9,8 +9,6 @@ or finishes, so abandoning it never leaves half-applied settings behind.
 
 from __future__ import annotations
 
-from rhetoric.gui_wheel import WheelComboBox
-
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
@@ -33,6 +31,7 @@ from PySide6.QtWidgets import (
 )
 
 from rhetoric.audio import recorder
+from rhetoric.gui_wheel import WheelComboBox
 
 
 @dataclass(frozen=True, slots=True)

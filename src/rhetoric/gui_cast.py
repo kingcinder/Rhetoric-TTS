@@ -38,8 +38,6 @@ parameter), per the gui_recording precedent.
 
 from __future__ import annotations
 
-from rhetoric.gui_wheel import WheelComboBox
-
 from pathlib import Path
 from typing import Callable
 
@@ -62,6 +60,7 @@ from rhetoric.gui_sections import QHSectionGroup
 from rhetoric.gui_settings import load_recent_reference_paths, speaker_config_from_payload
 from rhetoric.gui_themes import bulk_restyle
 from rhetoric.gui_utils import MAX_CAST_SPEAKERS, CastModel, next_speaker_key
+from rhetoric.gui_wheel import WheelComboBox
 from rhetoric.gui_widgets import PerceptualSlider
 from rhetoric.models.project import VoiceSettings
 from rhetoric.models.settings import SpeakerSettings

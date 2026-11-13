@@ -20,8 +20,6 @@ import-time Qt construction.
 
 from __future__ import annotations
 
-from rhetoric.gui_wheel import WheelComboBox
-
 import json
 from pathlib import Path
 
@@ -42,6 +40,7 @@ from PySide6.QtWidgets import (
 )
 
 from rhetoric.crash import bundle, consent
+from rhetoric.gui_wheel import WheelComboBox
 
 
 def consent_state(root: str | Path) -> tuple[bool, bool]:

@@ -8,8 +8,6 @@ features that depend on them.
 
 from __future__ import annotations
 
-from rhetoric.gui_wheel import WheelComboBox
-
 from dataclasses import dataclass
 from typing import Callable
 
@@ -32,6 +30,7 @@ from PySide6.QtWidgets import (
 )
 
 from rhetoric.device_support import CUDADeviceInfo, available_device_modes
+from rhetoric.gui_wheel import WheelComboBox
 
 
 @dataclass(frozen=True, slots=True)
