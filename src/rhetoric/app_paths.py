@@ -76,6 +76,39 @@ def ensure_repo_default_paths(repo_root: str | Path) -> RhetoricPaths:
     return paths
 
 
+def render_work_dir() -> Path:
+    """The app's working area for render material.
+
+    Renders produce stems, caches, logs, previews, render plans and job files
+    while they run. None of that is output: the user's chosen output folder
+    must receive only the finished audio. Everything intermediate lives here,
+    under the app's data home (``~/.local/share/rhetoric/render-work/`` on
+    Linux), so it survives between renders and can be cleaned or swept
+    independently of the output folder. ``RHETORIC_RENDER_WORK`` overrides the
+    location for portable installs and tests.
+    """
+    override = os.environ.get("RHETORIC_RENDER_WORK", "").strip()
+    path = Path(override).expanduser() if override else app_data_dir() / "render-work"
+    path.mkdir(parents=True, exist_ok=True)
+    return path
+
+
+def render_project_dir(input_path: str | Path) -> Path:
+    """The per-render working directory for one input script.
+
+    Named after the input file so revisiting the same script reuses its stem
+    cache (fast re-renders) without the work appearing in the output folder.
+    """
+    stem = Path(str(input_path).strip()).stem or "render"
+    safe = "".join(
+        character if character.isalnum() or character in {"-", "_"} else "_"
+        for character in stem
+    ).strip("_") or "render"
+    path = render_work_dir() / f"{safe}_rhetoric"
+    path.mkdir(parents=True, exist_ok=True)
+    return path
+
+
 def normalize_output_filename(value: str) -> str:
     cleaned = Path(value.strip()).name
     if not cleaned:

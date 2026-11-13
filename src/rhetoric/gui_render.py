@@ -40,6 +40,7 @@ from PySide6.QtWidgets import QDialog, QLabel, QProgressBar, QVBoxLayout, QWidge
 # Keep this list in lockstep with tests/test_gui_render_import_safety.py.
 import tempfile  # noqa: F401 - used inside the subprocess helpers
 
+from rhetoric.app_paths import render_work_dir
 from rhetoric.audio.export_srt import write_srt
 from rhetoric.subtitle_targets import subtitle_sidecar_target
 
@@ -175,7 +176,9 @@ class RenderWorker(QThread):
         output_dir.mkdir(parents=True, exist_ok=True)
         temporary_dir: tempfile.TemporaryDirectory[str] | None = None
         if self._subprocess_job is None:
-            temporary_dir = tempfile.TemporaryDirectory(prefix=".rhetoric-render-", dir=str(output_dir))
+            # The job-script/result scratch directory is working material:
+            # it lives in render-work, never in the user's output folder.
+            temporary_dir = tempfile.TemporaryDirectory(prefix=".render-", dir=str(render_work_dir()))
             self._temporary_dir = temporary_dir
             job_path = Path(temporary_dir.name) / "job.json"
             result_path = Path(temporary_dir.name) / "result.json"

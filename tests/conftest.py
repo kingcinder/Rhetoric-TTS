@@ -105,6 +105,18 @@ def _restore_rhetoric_env():
             os.environ.pop(key, None)
 
 
+@pytest.fixture(autouse=True)
+def _isolate_render_work(tmp_path, monkeypatch):
+    """Give every test its own render-work home.
+
+    Renders write stems, cache, logs, previews and render_plan.json into the
+    app's render-work directory. Without this, a test render would write into
+    the developer's real ``~/.local/share/rhetoric/render-work`` (or, before
+    the layout fix, into a tmp output folder the test also inspects).
+    """
+    monkeypatch.setenv("RHETORIC_RENDER_WORK", str(tmp_path / "render-work"))
+
+
 # --- standalone Qt app-fixture guard ----------------------------------------
 
 #: Plain-text markers for constructing a QWidget (only QWidgets abort without

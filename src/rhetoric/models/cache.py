@@ -17,6 +17,7 @@ import numpy as np
 import soundfile as sf
 
 from rhetoric.models.project import RenderPlan
+from rhetoric.app_paths import render_work_dir
 from rhetoric.utils.hashing import build_chunk_hash, hash_file, hash_payload
 
 
@@ -120,8 +121,11 @@ class CachePaths:
 
     @classmethod
     def build(cls, output_dir: Path, project_name: str) -> "CachePaths":
+        # Kept signature-compatible with the historical layout, but the root
+        # is the app's render-work home: working material never lands in the
+        # user's output folder (only the finished audio does).
         safe_name = "".join(character if character.isalnum() or character in {"-", "_"} else "_" for character in project_name).strip("_") or "project"
-        project_root = output_dir / f"{safe_name}_rhetoric"
+        project_root = render_work_dir() / f"{safe_name}_rhetoric"
         return cls(
             project_root=project_root,
             cache_dir=project_root / "cache",

@@ -217,3 +217,12 @@ def test_loaded_project_renders_with_deterministic_engine(tmp_path: Path) -> Non
         output_path = pipeline.render(loaded.plan, loaded.render_settings)
 
     assert output_path.exists()
+    # The output folder holds ONLY the finished audio: stems, cache, logs and
+    # render_plan.json live in the app's render-work home.
+    from rhetoric.app_paths import render_project_dir
+
+    output_dir = Path(loaded.plan.output_dir)
+    assert sorted(path.name for path in output_dir.iterdir()) == [output_path.name]
+    work_project = render_project_dir(loaded.plan.source_path)
+    assert (work_project / "render_plan.json").is_file()
+    assert (work_project / "cache").is_dir()

@@ -5,6 +5,8 @@ from rhetoric.app_paths import (
     default_output_filename,
     ensure_repo_default_paths,
     normalize_output_filename,
+    render_project_dir,
+    render_work_dir,
     resolve_output_filename,
 )
 
@@ -72,6 +74,21 @@ def test_default_output_filename_increments_past_existing_renders(tmp_path: Path
     # A gap is not skipped over: the counter stops at the first free number.
     (output_dir / "story_No_4.flac").write_bytes(b"fourth render")
     assert default_output_filename(input_path, output_dir) == "story_No_3.flac"
+
+
+def test_render_work_lives_outside_any_output_folder(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setenv("RHETORIC_RENDER_WORK", str(tmp_path / "render-work"))
+    output_dir = tmp_path / "Output"
+    output_dir.mkdir()
+
+    work = render_work_dir()
+    project = render_project_dir(tmp_path / "Chapter One.txt")
+
+    assert work == tmp_path / "render-work"
+    assert project == work / "Chapter_One_rhetoric"
+    assert project.is_dir()
+    # Working material is never inside the folder the user chose for audio.
+    assert project != output_dir and output_dir not in project.parents
 
 
 def test_an_explicit_output_name_is_never_replaced(tmp_path: Path) -> None:

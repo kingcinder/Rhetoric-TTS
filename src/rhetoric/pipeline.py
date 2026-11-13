@@ -16,7 +16,7 @@ from typing import Any, Callable
 import numpy as np
 
 from rhetoric import __version__
-from rhetoric.app_paths import normalize_output_filename
+from rhetoric.app_paths import normalize_output_filename, render_project_dir, render_work_dir
 from rhetoric.audio.assemble import AudioSegment, assemble_dialogue, load_audio, save_wav
 from rhetoric.audio.export_flac import next_available_output_path, write_flac
 from rhetoric.device_support import cuda_devices, resolve_chatterbox_device
@@ -1379,7 +1379,10 @@ class RhetoricPipeline:
             render_state["retry_note"] = None
 
         variant = settings.model_variant
-        project_cache = ProjectCache(plan.output_dir)
+        # Working material (stems, cache, logs, previews, render_plan.json)
+        # lives in the app's render-work home, never the user's output folder:
+        # only the finished audio is written to plan.output_dir.
+        project_cache = ProjectCache(render_project_dir(plan.source_path))
         conditioning: dict[str, ChatterboxConditioning] = {}
         stem_segments: list[tuple[int, AudioSegment]] = []
         timing_entries: list[dict[str, Any]] = []
@@ -2315,7 +2318,7 @@ class RhetoricPipeline:
             )
 
         reference_path = profile.primary_reference.resolve()
-        project_cache = ProjectCache(reference_path.parent / ".rhetoric_preview")
+        project_cache = ProjectCache(render_work_dir() / "preview")
         if inference_backend == "vulkan":
             engine = AudioCppVulkanEngine(
                 variant=model_variant,
