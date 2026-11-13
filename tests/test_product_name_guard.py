@@ -7,6 +7,10 @@ from pathlib import Path
 ROOT = Path(__file__).parents[1]
 PUBLIC_TEXT = re.compile(r"\bThe Oracle\b|\bOracle TTS\b|Oracle alpha license", re.IGNORECASE)
 
+# Internal markers that exist only to find and migrate pre-rename data. They are
+# never shown to a user; the value itself is the key that identifies old files.
+ALLOWED_MARKERS = ('_LEGACY_DOCS_DIR_NAME = "the oracle tts"',)
+
 
 def _customer_text_files() -> list[Path]:
     paths = [*ROOT.joinpath("src").rglob("*.py")]
@@ -41,6 +45,8 @@ def test_customer_facing_text_uses_rhetoric_brand() -> None:
         except UnicodeDecodeError:
             continue
         for line_number, line in enumerate(text.splitlines(), start=1):
+            if any(marker in line for marker in ALLOWED_MARKERS):
+                continue
             if PUBLIC_TEXT.search(line):
                 findings.append(f"{path.relative_to(ROOT)}:{line_number}: {line.strip()}")
     assert not findings, "Customer-facing Oracle branding remains:\n" + "\n".join(findings)
@@ -61,7 +67,7 @@ def test_python_string_literals_do_not_expose_the_former_product_name() -> None:
         for node in ast.walk(tree):
             if isinstance(node, ast.Constant) and isinstance(node.value, str) and id(node) not in docstrings:
                 # These are persistent internal marker/command names, not product copy.
-                if node.value in {"the-oracle", ".oracle-portable"} or node.value.startswith((".oracle-render-", ".oracle-preview-")):
+                if node.value in {"the-oracle", ".oracle-portable", "the oracle tts"} or node.value.startswith((".oracle-render-", ".oracle-preview-")):
                     continue
                 if re.search(r"\bOracle\b", node.value, re.IGNORECASE):
                     findings.append(f"{path.relative_to(ROOT)}:{node.lineno}: {node.value}")

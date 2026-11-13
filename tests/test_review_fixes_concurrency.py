@@ -829,8 +829,15 @@ class TestTimeoutValidation:
             AudioCppVulkanEngine(timeout=0)
 
     def test_positive_constructor_timeout_accepted(self):
+        engine = AudioCppVulkanEngine(timeout=90)
+        assert engine.timeout == 90
+
+    def test_sub_floor_constructor_timeout_is_raised_to_the_floor(self):
+        # Model load and RADV shader compile precede the first utterance, so a
+        # budget below the floor would fail every synthesis; the engine raises
+        # the value instead of accepting a setting it cannot honour.
         engine = AudioCppVulkanEngine(timeout=30)
-        assert engine.timeout == 30
+        assert engine.timeout == 60
 
     def test_negative_env_timeout_clamped(self, monkeypatch):
         monkeypatch.setenv("RHETORIC_AUDIOCPP_TIMEOUT", "-30")

@@ -224,12 +224,14 @@ def test_the_construction_calls_find_the_gate_open_at_runtime(
         # Non-vacuity, per module: every gated construction site must have
         # fired, so a rename or a lazily-skipped build cannot pass silently.
         # Known floors (measured 2026-10-12): sections = the collapse toggle;
-        # cast = 3 panel dividers + the row key label; widgets = the speaker
-        # panel's 7 captioned sliders; chrome = the Live header.
+        # cast = 2 panel dividers + the row key label (the blend row's third
+        # divider went with hybrid voices); widgets = the speaker panel's 6
+        # remaining captioned sliders (the blend weight slider went with hybrid
+        # voices); chrome = the Live header.
         floors = {
             "gui_sections.py": 1,
-            "gui_cast.py": 4,
-            "gui_widgets.py": 7,
+            "gui_cast.py": 3,
+            "gui_widgets.py": 6,
             "gui_chrome.py": 1,
         }
         for module, floor in floors.items():

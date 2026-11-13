@@ -246,6 +246,7 @@ _SECTION_OWNED_ATTRS: dict[str, str] = {
     "input_path": "paths",
     "outdir_path": "paths",
     "output_name": "paths",
+    "_auto_output_name": "paths",
     "output_name_label": "paths",
     "cast_summary_label": "paths",
     "manage_cast_button": "paths",

@@ -15,6 +15,7 @@ from rhetoric.audio.assemble import save_wav
 from rhetoric.models.cache import CachedReference, ProjectCache
 from rhetoric.models.project import VoiceSettings
 from rhetoric.models.settings import RenderSettings, SpeakerSettings
+from rhetoric.app_paths import render_project_dir
 from rhetoric.pipeline import ChatterboxConditioning, RhetoricPipeline
 from rhetoric.utils.hashing import hash_payload
 
@@ -201,7 +202,7 @@ def run_deterministic_smoke_render(output_root: str | Path, source_format: str =
     dialogue_path.write_text(dialogue_text, encoding="utf-8")
     speaker_a = _write_reference(output_root / "speaker_a_ref.wav", 220.0)
     speaker_b = _write_reference(output_root / "speaker_b_ref.wav", 330.0)
-    project_dir = output_root / f"render_project_{source_format}"
+    project_dir = render_project_dir(dialogue_path)
     if project_dir.exists():
         shutil.rmtree(project_dir)
 

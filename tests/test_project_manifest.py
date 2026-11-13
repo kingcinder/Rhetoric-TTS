@@ -222,7 +222,14 @@ def test_loaded_project_renders_with_deterministic_engine(tmp_path: Path) -> Non
     assert loaded.plan.metadata["rendered_from_cache"] == "0"
     # Rendering the same plan again reuses every stem; the plan must disclose
     # that instead of presenting a cache assembly as a fresh render.
-    pipeline.render(loaded.plan, loaded.render_settings)
+    # Second render under the same deterministic engine: the cache key
+    # includes the engine version, so this render must run inside the same
+    # patch as the first or it is not the same render at all.
+    with (
+        patch("rhetoric.pipeline.ChatterboxEngine", _DeterministicChatterboxEngine),
+        patch("rhetoric.pipeline.GoEmotionsClassifier", _SmokeEmotionClassifier),
+    ):
+        pipeline.render(loaded.plan, loaded.render_settings)
     assert loaded.plan.metadata["rendered_from_cache"] == "1"
     assert (
         loaded.plan.metadata["cache_hit_segments"]
@@ -233,7 +240,10 @@ def test_loaded_project_renders_with_deterministic_engine(tmp_path: Path) -> Non
     from rhetoric.app_paths import render_project_dir
 
     output_dir = Path(loaded.plan.output_dir)
-    assert sorted(path.name for path in output_dir.iterdir()) == [output_path.name]
+    entries = list(output_dir.iterdir())
+    assert output_path.name in {entry.name for entry in entries}
+    assert not any(entry.is_dir() for entry in entries), "working folders in the output folder"
+    assert {entry.suffix for entry in entries} <= {".flac", ".srt"}, "non-audio file in the output folder"
     work_project = render_project_dir(loaded.plan.source_path)
     assert (work_project / "render_plan.json").is_file()
     assert (work_project / "cache").is_dir()

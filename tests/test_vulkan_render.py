@@ -22,6 +22,7 @@ import soundfile as sf
 
 pytestmark = pytest.mark.slow
 
+from rhetoric.app_paths import render_project_dir
 from rhetoric.models.cache import CachedReference, ProjectCache
 from rhetoric.models.project import VoiceSettings
 from rhetoric.models.settings import RenderSettings, SpeakerSettings; from rhetoric.pipeline import RhetoricPipeline, RenderProgress, _chunk_engine_key
@@ -262,7 +263,7 @@ def test_vulkan_render_chunked_dialogue_stems_stay_in_vulkan_namespace(tmp_path:
     assert len(vulkan_expected) > len(plan.utterances), "dialogue did not chunk; lengthen the fixture"
 
     # Every stem on disk is exactly the vulkan-namespaced set...
-    project_cache = ProjectCache(plan.output_dir)
+    project_cache = ProjectCache(render_project_dir(plan.source_path))
     stem_names = {path.stem for path in project_cache.stem_cache_dir.glob("*.wav")}
     assert stem_names == vulkan_expected
     # ...and none of the pytorch-namespaced hashes for the same content exist:
@@ -313,14 +314,14 @@ def test_vulkan_render_batches_all_misses_into_one_process(tmp_path: Path) -> No
     assert _DeterministicVulkanEngine.single_synthesize_calls == 0
 
     # The render timeline truthfully records one process serving all requests.
-    timing_path = ProjectCache(plan.output_dir).project_dir / "logs" / "render_timings.json"
+    timing_path = ProjectCache(render_project_dir(plan.source_path)).project_dir / "logs" / "render_timings.json"
     timing = json.loads(timing_path.read_text(encoding="utf-8"))
     assert timing["timeline"]["vulkan_batch_processes"] == 1
     assert timing["timeline"]["vulkan_batch_requests"] == len(vulkan_expected)
 
     # Every stem on disk is exactly the vulkan-namespaced set (cache writes
     # flow through the same save_wav path as single synthesis).
-    project_cache = ProjectCache(plan.output_dir)
+    project_cache = ProjectCache(render_project_dir(plan.source_path))
     stem_names = {path.stem for path in project_cache.stem_cache_dir.glob("*.wav")}
     assert stem_names == vulkan_expected
 
@@ -414,13 +415,13 @@ def test_vulkan_render_batch_cap_splits_many_stems_into_multiple_processes(
     assert sum(batch_sizes) == len(vulkan_expected)
 
     # The timeline truthfully records one process per batch and all requests.
-    timing_path = ProjectCache(plan.output_dir).project_dir / "logs" / "render_timings.json"
+    timing_path = ProjectCache(render_project_dir(plan.source_path)).project_dir / "logs" / "render_timings.json"
     timing = json.loads(timing_path.read_text(encoding="utf-8"))
     assert timing["timeline"]["vulkan_batch_processes"] == len(batch_sizes)
     assert timing["timeline"]["vulkan_batch_requests"] == len(vulkan_expected)
 
     # Every stem on disk is exactly the vulkan-namespaced set.
-    project_cache = ProjectCache(plan.output_dir)
+    project_cache = ProjectCache(render_project_dir(plan.source_path))
     stem_names = {path.stem for path in project_cache.stem_cache_dir.glob("*.wav")}
     assert stem_names == vulkan_expected
 
@@ -586,7 +587,7 @@ def test_vulkan_render_mixed_cache_progress_never_rewinds(tmp_path: Path) -> Non
         assert len(vulkan_expected) > 3, "fixture must chunk into several stems"
         # Seed every other stem as a cache hit so misses and hits interleave in
         # task order -- exactly the mixed case that used to rewind the bar.
-        project_cache = ProjectCache(plan.output_dir)
+        project_cache = ProjectCache(render_project_dir(plan.source_path))
         ordered = sorted(vulkan_expected)
         for index, chunk_hash in enumerate(ordered):
             if index % 2 == 0:

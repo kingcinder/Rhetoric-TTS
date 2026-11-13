@@ -30,7 +30,9 @@ def _rhetoric_env() -> dict[str, str]:
     return {
         key: value
         for key, value in os.environ.items()
-        if key.startswith(_RHETORIC_PREFIX)
+        # The suite's autouse render-work fixture seeds this one for every test;
+        # it is part of the harness baseline, not a leak from a test body.
+        if key.startswith(_RHETORIC_PREFIX) and key != "RHETORIC_RENDER_WORK"
     }
 
 

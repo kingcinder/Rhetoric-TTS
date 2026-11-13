@@ -112,7 +112,7 @@ def _migrate_legacy_setting_path(value: Any) -> str:
 
     Two shapes existed: the old per-user app directory
     (``.../the_oracle/...``) and the old repo-adjacent Documents folder
-    (``.../the oracle tts/Input``, ``/Output``). Both map onto the current
+    (``.../<former folder name>/Input``, ``/Output``). Both map onto the current
     Rhetoric homes. Anything else -- including paths the user genuinely chose
     elsewhere -- passes through unchanged.
     """

@@ -32,6 +32,7 @@ import pytest
 
 from rhetoric.audio.assemble import save_wav
 from rhetoric.cli import build_parser, handle_sweep_cache
+from rhetoric.app_paths import render_project_dir
 from rhetoric.models.cache import ProjectCache
 from rhetoric.pipeline import _write_pause_only_stem, sweep_project_cache
 
@@ -193,13 +194,13 @@ def test_sweep_purge_list_is_exactly_the_resynthesis_set(tmp_path: Path) -> None
     from rhetoric.smoke import _DeterministicChatterboxEngine
 
     plan_a, _events, _out, stems_a = _seeded_determinism_render(tmp_path, "sweep_e2e", _DeterministicChatterboxEngine)
-    cache = ProjectCache(plan_a.output_dir)
+    cache = ProjectCache(render_project_dir(plan_a.source_path))
 
     victim_hash = sorted(stems_a)[0]
     victim_path = cache.stem_cache_dir / f"{victim_hash}.wav"
     save_wav(victim_path, np.zeros(28800, dtype=np.float32), RATE)  # plant non-canonical silence
 
-    report = sweep_project_cache(plan_a.output_dir, expected_sample_rate=RATE, apply=True)
+    report = sweep_project_cache(render_project_dir(plan_a.source_path), expected_sample_rate=RATE, apply=True)
     assert report["purged_hashes"] == [victim_hash], "exactly the planted entry is reported"
 
     _plan_b, _events, _out, stems_b = _seeded_determinism_render(tmp_path, "sweep_e2e", _DeterministicChatterboxEngine)

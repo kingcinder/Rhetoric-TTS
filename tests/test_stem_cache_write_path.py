@@ -551,7 +551,9 @@ def _run_pause_only_preview(monkeypatch, tmp_path: Path, sample_rate: int = 2400
     utterance = Utterance(index=0, original_text="   ", repaired_text="", speaker="A", pause_after_ms=250)
     profile = VoiceProfile(name="A", speaker="A", reference_audio=[ref_path], engine_params=VoiceSettings())
     # render_preview derives its cache from the reference's parent — same root here.
-    cache = ProjectCache(ref_path.parent / ".rhetoric_preview")
+    from rhetoric.app_paths import render_work_dir
+
+    cache = ProjectCache(render_work_dir() / "preview")
 
     class _EngineDouble:
         def ensure_model_ready(self) -> None:

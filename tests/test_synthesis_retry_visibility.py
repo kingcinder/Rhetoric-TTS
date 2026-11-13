@@ -30,6 +30,7 @@ from unittest.mock import patch
 import numpy as np
 import pytest
 
+from rhetoric.app_paths import render_project_dir
 from rhetoric.models.settings import RenderSettings, SpeakerSettings
 from rhetoric.models.project import VoiceSettings
 from rhetoric.pipeline import RhetoricPipeline, RenderProgress
@@ -579,6 +580,12 @@ def _seeded_determinism_render(tmp_path: Path, project_name: str, engine_cls):
     speaker_a = _write_reference(tmp_path / "speaker_a_ref.wav", 220.0)
     speaker_b = _write_reference(tmp_path / "speaker_b_ref.wav", 330.0)
     project_dir = tmp_path / project_name
+    # Stem caches are keyed by the input script, so a shared render-work
+    # home would let one named render reuse another's stems and answer with
+    # cache hits instead of the cold render this helper promises. Give each
+    # named project its own working root (the autouse env fixture restores
+    # the variable after the test).
+    os.environ["RHETORIC_RENDER_WORK"] = str(project_dir / "render-work")
 
     with (
         patch("rhetoric.pipeline.ChatterboxEngine", engine_cls),
@@ -607,7 +614,7 @@ def _seeded_determinism_render(tmp_path: Path, project_name: str, engine_cls):
 
     stems = {
         path.name: path.read_bytes()
-        for path in sorted(ProjectCache(plan.output_dir).stem_cache_dir.glob("*.wav"))
+        for path in sorted(ProjectCache(render_project_dir(plan.source_path)).stem_cache_dir.glob("*.wav"))
         if path.is_file()
     }
     return plan, events, output_path, stems
@@ -723,6 +730,12 @@ def _seeded_pool_render(tmp_path: Path, project_name: str, engine_cls):
     speaker_a = _write_reference(tmp_path / "speaker_a_ref.wav", 220.0)
     speaker_b = _write_reference(tmp_path / "speaker_b_ref.wav", 330.0)
     project_dir = tmp_path / project_name
+    # Stem caches are keyed by the input script, so a shared render-work
+    # home would let one named render reuse another's stems and answer with
+    # cache hits instead of the cold render this helper promises. Give each
+    # named project its own working root (the autouse env fixture restores
+    # the variable after the test).
+    os.environ["RHETORIC_RENDER_WORK"] = str(project_dir / "render-work")
 
     with (
         patch("rhetoric.pipeline.ChatterboxEngine", engine_cls),
@@ -751,7 +764,7 @@ def _seeded_pool_render(tmp_path: Path, project_name: str, engine_cls):
 
     stems = {
         path.name: path.read_bytes()
-        for path in sorted(ProjectCache(plan.output_dir).stem_cache_dir.glob("*.wav"))
+        for path in sorted(ProjectCache(render_project_dir(plan.source_path)).stem_cache_dir.glob("*.wav"))
         if path.is_file()
     }
     return plan, events, output_path, stems
