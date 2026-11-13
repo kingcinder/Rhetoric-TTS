@@ -15,8 +15,8 @@ state instead of from a list of widgets registered at startup.
 
 from __future__ import annotations
 
+import shiboken6
 from PySide6.QtCore import QEvent, QObject
-from PySide6.QtGui import QWheelEvent
 from PySide6.QtWidgets import (
     QAbstractScrollArea,
     QAbstractSpinBox,
@@ -48,36 +48,37 @@ class WheelFocusGuard(QObject):
     """Application event filter implementing the focus-gated wheel rule."""
 
     def eventFilter(self, obj: object, event: QEvent) -> bool:
-        if event.type() != QEvent.Type.Wheel:
-            return False
-        if not isinstance(obj, QWidget) or not isinstance(obj, _WHEEL_EDITING_TYPES):
-            return False
+        # An application-wide filter sees every event of every object, including
+        # objects whose C++ side is already gone. Ask shiboken before any type
+        # test: isinstance() on a dangling wrapper resolves its C++ type and
+        # segfaults, which is how this crashed a hosted runner during window
+        # construction.
         try:
+            if event.type() != QEvent.Type.Wheel:
+                return False
+            if not shiboken6.isValid(obj) or not shiboken6.isValid(event):
+                return False
+            if not isinstance(obj, _WHEEL_EDITING_TYPES):
+                return False
             # Focus is the permission slip: a focused control is being edited
             # deliberately (keyboard or the wheel after a click) and keeps the
-            # event. Everything else routes to the view.
+            # event. Everything else routes to the enclosing view.
             if obj.hasFocus():
                 return False
             area = _enclosing_scroll_area(obj)
             if area is None:
                 return False
-            # Forward a fresh event: the delivered one belongs to the control
-            # and Qt has already marked it accepted by the time this filter
-            # runs, so re-sending it unchanged would be refused downstream.
-            forwarded = QWheelEvent(
-                event.position(),
-                event.globalPosition(),
-                event.pixelDelta(),
-                event.angleDelta(),
-                event.buttons(),
-                event.modifiers(),
-                event.phase(),
-                event.inverted(),
-            )
-            QApplication.sendEvent(area.viewport(), forwarded)
+            delta = event.angleDelta().y()
+            if delta:
+                # Scroll the view directly instead of re-sending a Python-built
+                # QWheelEvent: a constructed event has no platform device
+                # behind it, and handing one to Qt's scroll machinery is not a
+                # supported path.
+                bar = area.verticalScrollBar()
+                bar.setValue(bar.value() - delta)
             # Swallow the original so the control never applies its own step.
             return True
-        except RuntimeError:
+        except (RuntimeError, AttributeError, TypeError):
             # The widget's C++ object was deleted between delivery and filter.
             return False
 

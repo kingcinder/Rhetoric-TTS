@@ -62,9 +62,11 @@ def test_the_owners_four_legacy_values_are_rewritten_on_load(isolated_homes: Pat
     assert loaded["gui"]["project"]["output_dir"] == str(isolated_homes / "Output")
     # The old per-user data dir maps to its "rhetoric" sibling in place (the
     # folder the rename actually moved the data to), independent of XDG_DATA_HOME.
-    recorder_dir = loaded["recording_settings"]["output_dir"]
-    assert recorder_dir.endswith("/rhetoric/Seashells")
-    assert "the_oracle" not in recorder_dir.lower()
+    recorder_parts = Path(loaded["recording_settings"]["output_dir"]).parts
+    # Compare path components, not separators: the migration rewrites through
+    # Path, so a Windows run produces backslashes for the same relative layout.
+    assert recorder_parts[-2:] == ("rhetoric", "Seashells")
+    assert "the_oracle" not in str(Path(*recorder_parts)).lower()
     # A current-home reference path is untouched.
     assert loaded["gui"]["speakers"]["A"]["reference_path"] == "/media/x/Seashells/Cody.wav"
 
