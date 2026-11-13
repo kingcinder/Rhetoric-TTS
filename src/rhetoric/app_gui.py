@@ -4128,6 +4128,23 @@ class MainWindow(QMainWindow):
         self.plan = RenderPlan.from_dict(plan_payload)
         self._populate_table(self.plan)
         self.error_panel.append(f"Render complete: {output_path}")
+        # Never present a cache assembly as a fresh render: the plan records
+        # how many segments were already synthesized before this run.
+        cached_segments = int(self.plan.metadata.get("cache_hit_segments", "0") or 0)
+        total_segments = int(self.plan.metadata.get("segment_count", "0") or 0)
+        if cached_segments > 0:
+            if total_segments and cached_segments >= total_segments:
+                self.error_panel.append(
+                    "No audio was synthesized in this run: every segment came from the "
+                    "existing stem cache. Filenames were numbered so earlier renders "
+                    "stay intact; change a setting or clear the render-work cache to "
+                    "force fresh synthesis."
+                )
+            else:
+                self.error_panel.append(
+                    f"Reused {cached_segments} of {total_segments} segments from the stem "
+                    f"cache; {total_segments - cached_segments} were synthesized in this run."
+                )
         srt_path = self.plan.metadata.get("srt_path")
         if srt_path:
             self.error_panel.append(f"Subtitles written: {srt_path}")

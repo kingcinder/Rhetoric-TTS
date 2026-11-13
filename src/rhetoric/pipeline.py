@@ -1609,6 +1609,24 @@ class RhetoricPipeline:
         # Pin the progress model's segment total now that chunking is known.
         render_state["segments_total"] = len(raw_tasks)
 
+        # Cache honesty: how much of this render already existed on disk,
+        # recorded BEFORE dispatch. The completion message must disclose that a
+        # render was assembled from the stem cache instead of presenting it as
+        # fresh synthesis (the owner saw a 2-second "render complete" that
+        # only reused stems).
+        cached_segment_count = sum(
+            1
+            for task in raw_tasks
+            if project_cache.stem_path(
+                task_chunk_hashes[task.utterance_index]
+            ).exists()
+        )
+        plan.metadata["segment_count"] = str(len(raw_tasks))
+        plan.metadata["cache_hit_segments"] = str(cached_segment_count)
+        plan.metadata["rendered_from_cache"] = (
+            "1" if raw_tasks and cached_segment_count == len(raw_tasks) else "0"
+        )
+
         # Fast path: if every stem already exists, skip model warmup and worker dispatch.
         cached_results: list[SynthesisResult] | None = None
         all_cached = True

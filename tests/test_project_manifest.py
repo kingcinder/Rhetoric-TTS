@@ -217,6 +217,17 @@ def test_loaded_project_renders_with_deterministic_engine(tmp_path: Path) -> Non
         output_path = pipeline.render(loaded.plan, loaded.render_settings)
 
     assert output_path.exists()
+    # A first render synthesizes everything and says so.
+    assert loaded.plan.metadata["cache_hit_segments"] == "0"
+    assert loaded.plan.metadata["rendered_from_cache"] == "0"
+    # Rendering the same plan again reuses every stem; the plan must disclose
+    # that instead of presenting a cache assembly as a fresh render.
+    pipeline.render(loaded.plan, loaded.render_settings)
+    assert loaded.plan.metadata["rendered_from_cache"] == "1"
+    assert (
+        loaded.plan.metadata["cache_hit_segments"]
+        == loaded.plan.metadata["segment_count"]
+    )
     # The output folder holds ONLY the finished audio: stems, cache, logs and
     # render_plan.json live in the app's render-work home.
     from rhetoric.app_paths import render_project_dir

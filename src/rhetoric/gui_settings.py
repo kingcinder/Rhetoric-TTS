@@ -16,7 +16,7 @@ from rhetoric.gui_utils import MAX_CAST_SPEAKERS, normalize_cast_keys
 from rhetoric.models.cache import atomic_write
 from rhetoric.models.project import VoiceSettings
 from rhetoric.models.settings import RenderSettings, SpeakerSettings
-from rhetoric.platform_support import app_config_dir
+from rhetoric.platform_support import app_config_dir, app_data_dir
 
 
 GUI_SETTINGS_VERSION = 1
@@ -100,6 +100,68 @@ def _normalize_path_string(value: Any) -> str:
     return str(value).strip()
 
 
+#: Directory names the product used before the rename. The rename migrated
+#: data FOLDERS but left path VALUES inside settings files pointing at these
+#: old locations, so renders kept writing into a legacy Documents folder the
+#: owner was no longer looking at.
+_LEGACY_APP_DIR_NAMES = frozenset({"the_oracle", "the-oracle"})
+_LEGACY_DOCS_DIR_NAME = "the oracle tts"
+
+
+def _migrate_legacy_setting_path(value: Any) -> str:
+    """Map a persisted path from a former-name location to its current home.
+
+    Two shapes existed: the old per-user app directory
+    (``.../the_oracle/...``) and the old repo-adjacent Documents folder
+    (``.../the oracle tts/Input``, ``/Output``). Both map onto the current
+    Rhetoric homes. Anything else -- including paths the user genuinely chose
+    elsewhere -- passes through unchanged.
+    """
+    text = _normalize_path_string(value)
+    if not text:
+        return ""
+    path = Path(text).expanduser()
+    parts = list(path.parts)
+    lowered = [part.lower() for part in parts]
+    if _LEGACY_DOCS_DIR_NAME in lowered:
+        index = lowered.index(_LEGACY_DOCS_DIR_NAME)
+        tail = parts[index + 1 :]
+        base = app_data_dir()
+        return str(base.joinpath(*tail)) if tail else str(base)
+    if any(part in _LEGACY_APP_DIR_NAMES for part in lowered):
+        replaced = [
+            "rhetoric" if part.lower() in _LEGACY_APP_DIR_NAMES else part
+            for part in parts
+        ]
+        return str(Path(*replaced))
+    return text
+
+
+def _migrate_legacy_gui_paths(payload: dict[str, Any]) -> dict[str, Any]:
+    """Migrate path values inside a saved GUI payload (project + speakers)."""
+    project = payload.get("project")
+    if isinstance(project, dict) and "output_dir" in project:
+        migrated_project = dict(project)
+        migrated_project["output_dir"] = _migrate_legacy_setting_path(
+            project.get("output_dir")
+        )
+        payload = {**payload, "project": migrated_project}
+    speakers = payload.get("speakers")
+    if isinstance(speakers, dict):
+        migrated_speakers: dict[str, Any] = {}
+        changed = False
+        for key, config in speakers.items():
+            if isinstance(config, dict) and "reference_path" in config:
+                migrated_path = _migrate_legacy_setting_path(config.get("reference_path"))
+                if migrated_path != config.get("reference_path"):
+                    config = {**config, "reference_path": migrated_path}
+                    changed = True
+            migrated_speakers[key] = config
+        if changed:
+            payload = {**payload, "speakers": migrated_speakers}
+    return payload
+
+
 def _normalize_remember_backend(value: Any) -> bool:
     """Coerce the remember-backend flag to a bool (default: True).
 
@@ -149,12 +211,16 @@ def _normalize_app_settings(payload: dict[str, Any] | None) -> dict[str, Any]:
         normalized["last_input_file"] = data["last_input_file"]
     for key in ("default_input_dir", "default_output_dir"):
         if isinstance(data.get(key), str):
-            normalized[key] = data[key].strip()
+            # Load-time migration: a legacy path value is rewritten to the
+            # current Rhetoric home so the next save persists the correction.
+            normalized[key] = _migrate_legacy_setting_path(data[key])
     if isinstance(data.get("output_filename_warning"), bool):
         normalized["output_filename_warning"] = data["output_filename_warning"]
     for key in ("gui", "splitters", "sections", "window_geometry"):
         if isinstance(data.get(key), (dict, list)):
             normalized[key] = data[key]
+    if isinstance(normalized.get("gui"), dict):
+        normalized["gui"] = _migrate_legacy_gui_paths(normalized["gui"])
     if isinstance(data.get("inference_wizard_completed"), bool):
         normalized["inference_wizard_completed"] = data["inference_wizard_completed"]
     if isinstance(data.get("inference_wizard_dismissed"), bool):
@@ -206,6 +272,10 @@ def _normalize_app_settings(payload: dict[str, Any] | None) -> dict[str, Any]:
         for key in ("input_file", "output_dir", "output_filename"):
             if key in recording and not isinstance(recording[key], str):
                 recording.pop(key, None)
+        # The recorder's folder is one of the path values the rename left
+        # pointing at a legacy location (e.g. the old app data dir).
+        if "output_dir" in recording:
+            recording["output_dir"] = _migrate_legacy_setting_path(recording["output_dir"])
         for key in ("microphone_index", "samplerate"):
             if key not in recording:
                 continue
@@ -501,7 +571,7 @@ def _normalize_payload(payload: dict[str, Any]) -> dict[str, Any]:
         "audio_cpp_threads": _normalize_audio_cpp_threads(project.get("audio_cpp_threads")),
         "audio_cpp_timeout": _normalize_audio_cpp_timeout(project.get("audio_cpp_timeout")),
         "audio_cpp_max_batch": _normalize_audio_cpp_max_batch(project.get("audio_cpp_max_batch")),
-        "output_dir": str(project.get("output_dir", "")),
+        "output_dir": _migrate_legacy_setting_path(project.get("output_dir", "")),
         "output_filename": str(project.get("output_filename", "")),
     }
     for key, value in project.items():
