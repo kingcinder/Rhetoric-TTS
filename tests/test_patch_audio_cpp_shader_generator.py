@@ -1,4 +1,4 @@
-"""The vendored shader-generator patch, exercised against a synthetic tree.
+"""The vendored patches, exercised against a synthetic tree.
 
 `scripts/patch_audio_cpp_ggml.sh` edits the cloned audio.cpp tree in place. The
 shader-generator patch it now carries is what keeps the Vulkan build from going
@@ -7,11 +7,20 @@ fails with EAGAIN used to drop that shader silently, leaving an undefined
 `matmul_id_subgroup_*` symbol for the linker to find minutes later. These tests
 run the real script against a fixture tree so the anchors, the markers and the
 fail-loud behaviour stay pinned without cloning audio.cpp.
+
+The committed `scripts/patches/*.patch` artifacts are the reviewable copy of
+exactly those edits, and they drift silently when the script's text changes
+without a regeneration (that happened once already, from a stale local tree).
+The last tests here compare each artifact's added/removed lines with what the
+script produces on the fixture, so a changed edit cannot land with a stale
+artifact.
 """
 
 from __future__ import annotations
 
+import difflib
 import os
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -188,3 +197,97 @@ def test_a_moved_anchor_fails_loudly(tmp_path: Path) -> None:
     assert completed.returncode != 0
     assert "ANCHOR NOT FOUND" in completed.stderr + completed.stdout
     assert "shader fork retry patch application failed" in completed.stderr + completed.stdout
+
+
+# Each patched file, and the artifact that is supposed to be its reviewable diff.
+ARTIFACTS = {
+    "external/ggml/src/ggml-vulkan/ggml-vulkan.cpp": "scripts/patches/ggml_rdna1_buffer_memset.patch",
+    "external/sentencepiece/CMakeLists.txt": "scripts/patches/audio_cpp_space_safe_build.patch",
+    "external/ggml/src/ggml-vulkan/vulkan-shaders/vulkan-shaders-gen.cpp": "scripts/patches/ggml_shader_compile_robustness.patch",
+}
+
+_DIFF_HEADER = (
+    "+++",
+    "---",
+    "@@",
+    "diff --git",
+    "index ",
+    "new file mode",
+    "deleted file mode",
+    "old mode",
+    "new mode",
+    "similarity index",
+    "rename from",
+    "rename to",
+)
+
+# The RDNA1 block records the ggml commit it was vendored against. The fixture
+# tree is not a git checkout, so the script writes "unknown" there; compare the
+# shape, not the sha.
+_VENDOR_NOTE = re.compile(r"^(\s*// Vendored against ggml) \S+\.$")
+
+
+def _normalise(line: str) -> str:
+    return _VENDOR_NOTE.sub(r"\1 <pinned>.", line.rstrip())
+
+
+def _artifact_changes(text: str) -> tuple[list[str], list[str]]:
+    added: list[str] = []
+    removed: list[str] = []
+    for line in text.splitlines():
+        if line.startswith(_DIFF_HEADER):
+            continue
+        if line.startswith("+"):
+            added.append(_normalise(line[1:]))
+        elif line.startswith("-"):
+            removed.append(_normalise(line[1:]))
+    return added, removed
+
+
+def _applied_changes(before: str, after: str) -> tuple[list[str], list[str]]:
+    before_lines, after_lines = before.splitlines(), after.splitlines()
+    added: list[str] = []
+    removed: list[str] = []
+    matcher = difflib.SequenceMatcher(None, before_lines, after_lines)
+    for tag, i1, i2, j1, j2 in matcher.get_opcodes():
+        if tag in ("replace", "delete"):
+            removed.extend(_normalise(line) for line in before_lines[i1:i2])
+        if tag in ("replace", "insert"):
+            added.extend(_normalise(line) for line in after_lines[j1:j2])
+    return added, removed
+
+
+def test_the_committed_artifacts_match_a_fresh_application(tmp_path: Path) -> None:
+    """A changed edit must not land with a stale patch artifact: regenerate with
+    `scripts/patch_audio_cpp_ggml.sh` and commit the artifact it rewrites."""
+    root = _tree(tmp_path)
+    before = {rel: (root / "audio.cpp" / rel).read_text(encoding="utf-8") for rel in ARTIFACTS}
+
+    completed = _run(root)
+    assert completed.returncode == 0, completed.stderr + completed.stdout
+
+    drifted = []
+    for rel, artifact in ARTIFACTS.items():
+        after = (root / "audio.cpp" / rel).read_text(encoding="utf-8")
+        applied_added, applied_removed = _applied_changes(before[rel], after)
+        artifact_added, artifact_removed = _artifact_changes(
+            (REPO_ROOT / artifact).read_text(encoding="utf-8")
+        )
+        if sorted(applied_added) != sorted(artifact_added):
+            missing = sorted(set(applied_added) - set(artifact_added))
+            stale = sorted(set(artifact_added) - set(applied_added))
+            drifted.append(f"{artifact}: added lines differ; script adds {missing!r}, artifact has {stale!r}")
+        if sorted(applied_removed) != sorted(artifact_removed):
+            missing = sorted(set(applied_removed) - set(artifact_removed))
+            stale = sorted(set(artifact_removed) - set(applied_removed))
+            drifted.append(
+                f"{artifact}: removed lines differ; script removes {missing!r}, artifact has {stale!r}"
+            )
+    assert not drifted, "regenerate the artifacts with scripts/patch_audio_cpp_ggml.sh:\n" + "\n".join(drifted)
+
+
+def test_every_committed_artifact_is_covered() -> None:
+    committed = {path.name for path in (REPO_ROOT / "scripts" / "patches").glob("*.patch")}
+    assert committed == {Path(artifact).name for artifact in ARTIFACTS.values()}, (
+        "a patch artifact was added or removed without being wired into ARTIFACTS"
+    )
