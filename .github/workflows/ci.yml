@@ -128,15 +128,34 @@ jobs:
         shell: pwsh
         run: powershell -ExecutionPolicy Bypass -File .\doctor_rhetoric.ps1 --skip-model-init --ci
 
+      # Suite output is teed to a file so a red job leaves its failing node ids
+      # behind as a downloadable artifact: the Actions log endpoint needs
+      # repository admin rights, and a failure nobody can read is not
+      # diagnosable. `set -o pipefail` keeps pytest's status authoritative.
       - name: Run Test Suite (Linux)
         if: runner.os == 'Linux'
         shell: bash
-        run: ./.venv/bin/pytest
+        run: |
+          set -o pipefail
+          mkdir -p ci-test-logs
+          ./.venv/bin/pytest 2>&1 | tee ci-test-logs/pytest.txt
 
       - name: Run Test Suite (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
-        run: .\.venv\Scripts\pytest.exe
+        run: |
+          New-Item -ItemType Directory -Force -Path ci-test-logs | Out-Null
+          .\.venv\Scripts\pytest.exe 2>&1 | Tee-Object -FilePath ci-test-logs\pytest.txt
+          exit $LASTEXITCODE
+
+      - name: Upload suite failure log
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: suite-log-${{ matrix.os }}-py${{ matrix.python-version }}
+          path: ci-test-logs/
+          if-no-files-found: warn
+          retention-days: 7
 
       - name: Windows Tooltip Lifecycle - 50 real window cycles
         if: runner.os == 'Windows'
