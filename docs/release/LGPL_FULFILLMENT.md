@@ -18,7 +18,7 @@ its license is determined by the host's own build.
 
 ## Notices
 
-`THIRD_PARTY_NOTICES.md` (generated from `src/the_oracle/third_party.py`)
+`THIRD_PARTY_NOTICES.md` (generated from `src/rhetoric/third_party.py`)
 names all three components with their versions and licenses, and the full
 LGPL-2.1 and LGPL-3.0 texts accompany the distribution.
 

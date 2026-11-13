@@ -2,7 +2,7 @@
 
 ## Changed
 
-- Updated `EULA-DRAFT.md` and `src/the_oracle/EULA-DRAFT.md` to reflect the
+- Updated `EULA-DRAFT.md` and `src/rhetoric/EULA-DRAFT.md` to reflect the
   owner's one-time serial-number product, no subscription, no Community/trial
   edition, inert unlicensed state, offline activation, no telemetry, and final
   sales policy.
@@ -16,8 +16,8 @@
 
 ## Evidence
 
-- `cmp -s EULA-DRAFT.md src/the_oracle/EULA-DRAFT.md` — exit 0.
-- `/tmp/oracle-baseline-uV4W9R/bin/python -m pytest tests/test_eula_acceptance.py -q`
+- `cmp -s EULA-DRAFT.md src/rhetoric/EULA-DRAFT.md` — exit 0.
+- `/tmp/rhetoric-baseline-uV4W9R/bin/python -m pytest tests/test_eula_acceptance.py -q`
   — **8 passed**.
 - Managed-environment metadata confirmed the listed package versions/licenses;
   pinned Hugging Face model cards each reported `license: mit` at their pinned

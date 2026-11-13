@@ -1,7 +1,7 @@
 # Generic Voices — Attribution
 
 The clips in this folder are **bundled generic voice references** for The
-Oracle's "Default Voices" picker. They are **not** user recordings; they are
+Rhetoric's "Default Voices" picker. They are **not** user recordings; they are
 third-party reference clips redistributed with permission under their
 respective licenses. Rhetoric renders every voice through Chatterbox voice
 cloning, so these clips condition the model the same way any user-recorded

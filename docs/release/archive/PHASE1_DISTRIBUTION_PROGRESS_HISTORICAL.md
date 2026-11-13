@@ -30,7 +30,7 @@
 
 ## Evidence
 
-- `/tmp/oracle-baseline-uV4W9R/bin/python -m pytest tests/test_distribution_locks.py tests/test_linux_release.py tests/test_offline_bundle.py -q`
+- `/tmp/rhetoric-baseline-uV4W9R/bin/python -m pytest tests/test_distribution_locks.py tests/test_linux_release.py tests/test_offline_bundle.py -q`
   — **31 passed**.
 - The lock test verifies `--require-hashes`, deterministic package ordering,
   normalized distribution names, and manifest SHA-256 values.

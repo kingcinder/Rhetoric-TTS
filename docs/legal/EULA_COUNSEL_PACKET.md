@@ -7,7 +7,7 @@ Status: owner-finalized 2026-11-08 by owner order. Counsel review remains outsta
 ## Documents
 
 - Draft agreement: [`EULA.md`](../../EULA.md).
-- Packaged copy: [`src/the_oracle/EULA.md`](../../src/the_oracle/EULA.md).
+- Packaged copy: [`src/rhetoric/EULA.md`](../../src/rhetoric/EULA.md).
 - The two copies are byte-identical and remain named `DRAFT` until counsel and
   the owner approve them.
 

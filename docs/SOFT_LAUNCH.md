@@ -64,13 +64,14 @@ server.
 
 The storefront and payment workflow are deferred. Do not direct customers to
 email for a purchase or serial request. The owner mints serials after an
-authorized sale using the sibling `oracle-license-generator/license_sign.py`;
+authorized sale using the sibling `rhetoric-license-generator/license_sign.py`;
 the production signing seed stays in the owner's secret manager. See
 [LICENSING_OPS.md](LICENSING_OPS.md)
 for custody and test-key procedures.
 
+`RHETORIC1` is the token prefix from the 2026-11-12 rename onward.
 `ORACLE1` is the historical token prefix for 1.5.0 and remains accepted for
-compatibility. It is not the product name.
+compatibility. Neither is the product name.
 
 ## Support
 
@@ -95,7 +96,7 @@ rhetoric support-bundle
 ```
 
 The bundle is written under `Output/` and is never uploaded. It contains the
-app version and platform, whether `ORACLE_*` variables are present (not their
+app version and platform, whether `RHETORIC_*` variables are present (not their
 values), the license state (never the serial number or licensee), redacted settings,
 the newest redacted logs, and a doctor report. Crash reports are included only
 with `--include-crash-reports` **and** when local crash-reporting consent is
@@ -160,7 +161,7 @@ Run the gate, then clear each blocker:
 | `version` | Keep `__version__`, the README banner, and `CHANGELOG.md` in agreement (`scripts/release.py --check`). |
 | `checksums` | The 1.5.0 manifest is generated locally and must be committed with the release record; rebuilds must not silently replace it. |
 | `windows_scope` | Keep Windows explicitly unsupported until current-head qualification passes. |
-| `support_bundle` | Keep `the_oracle.support_bundle` importable. |
+| `support_bundle` | Keep `rhetoric.support_bundle` importable. |
 
 Warnings (weak-copyleft LGPL/MPL packages such as PySide6, certifi, `orjson`,
 `soxr`, and `tqdm`) do not block the gate, but their notice and

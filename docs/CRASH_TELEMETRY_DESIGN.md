@@ -54,7 +54,7 @@ dashboards, any background process, any scheduled task.
 New package, Qt-free core, lazy, never at import time:
 
 ```
-src/the_oracle/crash/
+src/rhetoric/crash/
 ├── __init__.py   # install_crash_handlers(), current_crash_consent() public surface
 ├── handlers.py   # sys.excepthook + threading.excepthook + Qt msg handler + faulthandler
 ├── record.py     # crash-record schema builder (typed dataclass → JSON)
@@ -93,7 +93,7 @@ its enforcement, and the tests mutate them to prove it.
 | Field                | Contains                                            | Never contains |
 |----------------------|-----------------------------------------------------|----------------|
 | `timestamp`          | UTC ISO-8601                                        | — |
-| `app_version`        | `the_oracle.__version__`                            | — |
+| `app_version`        | `rhetoric.__version__`                            | — |
 | `platform`           | OS, Python version, Qt version                      | MAC address, hostname, serials |
 | `gpu_backend`        | selected backend name, Vulkan device *name string*  | full `vulkaninfo` dump |
 | `exception`          | type name + message (sanitized)                     | stack frames with file *contents* |
@@ -169,7 +169,7 @@ In `tests/test_offline_guarantee.py`, same mutation-proven style:
 1. **Capture is network-free:** with `socket.socket` patched to raise,
    raise a synthetic exception through the installed handlers → record
    written, no error escapes, suite unaffected.
-2. **No heavyweight imports:** importing `the_oracle.crash` never imports
+2. **No heavyweight imports:** importing `rhetoric.crash` never imports
    torch/huggingface_hub/ML deps; `install_crash_handlers()` adds
    milliseconds, not model loads. GUI startup latency is pinned by an
    import-time test.

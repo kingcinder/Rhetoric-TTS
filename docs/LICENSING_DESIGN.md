@@ -32,7 +32,7 @@ New package, following the existing small-module conventions (Qt-free policy
 code, app_paths-managed persistence, cli.py owns command wiring):
 
 ```
-src/the_oracle/licensing/
+src/rhetoric/licensing/
 ├── __init__.py     # public surface: current_license(), verify_token(), LicenseStatus
 ├── keys.py         # embedded verify keys + key-id registry (ONLY place key material lives)
 ├── tokens.py       # token parse/verify over a versioned, canonical-payload envelope
@@ -41,7 +41,7 @@ src/the_oracle/licensing/
 └── policy.py       # licensed/unlicensed gate; single source
 ```
 
-Vendor-only tooling lives in `../oracle-license-generator/`, a sibling
+Vendor-only tooling lives in `../rhetoric-license-generator/`, a sibling
 directory outside the Git repository:
 
 ```
@@ -49,13 +49,13 @@ license_sign.py   # vendor-only minting CLI; not uploaded with the product repo
 ```
 
 The signing key enters the release process through an environment variable
-(`ORACLE_LICENSE_SIGNING_KEY`); losing it means key rotation (supported, see
+(`RHETORIC_LICENSE_SIGNING_KEY`); losing it means key rotation (supported, see
 below), not disaster. A GUI slice later adds a small `gui_license.py`
 (activation + About panel) following the `gui_ingest.py` injected-Qt pattern —
 out of scope for the first slice.
 
-Import discipline: `the_oracle.licensing` imports stdlib plus the vendored
-`the_oracle._ed25519` only — no third-party crypto dependency exists (decision
+Import discipline: `rhetoric.licensing` imports stdlib plus the vendored
+`rhetoric._ed25519` only — no third-party crypto dependency exists (decision
 §3). It must never import huggingface_hub, torch, or anything heavy, and it
 must never run at import time — `cli.main()` and `MainWindow` call
 `current_license()` lazily at feature gates, so GUI launch stays fast and an
@@ -64,7 +64,7 @@ unlicensed install never blocks startup.
 ## 3. Key and token model
 
 **Crypto choice — DECIDED (2026-09-25): Option B, vendored pure-Python
-Ed25519** (`the_oracle/_ed25519.py`, RFC 8032, pinned to the spec's §7.1 test
+Ed25519** (`rhetoric/_ed25519.py`, RFC 8032, pinned to the spec's §7.1 test
 vectors; verify in the client, sign only in the vendor script). Rationale: no
 new dependency for offline installs, nothing compiled to bundle, fully
 auditable; verification runs once per activation and once per doctor run, so
@@ -79,8 +79,11 @@ asymmetric signing, extraction buys the attacker nothing.
 **Token format** (`tokens.py` owns; versioned envelope):
 
 ```
-ORACLE1.<base64url(payload)>.<base64url(signature)>
+RHETORIC1.<base64url(payload)>.<base64url(signature)>
 ```
+
+Tokens issued before the rename carry the `ORACLE1` prefix instead; the
+verifier accepts both, and only `RHETORIC1` tokens are minted.
 
 Payload is canonical JSON (sorted keys, compact separators, UTF-8) so the
 signature is byte-stable across platforms:
@@ -169,7 +172,7 @@ guarantee test file (`tests/test_offline_guarantee.py`) gains these pins:
 1. **Activation and verification perform zero network I/O**: with
    `socket.socket` monkeypatched to raise, mint→store→verify→`current_license()`
    succeeds end to end.
-2. **No heavyweight imports**: importing `the_oracle.licensing` never imports
+2. **No heavyweight imports**: importing `rhetoric.licensing` never imports
    huggingface_hub or any ML dependency — same import-time discipline the
    offline policy already enforces elsewhere (`offline.py` owns the marker;
    licensing reads it, never writes it, never triggers a download).
@@ -212,7 +215,7 @@ this unit, not a later promise to retrofit.
 2. **`licensing/` core** — tokens, keys, policy, store + the §7 unit tests.
 3. **CLI surface** — `rhetoric activate <token>`, `rhetoric
    license-status`, `rhetoric machine-id`; the vendor-only signer in the
-   sibling `oracle-license-generator/` directory.
+   sibling `rhetoric-license-generator/` directory.
 4. **Doctor check** — §5 + doctor tests.
 5. **Offline-guarantee pins** — §6 tests, mutation-proven.
 6. **GUI slice** — `gui_license.py` (activation dialog + About panel),
@@ -242,7 +245,7 @@ how much.
 
 `verify_token` now delegates to `rhetoric_native`, a Rust extension
 (`crates/rhetoric_native`, built by `scripts/build_native_license.py`) loaded
-through `the_oracle._native`. The pure-Python verifier remains as the reference
+through `rhetoric._native`. The pure-Python verifier remains as the reference
 and the fallback for a checkout without the build. Both paths are pinned to
 identical `LicenseStatus` values across the full case matrix in
 `tests/test_native_core.py`, so the compiled core can never *change* a verdict —
@@ -363,7 +366,7 @@ process must pass its own gate in addition to the parent's.
   frozen-archive manifest would need a separate digest of the archive itself;
   it is not implemented.
 - The compiled extension must ship in the wheel
-  (`[tool.setuptools.package-data] the_oracle._native`). Without it an install
+  (`[tool.setuptools.package-data] rhetoric._native`). Without it an install
   falls back to the Python verifier and no attestation runs.
 - A patched `licensing/__init__.py` can skip the check entirely. That is the
   same economic argument as §10.2: it raises cost, it is not a boundary.

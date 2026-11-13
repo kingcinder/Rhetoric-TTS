@@ -1,6 +1,6 @@
 # Rhetoric
 
-The supported command name is `rhetoric`. The legacy `the-oracle` command and `./oracle` launcher remain available for existing installations.
+The supported command name is `rhetoric`. The legacy `rhetoric` command and `./rhetoric` launcher remain available for existing installations.
 
 **Release V1.5.0 — Rhetoric engineering candidate; not approved for commercial release.**
 
@@ -195,7 +195,7 @@ The doctor checks:
 - subtitle files under `Input/` that would take the CP1252 fallback, and the
   ones it would **block** outright
 - project `previews/` directories for files outside the gated preview
-  owner's naming scheme (`OraclePipeline.render_preview` via
+  owner's naming scheme (`RhetoricPipeline.render_preview` via
   `ProjectCache.preview_path`) — runtime evidence of a writer that bypassed
   the gated owner
 - release-metadata drift (version, banners, and the `CHANGELOG.md` gate)
@@ -239,7 +239,7 @@ Windows:
 ## Fully Offline Install
 
 Every model Rhetoric uses is pinned to an exact Hugging Face commit
-(`src/the_oracle/models/pins.py`), and the installer can run with zero
+(`src/rhetoric/models/pins.py`), and the installer can run with zero
 network access from a pre-built offline bundle. The bundle contains
 everything: the repo snapshot, every pinned model, and every wheel for the
 target platform(s).
@@ -269,7 +269,7 @@ Windows:
 The offline installer creates the venv purely from the bundled wheels,
 seeds the local Hugging Face cache with the pinned models, and the managed
 launcher then runs with `HF_HUB_OFFLINE=1`, so no model fetch can ever touch
-the network. Delete the `.oracle_offline` file in the install directory to
+the network. Delete the `.rhetoric_offline` file in the install directory to
 re-enable network model fetches.
 
 ## CLI Usage
@@ -366,7 +366,7 @@ manual script runs: Rhetoric completes the switch by itself.
   (`scripts/build_audio_cpp.sh`) if it is missing and downloads the Chatterbox
   model (`scripts/download_audio_cpp_model.sh`) if it is missing, streaming
   progress into the backend status panel. The queued render/preview starts by
-  itself once setup finishes, and `ORACLE_AUDIOCPP_CLI`/`ORACLE_AUDIOCPP_MODEL`
+  itself once setup finishes, and `RHETORIC_AUDIOCPP_CLI`/`RHETORIC_AUDIOCPP_MODEL`
   are set for the session.
 - **CLI** — `rhetoric render --inference-backend vulkan` runs the same
   automatic setup first (output streamed to stderr; a ready backend prints a
@@ -428,7 +428,7 @@ rhetoric render \
 
 `scripts/download_audio_cpp_model.sh` wraps audio.cpp's own model manager
 (`tools/model_manager_v2.py`) so the model lands in the right place and it
-prints the exact `export ORACLE_AUDIOCPP_MODEL=...` line to paste. The default
+prints the exact `export RHETORIC_AUDIOCPP_MODEL=...` line to paste. The default
 package is the spec's recommended Chatterbox Q8_0 GGUF; override with
 `AUDIOCPP_MODEL_PACKAGE=chatterbox_f16` (or set `AUDIOCPP_MODELS_ROOT` to
 install elsewhere), and pass `--dry-run` to preview the download or
@@ -459,7 +459,7 @@ therefore synthesizes every cache-missing stem through audio.cpp
 `--request-sequence` batches (a JSON file of `{id, text, voice_ref, options}`
 requests, output per request to `--out-dir/<id>.wav`), so the model load and
 shader compile happen once per batch instead of once per line. Batches are
-capped at 32 requests per subprocess (`ORACLE_AUDIOCPP_MAX_BATCH=<n>` to
+capped at 32 requests per subprocess (`RHETORIC_AUDIOCPP_MAX_BATCH=<n>` to
 override), so an enormous render is split into several processes instead of
 shipping one gigantic `requests.json` — and a failed batch only takes down
 its own group, never the whole render. Per-request `[TIMING]` lines keep the
@@ -477,16 +477,16 @@ of the PyTorch path.
 
 Optional environment knobs:
 
-- `ORACLE_AUDIOCPP_DEVICE=<n>` — select a specific Vulkan device on multi-GPU
+- `RHETORIC_AUDIOCPP_DEVICE=<n>` — select a specific Vulkan device on multi-GPU
   machines (passed as `--device <n>`). See the devices audio.cpp detects with
   `audiocpp_cli --backend vulkan --list-devices` (or the doctor).
-- `ORACLE_AUDIOCPP_THREADS=<n>` — pass `--threads <n>` to audio.cpp
+- `RHETORIC_AUDIOCPP_THREADS=<n>` — pass `--threads <n>` to audio.cpp
   (default is 4).
-- `ORACLE_AUDIOCPP_TIMEOUT=<seconds>` — per-synthesis timeout (default 600).
+- `RHETORIC_AUDIOCPP_TIMEOUT=<seconds>` — per-synthesis timeout (default 600).
   A batched render scales this by its request count (one `--request-sequence`
   process synthesizes N utterances, so it gets N x the per-synthesis timeout)
   so long renders are not killed just because they are one long subprocess.
-- `ORACLE_AUDIOCPP_MAX_BATCH=<n>` — maximum cache-missing stems per
+- `RHETORIC_AUDIOCPP_MAX_BATCH=<n>` — maximum cache-missing stems per
   `--request-sequence` subprocess (default 32). An enormous render is split
   into several processes at this cap, and a failed batch only takes down its
   own group. The engine also enforces the same cap as defense-in-depth:
@@ -499,13 +499,13 @@ The same device/threads/timeout/batch-cap knobs work without environment
 variables as render CLI flags and are persisted in saved project manifests
 (so a project re-renders with the same knobs):
 
-- `--audio-cpp-device <n>` — equivalent of `ORACLE_AUDIOCPP_DEVICE`; requires
+- `--audio-cpp-device <n>` — equivalent of `RHETORIC_AUDIOCPP_DEVICE`; requires
   `--inference-backend vulkan`.
-- `--audio-cpp-threads <n>` — equivalent of `ORACLE_AUDIOCPP_THREADS`; requires
+- `--audio-cpp-threads <n>` — equivalent of `RHETORIC_AUDIOCPP_THREADS`; requires
   `--inference-backend vulkan`.
-- `--audio-cpp-timeout <seconds>` — equivalent of `ORACLE_AUDIOCPP_TIMEOUT`;
+- `--audio-cpp-timeout <seconds>` — equivalent of `RHETORIC_AUDIOCPP_TIMEOUT`;
   requires `--inference-backend vulkan`.
-- `--audio-cpp-max-batch <n>` — equivalent of `ORACLE_AUDIOCPP_MAX_BATCH`
+- `--audio-cpp-max-batch <n>` — equivalent of `RHETORIC_AUDIOCPP_MAX_BATCH`
   (requests per `--request-sequence` subprocess); requires
   `--inference-backend vulkan`.
 
@@ -517,7 +517,7 @@ In the desktop GUI, the backend is chosen with the **Inference Backend**
 dropdown in Shared Render Settings: `PyTorch (CPU)` (default) or `Vulkan
 (audio.cpp)` (opt-in). It governs both render and preview, so previewing a
 row uses the same backend you render with, and it requires the same setup as
-the CLI path — a Vulkan-enabled `audiocpp_cli` plus `ORACLE_AUDIOCPP_MODEL`
+the CLI path — a Vulkan-enabled `audiocpp_cli` plus `RHETORIC_AUDIOCPP_MODEL`
 (see Build/Enable above). If either is missing when you select Vulkan, the
 GUI warns inline right at selection time (and blocks render with the same
 message), so the failure is surfaced before the render worker starts instead
@@ -528,8 +528,8 @@ to PyTorch, so the GUI never offers the unusable turbo+Vulkan combination.
 The GUI can also fetch the model for you: **Settings → Download Vulkan
 Model...** runs `scripts/download_audio_cpp_model.sh` in a background thread
 (the UI stays responsive — model downloads are large) and, when it finishes,
-sets `ORACLE_AUDIOCPP_MODEL` for the current session, clears the inline
-prerequisite warning, and shows the exact `export ORACLE_AUDIOCPP_MODEL=...`
+sets `RHETORIC_AUDIOCPP_MODEL` for the current session, clears the inline
+prerequisite warning, and shows the exact `export RHETORIC_AUDIOCPP_MODEL=...`
 line — and applies it automatically for the session.
 
 Next to the backend dropdown is a **Test Vulkan Backend** button. It runs a
@@ -575,9 +575,9 @@ guessing at a blind 0-15 index range. A stale saved device index that is no
 longer detected is kept as an explicit `Device N: (not detected)` row (never
 silently changed), and the label under the picker lists everything audio.cpp
 sees. The **Vulkan Timeout (s)** spin sets the per-synthesis timeout
-(equivalent of `ORACLE_AUDIOCPP_TIMEOUT`, default 600), with 0 meaning
+(equivalent of `RHETORIC_AUDIOCPP_TIMEOUT`, default 600), with 0 meaning
 "Default (600s)". The **Vulkan Max Batch** spin sets the requests-per-
-subprocess cap (equivalent of `ORACLE_AUDIOCPP_MAX_BATCH`, default 32), with
+subprocess cap (equivalent of `RHETORIC_AUDIOCPP_MAX_BATCH`, default 32), with
 0 meaning "Default (32)". These values are persisted in the same
 profiles/templates and manifests, so a GUI session needs no environment
 variables to pin the device, thread count, timeout, or batch cap.
@@ -592,7 +592,7 @@ applies it to the cloned audio.cpp tree before building — `ggml_vk_buffer_mems
 routes through the compute queue when the device architecture is `AMD_RDNA1`
 (`vk_command_pool` binds its queue, so the submission follows it too).
 
-The change is marked in the source with `ORACLE VENDORED PATCH` comment blocks
+The change is marked in the source with `RHETORIC VENDORED PATCH` comment blocks
 and documented as reviewable artifacts in `scripts/patches/`:
 
 - `ggml_rdna1_buffer_memset.patch` — the RDNA1 compute-queue fix, vendored
@@ -621,13 +621,13 @@ silently.
 - `release_checksums/` each release's sha256 manifest, tracked so a published
   artifact can be verified from a clone rather than the build folder
 - `scripts/` install, doctor, smoke, and model utility entrypoints
-- `src/the_oracle/` application code
+- `src/rhetoric/` application code
 - `tests/` unit and integration-style coverage
 - `docs/` design specs, the [upgrade guide](docs/UPGRADING.md), and the
   [troubleshooting guide](docs/TROUBLESHOOTING.md)
 - `packaging/` Linux desktop install/uninstall assets
 - `bootstrap_rhetoric.sh` / `.ps1` one-command setup (install, doctor,
-  run, uninstall wrappers follow the same `*_oracle_tts` naming)
+  run, uninstall wrappers follow the same `*_rhetoric` naming)
 
 ## Sample Inputs
 

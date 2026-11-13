@@ -6,7 +6,7 @@
 ## Isolated managed-install run — 2026-10-23
 
 - Environment: isolated Linux x86_64 checkout at
-  `/media/USER/Data/oracle-clean-install-YvsR8r/tree`, Python 3.12 managed
+  `/media/USER/Data/rhetoric-clean-install-YvsR8r/tree`, Python 3.12 managed
   `.venv`, CPU PyTorch 2.6.0; installation was provisioned with
   `scripts/manage_install.py bootstrap --pytorch-runtime cpu`. This is a
   disposable test tree, not the canonical checkout.
@@ -20,7 +20,7 @@
   inference.
 - Engine/corpus: standard Chatterbox, CPU, 12-utterance two-speaker dialogue,
   bundled `english_male_1.wav` and `english_reader_1.wav` references.
-- Output: `/media/USER/Data/oracle-clean-install-YvsR8r/real-render/real_engine_smoke.flac`.
+- Output: `/media/USER/Data/rhetoric-clean-install-YvsR8r/real-render/real_engine_smoke.flac`.
 - Runtime: 249.356 seconds.
 - Decode: mono FLAC, 24,000 Hz, 1,128,480 frames (47.02 seconds); readable by
   `ffprobe` and SoundFile. File size 1,076,521 bytes.
@@ -41,7 +41,7 @@ an existing model cache available, so a cold model download was not measured.
 - Corpus: 12 utterances in a two-speaker dialogue, using the bundled
   `english_male_1.wav` and `english_reader_1.wav` references. The copied inputs
   byte-match the repository assets.
-- Result: `/tmp/oracle-release-acceptance-no-gradio/real_engine_smoke.flac`
+- Result: `/tmp/rhetoric-release-acceptance-no-gradio/real_engine_smoke.flac`
 - Runtime: 243.06 seconds.
 - Decode: mono FLAC, 24,000 Hz, 1,085,280 frames (45.22 seconds); readable by
   both `ffprobe` and SoundFile.

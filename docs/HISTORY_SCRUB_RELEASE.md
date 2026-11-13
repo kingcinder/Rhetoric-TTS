@@ -14,8 +14,8 @@ explicit approval.
 ## Verify a scrub in a disposable mirror
 
 ```sh
-git clone --no-local . /tmp/oracle-history-scrub
-cd /tmp/oracle-history-scrub
+git clone --no-local . /tmp/rhetoric-history-scrub
+cd /tmp/rhetoric-history-scrub
 git filter-repo --force \
   --path "Seashells/Cody's Seashell.wav" \
   --path "Seashells/Cody's Seashell1.wav" \

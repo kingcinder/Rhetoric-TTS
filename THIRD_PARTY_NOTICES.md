@@ -54,7 +54,7 @@ Release version: **1.5.0**
 | `seashell fransisco_TTS_clean_v5_aggressive_targeted_cleanup.wav` | — | Owner-owned; all rights reserved | Seashells/ASSETS.md |
 | `Seashell_ fransisco.wav` | — | Owner-owned; all rights reserved | Seashells/ASSETS.md |
 
-Model revisions are pinned in `src/the_oracle/models/pins.py`; this
+Model revisions are pinned in `src/rhetoric/models/pins.py`; this
 table names each model and its license without duplicating the
 revision hashes, which are external identifiers rather than citations
 in this repository's history.

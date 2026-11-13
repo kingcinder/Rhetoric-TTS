@@ -67,9 +67,9 @@ The hashes below are the prior 1.4.2 source rehearsal artifacts. The 1.5.0 RC
 frozen artifacts are not yet built locally; hosted CI is intended to produce
 them from the post-change commit.
 
-- `release_artifacts/the_oracle-1.4.2.tar.gz` — SHA-256
+- `release_artifacts/rhetoric-1.4.2.tar.gz` — SHA-256
   `f6567a64dd3b003853350ddea5e4ec9524b1c7d0035d16a7f80bc54276d9eeb7`
-- `release_artifacts/the_oracle-1.4.2-py3-none-any.whl` — SHA-256
+- `release_artifacts/rhetoric-1.4.2-py3-none-any.whl` — SHA-256
   `c2ba4067537fc39b6a73f118a620078d9008ddce311c837080046b3e8a2667d6`
 - `release_artifacts/checksums-1.4.2.sha256`
 - `release_checksums/checksums-1.4.2.sha256`

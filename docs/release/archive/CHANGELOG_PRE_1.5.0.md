@@ -5,7 +5,7 @@
 ### Added
 
 - **A support layer on top of the doctor and crash unit.**
-  `the-oracle bug-report` composes a local bug report with a redacted
+  `rhetoric bug-report` composes a local bug report with a redacted
   diagnostics snapshot (`new`), reviews drafts (`list`, `show`), builds a
   single shareable zip containing the report, the diagnostics, and the
   existing support bundle (`package`), prints prefilled GitHub/email links
@@ -75,7 +75,7 @@
 
 - **Commercial alpha launch surface.** A production verify key (`k2`) is
   registered (the signing seed lives only in the owner's secret manager), and
-  `the-oracle support-bundle` creates a redacted, local-only diagnostic zip
+  `rhetoric support-bundle` creates a redacted, local-only diagnostic zip
   for early-user support. The bundle never includes manuscripts, audio,
   recordings, license tokens, or home-directory paths.
 - **Third-party notices are generated, not hand-maintained.**
@@ -97,7 +97,7 @@
   transition.** With crash consent on, native-crash capture arms at the console
   entry point (every command, and the GUI, routes through it), at both GUI
   launch paths, in the spawned clean render child
-  (`python -m the_oracle.render_subprocess`), in the doctor process and its
+  (`python -m rhetoric.render_subprocess`), in the doctor process and its
   probe children, and at the smoke and perf-baseline entry points. A session
   that *started* with consent already on used to run unarmed, which is why the
   08:06:51 GUI segfault left `crash_reports/native-crash.txt` at 0 bytes. Every
@@ -129,7 +129,7 @@
   the fallback count: files whose guarded-UTF-8 reading differs from their
   CP1252 reading report as "mixed-encoding, recovered per cue", which states
   the per-cue salvage behavior as the report's contract.
-- **The first real Studio-gated capability: `the-oracle render-report`.** It
+- **The first real Studio-gated capability: `rhetoric render-report`.** It
   measures a *finished* render — peak/RMS level and clipping, silence ratio,
   sample rate and channel count, utterance and speaker counts, and whether the
   plan's declared durations agree with the audio actually assembled — from the
@@ -224,11 +224,11 @@
 
 - **The trust features got GUI surfaces.** Crash-report consent and review,
   and license activation, are now in-app dialogs alongside the existing CLI
-  flags (`the-oracle privacy-opt-in`, `the-oracle activate`).
+  flags (`rhetoric privacy-opt-in`, `rhetoric activate`).
 - The doctor's cache audit gained the disk side: every project `previews/`
   directory is scanned for files outside the gated preview owner's naming
   scheme — runtime evidence of a writer that bypassed
-  `OraclePipeline.render_preview`.
+  `RhetoricPipeline.render_preview`.
 - Release tooling: a crash-hunt reproduction harness (exit-code
   classification, per-backend render loops, offscreen GUI launch loop) whose
   `--acceptance` gate requires zero non-zero exits, zero crash records, and —
@@ -281,12 +281,12 @@
   that gates stem/preview cache writes — with every section validated loudly
   at load, so a malformed record fails the suite instead of quietly shrinking
   a net to match nothing.
-- **Local, private crash reporting.** Opt in with `the-oracle privacy-opt-in`;
+- **Local, private crash reporting.** Opt in with `rhetoric privacy-opt-in`;
   reports stay in this install's `crash_reports/` folder (sanitized, capped at
   20 × 32 KiB), are never uploaded, and the doctor surfaces them for review.
   `PRIVACY.md` documents the whole data posture, every claim pinned by a test.
 - **Offline licensing.** Activate a purchased license with
-  `the-oracle activate <token>`; `the-oracle license-status` and `machine-id`
+  `rhetoric activate <token>`; `rhetoric license-status` and `machine-id`
   report the install's state. Nothing existing is gated — the community edition
   is everything that ships today. An expired or absent license degrades to
   community; nothing is ever locked away.
@@ -299,7 +299,7 @@
   a take and the one-shot fresh-seed retry heals it, the render now says so:
   progress and the completion summary report the retry, and the healed take is
   bit-for-bit reproducible (a re-render serves the same cached audio).
-- `the-oracle sweep-cache` runs a project's stem cache through the
+- `rhetoric sweep-cache` runs a project's stem cache through the
   servable-stem gate on demand — dry run by default, `--apply` deletes,
   `--json` for scripts — reporting every purged stem with its reason.
 
@@ -338,7 +338,7 @@
 - The doctor surfaces release-metadata drift (version, pyproject, banners,
   changelog) by reusing the release check's probes.
 - The committed patch-surface net also catches string-form patch targets
-  (`setattr("the_oracle.app_gui.X", ...)`, `patch("app_gui.X")`,
+  (`setattr("rhetoric.app_gui.X", ...)`, `patch("app_gui.X")`,
   `patch.multiple`), so future extraction slices cannot be silently
   undermined by either patch spelling.
 
@@ -357,11 +357,11 @@
 ### Added
 
 **Input linting and repair**
-- `the-oracle check-input` lints a dialogue file's formatting without
+- `rhetoric check-input` lints a dialogue file's formatting without
   rendering; `--fix` corrects in place (timestamped backup kept), `--json`
   emits a machine-readable report for CI, and `--check-refs` verifies every
   suggested `--speaker-ref` path exists and is readable audio.
-- `the-oracle fix-folder` batch-finds and fixes formatting across a folder
+- `rhetoric fix-folder` batch-finds and fixes formatting across a folder
   (recursing into subfolders) with `--json`, `--dry-run`, and `--no-backup`
   modes.
 - GUI: an input-formatting warning popup with a side-by-side preview diff —
@@ -380,7 +380,7 @@
   is suggested as ready-to-paste `--speakerA/B-ref` flags.
 
 **Voices**
-- `the-oracle voices` lists the default Seashells reference clips usable in
+- `rhetoric voices` lists the default Seashells reference clips usable in
   `--speaker-ref` flags.
 - Unknown or rejected speaker labels get the exact flag or rename needed,
   in the CLI report and the GUI popups.
@@ -388,9 +388,9 @@
 **Offline installs**
 - `scripts/build_offline_bundle.py` builds a fully offline install bundle
   (pinned wheels, seeded model cache, platform installers).
-- The `.oracle_offline` marker is enforced at every model-loading entry
+- The `.rhetoric_offline` marker is enforced at every model-loading entry
   point: no process can silently touch the network.
-- `the-oracle setup-vulkan` refuses with a clear message on an offline
+- `rhetoric setup-vulkan` refuses with a clear message on an offline
   install (the Vulkan GGUF model is not part of the bundle), and the
   LanguageTool grammar warm-up never attempts its download offline — the
   render falls back to local fixes instead.

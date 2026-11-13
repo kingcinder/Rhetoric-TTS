@@ -11,7 +11,7 @@ analytics service, no crash upload, and no account system.
 
 *Mechanism:* the only network code in the suite is model downloading, and
 offline installs disable even that; the diagnostics packages
-(`the_oracle.crash`, `the_oracle.licensing`) are source-pinned to import no
+(`rhetoric.crash`, `rhetoric.licensing`) are source-pinned to import no
 network module at all (`tests/test_offline_guarantee.py`).
 
 ## Crash reports stay on your disk until you choose to share one
@@ -21,7 +21,7 @@ sanitized report into this install's `crash_reports/` folder — capped at 20
 reports of at most 32 KiB each. Nothing is ever uploaded: there is no
 upload code to review or distrust. You can read a report as plain JSON
 before deciding to share it, and delete everything with
-`the-oracle privacy-opt-out --purge` (or manage consent with
+`rhetoric privacy-opt-out --purge` (or manage consent with
 `privacy-status` / `privacy-opt-in` / `privacy-opt-out`).
 
 *Mechanism:* fail-closed consent stored separately from your settings —
@@ -32,7 +32,7 @@ read-only (`tests/test_doctor_crash.py`).
 
 ## Bug reports are composed, packaged, and sent by you
 
-`the-oracle bug-report` (and **Help → Report a Problem…**) collects a
+`rhetoric bug-report` (and **Help → Report a Problem…**) collects a
 read-only diagnostics snapshot, stores the draft in this install's
 `support_reports/` folder, and builds a zip only when you ask for one. The
 CLI prints prefilled issue and email links; the GUI copies or opens them when
@@ -75,7 +75,7 @@ hash-only with a fail-open skip when unavailable
 
 When *you* fetch a voice model or grammar tool, the download goes to the
 model cache on your disk; nobody sees it. Offline installs (the
-`.oracle_offline` marker) never download at all — model resolution is
+`.rhetoric_offline` marker) never download at all — model resolution is
 pinned to the local cache with outbound connections forbidden.
 
 *Mechanism:* `tests/test_offline_guarantee.py` — every model-resolving

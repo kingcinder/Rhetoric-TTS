@@ -7,14 +7,14 @@ any distribution decision and must not be copied into
 ## Installed component evidence
 
 The versions and metadata below were read from the managed CPU environment at
-`/media/USER/Data/oracle-clean-install-YvsR8r/tree/.venv` on 2026-10-23.
+`/media/USER/Data/rhetoric-clean-install-YvsR8r/tree/.venv` on 2026-10-23.
 
 | Component | Installed version | Metadata license | Proposed handling | Open verification |
 |---|---:|---|---|---|
 | `torch` | 2.6.0+cpu | BSD-3-Clause | Separate notice and allow only after counsel confirms the PyTorch bundle terms | Read the exact wheel license files for the selected CPU/CUDA wheels |
 | `torchaudio` | 2.6.0+cpu | missing | Separate notice; conditional approval only | Confirm upstream audio license and wheel notices |
 | `torchvision` | 0.21.0+cpu | BSD | Separate notice; conditional approval only | Confirm exact upstream license text |
-| `chatterbox-tts` | 0.1.7+oracle1 | MIT | Proposed allow, with upstream MIT notice and local metadata patch disclosure | Counsel confirms the patched distribution and model terms |
+| `chatterbox-tts` | 0.1.7+rhetoric1 | MIT | Proposed allow, with upstream MIT notice and local metadata patch disclosure | Counsel confirms the patched distribution and model terms |
 | `huggingface-hub` | 1.33.0 | Apache-2.0 | Proposed allow with Apache notice | Confirm installed license file is shipped |
 | `PySide6` / Qt | 6.8.2.1 | LGPL | Proposed allow only with replaceable libraries, source offer, and relink instructions | Frozen-package replacement test and counsel review |
 | `soundfile` | 0.13.1 | BSD 3-Clause | Proposed allow with notice | Confirm bundled libsndfile strategy |
@@ -29,7 +29,7 @@ The versions and metadata below were read from the managed CPU environment at
 ## Model-card evidence
 
 The pinned model-card `README.md` files were fetched at the exact revisions in
-`src/the_oracle/models/pins.py` on 2026-10-23. Each reported `license: mit`:
+`src/rhetoric/models/pins.py` on 2026-10-23. Each reported `license: mit`:
 
 - `ResembleAI/chatterbox` — `5bb1f6ee58e50c3b8d408bc82a6d3740c2db6e18`.
 - `ResembleAI/chatterbox-turbo` — `749d1c1a46eb10492095d68fbcf55691ccf137cd`.

@@ -1,7 +1,7 @@
 # Phase 0 Baseline — Rhetoric 1.5.0
 
 Date: 2026-10-25  
-Canonical checkout: `/media/cody/Data/DOCUMENTS_PROJECT_FILES/the oracle tts`  
+Canonical checkout: `/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric tts`  
 Branch: `release/1.5.0-final`  
 Base commit: `93a55d4` (`main`)
 

@@ -20,7 +20,7 @@ report).
 
 ## Entrypoint: "rhetoric is not installed in <old path>"
 
-The managed launcher at `~/.local/bin/rhetoric` (Linux), with `the-oracle` retained as a compatibility alias, points at the
+The managed launcher at `~/.local/bin/rhetoric` (Linux), with `rhetoric` retained as a compatibility alias, points at the
 checkout it was installed from. If the repo moved, re-run the install step
 to rewrite it:
 
@@ -56,7 +56,7 @@ than served. There is nothing to clean up by hand.
 
 The Vulkan GGUF model is not part of the offline bundle, and an offline
 install must never attempt a network fetch. Run `rhetoric setup-vulkan`
-on a networked machine (deleting the `.oracle_offline` marker in the
+on a networked machine (deleting the `.rhetoric_offline` marker in the
 install root re-enables network fetches), or re-install without
 `--offline-bundle`.
 
@@ -103,7 +103,7 @@ The GUI needs a display or the offscreen platform for tests/smokes:
 
 `./rhetoric doctor` runs `audiocpp_cli` to enumerate devices. No device
 usually means the driver/loader layer, not the app: `vulkaninfo` is the
-next diagnostic. The binary and model are set up by `the-oracle
+next diagnostic. The binary and model are set up by `rhetoric
 setup-vulkan`; the CI job `vulkan-smoke` shows a known-good path.
 
 ## Windows launcher quirks
@@ -115,7 +115,7 @@ launcher misbehaves after moving the checkout, re-run
 
 ## Crash reports (if a crash was captured)
 
-If local crash reporting was enabled (check with `the-oracle
+If local crash reporting was enabled (check with `rhetoric
 privacy-status`), a captured crash leaves a sanitized JSON report in this
 install's `crash_reports/` folder — the newest report names the exception
 type and where it happened. Review it, then share it only through a

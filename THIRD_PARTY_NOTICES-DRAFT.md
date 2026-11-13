@@ -7,7 +7,7 @@ The release must include a machine-generated dependency inventory and the licens
 - PySide6 — LGPL obligations and relinking/replacement instructions.
 - LanguageTool / `language-tool-python` — verify LGPL terms for the shipped distribution.
 - `audio.cpp` and `ggml` — verify the exact commit and license files included in the binary/source distribution.
-- Chatterbox TTS and each Hugging Face model listed in `src/the_oracle/models/pins.py` — inspect each model card and record license, attribution, and commercial-use terms.
+- Chatterbox TTS and each Hugging Face model listed in `src/rhetoric/models/pins.py` — inspect each model card and record license, attribution, and commercial-use terms.
 - ffmpeg, if bundled — record the exact build flavor and corresponding license obligations.
 - All other installed packages — generate with `pip-licenses` from the release lock environment and attach exact license texts.
 

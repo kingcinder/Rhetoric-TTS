@@ -4,7 +4,7 @@
 
 ## Current candidate
 
-- Canonical checkout: `/media/USER/Data/DOCUMENTS_PROJECT_FILES/the oracle tts`
+- Canonical checkout: `/media/USER/Data/DOCUMENTS_PROJECT_FILES/Rhetoric tts`
 - Branch / pre-work HEAD: `release/1.4.0` / `8f08151` (`1.4.1`); current source is being prepared as version `1.4.2` to avoid colliding with the already checksummed 1.4.1 artifacts.
 - Remote `origin/release/1.4.0`: `b21caa4`; latest listed hosted run `39913481331` failed on that older SHA. No hosted run for local HEAD was found.
 - Pre-existing unstaged edits retained: `pyproject.toml`, `tests/conftest.py` (xdist real-repository isolation).
@@ -15,7 +15,7 @@
 - Focused recorded CI regressions on current checkout: `.venv/bin/python -m pytest tests/test_third_party_notices.py tests/test_soft_launch_gate.py::test_voice_asset_problems_accepts_owner_owned_inventory tests/test_support_diagnostics.py::test_log_summary_has_names_and_sizes_only -q` — **15 passed**.
 - `.venv/bin/python scripts/generate_third_party_notices.py --check` — **pass, 136 components** on this Linux environment.
 - New real-audio regressions were observed failing against the old harness, then `.venv/bin/python -m pytest tests/test_review_fixes_text.py -q` — **35 passed** after replacing generated tones with bundled attributed speech references, expanding to 12 two-speaker utterances, requiring decoded FLAC, and rejecting stationary-tone output.
-- `compileall` for `src/the_oracle/real_engine_smoke.py` and `git diff --check` — **pass**.
+- `compileall` for `src/rhetoric/real_engine_smoke.py` and `git diff --check` — **pass**.
 - `.venv/bin/python scripts/doctor.py --ci` — **pass**; managed dependencies, CPU Chatterbox initialization (83.189 seconds), Perth watermarking, Qt, deterministic smoke, and Vulkan build/device reported ready. CUDA is unsuitable on the Quadro K600 (1 GiB; 4 GiB minimum). AMD Radeon RX 5700 XT Vulkan device detected for audio.cpp.
 - `.venv/bin/python scripts/soft_launch.py --check --json` — **blocked** only by the explicitly draft EULA; 136 components, asset inventory, production verify key, prior 1.4.1 checksums/artifacts, and support workflow checks passed. LGPL source/replacement obligations remain a warning.
 - Initial `.venv/bin/python -m pip_audit` reported **42 advisories** across Brotli, certifi, Pillow, and virtualenv. After resolving the Gradio/Pillow constraint and updating managed dependencies, the current audit reports zero known vulnerabilities in the auditable installed set. It cannot audit the local package, pinned Perth source, or CPU PyTorch packages through PyPI.
@@ -25,10 +25,10 @@
 - The EULA remains a draft and the soft-launch gate correctly blocks commercial
   distribution pending owner and counsel approval.
 - Default loudness normalization now limits gain to 0.98 peak headroom. The initial transient fixture failed before the fix; `tests/test_audio_assemble.py` passed after it.
-- Dependency follow-up: removed Gradio from the managed install and Chatterbox's patched installed metadata because Oracle does not use its demo UI. Pillow 13.0.0 now resolves. Brotli 1.2.1, certifi 2026.10.23, and virtualenv 21.14.13 are installed.
+- Dependency follow-up: removed Gradio from the managed install and Chatterbox's patched installed metadata because Rhetoric does not use its demo UI. Pillow 13.0.0 now resolves. Brotli 1.2.1, certifi 2026.10.23, and virtualenv 21.14.13 are installed.
 - `.venv/bin/python -m pip check` — **pass**. `.venv/bin/python -m pip_audit` — **pass, 0 known vulnerabilities** in the audited dependency set. `.venv/bin/python scripts/generate_third_party_notices.py --check` — **pass, 115 components** after regeneration.
 - Full current-working-tree suite before the isolated dependency follow-up: `.venv/bin/python -m pytest -q` — **2,087 passed, 0 skipped, 6 warnings, 0 failed** in 411.07 seconds. This result is superseded below.
-- Re-ran `.venv/bin/python scripts/doctor.py --ci` after removing Gradio and upgrading Pillow — **exit 0**. Managed dependency pins, Chatterbox CPU initialization (21.453 seconds), Perth, Qt, deterministic smoke, audio.cpp Vulkan device detection, and release metadata passed. Optional Turbo checkpoint is not cached; NVIDIA CUDA is unsuitable on the installed 1 GiB Quadro K600. Doctor's real-engine smoke check looks for its default build path; the separate real render is under `/tmp/oracle-release-acceptance-no-gradio`.
+- Re-ran `.venv/bin/python scripts/doctor.py --ci` after removing Gradio and upgrading Pillow — **exit 0**. Managed dependency pins, Chatterbox CPU initialization (21.453 seconds), Perth, Qt, deterministic smoke, audio.cpp Vulkan device detection, and release metadata passed. Optional Turbo checkpoint is not cached; NVIDIA CUDA is unsuitable on the installed 1 GiB Quadro K600. Doctor's real-engine smoke check looks for its default build path; the separate real render is under `/tmp/rhetoric-release-acceptance-no-gradio`.
 - `.venv/bin/python -m pip install --dry-run .[ml]` resolved the managed project's declared base/ML dependencies. These are resolver/metadata checks, not a clean installation.
 - Failure-recovery and persistence targeted checks: `.venv/bin/python -m pytest tests/test_audio_assemble.py tests/test_cache_miss_is_not_corruption.py tests/test_project_manifest.py tests/test_render_subprocess_arming.py tests/test_render_worker_integration.py tests/test_stem_cache_write_path.py tests/test_sweep_cache.py -q` — **74 passed**. These cover project manifest round-trip, cache write/recovery, per-utterance partial failure, and render subprocess behavior; they do not prove data survives an actual power loss or customer cancellation session.
 - Support/privacy targeted checks: `.venv/bin/python -m pytest tests/test_support_bundle.py tests/test_support_diagnostics.py tests/test_support_offline.py tests/test_support_package.py tests/test_support_report.py tests/test_support_store.py tests/test_cli_bug_report.py tests/test_gui_problem_report.py -q` — **76 passed**. Source review confirms support bundles are local and user-initiated; user must inspect report/package before sending.
@@ -39,7 +39,7 @@
 
 - Isolated managed Linux x86_64 installation: `scripts/manage_install.py
   bootstrap --pytorch-runtime cpu` completed in a disposable checkout at
-  `/media/USER/Data/oracle-clean-install-YvsR8r/tree`. The first install
+  `/media/USER/Data/rhetoric-clean-install-YvsR8r/tree`. The first install
   exposed an incompatible dependency closure (`numpy 2.4.6` against Chatterbox
   0.1.7's `<2` requirement, then `ml-dtypes 0.6.0` requiring NumPy `>=2`).
   Fixed the declared NumPy range and capped `ml-dtypes<0.6`; added a regression
@@ -51,7 +51,7 @@
   -q` — **40 passed**.
 - Real CPU inference through that isolated managed install completed in
   **249.356 seconds**. Output:
-  `/media/USER/Data/oracle-clean-install-YvsR8r/real-render/real_engine_smoke.flac`,
+  `/media/USER/Data/rhetoric-clean-install-YvsR8r/real-render/real_engine_smoke.flac`,
   mono 24 kHz FLAC, 47.02 seconds, 1,076,521 bytes, peak 0.980011, no samples
   at/above 0.9999; SHA-256
   `1db8d6806f5c58a996b9e02f2dad43f1674ec00132dbbc965732c47a08d255da`.
@@ -88,8 +88,8 @@
 - Corrected release build from clean commit
   `b03a667f93900ee7ea9704f50719e328604d85e1` passed **2,089 tests, 0 skipped,
   6 warnings, 0 failed** in 392.34 seconds. Final artifacts are
-  `release_artifacts/the_oracle-1.4.2.tar.gz` and
-  `release_artifacts/the_oracle-1.4.2-py3-none-any.whl`; `sha256sum -c` passed
+  `release_artifacts/rhetoric-1.4.2.tar.gz` and
+  `release_artifacts/rhetoric-1.4.2-py3-none-any.whl`; `sha256sum -c` passed
   for both. The corrected sdist contains **0** `tests/` paths. `detect-secrets`
   reported zero findings in each archive. The tracked manifest is
   `release_checksums/checksums-1.4.2.sha256`.
@@ -99,7 +99,7 @@
   support workflow all pass. No publication occurred.
 
 - Clean committed-base suite-count certification for `8f08151`: **2077 passed, 3 skipped, 0 failed, 0 errors**. Availability check passed. This measures committed base, not the modified candidate tree.
-- Real standard Chatterbox CPU inference with the 12-utterance two-speaker corpus and bundled speech references completed with default `light` loudness in **213.62 seconds**. Output root: `/tmp/oracle-release-acceptance-default`.
+- Real standard Chatterbox CPU inference with the 12-utterance two-speaker corpus and bundled speech references completed with default `light` loudness in **213.62 seconds**. Output root: `/tmp/rhetoric-release-acceptance-default`.
 - `ffprobe` and SoundFile both decoded the output as mono FLAC at 24 kHz, 1,060,320 frames / 44.18 seconds. Peak **0.980011**, RMS **0.079409**, zero samples at/above 0.9999, 46 100 ms frames below -60 dBFS, active-frame RMS coefficient of variation **1.109**. FLAC SHA-256: `2688bc3049c2733e3c6f25d8e5b4cc8758b6cbf0aae2815d319555aaa366d9e2`.
 - The reference WAV files copied into the acceptance inputs byte-match `Seashells/generic/english_male_1.wav` and `english_reader_1.wav`. No ASR model is cached; human listening/intelligibility review remains unverified.
 - Repeated the standard CPU render after removing Gradio and upgrading Pillow. It completed in **243.06 seconds**, producing mono FLAC at 24 kHz, 1,085,280 frames / 45.22 seconds; peak **0.980011**, zero samples at/above 0.9999. SHA-256: `f3ea3671c8ecc290e14fcc2a032f16fc058fcf09692963c591f62656034e6936`.

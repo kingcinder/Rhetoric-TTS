@@ -2,7 +2,7 @@
 
 Audience: the vendor operator (you) minting and managing Rhetoric serial numbers.
 This is the operational half of `docs/LICENSING_DESIGN.md` (design §3–§8);
-the generator kept in the sibling `../oracle-license-generator/` directory,
+the generator kept in the sibling `../rhetoric-license-generator/` directory,
 outside the product repository.
 
 The client never contacts a server: activation, verification, and status
@@ -21,19 +21,19 @@ writes an AES-256 gpg-symmetric file and prints **only** the verify key, so
 the seed never appears in a terminal, a log, or shell history.
 
 ```bash
-python ../oracle-license-generator/license_sign.py keygen \
-  --seal ~/secrets/oracle-seed.gpg
+python ../rhetoric-license-generator/license_sign.py keygen \
+  --seal ~/secrets/rhetoric-seed.gpg
 ```
 
 - A plain `keygen` still prints `signing_seed_hex` for a secret manager; if
   you use it, treat the printed value as the only copy and never let it
   reach a chat transcript, an issue tracker, or a CI log.
-- `ORACLE_LICENSE_SIGNING_KEY_FILE` (a sealed file) or
-  `ORACLE_LICENSE_SIGNING_KEY` (64-hex, 32 bytes) is how the seed enters
-  the minting environment at mint time. `ORACLE_SEED_PASSPHRASE` supplies
+- `RHETORIC_LICENSE_SIGNING_KEY_FILE` (a sealed file) or
+  `RHETORIC_LICENSE_SIGNING_KEY` (64-hex, 32 bytes) is how the seed enters
+  the minting environment at mint time. `RHETORIC_SEED_PASSPHRASE` supplies
   the passphrase to gpg for unattended minting; omit it and gpg prompts.
   Export per-command, never from a shell dotfile.
-- Record ONLY `verify_key_hex` in `src/the_oracle/licensing/keys.py` under
+- Record ONLY `verify_key_hex` in `src/rhetoric/licensing/keys.py` under
   a key id — the two steps above this one are the whole procedure:
 
   ```python
@@ -51,13 +51,13 @@ seed is printed in the spec and was hard-coded in this repository's own
 tests — any reader could mint a licence every shipped install accepted.
 It is gone. The production key **`k2` was registered on 2026-10-19**; its
 signing seed was generated on the owner's machine on 2026-11-01 (the
-provisioning run wrote it to `~/.config/the-oracle/license-signing-seed`,
+provisioning run wrote it to `~/.config/rhetoric/license-signing-seed`,
 mode `0600`). Custody as of 2026-11-09: the plaintext copy has been deleted
-and the seed exists only as the sealed file `~/secrets/oracle-seed.gpg`
+and the seed exists only as the sealed file `~/secrets/rhetoric-seed.gpg`
 (PGP symmetric, AES-256, mode `0600`, sealed 2026-11-01 07:16 PT). A
 production serial minted 2026-11-01 (licensee "Cody", lic_id
 b0a7fe4c-8ab2-4629-8d2b-6eb06cccbc14, no expiry, not machine-bound) is
-activated in the vendor checkout root (`oracle_license.json`). Only the public verify key is
+activated in the vendor checkout root (`rhetoric_license.json`). Only the public verify key is
 in `keys.py`. Two nets keep a forgeable key out:
 
 - `tests/test_licensing_registry_hygiene.py` fails if any registered key
@@ -80,7 +80,7 @@ with the procedure below. Deliver only the `token` string; never include the
 signing seed or the minting environment in the reply.
 
 ```bash
-ORACLE_LICENSE_SIGNING_KEY=<seed_hex> python ../oracle-license-generator/license_sign.py mint \
+RHETORIC_LICENSE_SIGNING_KEY=<seed_hex> python ../rhetoric-license-generator/license_sign.py mint \
   --licensee "customer name or email (their choice)" \
   --key-id k2 \  # required: a defaulted key id is how k1 got used
   [--expires 2027-01-31T00:00:00Z] \
@@ -102,7 +102,7 @@ ORACLE_LICENSE_SIGNING_KEY=<seed_hex> python ../oracle-license-generator/license
 
 ```bash
 python -c "import sys; sys.path.insert(0, 'src'); \
-from the_oracle.licensing import tokens; \
+from rhetoric.licensing import tokens; \
 print(tokens.verify_token(open('token.txt').read().strip()))"
 ```
 
@@ -186,7 +186,7 @@ machine-readable technical conformance report for a finished render
 utterance and speaker counts, and whether the plan's declared durations
 agree with the audio). It is read-only and requires a valid serial number.
 
-- Implementation: `src/the_oracle/render_report.py` (measurement) and
+- Implementation: `src/rhetoric/render_report.py` (measurement) and
   `handle_render_report` in `cli.py` (the gate).
 - `cli.main()` checks `require(current_license(), "render-report")` before
   the command. This boundary is pinned by

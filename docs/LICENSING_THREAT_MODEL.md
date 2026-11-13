@@ -1,7 +1,7 @@
 # Licensing threat model — what offline licensing actually defends
 
 Status: **written 2026-10-13** for the 1.4.0 release work (Phase 1, items 1/4/6).
-It documents the honest boundary of `the_oracle.licensing` so that no marketing
+It documents the honest boundary of `rhetoric.licensing` so that no marketing
 claim, support script, or EULA draft promises more than the design delivers.
 `docs/LICENSING_DESIGN.md` remains the design contract; this file is the threat
 model and the residual-risk record.
@@ -10,11 +10,11 @@ model and the residual-risk record.
 
 The client embeds **public verify keys only** and verifies a signed token
 locally. The signing seed exists solely on the vendor's machine, read from
-`ORACLE_LICENSE_SIGNING_KEY` by the sibling `oracle-license-generator/license_sign.py`,
+`RHETORIC_LICENSE_SIGNING_KEY` by the sibling `rhetoric-license-generator/license_sign.py`,
 which is outside the product repository. Verification is a pure function of (token bytes, embedded key
 registry, wall clock) — no network, ever.
 
-Token: `ORACLE1.<base64url(canonical-json payload)>.<base64url(signature)>`,
+Token: `RHETORIC1.<base64url(canonical-json payload)>.<base64url(signature)>`,
 Ed25519 over the canonical bytes. Failures are typed (`malformed`,
 `unknown_key`, `bad_signature`, `expired`, `machine_mismatch`, `store_error`,
 `no_token`) and never raise at the call site.
@@ -36,7 +36,7 @@ Ed25519 over the canonical bytes. Failures are typed (`malformed`,
 - **Not a network licence service.** No activation server, no phone-home, no
   revocation list, no analytics. Deliberate: it is what lets `PRIVACY.md` say
   activation never contacts a server, and what keeps the offline guarantee
-  (`.oracle_offline`) true.
+  (`.rhetoric_offline`) true.
 - **Not uncopyable.** A copied install without a valid serial number remains
   visible but its functional features are inert.
 
@@ -63,7 +63,7 @@ sets it forwards can expire a valid licence early.
 ## 5. Machine binding (opt-in, currently unused)
 
 `payload.machine_hash` is an optional 32-hex SHA-256 prefix of the OS machine
-id. The client ships the field and `the_oracle.licensing.machine` so turning it
+id. The client ships the field and `rhetoric.licensing.machine` so turning it
 on is a **vendor-side token field**, with no client release.
 
 - The raw machine id is never stored, logged, or transmitted; only the hash

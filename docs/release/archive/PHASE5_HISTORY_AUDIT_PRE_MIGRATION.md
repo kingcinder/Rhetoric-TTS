@@ -6,7 +6,7 @@ Audit date: 2026-10-25 UTC
 
 ## Recovery anchor
 
-- Full-ref bundle: `/tmp/the-oracle-pre-scrub-20261025T143643Z.bundle`
+- Full-ref bundle: `/tmp/rhetoric-pre-scrub-20261025T143643Z.bundle`
 - SHA-256: `3c2133098a5d9c875afe987941d3d42822bf3b7e42808eb04fbabd22efe97623`
 - The bundle was created outside the repository with `git bundle create ... --all`
   before rewriting.

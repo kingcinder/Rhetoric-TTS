@@ -136,10 +136,10 @@ outside the authorized scope.
    earlier text here was wrong). A production seed for key `k2` WAS generated
    on 2026-11-01 and used: a serial was minted that day (licensee "Cody",
    lic_id b0a7fe4c-8ab2-4629-8d2b-6eb06cccbc14, no expiry, not machine-bound)
-   and is activated in the vendor checkout root (`oracle_license.json`). The
-   seed itself exists only as the sealed file `~/secrets/oracle-seed.gpg`
+   and is activated in the vendor checkout root (`rhetoric_license.json`). The
+   seed itself exists only as the sealed file `~/secrets/rhetoric-seed.gpg`
    (PGP symmetric, AES-256, mode 0600, sealed 2026-11-01 07:16 PT); the
-   plaintext copy at `~/.config/the-oracle/license-signing-seed` was deleted
+   plaintext copy at `~/.config/rhetoric/license-signing-seed` was deleted
    after sealing.
 3. Have an independent human reviewer listen to exact final-head outputs and
    record reviewer, date, commit, intelligibility, speaker assignment,

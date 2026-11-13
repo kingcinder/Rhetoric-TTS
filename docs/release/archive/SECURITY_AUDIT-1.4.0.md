@@ -19,7 +19,7 @@ nothing here is silently accepted.
 
 ## 1. Published test-vector key in the production registry — FIXED
 
-`src/the_oracle/licensing/keys.py` shipped exactly one entry, `k1`, whose public
+`src/rhetoric/licensing/keys.py` shipped exactly one entry, `k1`, whose public
 key was RFC 8032 §7.1 TEST 1's published vector. Its seed is printed in the RFC
 and was hard-coded throughout this repository's tests, so **any reader of the
 spec could mint a token that every shipped install accepted as a genuine
@@ -45,7 +45,7 @@ install runs as `community` — and:
 
 Owner action completed 2026-10-19: the production key `k2` was generated on the
 owner's machine, its `signing_seed_hex` was written to
-`~/.config/the-oracle/license-signing-seed` (mode `0600`) for transfer into the
+`~/.config/rhetoric/license-signing-seed` (mode `0600`) for transfer into the
 owner's secret manager, and only `verify_key_hex` was registered as
 `VerifyKey(key_id="k2", ...)` in `keys.py`. The licensing branch of the release
 gate is now open; the commercial gate still reports the EULA and the
@@ -61,7 +61,7 @@ therefore verifies **for any message**: a universal forgery from a 32-byte
 public key. `tests/test_licensing_ed25519.py::test_identity_public_key_must_not_verify_a_forged_signature`
 failed before the fix and passes after it.
 
-Fix in `src/the_oracle/_ed25519.py::verify`:
+Fix in `src/rhetoric/_ed25519.py::verify`:
 
 - small-order public keys **and** R are refused (`[8]P == neutral`), which kills
   the collapse above;
@@ -97,7 +97,7 @@ whose resource loading uses `importlib.resources`. The offline builder converts
 that exact commit to a wheel and the offline installer consumes the wheel
 without VCS or build-network access.
 
-Audit limits: pip-audit cannot match the local Oracle package, CPU-only
+Audit limits: pip-audit cannot match the local Rhetoric package, CPU-only
 PyTorch wheels, or Git-sourced Perth against PyPI advisories. They remain
 explicitly unaudited rather than being counted as clean.
 
@@ -130,7 +130,7 @@ Commands and results:
 ```
 /home/USER/redteam-tools/bin/gitleaks detect --source . --no-banner --redact \
   --config .gitleaks.toml --report-format json \
-  --report-path /tmp/oracle-gitleaks-final.json
+  --report-path /tmp/rhetoric-gitleaks-final.json
 # 780 commits scanned; no leaks found; exit 0
 
 git log --all --name-only --format='' | rg -c \

@@ -33,9 +33,9 @@ Status: **in progress; not a release approval**. Evidence in this audit is tied 
 - **Severity:** P0 — existing customers would lose shipped workflows
 - **Component:** Licensing policy and CLI dispatch
 - **User consequence:** An install without a key could not launch `voices` or other existing commands, despite the approved rollout design defining Community as the default and preserving current workflows.
-- **Evidence:** On local HEAD `8f08151`, `.venv/bin/python -m the_oracle.cli voices` exited 1 and printed the activation/purchase message. The licensing policy and `cli.main()` applied a product-key check globally. The regression test `test_community_can_use_existing_cli_commands_without_activation` reproduced this before the fix.
+- **Evidence:** On local HEAD `8f08151`, `.venv/bin/python -m rhetoric.cli voices` exited 1 and printed the activation/purchase message. The licensing policy and `cli.main()` applied a product-key check globally. The regression test `test_community_can_use_existing_cli_commands_without_activation` reproduced this before the fix.
 - **Correction:** Removed the global activation check; normal commands remain available in Community. Kept the new render report behind its Studio entitlement. No token format, signing key, or issuance policy was changed.
-- **Validation:** The regression passes. Full licensing, CLI, report, GUI, and integration coverage passed in the complete suite (**2,087 passed, 0 skipped, 0 failed**). `the-oracle voices` also exits 0 without an activated key.
+- **Validation:** The regression passes. Full licensing, CLI, report, GUI, and integration coverage passed in the complete suite (**2,087 passed, 0 skipped, 0 failed**). `rhetoric voices` also exits 0 without an activated key.
 - **Release blocker:** Corrected locally; still requires final suite and candidate qualification.
 
 ### RAUD-001 — Speech quality still needs listening review
@@ -43,7 +43,7 @@ Status: **in progress; not a release approval**. Evidence in this audit is tied 
 - **Severity:** P0 — release blocker until real output is reviewed
 - **Component:** Real-engine smoke and voice conditioning
 - **User consequence:** The prior harness supplied pure tones as speaker references and accepted any nonzero output bytes; it could pass without demonstrating realistic voice conditioning or valid speech output. A real render proves the engine completed and emitted a valid file, but not that its speech is intelligible or pleasant.
-- **Evidence:** `src/the_oracle/real_engine_smoke.py` generated 1-second 220/330 Hz sine-wave references. `_validate_smoke_output` checked only nonempty samples, positive peak, and nonempty file. Two regression tests failed against that behavior. They now require attributed bundled speech references, a 12-utterance two-speaker corpus, speech-like signal variation, and a decodable FLAC.
+- **Evidence:** `src/rhetoric/real_engine_smoke.py` generated 1-second 220/330 Hz sine-wave references. `_validate_smoke_output` checked only nonempty samples, positive peak, and nonempty file. Two regression tests failed against that behavior. They now require attributed bundled speech references, a 12-utterance two-speaker corpus, speech-like signal variation, and a decodable FLAC.
 - **Reproduction:** `.venv/bin/python -m pytest tests/test_review_fixes_text.py -q`; initial red run failed both new reference and stationary-tone checks. Green result is recorded in progress.
 - **Correction:** Use real bundled English references and validate exported FLAC structure/sample content. Finish a real render, inspect its metadata and signal, and perform the required listening review.
 - **Validation:** Standard Chatterbox CPU render completed in 243.06 seconds after removing Gradio and upgrading Pillow to 13.0.0. `ffprobe` and SoundFile decoded mono FLAC at 24 kHz, 1,085,280 frames / 45.22 s; peak 0.980011, zero samples at/above 0.9999, active-frame RMS CV 1.008. Output SHA-256: `f3ea3671c8ecc290e14fcc2a032f16fc058fcf09692963c591f62656034e6936`. The copied bundled references byte-match their source files. Human intelligibility/timbre review is not available in this run.
@@ -76,7 +76,7 @@ Status: **in progress; not a release approval**. Evidence in this audit is tied 
 - **Severity:** Closed for the managed runtime dependency graph
 - **Component:** Python dependency environment
 - **User consequence:** Earlier installs included a Pillow release with known critical/high image-parser defects.
-- **Evidence:** Initial audit reported 42 advisory records. The managed install now uses Pillow 13.0.0, Brotli 1.2.1, certifi 2026.10.23, and virtualenv 21.14.13. Pillow 13's official [release notes](https://pillow.readthedocs.io/en/stable/releasenotes/13.0.0.html) describe critical/high security fixes. Chatterbox's source imports no Gradio API, and the Oracle uses its Qt UI, so the installer no longer installs Gradio and the metadata patch removes its unused requirement. The rendered CPU smoke passed with Gradio absent. `resemble-perth`, the local project, and CPU PyTorch packages remain outside `pip-audit`'s configured PyPI audit scope.
+- **Evidence:** Initial audit reported 42 advisory records. The managed install now uses Pillow 13.0.0, Brotli 1.2.1, certifi 2026.10.23, and virtualenv 21.14.13. Pillow 13's official [release notes](https://pillow.readthedocs.io/en/stable/releasenotes/13.0.0.html) describe critical/high security fixes. Chatterbox's source imports no Gradio API, and Rhetoric uses its Qt UI, so the installer no longer installs Gradio and the metadata patch removes its unused requirement. The rendered CPU smoke passed with Gradio absent. `resemble-perth`, the local project, and CPU PyTorch packages remain outside `pip-audit`'s configured PyPI audit scope.
 - **Reproduction:** `.venv/bin/python -m pip_audit`; managed installation commands are pinned in `tests/test_install_boundary.py`.
 - **Correction:** Removed the unused Gradio dependency from the managed online/offline install and patched Chatterbox metadata; raised Pillow's minimum to 13.0.0. Updated Brotli, certifi, and virtualenv to fixed versions and regenerated third-party notices.
 - **Validation:** `pip-audit` reports no known vulnerabilities, `.venv/bin/python -m pip check` passes, and a real CPU render succeeds with Gradio absent.
@@ -108,7 +108,7 @@ Status: **in progress; not a release approval**. Evidence in this audit is tied 
 - **Severity:** P1 — distribution hygiene requirement
 - **Component:** Source distribution manifest
 - **User consequence:** The first local 1.4.2 source archive contained 163 test files that users do not need to install or run the application.
-- **Evidence:** `tar -tzf release_artifacts/the_oracle-1.4.2.tar.gz | rg '^the_oracle-1.4.2/tests/' | wc -l` returned 163. No `tests` directive existed in `MANIFEST.in`; setuptools included the tracked tree by default. The wheel contained no test suite.
+- **Evidence:** `tar -tzf release_artifacts/rhetoric-1.4.2.tar.gz | rg '^rhetoric-1.4.2/tests/' | wc -l` returned 163. No `tests` directive existed in `MANIFEST.in`; setuptools included the tracked tree by default. The wheel contained no test suite.
 - **Correction:** Add `prune tests` to `MANIFEST.in` and a regression in `tests/test_release_hygiene.py` that requires the exclusion.
 - **Validation:** Regression was observed failing before the manifest change. After the change, `pytest tests/test_release_hygiene.py -q` passed (6 tests); the final clean release build contains zero `tests/` entries and its checksum verifies.
 - **Release blocker:** No; corrected archive was rebuilt and inspected.
@@ -118,7 +118,7 @@ Status: **in progress; not a release approval**. Evidence in this audit is tied 
 - **Severity:** P0 — clean-install blocker, corrected in the working tree
 - **Component:** Python dependency resolution for managed Chatterbox installs
 - **User consequence:** A fresh install could provision NumPy 2.4.6 even though Chatterbox 0.1.7 requires NumPy `<2`; after downgrading NumPy, `ml-dtypes 0.6.0` still required NumPy `>=2`. `pip check` therefore reported broken requirements and the environment was not internally consistent.
-- **Evidence:** Reproduced in the isolated managed install at `/media/USER/Data/oracle-clean-install-YvsR8r/tree`. `pip check` first reported the Chatterbox/NumPy conflict, then the `ml-dtypes`/NumPy conflict. Dry-run resolution selected `ml-dtypes 0.5.4` for the compatible closure.
+- **Evidence:** Reproduced in the isolated managed install at `/media/USER/Data/rhetoric-clean-install-YvsR8r/tree`. `pip check` first reported the Chatterbox/NumPy conflict, then the `ml-dtypes`/NumPy conflict. Dry-run resolution selected `ml-dtypes 0.5.4` for the compatible closure.
 - **Correction:** Constrain the project to `numpy>=1.26,<2`, pin the managed Chatterbox runtime to `ml-dtypes<0.6`, and add `tests/test_release_dependency_constraints.py`.
 - **Validation:** Reinstalled in the isolated tree: NumPy 1.26.4, ml-dtypes 0.5.4, `pip check` clean, and normal doctor exited 0. Targeted install/offline/metadata regression set: 40 passed. The corrected full working-tree suite passed **2,089 tests**, and the clean release build repeated that result.
 - **Release blocker:** No for managed dependency consistency; cold download and first-user workflow remain unverified.

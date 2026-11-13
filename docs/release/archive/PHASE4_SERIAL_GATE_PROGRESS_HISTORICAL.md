@@ -23,17 +23,17 @@ Date: 2026-10-23
 
 ## Evidence
 
-- `PYTHONPATH=src /tmp/oracle-baseline-uV4W9R/bin/python -m pytest tests/test_eula_acceptance.py tests/test_serial_gate_product.py tests/test_licensing_policy_enforcement.py tests/test_render_report.py tests/test_license_state_render.py tests/test_gui_license.py tests/test_doctor_licensing.py tests/test_cli_bug_report.py tests/test_support_diagnostics.py tests/test_gui_crash.py -q`
+- `PYTHONPATH=src /tmp/rhetoric-baseline-uV4W9R/bin/python -m pytest tests/test_eula_acceptance.py tests/test_serial_gate_product.py tests/test_licensing_policy_enforcement.py tests/test_render_report.py tests/test_license_state_render.py tests/test_gui_license.py tests/test_doctor_licensing.py tests/test_cli_bug_report.py tests/test_support_diagnostics.py tests/test_gui_crash.py -q`
   → **99 passed**.
 - `git diff --check` → passed.
-- `cmp -s EULA-DRAFT.md src/the_oracle/EULA-DRAFT.md` → identical.
+- `cmp -s EULA-DRAFT.md src/rhetoric/EULA-DRAFT.md` → identical.
 - `scripts/soft_launch.py --check --json` → blocked by 7 existing blockers:
   draft EULA and unresolved owner/counsel dependency decisions for
   `chatterbox-tts`, `deepmultilingualpunctuation`, `torch`, `torchaudio`,
   `torchvision`, and `transformers`; one weak-copyleft warning remains.
 - `rg -n -i '(community|trial)'` over the Phase 4 code/UI and named release
   documents → no matches.
-- `PYTHONPATH=src /tmp/oracle-baseline-uV4W9R/bin/python -m pytest tests/test_serial_vendor_workflow.py -q`
+- `PYTHONPATH=src /tmp/rhetoric-baseline-uV4W9R/bin/python -m pytest tests/test_serial_vendor_workflow.py -q`
   → **1 passed** using throwaway `k2`/`k3` test keys only; no production seed
   was read or written.
 

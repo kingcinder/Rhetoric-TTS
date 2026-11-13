@@ -2,7 +2,7 @@ This is engineered for:
 
 phoneme coverage
 cadence variation
-conversational realism (fits your Oracle use case)
+conversational realism (fits your Rhetoric use case)
 
 Recording constraints (these matter MORE than the script)
 HARD REQUIREMENTS: (non-negotiable)
@@ -55,7 +55,7 @@ Result: permanent hiss / room tone baked into voice
 Mechanism: harmonic distortion → irreversible
 Result: harsh, crunchy output
 
-5) Optional upgrade (high-impact for Oracle)
+5) Optional upgrade (high-impact for Rhetoric)
 
 If you want significantly better results, do this:
 
