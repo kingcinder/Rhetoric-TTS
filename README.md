@@ -658,25 +658,31 @@ The portable sample inputs under `Input/` include:
 
 ## Development
 
-Create a local development environment with a supported interpreter:
+Create a local development environment with a supported interpreter. The
+managed installer is the supported setup: it creates `.venv`, installs the
+audited runtime plus the dev tools, and applies the engine-package metadata
+patch. Use it instead of installing the extras by hand.
 
 Linux:
 
 ```bash
-python3.12 -m venv .venv
-./.venv/bin/python -m pip install --upgrade pip
-./.venv/bin/python -m pip install -e ".[dev,ml,chatterbox]"
+python3.12 scripts/manage_install.py bootstrap --include-dev --pytorch-runtime cpu
 ./.venv/bin/pytest
 ```
 
 Windows:
 
 ```powershell
-py -3.12 -m venv .venv
-.\.venv\Scripts\python.exe -m pip install --upgrade pip
-.\.venv\Scripts\python.exe -m pip install -e ".[dev,ml,chatterbox]"
+py -3.12 scripts\manage_install.py bootstrap --include-dev --pytorch-runtime cpu
 .\.venv\Scripts\pytest.exe
 ```
+
+Do not install the `dev`, `ml` and `chatterbox` extras in one command. That
+combination does not co-resolve:
+`[ml]` pins `transformers==5.20.0` while `chatterbox-tts 0.1.7` pins a different
+Transformers version, so the resolver aborts. The managed installer installs
+the same audited stack in the order that works. Changing those pins is an owner
+decision, not a setup workaround.
 
 A bare `pytest` runs everything. For the faster loop between changes, exclude the
 `slow` marker:

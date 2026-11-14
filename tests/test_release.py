@@ -126,6 +126,19 @@ def _write_fake_repo(
     return tmp_path
 
 
+def test_the_readme_developer_setup_uses_the_managed_installer() -> None:
+    """The documented dev install must be the one the resolver accepts.
+
+    README advertised `pip install -e ".[dev,ml,chatterbox]"`, which cannot
+    resolve ([ml] pins transformers 5.20.0; chatterbox-tts 0.1.7 pins another
+    version). The managed installer is the working path; this pins the two
+    together so the README cannot drift back to a command that always fails.
+    """
+    readme = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
+    assert 'pip install -e ".[dev,ml,chatterbox]"' not in readme
+    assert "manage_install.py bootstrap --include-dev" in readme
+
+
 def test_pyproject_is_generated_from_the_package_version() -> None:
     """The collapse pin: no version literal in pyproject; it reads __version__."""
     data = tomllib.loads((REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8"))
