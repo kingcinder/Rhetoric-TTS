@@ -81,6 +81,38 @@ def test_the_dispatch_input_reaches_the_suite_as_an_environment_variable() -> No
     )
 
 
+def test_a_native_fault_will_name_its_test_in_the_artifact() -> None:
+    """A segfault must not leave the artifact as bare truncated progress.
+
+    Measured: the py3.11 leg died at 88% with ``Segmentation fault (core
+    dumped)`` and exit code 139, and the uploaded ``pytest.txt`` simply stopped
+    mid-file -- no traceback, no test name. ``PYTHONFAULTHANDLER`` makes Python
+    print every thread's frame as the process dies, and the step's tee already
+    captures stderr into that file. The exit code gets its own file because
+    the runner log that carried it needs admin rights to read.
+    """
+    step = _step(SUITE_STEP)
+    script = str(step["run"])
+
+    assert step["env"]["PYTHONFAULTHANDLER"] == "1", (
+        "without faulthandler a native fault writes no Python frame anywhere, "
+        "which is how the 88% crash reached the artifact with no explanation"
+    )
+    assert "suite-exit-code.txt" in script
+    assert 'exit "$status"' in script, "pytest's own status must stay the step's status"
+
+
+def test_the_post_crash_step_captures_the_kernel_log() -> None:
+    """A segfault or OOM kill is recorded by the kernel, not by pytest."""
+    script = str(_step(POST_CRASH_STEP)["run"])
+
+    assert "kernel-log-tail.txt" in script
+    assert "dmesg" in script
+    # Best-effort like the other probes: a restricted kernel must not mask the
+    # failure this step exists to describe.
+    assert "|| true" in script
+
+
 def test_the_workflow_keeps_the_post_crash_headroom_probe() -> None:
     """A failed suite still records the state at the moment of the failure."""
     step = _step(POST_CRASH_STEP)

@@ -153,23 +153,37 @@ jobs:
           # Read through the expression context rather than spliced into the
           # shell: the input is user-controlled text.
           RHETORIC_FORCE_TEST_FAILURE: "${{ github.event.inputs['force-failure'] || 'false' }}"
+          # A native fault leaves no Python traceback, and that is exactly how
+          # the py3.11 leg died at 88% (SIGSEGV, exit 139) with a truncated
+          # pytest.txt. faulthandler prints every thread's Python frame to
+          # stderr as the process dies, and the tee below captures it into the
+          # artifact, so the next occurrence names the running test.
+          PYTHONFAULTHANDLER: "1"
         run: |
           set -o pipefail
           mkdir -p ci-test-logs
           # A crash in Qt or torch kills pytest with no Python frames, so record
-          # the headroom first: the last three hosted runs died on SIGBUS.
+          # the headroom first.
           { free -m; df -h /tmp /dev/shm; } | tee ci-test-logs/resources-before.txt
           # Printed so a run's own log says which way the input resolved.
           echo "Forced suite failure requested: ${RHETORIC_FORCE_TEST_FAILURE:-<unset>}"
-          ./.venv/bin/pytest 2>&1 | tee ci-test-logs/pytest.txt
+          # Keep pytest's own status in the artifact. The runner log said
+          # "exit code 139", but that log needs admin rights to read and the
+          # artifact is what survives; the number also separates a signal death
+          # (128+N) from an ordinary test failure.
+          status=0
+          ./.venv/bin/pytest 2>&1 | tee ci-test-logs/pytest.txt || status=$?
+          echo "$status" | tee ci-test-logs/suite-exit-code.txt
+          exit "$status"
 
       # The headroom print above is a before-picture, taken while the box is
-      # healthy. SIGBUS is an mmap, disk or tmpfs failure, so a crash needs the
-      # state at the moment it happened: this runs only after a failed step and
-      # lands in the same artifact directory the failure upload collects.
+      # healthy. Memory, disk and tmpfs exhaustion are the resource causes of a
+      # SIGBUS, and a native fault needs the state at the moment it happened:
+      # this runs only after a failed step and lands in the same artifact
+      # directory the failure upload collects.
       - name: Post-Crash Headroom (Linux)
         # Linux only: `free` is not on the Windows runners, and their suite step
-        # has no SIGBUS history to explain.
+        # has no such crash history to explain.
         if: failure() && runner.os == 'Linux'
         shell: bash
         run: |
@@ -178,6 +192,11 @@ jobs:
           # describes, and a runner without /dev/shm must still report RAM.
           { free -m || true; df -h /tmp /dev/shm || true; } 2>&1 \
             | tee ci-test-logs/resources-after.txt
+          # The kernel records a segfault or an OOM kill in its ring buffer, and
+          # that line is the difference between "our code crashed" and "the box
+          # killed it". Best-effort: hosted kernels often restrict dmesg.
+          { dmesg 2>/dev/null | tail -30 || true; } \
+            | tee ci-test-logs/kernel-log-tail.txt
 
       - name: Run Test Suite (Windows)
         if: runner.os == 'Windows'
