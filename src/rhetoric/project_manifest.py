@@ -109,7 +109,9 @@ def save_project_manifest(path: str | Path, project: SavedProject) -> Path:
 
 def load_project_manifest(path: str | Path) -> SavedProject:
     source = Path(path)
-    payload = json.loads(source.read_text(encoding="utf-8"))
+    # utf-8-sig: a manifest re-saved by Notepad carries a BOM, and json.loads
+    # rejects that with a JSONDecodeError the user reads as a corrupt project.
+    payload = json.loads(source.read_text(encoding="utf-8-sig"))
     return saved_project_from_dict(payload)
 
 

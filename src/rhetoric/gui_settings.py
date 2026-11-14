@@ -54,7 +54,10 @@ def save_gui_settings(path: str | Path, payload: dict[str, Any]) -> Path:
 def load_gui_settings(path: str | Path) -> dict[str, Any]:
     source = Path(path)
     try:
-        payload = json.loads(source.read_text(encoding="utf-8"))
+        # utf-8-sig, not utf-8: a profile re-saved by Notepad or another Windows
+        # editor starts with a BOM, and json.loads rejects that as "Unexpected
+        # UTF-8 BOM" -- an error the user cannot see or fix from the app.
+        payload = json.loads(source.read_text(encoding="utf-8-sig"))
     except OSError as exc:
         # A vanished/renamed file (or unreadable path) must surface as the
         # same error type the GUI handlers catch — raw FileNotFoundError
@@ -303,7 +306,10 @@ def load_app_settings() -> dict[str, Any]:
     if not path.exists():
         return _normalize_app_settings({})
     try:
-        payload = json.loads(path.read_text(encoding="utf-8"))
+        # utf-8-sig: a hand-edited app-settings file saved by Notepad starts with
+        # a BOM, which json.loads rejects. Tolerating it is the difference
+        # between "keep the user's settings" and "silently reset to defaults".
+        payload = json.loads(path.read_text(encoding="utf-8-sig"))
     except (OSError, UnicodeDecodeError, json.JSONDecodeError):
         return _normalize_app_settings({})
     return _normalize_app_settings(payload)
@@ -327,7 +333,7 @@ def load_recent_reference_paths(limit: int = 10) -> list[str]:
     if not path.exists():
         return []
     try:
-        payload = json.loads(path.read_text(encoding="utf-8"))
+        payload = json.loads(path.read_text(encoding="utf-8-sig"))
     except (OSError, ValueError, UnicodeDecodeError):
         _LOG.warning("Ignoring corrupt recent-references file: %s", path)
         return []

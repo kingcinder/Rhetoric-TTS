@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 import pytest
@@ -426,6 +427,54 @@ def test_load_gui_settings_corrupt_json_raises_gui_settings_error(tmp_path: Path
 def test_load_template_missing_raises_gui_settings_error() -> None:
     with pytest.raises(GUISettingsError):
         load_template("no_such_template_anywhere")
+
+
+# ----------------------------------------------------------------------------
+# Editors that save a UTF-8 BOM (Notepad and friends)
+# ----------------------------------------------------------------------------
+
+
+def _bom_json(payload: object) -> bytes:
+    """A JSON file the way a Windows editor saves it: BOM, then the document."""
+    return b"\xef\xbb\xbf" + json.dumps(payload).encode("utf-8")
+
+
+def test_load_gui_settings_accepts_a_utf8_bom(tmp_path: Path) -> None:
+    """A profile re-saved by Notepad must load, not read as invalid JSON."""
+    path = tmp_path / "notepad_settings.json"
+    path.write_bytes(_bom_json(_payload()))
+
+    loaded = load_gui_settings(path)
+
+    assert loaded["project"]["output_filename"] == "rhetoric_render.flac"
+    assert loaded["speakers"]["A"]["reference_path"] == "/tmp/a.wav"
+
+
+def test_load_app_settings_accepts_a_utf8_bom(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """A hand-edited app-settings file with a BOM keeps its values."""
+    isolate_user_config(monkeypatch, tmp_path)
+    from rhetoric.gui_settings import app_settings_path
+
+    app_settings_path().write_bytes(
+        _bom_json({"inference_backend": "vulkan", "audio_cpp_threads": 4})
+    )
+
+    loaded = load_app_settings()
+
+    assert loaded["inference_backend"] == "vulkan"
+    assert loaded["audio_cpp_threads"] == 4
+
+
+def test_load_recent_reference_paths_accepts_a_utf8_bom(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A BOM must not make the recent-references list look corrupt and empty."""
+    isolate_user_config(monkeypatch, tmp_path)
+    from rhetoric.gui_settings import recent_references_path
+
+    recent_references_path().write_bytes(_bom_json(["/tmp/a.wav", "/tmp/b.wav"]))
+
+    assert load_recent_reference_paths() == ["/tmp/a.wav", "/tmp/b.wav"]
 
 
 # ----------------------------------------------------------------------------

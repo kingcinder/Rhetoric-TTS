@@ -64,7 +64,9 @@ def validate_manifest(payload: Any) -> dict[str, Any]:
 def parse_manifest(data: bytes | str) -> dict[str, Any]:
     """Parse and validate manifest JSON from raw bytes or text."""
     try:
-        text = data.decode("utf-8") if isinstance(data, bytes) else data
+        # utf-8-sig: a manifest saved by Notepad starts with a BOM, and a BOM is
+        # not JSON. The decode is where a byte-level reader must drop it.
+        text = data.decode("utf-8-sig") if isinstance(data, bytes) else data
         payload = json.loads(text)
     except (UnicodeDecodeError, json.JSONDecodeError) as exc:
         raise ManifestError(f"could not parse update manifest: {exc}") from exc

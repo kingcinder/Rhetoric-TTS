@@ -62,7 +62,9 @@ def is_accepted(root: str | Path) -> bool:
     if current is None:
         return False
     try:
-        data = json.loads(acceptance_path(root).read_text(encoding="utf-8"))
+        # utf-8-sig: an editor that saves the record with a BOM must not revoke
+        # an acceptance the user already gave (a BOM is not JSON to json.loads).
+        data = json.loads(acceptance_path(root).read_text(encoding="utf-8-sig"))
     except (OSError, ValueError):
         return False
     if not isinstance(data, dict):

@@ -124,6 +124,30 @@ def test_manifest_scalar_root_raises_typed_error(tmp_path: Path, raw: str) -> No
         load_project_manifest(manifest_path)
 
 
+def test_a_manifest_saved_with_a_utf8_bom_loads(tmp_path: Path) -> None:
+    """A manifest re-saved by Notepad keeps its BOM; it must still load."""
+    plan = RenderPlan(
+        title="BOM project",
+        source_path="in.txt",
+        output_dir=str(tmp_path / "output"),
+        engine="chatterbox",
+        correction_mode="moderate",
+    )
+    speakers = {
+        "A": SpeakerSettings(reference_path="a.wav", voice_settings=VoiceSettings()),
+        "B": SpeakerSettings(reference_path="b.wav", voice_settings=VoiceSettings()),
+    }
+    payload = build_saved_project(plan, RenderSettings(), speakers).to_dict()
+    manifest_path = tmp_path / "bom-project.json"
+    manifest_path.write_bytes(b"\xef\xbb\xbf" + json.dumps(payload).encode("utf-8"))
+
+    loaded = load_project_manifest(manifest_path)
+
+    assert loaded.title == "BOM project"
+    assert loaded.render_settings.correction_mode == "moderate"
+    assert loaded.speaker_settings["A"].reference_path == "a.wav"
+
+
 def test_manifest_default_artist_uses_rhetoric_brand(tmp_path: Path) -> None:
     plan = RenderPlan(
         title="t",

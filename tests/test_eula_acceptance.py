@@ -45,6 +45,14 @@ def test_malformed_record_fails_closed(root: Path) -> None:
     assert eula_acceptance.is_accepted(root) is False
 
 
+def test_acceptance_record_with_a_utf8_bom_is_accepted(root: Path) -> None:
+    """An editor that saves the record with a BOM must not revoke acceptance."""
+    path = eula_acceptance.record_acceptance(root)
+    path.write_bytes(b"\xef\xbb\xbf" + path.read_bytes())
+
+    assert eula_acceptance.is_accepted(root) is True
+
+
 def test_wrong_shape_fails_closed(root: Path) -> None:
     eula_acceptance.acceptance_path(root).write_text(json.dumps(["x"]), encoding="utf-8")
     assert eula_acceptance.is_accepted(root) is False

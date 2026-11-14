@@ -47,6 +47,24 @@ def test_verify_manifest_artifact_and_report_update(tmp_path: Path) -> None:
     assert checker.update_available("1.5.0", payload) is False
 
 
+def test_a_manifest_saved_with_a_utf8_bom_is_readable(tmp_path: Path) -> None:
+    """A manifest re-saved by Notepad must not read as unparseable to the updater."""
+    from rhetoric.update_manifest import load_manifest
+
+    manifest = tmp_path / "update-manifest.json"
+    document = {
+        "format": 1,
+        "version": "1.5.0",
+        "artifacts": [{"name": "rhetoric-1.5.0.AppImage", "sha256": "0" * 64, "size": 3}],
+    }
+    manifest.write_bytes(b"\xef\xbb\xbf" + json.dumps(document).encode("utf-8"))
+
+    payload = load_manifest(manifest)
+
+    assert payload["version"] == "1.5.0"
+    assert payload["artifacts"][0]["name"] == "rhetoric-1.5.0.AppImage"
+
+
 def test_verify_manifest_rejects_changed_artifact(tmp_path: Path) -> None:
     checker = _load()
     artifact = tmp_path / "rhetoric.AppImage"
