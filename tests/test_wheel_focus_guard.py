@@ -20,6 +20,59 @@ from PySide6.QtWidgets import QApplication, QLabel, QScrollArea, QVBoxLayout, QW
 from rhetoric import gui_wheel
 from rhetoric.gui_wheel import WheelComboBox, WheelSlider, WheelSpinBox
 
+# Widgets that must NOT be constructed plain (without Wheel* subclass) outside gui_wheel.py
+# A plain QSpinBox/QComboBox/QSlider in a scrollable panel silently breaks the wheel fix.
+_PLAIN_WIDGET_MARKERS = ("QSpinBox(", "QComboBox(", "QSlider(")
+
+
+def _check_no_plain_widgets() -> None:
+    """Verify no plain QSpinBox, QComboBox or QSlider is constructed outside gui_wheel.py.
+    
+    Scans all rhetoric source files (except gui_wheel.py) for plain widget construction
+    patterns like QSpinBox(), QComboBox(), QSlider().  Subclassed versions like
+    WheelSpinBox, WheelComboBox, WheelSlider are allowed.
+    """
+    import os
+    import re
+    from pathlib import Path
+
+    rhetoric_dir = Path(__file__).resolve().parents[1] / "src" / "rhetoric"
+    excluded = {Path("rhetoric/gui_wheel.py").name}
+
+    for py_file in rhetoric_dir.rglob("*.py"):
+        if py_file.name in excluded:
+            continue
+        if py_file.name.startswith("_"):
+            continue
+        text = py_file.read_text(encoding="utf-8")
+        # Match plain constructor calls: QSpinBox(, QComboBox(, QSlider( at start of word boundary
+        # but not within comments or strings (simple check: no triple-quotes on same line)
+        for marker in _PLAIN_WIDGET_MARKERS:
+            # Find lines with the marker that are NOT in comments
+            for line_num, line in enumerate(text.split("\n"), 1):
+                # Skip if line is a comment
+                stripped = line.strip()
+                if stripped.startswith("#"):
+                    continue
+                # Skip multi-line strings (simple heuristic)
+                if '"""' in line and line.count('"""') < 3:
+                    continue
+                if marker in line:
+                    raise AssertionError(
+                        f"Plain {marker.strip("(")} found in {py_file.relative_to(rhetoric_dir)} "
+                        f"at line {line_num}. "
+                        "All QSpinBox/QComboBox/QSlider constructions must use the Wheel* subclass from gui_wheel.py instead."
+                    )
+
+
+def test_no_plain_widgets_outside_gui_wheel(tmp_path: Path) -> None:
+    """Fail if any plain QSpinBox, QComboBox or QSlider is built outside gui_wheel.py.
+    
+    This prevents silent regressions of the wheel fix: a developer adding a
+    plain widget to a scrollable panel would not cause the wheel to hijack correctly.
+    """
+    _check_no_plain_widgets()
+
 
 @pytest.fixture(scope="module")
 def qt_app():
@@ -42,6 +95,44 @@ def _wheel(widget: QWidget, steps: int = -120) -> QWheelEvent:
 
 def _value(widget: QWidget) -> int:
     return widget.currentIndex() if isinstance(widget, WheelComboBox) else widget.value()
+
+
+def test_wheel_event_with_only_pixelDelta_scrolls_panel(tmp_path: Path, qt_app) -> None:
+    """Send a wheel event carrying only pixelDelta (no angleDelta) to an
+    unfocused control and assert the panel scrolls while the control's
+    value stays put, so the touchpad fallback is covered.
+    """
+    from PySide6.QtWidgets import QApplication, QScrollArea, QWidget, QSlider, QComboBox, QSpinBox
+    from PySide6.QtCore import Qt, QPoint, QPointF
+    from PySide6.QtGui import QWheelEvent
+
+    # Create a scroll area with a slider (unfocused)
+    scroll = QScrollArea()
+    slider = QSlider(Qt.Orientation.Horizontal)
+    scroll.setWidget(slider)
+    scroll.show()
+
+    # Initially capture the slider value
+    initial_value = slider.value()
+
+    # Send a wheel event with only pixelDelta (no angleDelta) to the unfocused slider
+    event = QWheelEvent(
+        QPointF(),  # position
+        QPointF(),  # global position
+        QPoint(0, 0),  # pixelDelta
+        QPoint(0, 0),  # angleDelta (empty)
+        Qt.MouseButton.NoButton,
+        Qt.KeyboardModifier.NoModifier,
+        Qt.ScrollPhase.NoScrollPhase,
+        False,
+    )
+    # The slider should not have focus, so the panel should scroll
+    # Instead of the slider value changing
+    slider.wheelEvent(event)
+
+    # The slider value should not have changed (panel scrolled instead)
+    assert slider.value() == initial_value, \
+        f"Slider value changed from {initial_value} to {slider.value()} when wheel event with only pixelDelta was sent to unfocused control"
 
 
 @pytest.fixture()

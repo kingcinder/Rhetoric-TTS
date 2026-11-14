@@ -172,7 +172,7 @@ def test_the_generator_patch_is_applied_and_idempotent(tmp_path: Path) -> None:
     assert "#include <chrono>" in patched
     # The wait is bounded per generator, not per shader: 40 x 250ms, and the
     # compile latch it then sets stops every other waiter immediately.
-    assert "rhetoric_fork_attempt < 40" in patched
+    assert "rhetoric_fork_attempt < FORK_FAIL_RETRY_COUNT" in patched
     assert "rhetoric_fork_stalled" not in patched, "one flag is enough; the latch already covers this"
     # A shader that still fails cannot become a silent hole in the archive.
     assert "rhetoric_shader_compile_failed = true;" in patched

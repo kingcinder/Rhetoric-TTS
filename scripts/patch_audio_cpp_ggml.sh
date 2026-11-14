@@ -35,8 +35,27 @@ SP_FILE="$AUDIOCPP_DIR/external/sentencepiece/CMakeLists.txt"
 GGML_MARKER="===== BEGIN RHETORIC VENDORED PATCH (RDNA1 buffer memset) ====="
 SP_MARKER="===== BEGIN RHETORIC VENDORED PATCH (space-safe macro-prefix-map) ====="
 SPIRV_MARKER="===== BEGIN RHETORIC VENDORED PATCH (portable SPIR-V headers) ====="
+# Superseded (pre-rename ORACLE) markers - these indicate the audio.cpp
+# tree was patched with an older revision that used different marker formats.
+# If found, the developer must reset or re-clone audio.cpp before re-running.
+SUPERSEDED_MARKER_RDNA1="===== ORACLE RDNA1 buffer memset (pre-rename) ====="
+SUPERSEDED_MARKER_SP="===== ORACLE space-safe build (pre-rename) ====="
+SUPERSEDED_MARKER_SPIRV="===== ORACLE portable SPIR-V headers (pre-rename) ====="
 SHADERS_GEN_FILE="$AUDIOCPP_DIR/external/ggml/src/ggml-vulkan/vulkan-shaders/vulkan-shaders-gen.cpp"
 PYTHON_BIN="${PYTHON_BIN:-python3}"
+
+# Check for superseded markers and inform developer
+if grep -Fq "$SUPERSEDED_MARKER_RDNA1" "$GGML_FILE" || \
+   grep -Fq "$SUPERSEDED_MARKER_SP" "$SP_FILE" || \
+   grep -Fq "$SUPERSEDED_MARKER_SPIRV" "$GGML_FILE"; then
+  echo ""
+  echo "=== TREE PATCHED WITH PRE-RENAME ORACLE REVISION ==="
+  echo "The audio.cpp tree carries superseded ORACLE revision markers."
+  echo "These markers indicate the tree was patched with an older patch format."
+  echo "Please reset or re-clone the audio.cpp directory, then re-run this script."
+  echo ""
+  exit 1
+fi
 
 if [[ ! -f "$GGML_FILE" ]]; then
   echo "ERROR: ggml-vulkan.cpp not found at $GGML_FILE (run scripts/build_audio_cpp.sh first)." >&2
@@ -44,7 +63,9 @@ if [[ ! -f "$GGML_FILE" ]]; then
 fi
 
 # The shader generator carries the fork-retry and fail-loud patch; refuse to run
-# without it rather than shipping a build whose race is silently unpatched.
+  # without it rather than shipping a build whose race is silently unpatched.
+# Retry window is configurable via FORK_FAIL_RETRY_COUNT (default: 40 attempts = 10s).
+FORK_FAIL_RETRY_COUNT=${FORK_FAIL_RETRY_COUNT:-40}
 if [[ ! -f "$SHADERS_GEN_FILE" ]]; then
   echo "ERROR: vulkan-shaders-gen.cpp not found at $SHADERS_GEN_FILE (run scripts/build_audio_cpp.sh first)." >&2
   exit 1
@@ -211,7 +232,7 @@ SH_FORK_PATCHED="$(printf '%s\n' \
   '    // Wait up to 10s (40 x 250ms) for a slot instead of losing the shader. A' \
   '    // shader that uses the whole window means the shortage is not a burst, and' \
   '    // the compile latch it then sets stops every other wait immediately.' \
-  '    for (int rhetoric_fork_attempt = 0; pid < 0 && rhetoric_fork_attempt < 40; ++rhetoric_fork_attempt) {' \
+  '    for (int rhetoric_fork_attempt = 0; pid < 0 && rhetoric_fork_attempt < FORK_FAIL_RETRY_COUNT; ++rhetoric_fork_attempt) {' \
   '        if (errno != EAGAIN && errno != ENOMEM) {' \
   '            break;' \
   '        }' \

@@ -40,7 +40,7 @@ index 7295ef1..df39774 100644
 +    // Wait up to 10s (40 x 250ms) for a slot instead of losing the shader. A
 +    // shader that uses the whole window means the shortage is not a burst, and
 +    // the compile latch it then sets stops every other wait immediately.
-+    for (int rhetoric_fork_attempt = 0; pid < 0 && rhetoric_fork_attempt < 40; ++rhetoric_fork_attempt) {
++    for (int rhetoric_fork_attempt = 0; pid < 0 && rhetoric_fork_attempt < FORK_FAIL_RETRY_COUNT; ++rhetoric_fork_attempt) {
 +        if (errno != EAGAIN && errno != ENOMEM) {
 +            break;
 +        }
