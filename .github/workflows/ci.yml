@@ -153,12 +153,6 @@ jobs:
           # Read through the expression context rather than spliced into the
           # shell: the input is user-controlled text.
           RHETORIC_FORCE_TEST_FAILURE: "${{ github.event.inputs['force-failure'] || 'false' }}"
-          # A native fault leaves no Python traceback, and that is exactly how
-          # the py3.11 leg died at 88% (SIGSEGV, exit 139) with a truncated
-          # pytest.txt. faulthandler prints every thread's Python frame to
-          # stderr as the process dies, and the tee below captures it into the
-          # artifact, so the next occurrence names the running test.
-          PYTHONFAULTHANDLER: "1"
         run: |
           set -o pipefail
           mkdir -p ci-test-logs
@@ -167,6 +161,12 @@ jobs:
           { free -m; df -h /tmp /dev/shm; } | tee ci-test-logs/resources-before.txt
           # Printed so a run's own log says which way the input resolved.
           echo "Forced suite failure requested: ${RHETORIC_FORCE_TEST_FAILURE:-<unset>}"
+          # Native faults: the suite keeps faulthandler armed itself (the crash-
+          # consent tests disarm the process-wide handler at ~19%, and
+          # tests/conftest.py re-arms at every test boundary). Deliberately no
+          # PYTHONFAULTHANDLER here: the consent-aware entry-point test runs a
+          # subprocess and asserts the handler is OFF with consent off, and an
+          # ambient variable would overwrite the thing it measures.
           # Keep pytest's own status in the artifact. The runner log said
           # "exit code 139", but that log needs admin rights to read and the
           # artifact is what survives; the number also separates a signal death

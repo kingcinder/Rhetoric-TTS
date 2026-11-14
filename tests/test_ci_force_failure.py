@@ -86,17 +86,23 @@ def test_a_native_fault_will_name_its_test_in_the_artifact() -> None:
 
     Measured: the py3.11 leg died at 88% with ``Segmentation fault (core
     dumped)`` and exit code 139, and the uploaded ``pytest.txt`` simply stopped
-    mid-file -- no traceback, no test name. ``PYTHONFAULTHANDLER`` makes Python
-    print every thread's frame as the process dies, and the step's tee already
-    captures stderr into that file. The exit code gets its own file because
-    the runner log that carried it needs admin rights to read.
+    mid-file -- no traceback, no test name. The suite keeps faulthandler armed
+    itself now (tests/conftest.py re-arms what the crash-consent tests disarm),
+    and the step's tee already captures stderr into that file. The exit code
+    gets its own file because the runner log that carried it needs admin rights
+    to read.
+
+    The step must NOT set ``PYTHONFAULTHANDLER``: the consent-aware entry-point
+    test runs a subprocess and asserts the handler is OFF with consent off, so
+    an ambient variable makes that check fail by measuring the harness instead
+    of the code. Measured on the first hosted run after it was added.
     """
     step = _step(SUITE_STEP)
     script = str(step["run"])
 
-    assert step["env"]["PYTHONFAULTHANDLER"] == "1", (
-        "without faulthandler a native fault writes no Python frame anywhere, "
-        "which is how the 88% crash reached the artifact with no explanation"
+    assert "PYTHONFAULTHANDLER" not in step.get("env", {}), (
+        "an ambient faulthandler variable overrides the consent-aware entry-point "
+        "test, which asserts capture stays off with consent off"
     )
     assert "suite-exit-code.txt" in script
     assert 'exit "$status"' in script, "pytest's own status must stay the step's status"
