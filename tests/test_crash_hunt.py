@@ -86,7 +86,7 @@ def test_harvest_ignores_preexisting_records(tmp_path: Path):
 def test_kernel_crash_scan_parses_journal(monkeypatch):
     """Kernel segfault lines during the run window must count as crashes."""
     fake_output = (
-        "Sep 27 16:41:06 codypc kernel: python[10010]: segfault at 12 ip 00007af2 in libQt6Widgets.so.6\n"
+        "Sep 27 16:41:06 workstation kernel: python[10010]: segfault at 12 ip 00007af2 in libQt6Widgets.so.6\n"
         "Sep 27 16:47:56 codypc kernel: traps: python[10825] general protection fault ip:795f\n"
         "Sep 27 16:48:00 codypc kernel: something harmless\n"
     )

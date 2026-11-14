@@ -39,7 +39,7 @@ def _write_app_settings(payload: dict) -> None:
 
 
 def test_the_owners_four_legacy_values_are_rewritten_on_load(isolated_homes: Path) -> None:
-    legacy_docs = "/home/cody/Documents/the oracle tts"
+    legacy_docs = "/home/legacy-user/Documents/the oracle tts"
     _write_app_settings(
         {
             "default_input_dir": f"{legacy_docs}/Input",
@@ -50,7 +50,7 @@ def test_the_owners_four_legacy_values_are_rewritten_on_load(isolated_homes: Pat
                 "speakers": {"A": {"reference_path": "/media/x/Seashells/Cody.wav"}},
             },
             "recording_settings": {
-                "output_dir": "/home/cody/.local/share/the_oracle/Seashells"
+                "output_dir": "/home/legacy-user/.local/share/the_oracle/Seashells"
             },
         }
     )
@@ -74,7 +74,7 @@ def test_the_owners_four_legacy_values_are_rewritten_on_load(isolated_homes: Pat
 def test_the_migrated_values_persist_through_a_save(isolated_homes: Path) -> None:
     _write_app_settings(
         {
-            "default_output_dir": "/home/cody/Documents/the oracle tts/Output",
+            "default_output_dir": "/home/legacy-user/Documents/the oracle tts/Output",
         }
     )
 
@@ -94,7 +94,7 @@ def test_profile_output_dir_is_migrated_on_load_and_save(
         {
             "version": 1,
             "project": {
-                "output_dir": "/home/cody/Documents/the oracle tts/Output",
+                "output_dir": "/home/legacy-user/Documents/the oracle tts/Output",
                 "output_filename": "take.flac",
             },
             "speakers": {"A": {"reference_path": "/media/x/Cody.wav"}},
@@ -109,12 +109,12 @@ def test_profile_output_dir_is_migrated_on_load_and_save(
 def test_unrelated_paths_are_left_alone(isolated_homes: Path) -> None:
     _write_app_settings(
         {
-            "default_output_dir": "/media/cody/Data/Audio Output",
+            "default_output_dir": "/media/legacy-user/Data/Audio Output",
             "audio_cpp_cli": "/opt/audiocpp/bin/audiocpp_cli",
         }
     )
 
     loaded = load_app_settings()
 
-    assert loaded["default_output_dir"] == "/media/cody/Data/Audio Output"
+    assert loaded["default_output_dir"] == "/media/legacy-user/Data/Audio Output"
     assert loaded["audio_cpp_cli"] == "/opt/audiocpp/bin/audiocpp_cli"
