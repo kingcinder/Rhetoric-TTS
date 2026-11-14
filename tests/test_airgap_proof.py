@@ -316,6 +316,13 @@ class FakeVm:
         self.staged.append(list(relative_paths))
 
 
+def test_the_vm_launcher_and_ssh_key_must_be_named_explicitly(proof, tmp_path: Path) -> None:
+    """The public tree must not ship a home-relative owner VM path as a default."""
+    with pytest.raises(SystemExit) as excinfo:
+        proof.main(["--bundle", str(tmp_path / "bundle")])
+    assert excinfo.value.code == 2
+
+
 def _run(proof, bundle: Path, runner, tmp_path: Path, log: list[str] | None = None):
     vm_script = tmp_path / "run-vm.sh"
     vm_script.write_text("#!/bin/sh\n", encoding="utf-8")

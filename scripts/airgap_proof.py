@@ -2,8 +2,8 @@
 """Air-gapped offline-install proof.
 
 One command that answers: *does the offline bundle install and render on a
-machine that has never had a network?* It drives the Windows QEMU guest that
-`docs/WINDOWS_VM.md` describes:
+machine that has never had a network?* It drives the Windows QEMU guest the
+owner keeps outside this repository:
 
 1. checks the bundle locally (manifest, Windows wheels, every pinned model);
 2. boots the guest with a network, resolves its data volume by label, and
@@ -20,8 +20,8 @@ Exit status is 0 only when the guest reports PASS. The guest script owns the
 individual assertions; this harness owns staging, arming, completion detection
 and the final verdict.
 
-The VM tooling lives outside the repository (see `docs/WINDOWS_VM.md`); point
-``--vm-script`` at its launcher.
+The VM tooling lives outside the repository; point ``--vm-script`` at its
+launcher and ``--ssh-key`` at the key the guest trusts.
 """
 
 from __future__ import annotations
@@ -495,14 +495,14 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--vm-script",
         type=Path,
-        default=Path.home() / ".oracle-win11-vm" / "run-vm.sh",
-        help="Guest launcher from docs/WINDOWS_VM.md (default: %(default)s).",
+        required=True,
+        help="Guest launcher (start/stop/ssh wrapper) for the local Windows VM.",
     )
     parser.add_argument(
         "--ssh-key",
         type=Path,
-        default=Path.home() / ".ssh" / "oracle-win11-vm",
-        help="Guest SSH key (default: %(default)s).",
+        required=True,
+        help="SSH key that logs into the guest.",
     )
     parser.add_argument("--ssh-port", type=int, default=DEFAULT_SSH_PORT)
     parser.add_argument("--volume-label", default=VOLUME_LABEL, help="Label of the guest data volume.")

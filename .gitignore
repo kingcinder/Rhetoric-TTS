@@ -24,6 +24,9 @@ audio.cpp/
 # Temporary development folders
 tmp_gui_repo/
 
+# Owner's local Windows VM notes (kept outside the public tree)
+docs/WINDOWS_VM.md
+
 # Qwen Code config
 .qwen/
 

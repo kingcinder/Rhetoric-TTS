@@ -4,7 +4,8 @@
 **Hosted CI at this head:** run [43605100480](https://github.com/kingcinder/Rhetoric-TTS/actions/runs/43605100480) — every job green, including `windows-latest / py3.11`, `windows-latest / py3.12`, each Windows ten-consecutive-certification step, and `Windows installer end to end`.
 
 This record closes the installer-acceptance half of the Windows gate on the
-local QEMU/KVM Windows 11 Pro guest described in [WINDOWS_VM.md](../WINDOWS_VM.md).
+local QEMU/KVM Windows 11 Pro guest (the owner's VM notes are kept outside the
+repository).
 It is an engineering acceptance of an **unsigned** build on a VM. It is not a
 claim of general Windows support, and it does not change the paid-offer
 decision, which the EULA and the owner still scope to Linux.
@@ -96,8 +97,8 @@ rendering. Raw logs:
 Non-fatal, Windows-only warnings in every run: PySide6 ships no font directory
 (`QFontDatabase: Cannot find font directory`), and the throwaway Qt config root
 survives five reap attempts (already listed in
-[WINDOWS_VM.md](../WINDOWS_VM.md)). Neither changes an exit code or a
-certification verdict.
+the owner's local VM notes). Neither changes an exit code or a certification
+verdict.
 
 ## What this does not establish
 
