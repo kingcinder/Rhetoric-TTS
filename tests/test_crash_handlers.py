@@ -152,6 +152,35 @@ def test_arm_native_capture_fails_closed_without_consent(wired: Path) -> None:
     assert not (wired / "crash_reports").exists()
 
 
+def test_the_harness_rearms_the_faulthandler_the_app_path_disarms(
+    wired: Path, pytestconfig
+) -> None:
+    """Consent teardown is process-global; the suite must undo it.
+
+    ``disable_faulthandler_catch`` is right for the app and wrong for a test
+    process that keeps running: every later test lost native-fault
+    diagnostics, and the hosted py3.11 leg's 88% SIGSEGV consequently uploaded
+    a ``pytest.txt`` with no stack in it. ``tests/conftest.py`` re-arms at each
+    test boundary; this drives that helper directly so the guarantee cannot
+    disappear with nobody noticing.
+    """
+    import faulthandler
+
+    from tests import conftest
+
+    consent.write_consent(wired, True)
+    assert handlers.enable_faulthandler_catch(wired) is True
+    handlers.disable_faulthandler_catch()
+    assert faulthandler.is_enabled() is False, (
+        "the app-path teardown disarms the shared process handler"
+    )
+
+    assert conftest.arm_faulthandler_if_disabled(pytestconfig) is True
+    assert faulthandler.is_enabled() is True
+    # Already armed: a second call is a no-op, not a second handler.
+    assert conftest.arm_faulthandler_if_disabled(pytestconfig) is False
+
+
 def test_arm_native_capture_arms_and_is_idempotent(wired: Path) -> None:
     """M: dropping the armed early-return (or the arm_native_capture call in
     cli.main) fails one of the two arming pins; re-arming must be a no-op on

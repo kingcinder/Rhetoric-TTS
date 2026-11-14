@@ -16,6 +16,7 @@ pass).
 from __future__ import annotations
 
 import ast
+import faulthandler
 import inspect
 import io
 import os
@@ -362,6 +363,65 @@ def pytest_sessionstart(session) -> None:
     # A fresh session (the suite can run in-process, e.g. under a wrapper that
     # calls pytest.main twice) must not inherit the previous run's skips.
     _SKIPS.clear()
+
+
+# --- native-fault diagnostics -------------------------------------------------
+
+#: Last-resort descriptor if pytest's own saved stderr is unavailable (e.g.
+#: ``-p no:faulthandler``). Never assume this is the terminal: by the time
+#: conftest is imported pytest's global capture may already have replaced fd 2.
+_NATIVE_FAULT_FD = os.dup(2)
+
+
+def _fault_report_fd(config) -> int:
+    """The descriptor pytest's faulthandler writes its first dump to.
+
+    pytest's plugin duplicates the real stderr in ``pytest_configure`` --
+    before per-test capture can redirect it -- and stashes the descriptor. A
+    dump written to ``sys.stderr`` during a test lands in the capture file and
+    dies with the process that was supposed to report it (measured: a
+    deliberately disarmed run re-armed against fd 2 still uploaded no stack).
+    """
+    try:
+        from _pytest.faulthandler import fault_handler_stderr_fd_key
+
+        fd = config.stash.get(fault_handler_stderr_fd_key, None)
+        if isinstance(fd, int):
+            return fd
+    except Exception:  # noqa: BLE001 - a pytest without that plugin still runs
+        pass
+    return _NATIVE_FAULT_FD
+
+
+def arm_faulthandler_if_disabled(config) -> bool:
+    """Re-arm the process-wide native-fault handler; return whether we did.
+
+    ``rhetoric.crash.handlers.disable_faulthandler_catch`` calls
+    ``faulthandler.disable()``, which is right for the app (consent off must
+    mean no capture) but affects the whole process. The crash-handler tests run
+    at about 19% of the suite, so before this existed every later test -- every
+    GUI test that builds and destroys real windows included -- ran unarmed. The
+    hosted py3.11 leg died at 88% with a SIGSEGV whose uploaded ``pytest.txt``
+    stopped mid-line and carried no stack at all: this is why.
+    """
+    if faulthandler.is_enabled():
+        return False
+    faulthandler.enable(file=_fault_report_fd(config))
+    return True
+
+
+@pytest.fixture(autouse=True)
+def _keep_faulthandler_armed(request):
+    """Keep the native-fault dump available to every test.
+
+    Runs before each test and again after it returns, so a crash in another
+    fixture's teardown is covered too. A test that disarms the handler on
+    purpose (the crash-consent ones) re-arms at the next boundary instead of
+    silently removing the diagnostic from the rest of the run.
+    """
+    arm_faulthandler_if_disabled(request.config)
+    yield
+    arm_faulthandler_if_disabled(request.config)
 
 
 # --- window lifetime ----------------------------------------------------------
