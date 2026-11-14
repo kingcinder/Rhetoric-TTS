@@ -5,8 +5,10 @@ release has passed every acceptance gate.
 
 - **Human audio review is outstanding.** Automated CPU synthesis produced a
   valid FLAC, but intelligibility and audible quality have not been reviewed.
-- **Windows is experimental and excluded from the proposed paid offer** until
-  GUI certification and native installer acceptance pass.
+- **Windows is experimental and excluded from the proposed paid offer.** Hosted
+  Windows CI and a Windows 11 guest run of the installer acceptance and ten
+  consecutive GUI certifications passed at `17fdab9`
+  ([evidence](WINDOWS_GUEST_ACCEPTANCE_1.5.0.md)); the installer is unsigned.
 - **CUDA and Vulkan are experimental.** Matching-hardware production rendering
   and resource measurements are not qualified.
 - **First model use requires a large download** unless a correctly prepared

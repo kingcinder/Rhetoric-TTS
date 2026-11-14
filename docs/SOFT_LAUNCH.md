@@ -133,8 +133,11 @@ changed.
 
 ## Known limitations
 
-- **Windows is unsupported.** Current-head hosted Windows evidence and clean
-  Windows 11 installer acceptance are not verified; see the readiness report.
+- **Windows is experimental.** Hosted Windows CI and a clean Windows 11 guest
+  installer acceptance plus ten consecutive GUI certifications passed at
+  `17fdab9` ([evidence](release/WINDOWS_GUEST_ACCEPTANCE_1.5.0.md)); the
+  installer is unsigned, and Windows remains excluded from the proposed paid
+  offer.
 - **First run downloads models.** The first render may need a multi-GB model
   download; the doctor announces it before it starts. Offline installs use the
   bundle instead.

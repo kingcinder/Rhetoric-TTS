@@ -19,8 +19,9 @@ approval.
 
 The candidate is not approved for commercial distribution. Linux x86_64 is the
 intended qualification target. Windows is experimental and excluded from the
-proposed paid offer until its GUI and installer qualification passes. CUDA and
-Vulkan are experimental. Frozen artifacts, clean-machine installation,
+proposed paid offer; its GUI and installer qualification passed at `17fdab9`
+([evidence](WINDOWS_GUEST_ACCEPTANCE_1.5.0.md)), and the installer is
+unsigned. CUDA and Vulkan are experimental. Frozen artifacts, clean-machine installation,
 offline activation, model download/resume, rollback, uninstall, and human audio
 review remain open unless `FINAL_RELEASE_READINESS.md` records direct evidence.
 

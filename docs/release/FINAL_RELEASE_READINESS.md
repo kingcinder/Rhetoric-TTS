@@ -17,7 +17,15 @@ review of the CJK and Arabic corpus cases (see "Acceptance still open").
 2026-11-12 that the EULA ships as written and that independent counsel review
 is waived. The storefront (§ "Owner-only decisions") is still open.
 
-## Suite and CI story
+**Update (2026-11-14):** at `17fdab9`, hosted run
+[43605100480](https://github.com/kingcinder/Rhetoric-TTS/actions/runs/43605100480)
+passed every job — Ubuntu and Windows suites on both Pythons, Vulkan, frozen
+Linux packaging, the license core, and the Windows installer end-to-end,
+including the ten-consecutive six-theme certification step on both Windows
+legs. A local Windows 11 Pro guest also passed the Inno Setup installer,
+activation and ten consecutive certifications; see
+[Windows guest acceptance](WINDOWS_GUEST_ACCEPTANCE_1.5.0.md). Windows stays
+experimental and excluded from the paid offer, and its installer is unsigned.
 
 - **Full suite at this fix pass's head** (serial, main checkout venv):
   **2,275 passed, 0 failed, 0 skipped** in 736 s, `QT_QPA_PLATFORM=offscreen`.
@@ -58,6 +66,13 @@ catalog's sanctioned split.
 - **Windows edition fix** (`3652354`, `78630fe`): the Inno Setup installer and
   its launcher/edition behavior are qualified end to end — install smoke,
   certification soak, and a fully offline install, activation, and render.
+- **Windows installed-product acceptance** (`17fdab9`, 2026-11-14): the
+  unsigned Inno Setup installer installed silently in 65.5 s, recorded an EULA
+  digest matching the installed text, created the Start Menu/uninstall entries,
+  and the frozen GUI reported `mainwindow_built` at 2.5 s with the `k2` license
+  valid and model prewarm successful; the Phase 4 acceptance set passed (104
+  tests) and ten consecutive six-theme certifications passed with no retries
+  ([record](WINDOWS_GUEST_ACCEPTANCE_1.5.0.md)).
 - **Rename purge** (`a98a307`, `86df7ee`, `a37c8b4`): package
   `the_oracle` → `rhetoric`, `ORACLE_*` → `RHETORIC_*`, data-folder migration,
   brand guard restored.
@@ -92,8 +107,7 @@ catalog's sanctioned split.
    legacy Documents folder were not moved into `render-work/`. The source-side
    fix means new renders write there; moving the old material is a follow-up
    once the GUI is closed.
-4. **Windows installed-product qualification** (hosted installer E2E is green;
-   a Windows guest install is still open).
+
 
 ## Owner-only decisions and actions
 
