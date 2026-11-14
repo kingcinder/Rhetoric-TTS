@@ -114,9 +114,14 @@ catalog's sanctioned split.
 ## Acceptance still open
 
 1. **Installed-lifecycle qualification** on the frozen Linux AppImage and deb
-   in fresh Ubuntu 24.04 containers (activation with a throwaway key, cold
-   download/resume/offline/low-disk, doctor, first render, project save/reopen,
-   settings persistence, update, rollback, uninstall, data retention).
+   in fresh Ubuntu 24.04 containers. Verified 2026-11-14: checksums, `.deb`
+   install, installed EULA digest, EULA click-through, the unlicensed activation
+   dialog, the inert main window after Cancel, uninstall, and the AppImage
+   extract-and-run start ([evidence](LINUX_FROZEN_ACCEPTANCE_1.5.0.md)). Still
+   open: activation with a production serial, cold download/resume/offline/
+   low-disk, doctor, first render, project save/reopen, settings persistence,
+   update, rollback, and the LGPL library swap. The container run also found
+   and fixed the missing `.deb` `Depends`; the rebuilt package needs re-checking.
 2. **Human listening review of corpus cases 4 (CJK) and 5 (Arabic).**
 3. **Data-cleanup follow-up (pending, GUI was open during this pass):** the
    owner's GUI was running, so the remaining working material in the repo
