@@ -1031,6 +1031,16 @@ def test_interactive_non_tty_refuses_prompt_and_continues(tmp_path: Path, monkey
         lambda path, fix, json_output=False: calls.append(("check", fix)),
     )
 
+    # The pipeline is irrelevant here, and leaving it real made this test
+    # download models: in a fresh worktree it sat on a Hugging Face socket for
+    # 16 minutes and stalled the full suite (measured 2026-11-14). Fake it so
+    # the test proves only what it names.
+    monkeypatch.setattr(
+        cli,
+        "RhetoricPipeline",
+        lambda *a, **k: (_ for _ in ()).throw(AssertionError("pipeline must not run")),
+    )
+
     target = tmp_path / "in.txt"
     target.write_text("A - Hello there.\n", encoding="utf-8")
     args = _render_args("--fix-input-interactive", outdir=str(tmp_path / "output"))
