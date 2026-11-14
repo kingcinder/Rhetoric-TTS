@@ -186,19 +186,58 @@ def test_an_unfocused_control_scrolls_the_panel_instead_of_changing(panel, contr
     assert scroll.verticalScrollBar().value() > 0
 
 
-@pytest.mark.parametrize("control", ["spin", "slider"])
-def test_a_focused_control_keeps_the_wheel(panel, control):
-    scroll, controls = panel
-    widget = controls[control]
-    scroll.activateWindow()
-    widget.setFocus(Qt.FocusReason.OtherFocusReason)
+class _FocusedWheelSpinBox(WheelSpinBox):
+    """A spin box that reports focus without a window manager granting it.
+
+    ``setFocus`` only takes effect in an active window. On this desktop's xcb
+    session the test window is never activated (another window holds focus), so
+    the real focused branch was unreachable there even though it worked under
+    offscreen. The rule under test is the mixin's branch on ``hasFocus()``, so
+    report it directly and keep the test independent of window activation.
+    """
+
+    def hasFocus(self) -> bool:  # noqa: N802 (Qt casing)
+        return True
+
+
+class _FocusedWheelSlider(WheelSlider):
+    """A slider that reports focus; see ``_FocusedWheelSpinBox``."""
+
+    def hasFocus(self) -> bool:  # noqa: N802 (Qt casing)
+        return True
+
+
+@pytest.mark.parametrize(
+    "widget_type", [_FocusedWheelSpinBox, _FocusedWheelSlider], ids=["spin", "slider"]
+)
+def test_a_focused_control_keeps_the_wheel(qt_app, widget_type):
+    scroll = QScrollArea()
+    scroll.setWidgetResizable(True)
+    content = QWidget()
+    layout = QVBoxLayout(content)
+    widget = widget_type()
+    widget.setRange(0, 100)
+    widget.setValue(50)
+    layout.addWidget(widget)
+    content.setMinimumHeight(1200)
+    scroll.setWidget(content)
+    scroll.resize(320, 200)
+    scroll.show()
     QApplication.processEvents()
+
     assert widget.hasFocus()
-    before = _value(widget)
+    before = widget.value()
+    scroll.verticalScrollBar().setValue(0)
 
     QApplication.sendEvent(widget, _wheel(widget, steps=120))
+    QApplication.processEvents()
 
-    assert _value(widget) != before
+    assert widget.value() != before, "a focused control must keep the wheel"
+    assert scroll.verticalScrollBar().value() == 0, (
+        "a focused control must not hand the wheel to the panel"
+    )
+    scroll.close()
+    scroll.deleteLater()
 
 
 def test_a_control_outside_a_scroll_area_keeps_its_value(qt_app):
