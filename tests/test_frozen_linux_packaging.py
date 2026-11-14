@@ -33,6 +33,19 @@ def _load_builder():
     return module
 
 
+def test_deb_declares_the_runtime_libraries_the_frozen_app_needs() -> None:
+    """Measured in a clean ubuntu:24.04 container on 2026-11-14.
+
+    Without these the frozen binary aborts before the window appears:
+    libGL.so.1, then libpulse.so.0, then the xcb platform plugin. The .deb
+    previously declared no Depends at all, so a clean machine installed it and
+    could not start it.
+    """
+    builder = _load_builder()
+    depends = {name.strip() for name in builder.DEB_DEPENDS.split(",")}
+    assert {"libgl1", "libpulse0", "libxcb-cursor0", "libxkbcommon0"} <= depends
+
+
 def test_frozen_spec_has_no_model_or_secret_inputs() -> None:
     spec = (REPO_ROOT / "packaging" / "linux" / "rhetoric.spec").read_text(encoding="utf-8")
     assert "MODEL_PATH" not in spec

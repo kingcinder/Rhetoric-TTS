@@ -148,6 +148,16 @@ def stage_appdir(appdir: Path, frozen_dist: Path) -> Path:
     return appdir
 
 
+DEB_DEPENDS = (
+    "libgl1, libegl1, libxkbcommon0, libxkbcommon-x11-0, libdbus-1-3, "
+    "libfontconfig1, libglib2.0-0, libxcb-cursor0, libxcb-icccm4, "
+    "libxcb-image0, libxcb-keysyms1, libxcb-randr0, libxcb-render-util0, "
+    "libxcb-shape0, libxcb-xfixes0, libxcb-xinerama0, libxcb-sync1, "
+    "libxcb-xkb1, libx11-xcb1, libxrender1, libxi6, libxtst6, libsm6, "
+    "libice6, libnss3, libnspr4, libcups2, libpulse0, libgomp1"
+)
+
+
 def _build_deb(appdir: Path, outdir: Path, version: str) -> Path:
     root = outdir / "deb-root"
     if root.exists():
@@ -167,6 +177,7 @@ def _build_deb(appdir: Path, outdir: Path, version: str) -> Path:
         "Package: rhetoric\n"
         f"Version: {version}\n"
         "Section: sound\nPriority: optional\nArchitecture: amd64\n"
+        f"Depends: {DEB_DEPENDS}\n"
         "Maintainer: Rhetoric\n"
         "Description: Rhetoric local text-to-speech application\n"
         " Frozen application; models are downloaded after activation.\n",
