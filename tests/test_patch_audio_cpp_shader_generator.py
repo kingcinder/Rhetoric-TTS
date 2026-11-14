@@ -144,10 +144,11 @@ def _tree(tmp_path: Path) -> Path:
     return root
 
 
-def _run(root: Path) -> subprocess.CompletedProcess[str]:
+def _run(root: Path, **overrides: str) -> subprocess.CompletedProcess[str]:
     env = dict(os.environ)
     env["AUDIOCPP_DIR"] = str(root / "audio.cpp")
     env["PYTHON_BIN"] = sys.executable
+    env.update(overrides)
     return subprocess.run(
         ["bash", str(root / "scripts" / "patch_audio_cpp_ggml.sh")],
         cwd=str(root),
@@ -172,7 +173,11 @@ def test_the_generator_patch_is_applied_and_idempotent(tmp_path: Path) -> None:
     assert "#include <chrono>" in patched
     # The wait is bounded per generator, not per shader: 40 x 250ms, and the
     # compile latch it then sets stops every other waiter immediately.
-    assert "rhetoric_fork_attempt < FORK_FAIL_RETRY_COUNT" in patched
+    assert "rhetoric_fork_attempt < 40" in patched
+    assert "FORK_FAIL_RETRY_COUNT" not in patched, (
+        "the retry window is a patch-time constant and must be emitted as a number; "
+        "the identifier does not exist in the generated C++"
+    )
     assert "rhetoric_fork_stalled" not in patched, "one flag is enough; the latch already covers this"
     # A shader that still fails cannot become a silent hole in the archive.
     assert "rhetoric_shader_compile_failed = true;" in patched
@@ -203,6 +208,32 @@ def test_the_generator_patch_is_applied_and_idempotent(tmp_path: Path) -> None:
     second = _run(root)
     assert second.returncode == 0, second.stderr + second.stdout
     assert generator.read_text(encoding="utf-8") == patched, "a second run must not re-patch"
+
+
+def test_the_retry_window_override_reaches_the_generated_cpp(tmp_path: Path) -> None:
+    """FORK_FAIL_RETRY_COUNT is a patch-time constant, so the number must be
+    written into the C++. Emitting the identifier instead produced a generator
+    that could not compile: the symbol does not exist in that translation unit.
+    """
+    root = _tree(tmp_path)
+    generator = (
+        root / "audio.cpp" / "external" / "ggml" / "src" / "ggml-vulkan"
+        / "vulkan-shaders" / "vulkan-shaders-gen.cpp"
+    )
+
+    completed = _run(root, FORK_FAIL_RETRY_COUNT="7")
+    assert completed.returncode == 0, completed.stderr + completed.stdout
+    patched = generator.read_text(encoding="utf-8")
+    assert "rhetoric_fork_attempt < 7" in patched
+    assert "FORK_FAIL_RETRY_COUNT" not in patched
+
+
+def test_a_non_numeric_retry_window_is_refused(tmp_path: Path) -> None:
+    root = _tree(tmp_path)
+
+    completed = _run(root, FORK_FAIL_RETRY_COUNT="many")
+    assert completed.returncode != 0
+    assert "FORK_FAIL_RETRY_COUNT must be a positive integer" in completed.stderr + completed.stdout
 
 
 def test_a_missing_generator_file_is_refused(tmp_path: Path) -> None:

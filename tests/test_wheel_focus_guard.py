@@ -20,59 +20,51 @@ from PySide6.QtWidgets import QApplication, QLabel, QScrollArea, QVBoxLayout, QW
 from rhetoric import gui_wheel
 from rhetoric.gui_wheel import WheelComboBox, WheelSlider, WheelSpinBox
 
-# Widgets that must NOT be constructed plain (without Wheel* subclass) outside gui_wheel.py
-# A plain QSpinBox/QComboBox/QSlider in a scrollable panel silently breaks the wheel fix.
-_PLAIN_WIDGET_MARKERS = ("QSpinBox(", "QComboBox(", "QSlider(")
+# The three controls the wheel fix subclasses. A plain one in a scrollable panel
+# silently restores the value hijack, so src/rhetoric may only build these three
+# names inside gui_wheel.py (as the subclasses' bases).
+_PLAIN_WHEEL_WIDGETS = frozenset({"QSpinBox", "QComboBox", "QSlider"})
 
 
 def _check_no_plain_widgets() -> None:
-    """Verify no plain QSpinBox, QComboBox or QSlider is constructed outside gui_wheel.py.
-    
-    Scans all rhetoric source files (except gui_wheel.py) for plain widget construction
-    patterns like QSpinBox(), QComboBox(), QSlider().  Subclassed versions like
-    WheelSpinBox, WheelComboBox, WheelSlider are allowed.
+    """Fail if src/rhetoric constructs a plain QSpinBox, QComboBox or QSlider.
+
+    Parses with ``ast`` rather than grepping lines: docstrings, comments and
+    multi-line stylesheet strings mention these names (gui_themes.py does), so a
+    line scan both misses real calls inside multi-line expressions and flags
+    text. A call whose callee is one of the three names anywhere but
+    gui_wheel.py is a regression of the wheel fix.
     """
-    import os
-    import re
+    import ast
     from pathlib import Path
 
     rhetoric_dir = Path(__file__).resolve().parents[1] / "src" / "rhetoric"
-    excluded = {Path("rhetoric/gui_wheel.py").name}
-
-    for py_file in rhetoric_dir.rglob("*.py"):
-        if py_file.name in excluded:
+    offenders: list[str] = []
+    for py_file in sorted(rhetoric_dir.rglob("*.py")):
+        if py_file.name == "gui_wheel.py":
             continue
-        if py_file.name.startswith("_"):
-            continue
-        text = py_file.read_text(encoding="utf-8")
-        # Match plain constructor calls: QSpinBox(, QComboBox(, QSlider( at start of word boundary
-        # but not within comments or strings (simple check: no triple-quotes on same line)
-        for marker in _PLAIN_WIDGET_MARKERS:
-            # Find lines with the marker that are NOT in comments
-            for line_num, line in enumerate(text.split("\n"), 1):
-                # Skip if line is a comment
-                stripped = line.strip()
-                if stripped.startswith("#"):
-                    continue
-                # Skip multi-line strings (simple heuristic)
-                if '"""' in line and line.count('"""') < 3:
-                    continue
-                if marker in line:
-                    raise AssertionError(
-                        f"Plain {marker.strip("(")} found in {py_file.relative_to(rhetoric_dir)} "
-                        f"at line {line_num}. "
-                        "All QSpinBox/QComboBox/QSlider constructions must use the Wheel* subclass from gui_wheel.py instead."
-                    )
+        tree = ast.parse(py_file.read_text(encoding="utf-8"), filename=str(py_file))
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Call):
+                continue
+            func = node.func
+            if isinstance(func, ast.Name):
+                name = func.id
+            elif isinstance(func, ast.Attribute):
+                name = func.attr
+            else:
+                continue
+            if name in _PLAIN_WHEEL_WIDGETS:
+                offenders.append(f"{py_file.relative_to(rhetoric_dir)}:{node.lineno}: {name}()")
+    assert not offenders, (
+        "plain wheel-sensitive widgets built outside gui_wheel.py; use "
+        "WheelSpinBox/WheelComboBox/WheelSlider instead: " + ", ".join(offenders)
+    )
 
 
-def test_no_plain_widgets_outside_gui_wheel(tmp_path: Path) -> None:
-    """Fail if any plain QSpinBox, QComboBox or QSlider is built outside gui_wheel.py.
-    
-    This prevents silent regressions of the wheel fix: a developer adding a
-    plain widget to a scrollable panel would not cause the wheel to hijack correctly.
-    """
+def test_no_plain_widgets_outside_gui_wheel() -> None:
+    """A plain QSpinBox/QComboBox/QSlider outside gui_wheel.py re-breaks the wheel."""
     _check_no_plain_widgets()
-
 
 @pytest.fixture(scope="module")
 def qt_app():
@@ -97,42 +89,54 @@ def _value(widget: QWidget) -> int:
     return widget.currentIndex() if isinstance(widget, WheelComboBox) else widget.value()
 
 
-def test_wheel_event_with_only_pixelDelta_scrolls_panel(tmp_path: Path, qt_app) -> None:
-    """Send a wheel event carrying only pixelDelta (no angleDelta) to an
-    unfocused control and assert the panel scrolls while the control's
-    value stays put, so the touchpad fallback is covered.
-    """
-    from PySide6.QtWidgets import QApplication, QScrollArea, QWidget, QSlider, QComboBox, QSpinBox
-    from PySide6.QtCore import Qt, QPoint, QPointF
-    from PySide6.QtGui import QWheelEvent
-
-    # Create a scroll area with a slider (unfocused)
-    scroll = QScrollArea()
-    slider = QSlider(Qt.Orientation.Horizontal)
-    scroll.setWidget(slider)
-    scroll.show()
-
-    # Initially capture the slider value
-    initial_value = slider.value()
-
-    # Send a wheel event with only pixelDelta (no angleDelta) to the unfocused slider
-    event = QWheelEvent(
-        QPointF(),  # position
-        QPointF(),  # global position
-        QPoint(0, 0),  # pixelDelta
-        QPoint(0, 0),  # angleDelta (empty)
+def _wheel_pixels(widget: QWidget, pixels: int = -120) -> QWheelEvent:
+    """A wheel event with pixelDelta only, as a smooth touchpad sends it."""
+    centre = widget.rect().center()
+    return QWheelEvent(
+        QPointF(centre),
+        QPointF(widget.mapToGlobal(centre)),
+        QPoint(0, pixels),
+        QPoint(0, 0),  # no angleDelta: the notched-wheel half is absent
         Qt.MouseButton.NoButton,
         Qt.KeyboardModifier.NoModifier,
         Qt.ScrollPhase.NoScrollPhase,
         False,
     )
-    # The slider should not have focus, so the panel should scroll
-    # Instead of the slider value changing
-    slider.wheelEvent(event)
 
-    # The slider value should not have changed (panel scrolled instead)
-    assert slider.value() == initial_value, \
-        f"Slider value changed from {initial_value} to {slider.value()} when wheel event with only pixelDelta was sent to unfocused control"
+
+def test_a_pixel_delta_only_wheel_scrolls_the_panel(qt_app) -> None:
+    """A touchpad wheel over an unfocused control scrolls the panel.
+
+    ``_WheelScrollsPanel.wheelEvent`` falls back to ``pixelDelta().y()`` when
+    ``angleDelta`` is empty. The control's value must not move and the panel
+    must move, which is the touchpad half of the fix.
+    """
+    scroll = QScrollArea()
+    scroll.setWidgetResizable(True)
+    content = QWidget()
+    layout = QVBoxLayout(content)
+    slider = WheelSlider(Qt.Orientation.Horizontal)
+    slider.setRange(0, 100)
+    slider.setValue(50)
+    layout.addWidget(slider)
+    content.setMinimumHeight(1200)
+    scroll.setWidget(content)
+    scroll.resize(320, 200)
+    scroll.show()
+    scroll.setFocus(Qt.FocusReason.OtherFocusReason)
+    QApplication.processEvents()
+
+    assert not slider.hasFocus()
+    before = slider.value()
+    scroll.verticalScrollBar().setValue(0)
+
+    QApplication.sendEvent(slider, _wheel_pixels(slider, pixels=-120))
+    QApplication.processEvents()
+
+    assert slider.value() == before, "the unfocused slider must not consume the wheel"
+    assert scroll.verticalScrollBar().value() > 0, "the panel must scroll on pixelDelta"
+    scroll.close()
+    scroll.deleteLater()
 
 
 @pytest.fixture()

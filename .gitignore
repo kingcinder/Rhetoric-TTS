@@ -138,3 +138,6 @@ src/rhetoric/_native/*.so
 src/rhetoric/_native/*.pyd
 src/rhetoric/_native/*.dll
 src/rhetoric/_native/*.dylib
+
+# Host binary built on demand by scripts/fork_inject.sh from forkfail.c.
+scripts/forkfail.so
