@@ -240,6 +240,25 @@ def test_a_non_numeric_retry_window_is_refused(tmp_path: Path) -> None:
     assert "FORK_FAIL_RETRY_COUNT must be a positive integer" in completed.stderr + completed.stdout
 
 
+def test_a_leading_zero_retry_window_is_decimal_not_octal(tmp_path: Path) -> None:
+    """``08`` is not a valid octal literal, and bash's `[[ -lt ]]` used to abort
+    on it with "value too great for base" before the range check could run.
+    A leading-zero override must be read as decimal 8.
+    """
+    root = _tree(tmp_path)
+    generator = (
+        root / "audio.cpp" / "external" / "ggml" / "src" / "ggml-vulkan"
+        / "vulkan-shaders" / "vulkan-shaders-gen.cpp"
+    )
+
+    completed = _run(root, FORK_FAIL_RETRY_COUNT="08")
+    assert completed.returncode == 0, completed.stderr + completed.stdout
+    assert "value too great for base" not in completed.stderr + completed.stdout
+    patched = generator.read_text(encoding="utf-8")
+    assert "rhetoric_fork_attempt < 8" in patched
+    assert "Wait up to 8 x 250ms" in patched
+
+
 def test_a_missing_generator_file_is_refused(tmp_path: Path) -> None:
     root = _tree(tmp_path)
     (root / "audio.cpp" / "external" / "ggml" / "src" / "ggml-vulkan" / "vulkan-shaders" / "vulkan-shaders-gen.cpp").unlink()

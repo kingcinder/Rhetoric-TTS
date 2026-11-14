@@ -60,6 +60,10 @@ case "$FORK_FAIL_RETRY_COUNT" in
     exit 1
     ;;
 esac
+# Bash reads a leading zero as octal, so "08" would abort the comparison below
+# with "value too great for base". Normalise to base 10 first; the case above has
+# already rejected everything that is not digits.
+FORK_FAIL_RETRY_COUNT=$((10#$FORK_FAIL_RETRY_COUNT))
 if [[ "$FORK_FAIL_RETRY_COUNT" -lt 1 ]]; then
   echo "ERROR: FORK_FAIL_RETRY_COUNT must be at least 1, got '$FORK_FAIL_RETRY_COUNT'." >&2
   exit 1
