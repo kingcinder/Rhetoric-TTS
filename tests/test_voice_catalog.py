@@ -42,3 +42,30 @@ def test_voice_catalog_audit_reports_fallback_sources_and_no_low_risk_mixing(tmp
     assert audit["fallback_clip_count"] == 1
     assert audit["seashell_clip_count"] == 0
     assert audit["voice_mixing_low_risk"] is False
+
+
+def test_voice_labels_keep_apostrophes_inside_the_word(tmp_path: Path) -> None:
+    """A clip named after its owner must read "Cody's", not "Cody'S".
+
+    ``str.title()`` uppercases the letter following an apostrophe.
+    """
+    seashells = tmp_path / "Seashells"
+    seashells.mkdir()
+    (seashells / "cody's seashell.wav").write_bytes(b"RIFF")
+
+    choices = default_voice_choices(tmp_path)
+
+    assert choices
+    assert choices[0].label == "Cody's Seashell"
+
+
+def test_voice_labels_collapse_separator_runs(tmp_path: Path) -> None:
+    """``name_ file.wav`` must not produce a doubled space in the label."""
+    seashells = tmp_path / "Seashells"
+    seashells.mkdir()
+    (seashells / "Seashell_ fransisco.wav").write_bytes(b"RIFF")
+
+    choices = default_voice_choices(tmp_path)
+
+    assert choices
+    assert choices[0].label == "Seashell Fransisco"

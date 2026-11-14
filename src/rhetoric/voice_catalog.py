@@ -115,7 +115,11 @@ def voice_catalog_audit(repo_root: str | Path) -> dict[str, Any]:
 
 def _label_for_path(path: Path) -> str:
     stem = path.stem.replace("_", " ").replace("-", " ").strip() or "Reference"
-    return stem.title()
+    # ``str.title()`` uppercases the letter after an apostrophe, so a clip
+    # named after its owner read "Cody'S Seashell"; the separator replacement
+    # can also leave runs of spaces ("Seashell_ fransisco" -> "Seashell  ").
+    # Capitalise each whitespace-separated word and collapse the runs.
+    return " ".join(word[:1].upper() + word[1:].lower() for word in stem.split())
 
 
 def _count_voice_files(directory: Path) -> int:
