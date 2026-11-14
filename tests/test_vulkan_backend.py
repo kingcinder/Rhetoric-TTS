@@ -43,6 +43,34 @@ def _fake_completed(returncode: int, stderr: str = "", stdout: str = "") -> subp
     return subprocess.CompletedProcess(args=[], returncode=returncode, stdout=stdout, stderr=stderr)
 
 
+def test_a_probe_that_cannot_be_reaped_does_not_hang_the_suite(monkeypatch) -> None:
+    """A D-state vulkaninfo must fail the probe closed, not block forever.
+
+    Measured 2026-11-14: `subprocess.run(timeout=15)` killed the probe and then
+    waited for the child again; a kernel-stuck `vulkaninfo --summary` (D state,
+    unkillable even with SIGKILL) hung the full suite at 93% forever. The probe
+    has to kill and return instead of re-waiting.
+    """
+
+    class StuckProbe:
+        def __init__(self) -> None:
+            self.returncode = None
+            self.killed = False
+
+        def communicate(self, timeout=None):
+            raise subprocess.TimeoutExpired(cmd="vulkaninfo", timeout=timeout)
+
+        def kill(self) -> None:
+            self.killed = True
+
+    probe = StuckProbe()
+    monkeypatch.setattr(vulkan_backend.shutil, "which", lambda name: "/usr/bin/vulkaninfo")
+    monkeypatch.setattr(vulkan_backend.subprocess, "Popen", lambda *a, **k: probe)
+
+    assert vulkan_device_available() is False
+    assert probe.killed is True
+
+
 def _engine_with_fake_binary(tmp_path: Path, **kwargs) -> AudioCppVulkanEngine:
     binary = tmp_path / "audiocpp_cli"
     binary.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")

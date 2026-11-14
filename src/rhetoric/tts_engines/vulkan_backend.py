@@ -163,17 +163,28 @@ def vulkan_device_available() -> bool:
     vulkaninfo = shutil.which("vulkaninfo")
     if vulkaninfo is None:
         return False
+    # Popen + communicate, not subprocess.run: run()'s timeout handler kills
+    # the child and then waits for it again, which blocks forever when the
+    # kernel holds the probe in uninterruptible (D) state. Measured
+    # 2026-11-14: one stuck `vulkaninfo --summary` hung the full suite at 93%
+    # and could not be killed even with SIGKILL. Fail closed and leave the
+    # stuck child to the kernel instead of waiting for a process that may
+    # never become reapable.
     try:
-        completed = subprocess.run(
+        process = subprocess.Popen(
             [vulkaninfo, "--summary"],
-            capture_output=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
             text=True,
-            timeout=15,
-            check=False,
         )
-    except (OSError, subprocess.TimeoutExpired):
+    except OSError:
         return False
-    return completed.returncode == 0
+    try:
+        process.communicate(timeout=15)
+    except subprocess.TimeoutExpired:
+        process.kill()
+        return False
+    return process.returncode == 0
 
 
 def _repo_root() -> Path:
