@@ -623,10 +623,14 @@ def test_untrusted_file_still_prompts(qt_app, monkeypatch, tmp_path) -> None:
 
         def exec(self):  # noqa: D102 - user clicks the fix button (Cancel role)
             popup_opened.append(True)
+            # Qt's standard-button text is style-dependent: the xcb style adds
+            # the keyboard mnemonic ("&Cancel") where offscreen gives "Cancel".
+            # Strip it so the lookup states the role it wants, not a spelling
+            # that only happens to match one platform's style.
             cancel_button = next(
                 button
                 for button in self.buttons()
-                if button.text().lower().startswith("cancel")
+                if button.text().replace("&", "").strip().lower().startswith("cancel")
             )
             self.clickedButton = lambda: cancel_button  # type: ignore[method-assign]
             return 0
