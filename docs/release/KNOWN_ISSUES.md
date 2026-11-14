@@ -26,13 +26,21 @@ release has passed every acceptance gate.
 - **Installed lifecycle qualification remains open.** Clean-machine
   installation, cold model download, project save/reopen, update, rollback,
   and uninstall need direct acceptance evidence.
-- **Hosted CI for this release branch must be checked at its pushed commit.**
-  Earlier run IDs and commit-specific reports belong to superseded candidates.
-  At 5446d39 (run 42576825781) every functional job passed: Ubuntu and
-  Windows suites on both Pythons, the Vulkan no-skip suite, frozen
-  packaging, the license core, and the Windows installer end-to-end.
-  The suite-counts job passes only at a head whose counts are recorded
-  in scripts/suite_counts_baseline.json.
+- **Hosted CI must be checked at the pushed commit.** Earlier run IDs belong to
+  superseded candidates. At `17fdab9` (run 43605100480) and `f6cc182` (run
+  43613200483) every job passed: Ubuntu and Windows suites on both Pythons, the
+  Vulkan no-skip suite, frozen packaging, the license core, the Windows
+  installer end-to-end, and the suite-counts gate. At the cleanup head
+  `cf2dfd0` (run 43621773933) every functional job passed and the Ubuntu 3.12
+  suite measured 2,280 passed / 35 skipped; the suite-counts gate is red only
+  because that head's entry lands on its follow-up commit. The gate passes only
+  at a head whose counts are recorded in or inherited from
+  scripts/suite_counts_baseline.json.
+- **A wedged GPU driver can hang local probes.** On 2026-11-14 this workstation's
+  driver blocked in `drm_open`; Qt and Vulkan probes became unkillable and local
+  full-suite runs could not finish. Reboot clears it. The Vulkan probe now fails
+  closed on timeout, but a device open that never returns still occupies the
+  probe process until the driver recovers.
 - **The automated update channel has not carried a release yet.** The
   channel, opt-out, and support gate are implemented and tested
   (docs/release/UPDATE_CHANNEL.md), but no 1.5.x GitHub release with an

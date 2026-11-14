@@ -1,6 +1,6 @@
 # Final Release Readiness — Rhetoric 1.5.0
 
-- **Assessment date:** 2026-11-13 (fix pass of 2026-11-12)
+- **Assessment date:** 2026-11-14 (final cleanup pass; fix pass 2026-11-12)
 - **Branch:** `release/1.5.0-final`
 - **Distribution:** Not authorized or performed. No tag, no GitHub release.
 
@@ -8,8 +8,11 @@
 
 **ENGINEERING STATUS: READY for the owner's release decision**, with the
 release-publication steps below still open and owner-only. Every functional
-hosted job passed at `a37c8b4`, and this fix pass closes the seven issues the
-owner reported from live use. The remaining engineering work is installed-
+hosted job passed at `17fdab9` (run 43605100480), `f6cc182` (run
+43613200483), and the cleanup head `cf2dfd0` (run 43621773933). At `cf2dfd0`
+only the suite-counts bookkeeping gate is red, because that head's entry is
+recorded on the follow-up commit; the Ubuntu 3.12 job measured **2,280 passed,
+35 skipped, 0 failed** in 505.84 s. The remaining engineering work is installed-
 lifecycle qualification on the frozen Linux artifacts and human listening
 review of the CJK and Arabic corpus cases (see "Acceptance still open").
 
@@ -27,22 +30,36 @@ activation and ten consecutive certifications; see
 [Windows guest acceptance](WINDOWS_GUEST_ACCEPTANCE_1.5.0.md). Windows stays
 experimental and excluded from the paid offer, and its installer is unsigned.
 
-- **Full suite at this fix pass's head** (serial, main checkout venv):
-  **2,275 passed, 0 failed, 0 skipped** in 736 s, `QT_QPA_PLATFORM=offscreen`.
-  This is after hybridized voices were removed (fewer tests) and the new
-  wheel-guard, numbering, legacy-path, cache-honesty and render-work tests were
-  added. The earlier run at `a37c8b4` was 2,244 passed / 1 failed, the single
-  failure being the in-tree pre-rename `src/rhetoric.egg-info` artifact
-  described in the fixed-pass table; hosted CI at that head passed both Ubuntu
-  suite jobs on fresh checkouts.
-- **Hosted CI at `a37c8b4`** (run 43365230005): Ubuntu and Windows full suites,
-  the Vulkan no-skip suite, Linux frozen AppImage/deb build, Windows installer
-  end-to-end, and the compiled license core all passed. The only failing job was
-  the repository's own bookkeeping gate ("Suite counts recorded or inheritable");
-  the remedy is `scripts/certify_suite_counts.py --record`, recorded in
-  `scripts/suite_counts_baseline.json`.
+- **Full suite:** the last locally recorded baseline is `f6cc182`
+  (**2,277 passed / 35 skipped**, recorded 2026-11-14 in a fresh worktree). The
+  cleanup head `cf2dfd0` was measured by the hosted Ubuntu 3.12 job: **2,280
+  passed, 35 skipped, 0 failed** (505.84 s). This workstation could not
+  re-measure it because its GPU driver wedged: `drm_open` blocks
+  uninterruptibly and cannot be killed, so every Qt or Vulkan probe that opens
+  the device hangs. The 35 skips are runtime-gated; the repository's skip audit
+  names only the Vulkan skip and marks its list incomplete, so this record does
+  not claim a complete skip list.
+- **Hosted CI at `f6cc182`** (run 43613200483) and `17fdab9` (run 43605100480):
+  all jobs passed, including the Ubuntu and Windows suites, the Vulkan no-skip
+  suite, the Linux frozen AppImage/deb build, the Windows installer end-to-end,
+  the compiled license core, and the suite-counts bookkeeping gate (the
+  `f6cc182` entry is recorded in `scripts/suite_counts_baseline.json`).
 - **This fix pass** is covered by targeted tests per fix plus hosted CI at the
   final head. Per-fix evidence is listed below.
+
+## Public-surface cleanup (2026-11-14)
+
+- `docs/WINDOWS_VM.md` is out of the tracked tree, ignored, and preserved for the
+owner outside the repository; the evidence doc no longer links to it and
+`scripts/airgap_proof.py` requires explicit `--vm-script` and `--ssh-key` paths.
+- Owner paths in test fixtures and two release notes are replaced with neutral
+names; the working tree scans clean for `/home/cody` and `/media/cody`.
+- README's developer setup points at the managed installer, and a test pins it
+so the documented install cannot drift back to the extras combination that pip
+refuses to resolve (pins unchanged).
+- Two suite hangs found and fixed: the Vulkan probe no longer re-waits on a child
+it could not kill, and the non-tty formatting test fakes the pipeline instead of
+starting a model download.
 
 ## This fix pass (2026-11-12 → 13)
 
@@ -107,6 +124,10 @@ catalog's sanctioned split.
    legacy Documents folder were not moved into `render-work/`. The source-side
    fix means new renders write there; moving the old material is a follow-up
    once the GUI is closed.
+4. **Local suite re-record for the cleanup head:** blocked on 2026-11-14 by the
+   host GPU-driver wedge described above. The hosted count is recorded from run
+   43621773933; after a reboot the owner can re-derive it with
+   `scripts/certify_suite_counts.py --record <head>`.
 
 
 ## Owner-only decisions and actions
