@@ -139,21 +139,28 @@ jobs:
       # behind as a downloadable artifact: the Actions log endpoint needs
       # repository admin rights, and a failure nobody can read is not
       # diagnosable. `set -o pipefail` keeps pytest's status authoritative.
+      #
+      # The workflow_dispatch force-failure input does NOT exit here. It reaches
+      # the suite as an environment variable and a test fails on it, so a
+      # deliberate red run still produces pytest.txt: exiting before pytest ran
+      # left the capture path itself unproven, and the artifact held only the
+      # two headroom files. A push event has no inputs context, and the `||`
+      # fallback is what makes this read 'false' there.
       - name: Run Test Suite (Linux)
         if: runner.os == 'Linux'
         shell: bash
+        env:
+          # Read through the expression context rather than spliced into the
+          # shell: the input is user-controlled text.
+          RHETORIC_FORCE_TEST_FAILURE: "${{ github.event.inputs['force-failure'] || 'false' }}"
         run: |
           set -o pipefail
           mkdir -p ci-test-logs
           # A crash in Qt or torch kills pytest with no Python frames, so record
           # the headroom first: the last three hosted runs died on SIGBUS.
           { free -m; df -h /tmp /dev/shm; } | tee ci-test-logs/resources-before.txt
-          # Check if failure is forced via workflow dispatch input
-          FORCE_FAILURE="${{ github.event.inputs.force-failure || 'false' }}"
-          if [[ "$FORCE_FAILURE" == 'true' ]]; then
-            echo 'Forcing suite step failure per workflow dispatch input'
-            exit 1
-          fi
+          # Printed so a run's own log says which way the input resolved.
+          echo "Forced suite failure requested: ${RHETORIC_FORCE_TEST_FAILURE:-<unset>}"
           ./.venv/bin/pytest 2>&1 | tee ci-test-logs/pytest.txt
 
       # The headroom print above is a before-picture, taken while the box is
