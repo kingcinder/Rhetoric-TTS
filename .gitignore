@@ -67,6 +67,7 @@ Profiles/**/*.json
 Profiles/.blends/
 
 # Seashells/ - curated voice references (keep .wav, ignore cache)
+Seashells/.blends/
 Seashells/.rhetoric_preview/
 Seashells/**/*.pkl
 
