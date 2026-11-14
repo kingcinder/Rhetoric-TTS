@@ -168,6 +168,24 @@ def test_missing_output_parent_is_created(tmp_path: Path) -> None:
     assert result.path.is_file()
 
 
+def test_output_directory_receives_the_default_named_bundle(tmp_path: Path) -> None:
+    """``--out <existing dir>`` must write a bundle there, not crash.
+
+    The path used to reach ``os.replace(temp, directory)`` and raise a bare
+    ``IsADirectoryError`` on a destination users plausibly pick.
+    """
+    root = _make_root(tmp_path)
+    out_dir = tmp_path / "bundles"
+    out_dir.mkdir()
+
+    result = support_bundle.build_support_bundle(root, out_dir, run_doctor=False)
+
+    assert result.path.parent == out_dir
+    assert result.path.name.startswith("rhetoric-support-")
+    assert result.path.name.endswith(".zip")
+    assert result.path.is_file()
+
+
 def test_cli_handler_prints_the_manifest(monkeypatch, tmp_path: Path, capsys) -> None:
     import rhetoric.cli as cli
     from rhetoric.support_bundle import SupportBundleResult

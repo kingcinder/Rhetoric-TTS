@@ -355,10 +355,16 @@ def build_support_bundle(
         moment = moment.replace(tzinfo=timezone.utc)
     stamp = moment.astimezone(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
 
+    default_name = f"rhetoric-support-{__version__}-{stamp}.zip"
     if out_path is None:
-        output = root / "Output" / f"rhetoric-support-{__version__}-{stamp}.zip"
+        output = root / "Output" / default_name
     else:
         output = Path(out_path).resolve()
+        # A directory is a plausible destination (``--out Output``), and it
+        # used to reach os.replace(temp, directory) and raise a bare
+        # IsADirectoryError. Treat it as "write the default-named bundle here".
+        if output.is_dir():
+            output = output / default_name
     output.parent.mkdir(parents=True, exist_ok=True)
 
     included: list[str] = ["manifest.json", "README.txt", "environment.json", "license.json"]
