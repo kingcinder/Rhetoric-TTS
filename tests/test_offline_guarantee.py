@@ -217,10 +217,12 @@ def test_cli_render_entry_point_enables_offline_mode(licensed_offline_install, m
 
     monkeypatch.setattr("rhetoric.cli.RhetoricPipeline", lambda: _RecordingPipeline())
 
+    input_file = tmp_path / "in.txt"
+    input_file.write_text("A: hi\n", encoding="utf-8")
     status = cli.main(
         [
             "render",
-            "--input", "in.txt",
+            "--input", str(input_file),
             "--outdir", str(tmp_path),
             "--speakerA-ref", "a.wav",
             "--speakerB-ref", "b.wav",
