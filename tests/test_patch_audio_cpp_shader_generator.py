@@ -171,9 +171,9 @@ def test_the_generator_patch_is_applied_and_idempotent(tmp_path: Path) -> None:
     assert "RHETORIC VENDORED PATCH (shader fork retry)" in patched
     assert "std::this_thread::sleep_for(std::chrono::milliseconds(250));" in patched
     assert "#include <chrono>" in patched
-    # The comment states the window actually compiled in, not a fixed "40".
-    assert "Wait up to 40 x 250ms" in patched
-    assert "10s (40 x 250ms)" not in patched
+    # The comment states the window actually compiled in, both as the total and
+    # as the attempt count that produces it.
+    assert "Wait up to 10000ms (40 x 250ms)" in patched
     # The wait is bounded per generator, not per shader: 40 x 250ms, and the
     # compile latch it then sets stops every other waiter immediately.
     assert "rhetoric_fork_attempt < 40" in patched
@@ -228,7 +228,7 @@ def test_the_retry_window_override_reaches_the_generated_cpp(tmp_path: Path) -> 
     assert completed.returncode == 0, completed.stderr + completed.stdout
     patched = generator.read_text(encoding="utf-8")
     assert "rhetoric_fork_attempt < 7" in patched
-    assert "Wait up to 7 x 250ms" in patched, "the comment must track the override"
+    assert "Wait up to 1750ms (7 x 250ms)" in patched, "the comment must track the override"
     assert "FORK_FAIL_RETRY_COUNT" not in patched
 
 
@@ -256,7 +256,34 @@ def test_a_leading_zero_retry_window_is_decimal_not_octal(tmp_path: Path) -> Non
     assert "value too great for base" not in completed.stderr + completed.stdout
     patched = generator.read_text(encoding="utf-8")
     assert "rhetoric_fork_attempt < 8" in patched
-    assert "Wait up to 8 x 250ms" in patched
+    assert "Wait up to 2000ms (8 x 250ms)" in patched
+
+
+def test_an_out_of_range_retry_window_is_refused_before_bash_arithmetic(tmp_path: Path) -> None:
+    """A digits-only value can still overflow bash's integer.
+
+    ``10#`` converts a decimal string into the shell's integer, and a long
+    enough string aborts the conversion with "value too great for base" -- a raw
+    arithmetic error instead of the friendly message the range check owes the
+    user. The magnitude is therefore refused before the conversion, and the
+    literal below is long enough that letting it through would prove it.
+    """
+    root = _tree(tmp_path)
+
+    completed = _run(root, FORK_FAIL_RETRY_COUNT="99999999999999999999")
+    assert completed.returncode != 0
+    output = completed.stderr + completed.stdout
+    assert "value too great" not in output
+    assert "FORK_FAIL_RETRY_COUNT must be a positive integer" in output
+
+
+def test_a_retry_window_above_the_bound_is_refused(tmp_path: Path) -> None:
+    """Within bash's range but past the documented ceiling: same friendly refusal."""
+    root = _tree(tmp_path)
+
+    completed = _run(root, FORK_FAIL_RETRY_COUNT="1000001")
+    assert completed.returncode != 0
+    assert "FORK_FAIL_RETRY_COUNT must be a positive integer" in completed.stderr + completed.stdout
 
 
 def test_a_missing_generator_file_is_refused(tmp_path: Path) -> None:

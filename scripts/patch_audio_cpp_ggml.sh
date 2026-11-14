@@ -54,20 +54,42 @@ fi
 # The retry window is a patch-time constant compiled into the generator, not a
 # runtime switch: FORK_FAIL_RETRY_COUNT attempts x 250ms, 40 by default.
 FORK_FAIL_RETRY_COUNT=${FORK_FAIL_RETRY_COUNT:-40}
+#: The most attempts a patch-time constant can ask for (about 69 hours of
+#: 250 ms waits). Past this the number is a typo or an attack, not a window.
+FORK_FAIL_RETRY_MAX=1000000
 case "$FORK_FAIL_RETRY_COUNT" in
   ''|*[!0-9]*)
     echo "ERROR: FORK_FAIL_RETRY_COUNT must be a positive integer, got '$FORK_FAIL_RETRY_COUNT'." >&2
     exit 1
     ;;
 esac
+# Strip leading zeros so the magnitude check below is about the value, not the
+# padding: "000000040" is 40, not a nine-digit number.
+FORK_FAIL_RETRY_DIGITS=${FORK_FAIL_RETRY_COUNT#"${FORK_FAIL_RETRY_COUNT%%[!0]*}"}
+# Refuse an absurd value BEFORE bash converts it. `10#` aborts with "value too
+# great for base" on a digits-only string that does not fit its integer, which
+# is an arithmetic error rather than the friendly message -- the same failure
+# the leading-zero case had. Seven digits covers every value up to the bound.
+if (( ${#FORK_FAIL_RETRY_DIGITS} > 7 )); then
+  echo "ERROR: FORK_FAIL_RETRY_COUNT must be a positive integer, got '$FORK_FAIL_RETRY_COUNT'." >&2
+  exit 1
+fi
 # Bash reads a leading zero as octal, so "08" would abort the comparison below
 # with "value too great for base". Normalise to base 10 first; the case above has
 # already rejected everything that is not digits.
-FORK_FAIL_RETRY_COUNT=$((10#$FORK_FAIL_RETRY_COUNT))
+FORK_FAIL_RETRY_COUNT=$((10#${FORK_FAIL_RETRY_DIGITS:-0}))
+if [[ "$FORK_FAIL_RETRY_COUNT" -gt "$FORK_FAIL_RETRY_MAX" ]]; then
+  echo "ERROR: FORK_FAIL_RETRY_COUNT must be a positive integer, got '$FORK_FAIL_RETRY_COUNT'." >&2
+  exit 1
+fi
 if [[ "$FORK_FAIL_RETRY_COUNT" -lt 1 ]]; then
   echo "ERROR: FORK_FAIL_RETRY_COUNT must be at least 1, got '$FORK_FAIL_RETRY_COUNT'." >&2
   exit 1
 fi
+# The comment written into the generator states the whole window as well as the
+# count that produces it, so a reader does not have to do 40 x 250ms in their
+# head to know how long a shader can stall the build.
+FORK_FAIL_RETRY_WINDOW_MS=$((FORK_FAIL_RETRY_COUNT * 250))
 if [[ ! -f "$SHADERS_GEN_FILE" ]]; then
   echo "ERROR: vulkan-shaders-gen.cpp not found at $SHADERS_GEN_FILE (run scripts/build_audio_cpp.sh first)." >&2
   exit 1
@@ -245,7 +267,7 @@ SH_FORK_PATCHED="$(printf '%s\n' \
   '    // CI runner the pids cgroup limit makes fork() fail with EAGAIN; the old' \
   '    // code threw, the caller logged and dropped that shader, and the gap only' \
   '    // surfaced much later as undefined matmul_id_subgroup_* at link time.' \
-  "    // Wait up to $FORK_FAIL_RETRY_COUNT x 250ms for a slot instead of losing the shader. A" \
+  "    // Wait up to ${FORK_FAIL_RETRY_WINDOW_MS}ms ($FORK_FAIL_RETRY_COUNT x 250ms) for a slot instead of losing the shader. A" \
   '    // shader that uses the whole window means the shortage is not a burst, and' \
   '    // the compile latch it then sets stops every other wait immediately.' \
   "    for (int rhetoric_fork_attempt = 0; pid < 0 && rhetoric_fork_attempt < $FORK_FAIL_RETRY_COUNT; ++rhetoric_fork_attempt) {" \
