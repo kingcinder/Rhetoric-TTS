@@ -599,8 +599,17 @@ def sweep_project_cache(
         "errors": [],
         "cache_missing_warning": None,
     }
-    if not stem_dir.exists():
-        report["cache_missing_warning"] = f"No stem cache directory found at {stem_dir}; nothing to sweep."
+    if not stem_dir.is_dir():
+        if stem_dir.exists():
+            # A regular file where the stem cache directory belongs used to
+            # reach ProjectCache's mkdir and raise a bare FileExistsError.
+            report["cache_missing_warning"] = (
+                f"Stem cache path is not a directory: {stem_dir}; nothing to sweep."
+            )
+        else:
+            report["cache_missing_warning"] = (
+                f"No stem cache directory found at {stem_dir}; nothing to sweep."
+            )
         return report
     cache = ProjectCache(project_dir)
 

@@ -281,3 +281,14 @@ def test_render_report_uses_the_serial_number_gate() -> None:
     cli_source = Path(cli.__file__).read_text(encoding="utf-8")
     assert 'require(current_license(), "render-report")' in cli_source
     assert "UNLOCKED_COMMANDS" not in cli_source
+
+
+def test_out_directory_gets_a_render_named_report(tmp_path: Path) -> None:
+    """``--out <dir>`` used to fail on temp.replace(directory); it now writes
+    the report into the folder under the render's own name."""
+    import rhetoric.render_report as render_report
+
+    written = render_report.write_report({"output": {"file": "dialogue.flac"}}, tmp_path)
+
+    assert written == tmp_path / f"dialogue{render_report.REPORT_SUFFIX}"
+    assert written.is_file()

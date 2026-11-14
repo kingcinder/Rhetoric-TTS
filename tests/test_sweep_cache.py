@@ -89,6 +89,21 @@ class TestSweepVerdicts:
         assert report["scanned"] == 0 and report["purged"] == 0
         assert "nothing to sweep" in report["cache_missing_warning"]
 
+    def test_a_file_where_the_stem_cache_dir_belongs_warns_instead_of_crashing(
+        self, tmp_path: Path
+    ) -> None:
+        """A corrupt layout used to reach ProjectCache's mkdir and raise
+        FileExistsError from the sweep."""
+        project = tmp_path / "proj"
+        (project / "cache").mkdir(parents=True)
+        (project / "cache" / "utterances").write_bytes(b"not a directory")
+
+        report = sweep_project_cache(project, apply=True)
+
+        assert report["scanned"] == 0 and report["purged"] == 0
+        assert "not a directory" in report["cache_missing_warning"]
+        assert (project / "cache" / "utterances").is_file(), "the warning must not delete it"
+
 
 class TestPauseAmbiguity:
     """The sweep's pause decision is canonical *shape*, not "is silent"."""

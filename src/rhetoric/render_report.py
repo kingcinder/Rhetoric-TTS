@@ -234,8 +234,18 @@ def report_text(report: dict[str, object]) -> str:
 
 
 def write_report(report: dict[str, object], path: Path) -> Path:
-    """Write the report JSON atomically (temp + replace) and return the path."""
+    """Write the report JSON atomically (temp + replace) and return the path.
+
+    A directory destination (``--out some/folder``) receives the report under
+    the render's own name; the replace step used to fail on a directory with a
+    bare ``IsADirectoryError`` for an input users plausibly pick.
+    """
     path = Path(path)
+    if path.is_dir():
+        output = report.get("output")
+        filename = str(output.get("file") or "") if isinstance(output, dict) else ""
+        stem = Path(filename).stem if filename else "render"
+        path = path / f"{stem}{REPORT_SUFFIX}"
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_name(path.name + ".tmp")
     temporary.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
