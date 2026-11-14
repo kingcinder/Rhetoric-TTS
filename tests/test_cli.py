@@ -16,6 +16,7 @@ import pytest
 
 from rhetoric.cli import (
     _input_json_document,
+    _render_path_refusal,
     build_parser,
     handle_check_input,
     handle_fix_folder,
@@ -187,6 +188,40 @@ def test_render_requires_speaker_refs_without_defaults(monkeypatch, tmp_path: Pa
     )
     with pytest.raises(SystemExit, match="--speakerA-ref"):
         handle_render(args)
+
+
+def test_render_path_refusal_rejects_a_missing_input(tmp_path: Path) -> None:
+    """A missing --input used to be a FileNotFoundError traceback from text ingest."""
+    args = _render_args("--input", str(tmp_path / "nope.txt"), outdir=str(tmp_path))
+    assert _render_path_refusal(args) == f"--input is not a readable file: {tmp_path / 'nope.txt'}"
+
+
+def test_render_path_refusal_rejects_a_directory_as_input(tmp_path: Path) -> None:
+    args = _render_args("--input", str(tmp_path), outdir=str(tmp_path))
+    assert _render_path_refusal(args) == f"--input is not a readable file: {tmp_path}"
+
+
+def test_render_path_refusal_rejects_an_outdir_that_is_a_file(tmp_path: Path) -> None:
+    """A file as --outdir used to be a NotADirectoryError traceback."""
+    target = tmp_path / "in.txt"
+    target.write_text("A: hi\n", encoding="utf-8")
+    blocked = tmp_path / "blocked"
+    blocked.write_bytes(b"x")
+
+    args = _render_args("--input", str(target), outdir=str(blocked))
+
+    assert _render_path_refusal(args) == f"--outdir exists but is not a directory: {blocked}"
+
+
+def test_render_path_refusal_rejects_a_missing_project(tmp_path: Path) -> None:
+    args = build_parser().parse_args(["render", "--project", str(tmp_path / "nope.json")])
+    assert _render_path_refusal(args) == f"--project is not a readable file: {tmp_path / 'nope.json'}"
+
+
+def test_render_path_refusal_accepts_a_real_input_and_directory(tmp_path: Path) -> None:
+    target = tmp_path / "in.txt"
+    target.write_text("A: hi\n", encoding="utf-8")
+    assert _render_path_refusal(_render_args("--input", str(target), outdir=str(tmp_path))) is None
 
 
 def test_render_defaults_speaker_refs_to_seashells(monkeypatch, tmp_path: Path) -> None:

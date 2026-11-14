@@ -1102,6 +1102,28 @@ def handle_voices(args: argparse.Namespace) -> int:
     return 0
 
 
+def _render_path_refusal(args: argparse.Namespace) -> str | None:
+    """Why the render's path flags cannot start a run, or None.
+
+    A missing ``--project``/``--input`` or a directory where a file belongs
+    used to reach ``Path.open`` deep in the pipeline and surface as a raw
+    ``FileNotFoundError``/``IsADirectoryError`` traceback.
+    """
+    if args.project:
+        if not Path(args.project).is_file():
+            return f"--project is not a readable file: {args.project}"
+        return None
+    if not args.input or not args.outdir:
+        # handle_render's own missing-flag message owns this case.
+        return None
+    if not Path(args.input).is_file():
+        return f"--input is not a readable file: {args.input}"
+    outdir = Path(args.outdir)
+    if outdir.exists() and not outdir.is_dir():
+        return f"--outdir exists but is not a directory: {args.outdir}"
+    return None
+
+
 def handle_render(args: argparse.Namespace) -> int:
     if args.project:
         saved = load_project_manifest(args.project)
@@ -1944,6 +1966,10 @@ def main(argv: list[str] | None = None) -> int:
         launch_gui()
         return 0
     if args.command == "render":
+        refusal = _render_path_refusal(args)
+        if refusal is not None:
+            print(f"render: {refusal}", file=sys.stderr)
+            return 2
         return handle_render(args)
     if args.command == "check-input":
         return handle_check_input(args)
