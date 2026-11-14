@@ -171,6 +171,9 @@ def test_the_generator_patch_is_applied_and_idempotent(tmp_path: Path) -> None:
     assert "RHETORIC VENDORED PATCH (shader fork retry)" in patched
     assert "std::this_thread::sleep_for(std::chrono::milliseconds(250));" in patched
     assert "#include <chrono>" in patched
+    # The comment states the window actually compiled in, not a fixed "40".
+    assert "Wait up to 40 x 250ms" in patched
+    assert "10s (40 x 250ms)" not in patched
     # The wait is bounded per generator, not per shader: 40 x 250ms, and the
     # compile latch it then sets stops every other waiter immediately.
     assert "rhetoric_fork_attempt < 40" in patched
@@ -225,6 +228,7 @@ def test_the_retry_window_override_reaches_the_generated_cpp(tmp_path: Path) -> 
     assert completed.returncode == 0, completed.stderr + completed.stdout
     patched = generator.read_text(encoding="utf-8")
     assert "rhetoric_fork_attempt < 7" in patched
+    assert "Wait up to 7 x 250ms" in patched, "the comment must track the override"
     assert "FORK_FAIL_RETRY_COUNT" not in patched
 
 

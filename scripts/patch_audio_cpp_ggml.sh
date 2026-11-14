@@ -241,7 +241,7 @@ SH_FORK_PATCHED="$(printf '%s\n' \
   '    // CI runner the pids cgroup limit makes fork() fail with EAGAIN; the old' \
   '    // code threw, the caller logged and dropped that shader, and the gap only' \
   '    // surfaced much later as undefined matmul_id_subgroup_* at link time.' \
-  '    // Wait up to 10s (40 x 250ms) for a slot instead of losing the shader. A' \
+  "    // Wait up to $FORK_FAIL_RETRY_COUNT x 250ms for a slot instead of losing the shader. A" \
   '    // shader that uses the whole window means the shortage is not a burst, and' \
   '    // the compile latch it then sets stops every other wait immediately.' \
   "    for (int rhetoric_fork_attempt = 0; pid < 0 && rhetoric_fork_attempt < $FORK_FAIL_RETRY_COUNT; ++rhetoric_fork_attempt) {" \
