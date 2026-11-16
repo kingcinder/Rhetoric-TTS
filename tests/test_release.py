@@ -366,6 +366,19 @@ def test_release_check_flags_packaging_and_artifact_version_drift(tmp_path: Path
     assert any("release_artifacts/rhetoric-9.9.8-x86_64.AppImage" in item for item in problems)
 
 
+def test_release_check_ignores_nested_runtime_dependency_versions(tmp_path: Path) -> None:
+    repo = _write_fake_repo(tmp_path)
+    artifacts = repo / "release_artifacts"
+    appdir = artifacts / "linux-frozen" / "AppDir" / "usr" / "lib" / "rhetoric"
+    wheels = artifacts / "offline-bundle" / "wheels"
+    appdir.mkdir(parents=True)
+    wheels.mkdir(parents=True)
+    (appdir / "libXau-6.0.0.so").write_bytes(b"runtime library")
+    (wheels / "torch-2.6.0+cpu-cp312-cp312-manylinux.whl").write_bytes(b"dependency wheel")
+
+    assert release.check(repo) == []
+
+
 def test_check_flags_invalid_changelog_date(tmp_path: Path) -> None:
     """The heading shape matches but the date is not a real calendar day."""
     repo = _write_fake_repo(

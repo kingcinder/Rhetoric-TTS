@@ -1319,6 +1319,7 @@ class RhetoricPipeline:
         settings: RenderSettings,
         progress_callback=None,
         *,
+        project_work_dir: str | Path | None = None,
         prewarmed_engine: ChatterboxEngine | None = None,
         render_click_wall: float | None = None,
         force_sequential: bool = False,
@@ -1386,9 +1387,10 @@ class RhetoricPipeline:
 
         variant = settings.model_variant
         # Working material (stems, cache, logs, previews, render_plan.json)
-        # lives in the app's render-work home, never the user's output folder:
+        # lives in the app's render-work home (or an explicit internal override);
         # only the finished audio is written to plan.output_dir.
-        project_cache = ProjectCache(render_project_dir(plan.source_path))
+        project_cache_root = project_work_dir or render_project_dir(plan.source_path)
+        project_cache = ProjectCache(project_cache_root)
         conditioning: dict[str, ChatterboxConditioning] = {}
         stem_segments: list[tuple[int, AudioSegment]] = []
         timing_entries: list[dict[str, Any]] = []
@@ -2300,9 +2302,14 @@ class RhetoricPipeline:
         output_dir: str | Path,
         speaker_settings: dict[str, SpeakerSettings],
         settings: RenderSettings,
+        *,
+        project_work_dir: str | Path | None = None,
     ) -> tuple[RenderPlan, Path]:
         plan = self.prepare_plan(input_path, output_dir, speaker_settings, settings)
-        output_path = self.render(plan, settings)
+        if project_work_dir is None:
+            output_path = self.render(plan, settings)
+        else:
+            output_path = self.render(plan, settings, project_work_dir=project_work_dir)
         return plan, output_path
 
     def render_preview(

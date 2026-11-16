@@ -166,7 +166,7 @@ def _build_deb(appdir: Path, outdir: Path, version: str) -> Path:
     (root / "usr" / "bin").mkdir(parents=True, exist_ok=True)
     (root / "usr" / "share" / "applications").mkdir(parents=True, exist_ok=True)
     link = root / "usr" / "bin" / "rhetoric"
-    link.symlink_to("/opt/rhetoric/usr/bin/rhetoric")
+    link.symlink_to("/opt/rhetoric/usr/lib/rhetoric/rhetoric")
     shutil.copy2(
         appdir / "usr" / "share" / "applications" / "rhetoric.desktop",
         root / "usr" / "share" / "applications",

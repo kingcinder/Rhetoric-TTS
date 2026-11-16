@@ -178,6 +178,27 @@ def test_probe_survives_a_broken_release_module(tmp_path: Path, monkeypatch) -> 
     assert "could not be loaded" in status["error"]
 
 
+def test_python_probe_timeout_decodes_partial_bytes(monkeypatch) -> None:
+    doctor = _load_doctor()
+    monkeypatch.setattr(
+        doctor,
+        "_run_command",
+        lambda *_args, **_kwargs: {
+            "ok": False,
+            "timed_out": True,
+            "error": "Timed out after 1s",
+            "stdout": b"partial stdout\n",
+            "stderr": b"partial stderr\n",
+        },
+    )
+
+    result = doctor._run_python_probe(Path.cwd(), "pass", timeout=1)
+
+    assert result["ok"] is False
+    assert result["stdout_tail"] == "partial stdout"
+    assert result["stderr_tail"] == "partial stderr"
+
+
 def test_probe_is_read_only(tmp_path: Path) -> None:
     """No file may be created or modified by the probe (same contract the
     whole-tree doctor gate enforces for the rest of the report)."""

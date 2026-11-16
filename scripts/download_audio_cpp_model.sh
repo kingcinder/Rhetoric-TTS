@@ -113,6 +113,11 @@ if [[ ! -e "$MODEL_PATH" ]]; then
   exit 1
 fi
 
+python3 "$REPO_ROOT/scripts/record_audio_cpp_model_provenance.py" \
+  --model-manager "$MODEL_MANAGER" \
+  --package "$AUDIOCPP_MODEL_PACKAGE" \
+  --model "$MODEL_PATH"
+
 cat <<EOF
 
 Chatterbox model installed: $MODEL_PATH

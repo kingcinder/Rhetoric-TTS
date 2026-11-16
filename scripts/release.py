@@ -539,7 +539,7 @@ def packaging_version_problems(repo_root: Path, version: str) -> list[str]:
         for path in sorted(item for item in artifacts_dir.rglob("*") if item.is_file()):
             if path.name == ".gitkeep":
                 continue
-            match = re.search(r"(?<!\d)(\d+\.\d+\.\d+)(?!\d)", path.name)
+            match = re.match(r"(?i)^rhetoric[-_](\d+\.\d+\.\d+)(?=[-_.])", path.name)
             if match and match.group(1) != version:
                 rel = path.relative_to(repo_root).as_posix()
                 problems.append(f"{rel}: artifact version {match.group(1)} does not match package version {version}")

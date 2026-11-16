@@ -7,6 +7,8 @@ without any network access.
 
 from __future__ import annotations
 
+import hashlib
+import json
 import os
 import subprocess
 import sys
@@ -24,6 +26,7 @@ SCRIPT = REPO_ROOT / "scripts" / "download_audio_cpp_model.sh"
 
 FAKE_MANAGER = """#!/usr/bin/env python3
 import argparse
+import hashlib
 import json
 import sys
 from pathlib import Path
@@ -44,7 +47,7 @@ def _info(package: str) -> dict:
         "target_directory": "Chatterbox-GGUF",
         "files": [f"Chatterbox-GGUF/{file_name}"],
         "strip_prefix": "Chatterbox-GGUF",
-        "download": {"kind": "huggingface_snapshot", "repo": "stub", "revision": "main", "gated": False},
+        "download": {"kind": "huggingface_snapshot", "repo": "audio-cpp/audio.cpp-gguf", "revision": "main", "gated": False},
     }
 
 
@@ -78,7 +81,15 @@ def main() -> int:
     print(f"target {target}")
     if not args.dry_run:
         target.mkdir(parents=True, exist_ok=True)
-        (target / file_name).write_bytes(b"stub-model")
+        model = target / file_name
+        model.write_bytes(b"stub-model")
+        (target / f"{file_name}.rhetoric-provenance.json").write_text(json.dumps({
+            "format": 1,
+            "repo": "audio-cpp/audio.cpp-gguf",
+            "revision": "b" * 40,
+            "file": file_name,
+            "sha256": hashlib.sha256(model.read_bytes()).hexdigest(),
+        }))
     print(f"installed {args.package} -> {target}")
     return 0
 
@@ -115,6 +126,9 @@ def test_script_installs_model_and_prints_export_line(fake_audio_cpp: Path) -> N
     assert result.returncode == 0, result.stdout + result.stderr
     expected = fake_audio_cpp / "models" / "Chatterbox-GGUF" / "chatterbox-q8_0.gguf"
     assert expected.exists()
+    provenance = json.loads(Path(f"{expected}.rhetoric-provenance.json").read_text())
+    assert provenance["revision"] == "b" * 40
+    assert provenance["file"] == expected.name
     assert f'export RHETORIC_AUDIOCPP_MODEL="{expected}"' in result.stdout
 
 

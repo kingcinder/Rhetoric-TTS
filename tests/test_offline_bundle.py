@@ -20,6 +20,8 @@ import json
 import os
 import re
 import sys
+import subprocess
+import tarfile
 import types
 import zipfile
 from pathlib import Path
@@ -730,3 +732,33 @@ def test_seed_offline_models_validates_before_creating_cache(
     with pytest.raises(SystemExit):
         manage_install.seed_offline_models(bundle)
     assert not hf_cache.exists(), "an invalid bundle created the HF cache"
+
+
+def test_offline_bundle_repo_archive_excludes_owner_recordings(
+    bundle_builder, tmp_path: Path, monkeypatch
+) -> None:
+    """Offline installation bundles must not copy the owner's voice directory."""
+    repo = tmp_path / "source"
+    (repo / "src").mkdir(parents=True)
+    (repo / "src" / "app.py").write_text("print('app')\n", encoding="utf-8")
+    (repo / "Seashells" / "generic").mkdir(parents=True)
+    (repo / "Seashells" / "generic" / "fixture.wav").write_bytes(b"fixture only")
+    subprocess.run(["git", "init", "-q", str(repo)], check=True)
+    subprocess.run(["git", "-C", str(repo), "config", "user.name", "Bundle Test"], check=True)
+    subprocess.run(
+        ["git", "-C", str(repo), "config", "user.email", "bundle-test@example.invalid"],
+        check=True,
+    )
+    subprocess.run(["git", "-C", str(repo), "add", "."], check=True)
+    subprocess.run(["git", "-C", str(repo), "commit", "-qm", "fixture"], check=True)
+    monkeypatch.setattr(bundle_builder, "REPO_ROOT", repo)
+
+    output = tmp_path / "bundle"
+    assert bundle_builder.main(
+        ["--output", str(output), "--platform", "linux", "--skip-models", "--skip-wheels"]
+    ) == 0
+
+    with tarfile.open(output / "repo.tar.gz", "r:gz") as archive:
+        names = set(archive.getnames())
+    assert "src/app.py" in names
+    assert not any(name == "Seashells" or name.startswith("Seashells/") for name in names)

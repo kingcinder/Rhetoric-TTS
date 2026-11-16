@@ -532,6 +532,20 @@ def write_launchers(bundle_dir: Path) -> None:
     (bundle_dir / "install.sh").chmod(0o755)
 
 
+def archive_repo(repo_root: Path, output: Path) -> None:
+    """Archive the install tree without copying the owner's voice recordings."""
+    with output.open("wb") as stream:
+        subprocess.run(
+            [
+                "git", "archive", "--format=tar.gz", "HEAD", "--", ".",
+                ":(exclude)Seashells/**",
+            ],
+            cwd=repo_root,
+            stdout=stream,
+            check=True,
+        )
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Build a fully offline install bundle for Rhetoric.")
     parser.add_argument("--output", type=Path, required=True, help="Bundle directory to create.")
@@ -558,9 +572,7 @@ def main(argv: list[str] | None = None) -> int:
                             capture_output=True, text=True, check=True).stdout.strip()
 
     log(f"archiving repo @ {commit[:12]}")
-    with open(bundle_dir / "repo.tar.gz", "wb") as fh:
-        subprocess.run(["git", "archive", "--format=tar.gz", "HEAD"], cwd=REPO_ROOT,
-                       stdout=fh, check=True)
+    archive_repo(REPO_ROOT, bundle_dir / "repo.tar.gz")
 
     model_sizes: dict[str, str] = {}
     if not args.skip_models:

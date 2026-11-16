@@ -94,6 +94,21 @@ def test_deterministic_markdown_smoke_render_runs_end_to_end(tmp_path: Path) -> 
     assert "output | path=" in render_trace
 
 
+def test_smoke_render_does_not_delete_user_render_work(tmp_path: Path, monkeypatch) -> None:
+    work_root = tmp_path / "user-render-work"
+    monkeypatch.setenv("RHETORIC_RENDER_WORK", str(work_root))
+    user_project = work_root / "smoke_dialogue_rhetoric"
+    user_project.mkdir(parents=True)
+    sentinel = user_project / "user-cache-marker"
+    sentinel.write_text("preserve", encoding="utf-8")
+
+    result = run_deterministic_smoke_render(tmp_path / "smoke-output", source_format="txt")
+
+    assert sentinel.read_text(encoding="utf-8") == "preserve"
+    assert result.project_dir != user_project
+    assert result.project_dir.is_dir()
+
+
 def test_render_progress_reports_stage_updates(tmp_path: Path) -> None:
     dialogue = tmp_path / "dialogue.txt"
     dialogue.write_text(

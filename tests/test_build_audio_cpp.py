@@ -11,6 +11,8 @@ wiring is verified without any network access or compilation.
 
 from __future__ import annotations
 
+import hashlib
+import json
 import os
 import shutil
 import subprocess
@@ -86,14 +88,23 @@ def _run_script(
     *args: str,
     extra_env: dict[str, str] | None = None,
 ) -> subprocess.CompletedProcess[str]:
+    fake_bin = audio_cpp.parent / "fake-bin"
+    fake_bin.mkdir(exist_ok=True)
+    fake_git = fake_bin / "git"
+    fake_git.write_text(
+        "#!/bin/sh\n"
+        "printf '%s\\n' 748c5e28f6a7228b8f38ad7142ca97d29584544b\n",
+        encoding="utf-8",
+    )
+    fake_git.chmod(0o755)
     env = {
         **os.environ,
+        "PATH": f"{fake_bin}{os.pathsep}{os.environ['PATH']}",
         "AUDIOCPP_DIR": str(audio_cpp),
         # Keep this fixture hermetic when the Vulkan CI job redirects real
         # model downloads to its runner cache.
         "AUDIOCPP_MODELS_ROOT": str(audio_cpp / "models"),
         "PATCH_AUDIOCPP_GGML_SH": str(patch),
-        "AUDIOCPP_SKIP_PIN_VERIFY": "1",
         **(extra_env or {}),
     }
     return subprocess.run(
@@ -120,10 +131,23 @@ def test_default_build_skips_model_download(fake_audio_cpp: tuple[Path, Path]) -
 
     assert result.returncode == 0, result.stdout + result.stderr
     assert _expected_binary(audio_cpp).exists()
+    provenance = json.loads(Path(f"{_expected_binary(audio_cpp)}.rhetoric-provenance.json").read_text())
+    assert provenance["source_commit"] == "748c5e28f6a7228b8f38ad7142ca97d29584544b"
+    assert provenance["binary_sha256"] == hashlib.sha256(_expected_binary(audio_cpp).read_bytes()).hexdigest()
     # No model was fetched unless --with-model is passed.
     assert not _expected_model(audio_cpp).exists()
     assert "download_audio_cpp_model.sh" in result.stdout  # next-steps pointer
     assert "748c5e28f6a7228b8f38ad7142ca97d29584544b" in SCRIPT.read_text(encoding="utf-8")
+
+
+def test_pin_verification_bypass_does_not_claim_build_provenance(
+    fake_audio_cpp: tuple[Path, Path],
+) -> None:
+    audio_cpp, patch = fake_audio_cpp
+    result = _run_script(audio_cpp, patch, extra_env={"AUDIOCPP_SKIP_PIN_VERIFY": "1"})
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert not Path(f"{_expected_binary(audio_cpp)}.rhetoric-provenance.json").exists()
 
 
 def test_with_model_builds_and_downloads_model(fake_audio_cpp: tuple[Path, Path]) -> None:

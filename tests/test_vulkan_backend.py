@@ -83,6 +83,19 @@ def test_supported_backends_contract() -> None:
     assert SUPPORTED_BACKENDS == ("pytorch", "vulkan")
 
 
+def test_vulkan_model_is_discovered_from_linux_installed_model_store(
+    monkeypatch, tmp_path: Path
+) -> None:
+    model = tmp_path / "Chatterbox-GGUF" / "chatterbox-q8_0.gguf"
+    model.parent.mkdir(parents=True)
+    model.write_bytes(b"fixture model")
+    monkeypatch.delenv("RHETORIC_AUDIOCPP_MODEL", raising=False)
+    monkeypatch.delenv("AUDIOCPP_MODELS_ROOT", raising=False)
+    monkeypatch.setattr(vulkan_backend, "SYSTEM_MODEL_ROOT", tmp_path)
+
+    assert vulkan_backend.find_audiocpp_model() == model
+
+
 def test_engine_contract_shape() -> None:
     engine = AudioCppVulkanEngine()
     assert engine.engine_id == "vulkan"
@@ -966,13 +979,18 @@ def test_synthesize_batch_streaming_timeout_kills_child(tmp_path: Path, monkeypa
     """The streaming path honors the timeout: a child that never produces
     wavs is killed and the same RuntimeError the blocking path raises is
     surfaced (never a hang, never a silent swallow)."""
+    monkeypatch.setattr(vulkan_backend, "STARTUP_ALLOWANCE_SECONDS", 0.01)
+    monkeypatch.setattr(vulkan_backend, "MIN_SYNTHESIS_TIMEOUT_SECONDS", 1.0)
     engine = _engine_with_fake_binary(tmp_path, timeout=1)
     reference = tmp_path / "ref.wav"
     sf.write(reference, np.zeros(2400, dtype=np.float32), 24000)
     conditioning = VulkanConditioning(cache_id="c1", reference_path=reference, speaker="A")
 
+    processes = []
+
     class _HangingPopen:
         def __init__(self, command, **kwargs):
+            processes.append(self)
             self.returncode = None
             self.stdout = iter([])
             self.stderr = iter([])
@@ -996,6 +1014,8 @@ def test_synthesize_batch_streaming_timeout_kills_child(tmp_path: Path, monkeypa
             [("Probe.", conditioning, VoiceSettings())],
             on_request_complete=lambda _index: None,
         )
+    assert len(processes) == 1
+    assert processes[0].killed is True
 
 
 def test_synthesize_batch_failure_is_visible_and_rdna1_detected(tmp_path: Path, monkeypatch) -> None:
@@ -1096,3 +1116,15 @@ def test_vulkan_backend_smoke_requires_device() -> None:
     # configured. Exercise the deterministic preflight only -- real synthesis
     # needs the ggml model present and is covered by the offline mocks above.
     engine.ensure_model_ready()
+
+
+def test_finds_offline_kit_audiocpp_cli(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    monkeypatch.delenv("RHETORIC_AUDIOCPP_CLI", raising=False)
+    monkeypatch.setattr(vulkan_backend, "SYSTEM_APP_ROOT", tmp_path)
+    monkeypatch.setattr(vulkan_backend, "_repo_root", lambda: tmp_path / "empty")
+    monkeypatch.setattr(vulkan_backend.shutil, "which", lambda _: None)
+    installed = tmp_path / "audio.cpp" / "bin" / "audiocpp_cli"
+    installed.parent.mkdir(parents=True)
+    installed.write_bytes(b"test executable")
+
+    assert vulkan_backend.find_audiocpp_binary() == installed

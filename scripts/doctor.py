@@ -77,9 +77,11 @@ def _status(ok: bool) -> str:
     return "PASS" if ok else "FAIL"
 
 
-def _tail(text: str, lines: int = 8) -> str:
+def _tail(text: str | bytes | None, lines: int = 8) -> str:
     if not text:
         return ""
+    if isinstance(text, bytes):
+        text = text.decode("utf-8", errors="replace")
     return "\n".join(text.strip().splitlines()[-lines:])
 
 

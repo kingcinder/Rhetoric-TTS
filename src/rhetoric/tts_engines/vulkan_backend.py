@@ -61,6 +61,8 @@ from rhetoric.utils.audio import (
 from rhetoric.utils.hashing import hash_file, hash_payload
 
 SUPPORTED_BACKENDS = ("pytorch", "vulkan")
+SYSTEM_MODEL_ROOT = Path("/opt/rhetoric/models")
+SYSTEM_APP_ROOT = Path("/opt/rhetoric/usr/lib/rhetoric")
 
 LOGGER = logging.getLogger(__name__)
 
@@ -192,7 +194,7 @@ def _repo_root() -> Path:
 
 
 def find_audiocpp_binary() -> Path | None:
-    """Locate ``audiocpp_cli``: env override, repo-local build, then PATH."""
+    """Locate ``audiocpp_cli``: env override, installed kit, repo build, then PATH."""
     override = os.environ.get("RHETORIC_AUDIOCPP_CLI")
     if override:
         candidate = Path(override).expanduser()
@@ -200,6 +202,7 @@ def find_audiocpp_binary() -> Path | None:
             return candidate
     root = _repo_root()
     for candidate in (
+        SYSTEM_APP_ROOT / "audio.cpp" / "bin" / "audiocpp_cli",
         root / "audio.cpp" / "build" / "linux-vulkan-release" / "bin" / "audiocpp_cli",
         root / "audio.cpp" / "build" / "bin" / "audiocpp_cli",
     ):
@@ -228,6 +231,7 @@ def find_audiocpp_model() -> Path | None:
     models_root = os.environ.get("AUDIOCPP_MODELS_ROOT")
     if models_root:
         folders.append(Path(models_root).expanduser() / "Chatterbox-GGUF")
+    folders.append(SYSTEM_MODEL_ROOT / "Chatterbox-GGUF")
     folders.append(root / "audio.cpp" / "models" / "Chatterbox-GGUF")
     for folder in folders:
         for name in ("chatterbox-q8_0.gguf", "chatterbox-f16.gguf"):

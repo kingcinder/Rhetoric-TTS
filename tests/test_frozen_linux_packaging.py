@@ -124,6 +124,30 @@ def test_frozen_build_checksums_sbom_but_keeps_it_out_of_update_targets(
     assert update["artifacts"] == []
 
 
+def test_deb_launcher_resolves_binary_from_usr_bin_symlink(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    builder = _load_builder()
+    appdir = tmp_path / "AppDir"
+    (appdir / "usr" / "bin").mkdir(parents=True)
+    (appdir / "usr" / "lib" / "rhetoric").mkdir(parents=True)
+    (appdir / "usr" / "share" / "applications").mkdir(parents=True)
+    (appdir / "usr" / "bin" / "rhetoric").write_text("#!/bin/sh\n", encoding="utf-8")
+    (appdir / "usr" / "lib" / "rhetoric" / "rhetoric").write_bytes(b"frozen executable")
+    (appdir / "usr" / "share" / "applications" / "rhetoric.desktop").write_text(
+        "[Desktop Entry]\nName=Rhetoric\n", encoding="utf-8"
+    )
+
+    def fake_dpkg_build(command, *, check):
+        Path(command[-1]).write_bytes(b"test deb")
+
+    monkeypatch.setattr(builder, "_require_tool", lambda _name: "dpkg-deb")
+    monkeypatch.setattr(builder.subprocess, "run", fake_dpkg_build)
+    builder._build_deb(appdir, tmp_path, "1.5.0")
+
+    link = tmp_path / "deb-root" / "usr" / "bin" / "rhetoric"
+    assert link.is_symlink()
+    assert link.readlink() == Path("/opt/rhetoric/usr/lib/rhetoric/rhetoric")
+
+
 def test_stage_appdir_uses_replaceable_runtime_and_keeps_user_data(tmp_path: Path) -> None:
     builder = _load_builder()
     frozen = tmp_path / "frozen"

@@ -15,7 +15,6 @@ from rhetoric.audio.assemble import save_wav
 from rhetoric.models.cache import CachedReference, ProjectCache
 from rhetoric.models.project import VoiceSettings
 from rhetoric.models.settings import RenderSettings, SpeakerSettings
-from rhetoric.app_paths import render_project_dir
 from rhetoric.pipeline import ChatterboxConditioning, RhetoricPipeline
 from rhetoric.utils.hashing import hash_payload
 
@@ -202,9 +201,10 @@ def run_deterministic_smoke_render(output_root: str | Path, source_format: str =
     dialogue_path.write_text(dialogue_text, encoding="utf-8")
     speaker_a = _write_reference(output_root / "speaker_a_ref.wav", 220.0)
     speaker_b = _write_reference(output_root / "speaker_b_ref.wav", 330.0)
-    project_dir = render_project_dir(dialogue_path)
+    project_dir = output_root / ".rhetoric-smoke" / source_format
     if project_dir.exists():
         shutil.rmtree(project_dir)
+    project_dir.mkdir(parents=True, exist_ok=True)
 
     with (
         patch("rhetoric.pipeline.ChatterboxEngine", _DeterministicChatterboxEngine),
@@ -233,7 +233,13 @@ def run_deterministic_smoke_render(output_root: str | Path, source_format: str =
             crossfade_ms=10,
             metadata={"title": f"Deterministic Smoke Render ({source_format})"},
         )
-        _, output_path = pipeline.render_project(dialogue_path, project_dir, speaker_settings, render_settings)
+        _, output_path = pipeline.render_project(
+            dialogue_path,
+            project_dir,
+            speaker_settings,
+            render_settings,
+            project_work_dir=project_dir,
+        )
         # The second pass exists to prove the first pass's stems are reused: the
         # pipeline decides that by comparing this plan against the stored one and
         # records the verdict before it exports anything. It does still export,
@@ -245,7 +251,13 @@ def run_deterministic_smoke_render(output_root: str | Path, source_format: str =
             render_settings,
             metadata={**render_settings.metadata, "output_filename": REUSE_PROBE_FILENAME},
         )
-        _, probe_path = pipeline.render_project(dialogue_path, project_dir, speaker_settings, probe_settings)
+        _, probe_path = pipeline.render_project(
+            dialogue_path,
+            project_dir,
+            speaker_settings,
+            probe_settings,
+            project_work_dir=project_dir,
+        )
         probe_path.unlink(missing_ok=True)
 
     render_plan_path = project_dir / "render_plan.json"
