@@ -1121,6 +1121,9 @@ def _render_path_refusal(args: argparse.Namespace) -> str | None:
     outdir = Path(args.outdir)
     if outdir.exists() and not outdir.is_dir():
         return f"--outdir exists but is not a directory: {args.outdir}"
+    for parent in outdir.parents:
+        if parent.exists() and not parent.is_dir():
+            return f"--outdir path contains a non-directory component: {parent}"
     return None
 
 

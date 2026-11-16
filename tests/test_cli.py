@@ -213,6 +213,20 @@ def test_render_path_refusal_rejects_an_outdir_that_is_a_file(tmp_path: Path) ->
     assert _render_path_refusal(args) == f"--outdir exists but is not a directory: {blocked}"
 
 
+def test_render_path_refusal_rejects_outdir_below_a_file(tmp_path: Path) -> None:
+    source = tmp_path / "in.txt"
+    source.write_text("A: hi\n", encoding="utf-8")
+    blocked = tmp_path / "notadir"
+    blocked.write_bytes(b"x")
+    outdir = blocked / "logs"
+
+    args = _render_args("--input", str(source), outdir=str(outdir))
+
+    assert _render_path_refusal(args) == (
+        f"--outdir path contains a non-directory component: {blocked}"
+    )
+
+
 def test_render_path_refusal_rejects_a_missing_project(tmp_path: Path) -> None:
     args = build_parser().parse_args(["render", "--project", str(tmp_path / "nope.json")])
     assert _render_path_refusal(args) == f"--project is not a readable file: {tmp_path / 'nope.json'}"
