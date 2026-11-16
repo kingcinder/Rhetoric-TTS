@@ -95,6 +95,20 @@ def app_settings_path() -> Path:
     return path / "app_settings.json"
 
 
+def load_installer_output_dir() -> str:
+    """Read the output-folder choice made by the Windows installer, if any."""
+    try:
+        return (user_config_dir() / "installer_output_dir.txt").read_text(encoding="utf-8").strip()
+    except OSError:
+        return ""
+
+
+def default_output_directory(app_settings: dict[str, Any], fallback: str | Path) -> Path:
+    """Resolve saved GUI choice, installer choice, then platform default."""
+    value = app_settings.get("default_output_dir") or load_installer_output_dir() or fallback
+    return Path(value).expanduser()
+
+
 def _normalize_path_string(value: Any) -> str:
     """Coerce a persisted filesystem path to a plain string ("" when absent)."""
     if value is None:

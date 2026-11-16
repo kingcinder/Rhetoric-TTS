@@ -38,7 +38,7 @@ import threading
 from pathlib import Path
 from typing import Callable
 
-from PySide6.QtCore import QTimer, QThread, QUrl, Signal
+from PySide6.QtCore import QTimer, QThread, QUrl, Qt, Signal
 from PySide6.QtMultimedia import QAudioOutput, QMediaPlayer
 from PySide6.QtWidgets import (
     QCheckBox,
@@ -127,6 +127,7 @@ class RecordingStudioDialog(QDialog):
     ) -> None:
         super().__init__(parent)
         self.setWindowTitle("Recording Studio - record a new Seashell voice")
+        self.setWindowFlag(Qt.WindowType.WindowMaximizeButtonHint, True)
         self.resize(760, 640)
         self.repo_root = Path(repo_root)
         self.voice_dir = Path(voice_dir)

@@ -43,3 +43,12 @@ def test_windows_installer_is_a_regular_program_installer() -> None:
     assert "LicenseFile=" in iss
     assert "EulaSha256" in iss
     assert "eula_acceptance.json" in iss
+
+
+def test_windows_installer_collects_a_writable_render_output_folder() -> None:
+    iss = (REPO_ROOT / "packaging" / "windows" / "Rhetoric.iss").read_text(encoding="utf-8")
+
+    assert "CreateInputDirPage(wpSelectDir" in iss
+    assert "ButtonNewFolder=Create folder here" in iss
+    assert "installer_output_dir.txt" in iss
+    assert "SaveStringsToUTF8FileWithoutBOM" in iss

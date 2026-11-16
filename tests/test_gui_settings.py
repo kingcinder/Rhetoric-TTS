@@ -11,11 +11,13 @@ from rhetoric.gui_settings import (
     WidgetSnapshot,
     cast_request_from_payload,
     current_gui_settings_payload,
+    default_output_directory,
     default_gui_settings_payload,
     drop_next_format_backup,
     input_file_is_trusted,
     list_templates,
     load_app_settings,
+    load_installer_output_dir,
     load_gui_settings,
     load_recent_reference_paths,
     load_template,
@@ -463,6 +465,33 @@ def test_load_app_settings_accepts_a_utf8_bom(tmp_path: Path, monkeypatch: pytes
 
     assert loaded["inference_backend"] == "vulkan"
     assert loaded["audio_cpp_threads"] == 4
+
+
+def test_installer_output_dir_is_read_from_the_utf8_install_default(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import rhetoric.gui_settings as gui_settings
+
+    monkeypatch.setattr(gui_settings, "user_config_dir", lambda: tmp_path)
+    selected = tmp_path / "My Audio" / "Renders"
+    (tmp_path / "installer_output_dir.txt").write_text(str(selected), encoding="utf-8")
+
+    assert load_installer_output_dir() == str(selected)
+
+
+def test_installer_output_dir_is_the_fresh_install_default_but_saved_choice_wins(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import rhetoric.gui_settings as gui_settings
+
+    monkeypatch.setattr(gui_settings, "user_config_dir", lambda: tmp_path)
+    selected = tmp_path / "Installer Renders"
+    (tmp_path / "installer_output_dir.txt").write_text(str(selected), encoding="utf-8")
+
+    assert default_output_directory({}, tmp_path / "fallback") == selected
+    assert default_output_directory(
+        {"default_output_dir": str(tmp_path / "saved-choice")}, tmp_path / "fallback"
+    ) == tmp_path / "saved-choice"
 
 
 def test_load_recent_reference_paths_accepts_a_utf8_bom(

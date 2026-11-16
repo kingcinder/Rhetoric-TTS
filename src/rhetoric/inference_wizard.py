@@ -9,6 +9,7 @@ features that depend on them.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Callable
 
 from PySide6.QtCore import QPoint, Qt, QTimer, Signal
@@ -20,6 +21,8 @@ from PySide6.QtWidgets import (
     QDialogButtonBox,
     QFileDialog,
     QFormLayout,
+    QHBoxLayout,
+    QGroupBox,
     QLabel,
     QLineEdit,
     QPlainTextEdit,
@@ -68,7 +71,7 @@ STAGES: tuple[TutorialStage, ...] = (
     ),
     TutorialStage(
         "input",
-        "3. Select the source and destination",
+        "3. Choose input and output folders",
         "Input is the transcript or script that will be repaired, split into utterances, and assigned to speakers. The Output Folder receives the final FLAC, stems, and optional subtitles. Analyze reads the input without rendering; Render FLAC uses the analyzed plan and the inference path chosen above. The last selected input is remembered, while a fresh install starts with the bundled What is, reality.txt test script when it exists. Set default Input and Output folders below; the Browse dialogs can replace those defaults, while the last-used file remains the next file until you change it.",
         "input_path",
     ),
@@ -183,6 +186,9 @@ class InferenceSetupWizard(QDialog):
         self.backend_picker.setCurrentIndex(backend_index if backend_index >= 0 else 0)
         selection_form.addRow("Inference path", self.backend_picker)
         selection_form.addRow("PyTorch device", self.device_picker)
+        self.selection_box.setObjectName("wizardSelection")
+        self.folder_box = QGroupBox("Input and output folders")
+        folder_form = QFormLayout(self.folder_box)
         input_default = getattr(main_window, "_default_input_dir", None)
         if input_default is None:
             input_default = getattr(getattr(main_window, "paths", None), "input_dir", "")
@@ -193,25 +199,31 @@ class InferenceSetupWizard(QDialog):
         self.output_folder_edit = QLineEdit(str(output_default))
         self.input_folder_browse = QPushButton("Browse…")
         self.output_folder_browse = QPushButton("Browse…")
+        self.output_folder_create = QPushButton("Create folder here")
+        self.output_folder_status = QLabel()
+        self.output_folder_status.setWordWrap(True)
         self.input_folder_browse.clicked.connect(lambda: self._browse_folder(self.input_folder_edit, "Choose default Input folder"))
         self.output_folder_browse.clicked.connect(lambda: self._browse_folder(self.output_folder_edit, "Choose default Output folder"))
+        self.output_folder_create.clicked.connect(self._create_output_folder)
         input_folder_row = QWidget()
         input_folder_form = QFormLayout(input_folder_row)
         input_folder_form.setContentsMargins(0, 0, 0, 0)
         input_folder_form.addRow(self.input_folder_edit, self.input_folder_browse)
         output_folder_row = QWidget()
-        output_folder_form = QFormLayout(output_folder_row)
-        output_folder_form.setContentsMargins(0, 0, 0, 0)
-        output_folder_form.addRow(self.output_folder_edit, self.output_folder_browse)
+        output_folder_layout = QHBoxLayout(output_folder_row)
+        output_folder_layout.setContentsMargins(0, 0, 0, 0)
+        output_folder_layout.addWidget(self.output_folder_edit, 1)
+        output_folder_layout.addWidget(self.output_folder_browse)
+        output_folder_layout.addWidget(self.output_folder_create)
         self.remember_input_folder = QCheckBox("Use this as the default Input folder")
         self.remember_output_folder = QCheckBox("Use this as the default Output folder")
         self.remember_input_folder.setChecked(True)
         self.remember_output_folder.setChecked(True)
-        selection_form.addRow("Default Input folder", input_folder_row)
-        selection_form.addRow("Default Output folder", output_folder_row)
-        selection_form.addRow("", self.remember_input_folder)
-        selection_form.addRow("", self.remember_output_folder)
-        self.selection_box.setObjectName("wizardSelection")
+        folder_form.addRow("Default Input folder", input_folder_row)
+        folder_form.addRow("Default Output folder", output_folder_row)
+        folder_form.addRow("", self.output_folder_status)
+        folder_form.addRow("", self.remember_input_folder)
+        folder_form.addRow("", self.remember_output_folder)
         self.explanation = QPlainTextEdit()
         self.explanation.setReadOnly(True)
         self.explanation.setMinimumHeight(220)
@@ -236,6 +248,7 @@ class InferenceSetupWizard(QDialog):
         layout.addWidget(self.heading)
         layout.addWidget(self.hardware_summary)
         layout.addWidget(self.selection_box)
+        layout.addWidget(self.folder_box)
         layout.addWidget(self.explanation, 1)
         layout.addWidget(self.progress)
         layout.addWidget(self.help_note)
@@ -263,6 +276,7 @@ class InferenceSetupWizard(QDialog):
         self.hardware_summary.setText(self._hardware_text() if stage.discovery else "")
         self.hardware_summary.setVisible(stage.discovery)
         self.selection_box.setVisible(stage.discovery)
+        self.folder_box.setVisible(stage.key == "input")
         self.continue_button.setText("Finish" if self._stage_index == len(self._stages) - 1 else "Continue")
         self._set_highlight(stage.target_name)
         self._move_near_target(stage.target_name)
@@ -316,16 +330,23 @@ class InferenceSetupWizard(QDialog):
         if chosen:
             field.setText(chosen)
 
+    def _create_output_folder(self) -> None:
+        value = self.output_folder_edit.text().strip()
+        if not value:
+            self.output_folder_status.setText("Enter an output folder path first.")
+            return
+        path = Path(value).expanduser()
+        try:
+            path.mkdir(parents=True, exist_ok=True)
+        except OSError as exc:
+            self.output_folder_status.setText(f"Could not create output folder: {exc}")
+            return
+        self.output_folder_edit.setText(str(path))
+        self.output_folder_status.setText(f"Output folder is ready: {path}")
+
     def _apply_discovery_selection(self) -> None:
         if not self._stages or not self._stages[self._stage_index].discovery:
             return
-        if self.on_preferences is not None:
-            self.on_preferences({
-                "default_input_dir": self.input_folder_edit.text().strip(),
-                "default_output_dir": self.output_folder_edit.text().strip(),
-                "remember_input_folder": self.remember_input_folder.isChecked(),
-                "remember_output_folder": self.remember_output_folder.isChecked(),
-            })
         backend = self.backend_picker.currentData()
         if backend == "vulkan":
             if self.on_selection:
@@ -341,8 +362,19 @@ class InferenceSetupWizard(QDialog):
         elif value == "cpu" and self.on_selection:
             self.on_selection("cpu", None)
 
+    def _apply_folder_preferences(self) -> None:
+        if self.on_preferences is not None:
+            self.on_preferences({
+                "default_input_dir": self.input_folder_edit.text().strip(),
+                "default_output_dir": self.output_folder_edit.text().strip(),
+                "remember_input_folder": self.remember_input_folder.isChecked(),
+                "remember_output_folder": self.remember_output_folder.isChecked(),
+            })
+
     def _continue(self) -> None:
         self._apply_discovery_selection()
+        if self._stages[self._stage_index].key == "input":
+            self._apply_folder_preferences()
         if self._stage_index >= len(self._stages) - 1:
             self._finish(True)
             return

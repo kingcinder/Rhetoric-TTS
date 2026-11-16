@@ -63,6 +63,7 @@ from rhetoric.gui_settings import (
     clear_trusted_input_files,
     current_gui_settings_payload,
     default_gui_settings_payload,
+    default_output_directory,
     input_file_is_trusted,
     list_templates,
     load_app_settings,
@@ -299,9 +300,9 @@ class MainWindow(QMainWindow):
         self._default_input_dir = Path(
             self._app_settings.get("default_input_dir") or self.paths.input_dir
         ).expanduser()
-        self._default_output_dir = Path(
-            self._app_settings.get("default_output_dir") or self.paths.output_dir
-        ).expanduser()
+        self._default_output_dir = default_output_directory(
+            self._app_settings, self.paths.output_dir
+        )
         self.output_filename_warning_enabled = bool(
             self._app_settings.get("output_filename_warning", True)
         )

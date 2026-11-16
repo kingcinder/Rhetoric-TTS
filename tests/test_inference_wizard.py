@@ -157,12 +157,78 @@ def test_unqualified_gpu_choices_are_labeled_experimental(qt_app):
 def test_discovery_wizard_exposes_default_folder_preferences(qt_app):
     main_window = QWidget()
     main_window.paths = type("Paths", (), {"input_dir": "/repo/Input", "output_dir": "/repo/Output"})()
-    wizard = InferenceSetupWizard(main_window, devices=[], mode="discovery")
+    wizard = InferenceSetupWizard(main_window, devices=[], mode="full")
     try:
+        wizard._stage_index = next(i for i, stage in enumerate(wizard._stages) if stage.key == "input")
+        wizard._render_stage()
+        assert not wizard.folder_box.isHidden()
         assert wizard.input_folder_edit.text() == "/repo/Input"
         assert wizard.output_folder_edit.text() == "/repo/Output"
         assert wizard.remember_input_folder.isChecked() is True
         assert wizard.remember_output_folder.isChecked() is True
+    finally:
+        wizard.close()
+        main_window.deleteLater()
+
+
+def test_output_folder_step_applies_the_selected_default(qt_app, tmp_path):
+    main_window = QWidget()
+    main_window.paths = type("Paths", (), {"input_dir": "/repo/Input", "output_dir": "/repo/Output"})()
+    seen = []
+    wizard = InferenceSetupWizard(
+        main_window, devices=[], mode="full", on_preferences=seen.append
+    )
+    try:
+        wizard._stage_index = next(i for i, stage in enumerate(wizard._stages) if stage.key == "input")
+        wizard._render_stage()
+        selected = tmp_path / "chosen-renders"
+        wizard.output_folder_edit.setText(str(selected))
+
+        wizard._continue()
+
+        assert seen == [{
+            "default_input_dir": "/repo/Input",
+            "default_output_dir": str(selected),
+            "remember_input_folder": True,
+            "remember_output_folder": True,
+        }]
+    finally:
+        wizard.close()
+        main_window.deleteLater()
+
+
+def test_create_output_folder_button_creates_the_selected_directory(qt_app, tmp_path):
+    main_window = QWidget()
+    main_window.paths = type("Paths", (), {"input_dir": "/repo/Input", "output_dir": "/repo/Output"})()
+    wizard = InferenceSetupWizard(main_window, devices=[], mode="full")
+    target = tmp_path / "new" / "renders"
+    try:
+        wizard._stage_index = next(i for i, stage in enumerate(wizard._stages) if stage.key == "input")
+        wizard._render_stage()
+        wizard.output_folder_edit.setText(str(target))
+        wizard.output_folder_create.click()
+
+        assert target.is_dir()
+        assert "ready" in wizard.output_folder_status.text().lower()
+    finally:
+        wizard.close()
+        main_window.deleteLater()
+
+
+def test_create_output_folder_button_reports_a_blocked_path(qt_app, tmp_path):
+    main_window = QWidget()
+    main_window.paths = type("Paths", (), {"input_dir": "/repo/Input", "output_dir": "/repo/Output"})()
+    wizard = InferenceSetupWizard(main_window, devices=[], mode="full")
+    blocker = tmp_path / "not-a-folder"
+    blocker.write_text("file", encoding="utf-8")
+    try:
+        wizard._stage_index = next(i for i, stage in enumerate(wizard._stages) if stage.key == "input")
+        wizard._render_stage()
+        wizard.output_folder_edit.setText(str(blocker / "renders"))
+        wizard.output_folder_create.click()
+
+        assert not (blocker / "renders").exists()
+        assert wizard.output_folder_status.text()
     finally:
         wizard.close()
         main_window.deleteLater()
