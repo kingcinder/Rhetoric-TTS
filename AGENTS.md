@@ -20,3 +20,7 @@ General working rules:
   for a change.
 - Verify changes with relevant checks, and report exactly what was verified.
 - Do not claim results or capabilities that were not observed.
+- For every test TTS render, select an input from the current available input
+  selection after checking the updated `Input/` contents. Do not reuse a stale
+  filename or substitute an unlisted fixture; record the selected path with the
+  render result.
