@@ -160,6 +160,12 @@ def test_the_registry_is_not_silently_widened_by_a_bare_check_name(acceptance) -
         assert path not in acceptance.CHECKS, f"{path} registers a whole check"
 
 
+def test_archive_git_ancestry_unverifiable_count_is_an_explained_delta(acceptance) -> None:
+    reason = acceptance.EXPECTED_DELTAS.get("doctor.resolved_records.unverifiable")
+    assert reason is not None
+    assert "archive" in reason and "ancestry" in reason
+
+
 # --- reading pytest's output ----------------------------------------------------
 
 

@@ -102,6 +102,8 @@ EXPECTED_DELTAS: dict[str, str] = {
         "resolved-record counts require Git ancestry unavailable in a git archive",
     "doctor.resolved_records.skipped":
         "a git archive has no .git directory for ancestry verification",
+    "doctor.resolved_records.unverifiable":
+        "a git archive cannot check recorded commit ancestry, so the working tree's unverifiable list is absent there",
     # A clean checkout has no venv until bootstrap creates one.
     "doctor.entrypoint.venv_entrypoint_exists":
         "a clean checkout has no .venv; `manage_install.py bootstrap` creates it",
