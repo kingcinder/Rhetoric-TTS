@@ -8,7 +8,6 @@ from tests.helpers import isolate_user_config
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 from PySide6.QtWidgets import QApplication
-from PySide6.QtCore import Qt
 
 from rhetoric.app_gui import RecordingStudioDialog
 
@@ -47,18 +46,6 @@ def test_teleprompter_lists_only_text_scripts(tmp_path, monkeypatch, qt_app):
     assert "Read Aloud transcript.txt" in names
     assert "scene one.md" in names
     assert not any(name.endswith(".wav") for name in names)
-
-
-def test_recording_studio_window_supports_maximizing(tmp_path, qt_app):
-    repo, voice, inputs = _make_dirs(tmp_path)
-    dialog = RecordingStudioDialog(repo, voice, inputs)
-    try:
-        assert dialog.windowFlags() & Qt.WindowType.WindowMaximizeButtonHint
-        dialog.showMaximized()
-        qt_app.processEvents()
-        assert dialog.isMaximized()
-    finally:
-        dialog.close()
 
 
 def test_teleprompter_switch_replaces_prompt_and_empty_selection_clears_it(

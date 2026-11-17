@@ -127,6 +127,10 @@ class RecordingStudioDialog(QDialog):
     ) -> None:
         super().__init__(parent)
         self.setWindowTitle("Recording Studio - record a new Seashell voice")
+        self.setWindowFlags(
+            (self.windowFlags() & ~Qt.WindowType.WindowType_Mask)
+            | Qt.WindowType.Window
+        )
         self.setWindowFlag(Qt.WindowType.WindowMaximizeButtonHint, True)
         self.resize(760, 640)
         self.repo_root = Path(repo_root)
@@ -241,6 +245,17 @@ class RecordingStudioDialog(QDialog):
         script = str(payload.get("input_file") or "")
         if script:
             index = self.script_combo.findData(script)
+            if index < 0:
+                remembered_name = Path(script).name.casefold()
+                index = next(
+                    (
+                        candidate
+                        for candidate in range(self.script_combo.count())
+                        if Path(str(self.script_combo.itemData(candidate) or "")).name.casefold()
+                        == remembered_name
+                    ),
+                    -1,
+                )
             if index >= 0:
                 self.script_combo.setCurrentIndex(index)
         # Studio takes belong to the application's reference library. Ignore
@@ -308,9 +323,15 @@ class RecordingStudioDialog(QDialog):
         self.script_combo.blockSignals(True)
         self.script_combo.clear()
         self.script_combo.addItem("<no script - type your own lines>", "")
+        scripts = []
         if self.input_dir.is_dir():
             for path in sorted(self.input_dir.glob("*")):
-                if path.suffix.lower() in (".txt", ".md") and path.is_file():
+                if (
+                    path.suffix.lower() in (".txt", ".md")
+                    and path.name.casefold() != "readme.md"
+                    and path.is_file()
+                ):
+                    scripts.append(path)
                     self.script_combo.addItem(path.name, str(path))
         # The bundled alphabet/phonetic coverage script is the safest first
         # take: it exercises a broad range of sounds while remaining easy to
@@ -318,6 +339,8 @@ class RecordingStudioDialog(QDialog):
         # by MainWindow, so this only governs a genuinely fresh studio.
         default_script = self.input_dir / "What is, reality.txt"
         default_index = self.script_combo.findData(str(default_script))
+        if default_index < 0 and scripts:
+            default_index = self.script_combo.findData(str(scripts[0]))
         if default_index >= 0:
             self.script_combo.setCurrentIndex(default_index)
         else:

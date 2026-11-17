@@ -5,6 +5,7 @@ from rhetoric.app_paths import (
     default_output_filename,
     ensure_repo_default_paths,
     normalize_output_filename,
+    resolve_default_input_dir,
     render_project_dir,
     render_work_dir,
     resolve_output_filename,
@@ -32,6 +33,30 @@ def test_installed_root_migrates_repo_content_without_deleting_it(tmp_path: Path
     assert paths.input_dir == tmp_path / "data" / "rhetoric" / "Input"
     assert (paths.input_dir / "story.txt").read_text(encoding="utf-8") == "A: hello\n"
     assert (repo / "Input" / "story.txt").is_file()
+
+
+def test_installed_root_uses_live_repo_input_over_its_migrated_default(tmp_path: Path) -> None:
+    repo = tmp_path / "repo"
+    repo_input = repo / "Input"
+    repo_input.mkdir(parents=True)
+    (repo / "pyproject.toml").touch()
+    app_input = tmp_path / "data" / "rhetoric" / "Input"
+    app_input.mkdir(parents=True)
+    (app_input / "stale.txt").write_text("stale copy", encoding="utf-8")
+
+    assert resolve_default_input_dir(app_input, app_input, repo) == repo_input
+
+
+def test_custom_input_directory_is_preserved(tmp_path: Path) -> None:
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    (repo / "pyproject.toml").touch()
+    (repo / "Input").mkdir()
+    app_default = tmp_path / "data" / "Input"
+    custom = tmp_path / "selected" / "Input"
+    custom.mkdir(parents=True)
+
+    assert resolve_default_input_dir(custom, app_default, repo) == custom
 
 
 def test_ensure_repo_default_paths_creates_expected_directories(tmp_path: Path) -> None:

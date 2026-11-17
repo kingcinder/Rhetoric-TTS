@@ -51,6 +51,7 @@ from rhetoric.app_paths import (
     ensure_repo_default_paths,
     normalize_output_filename,
     default_output_filename,
+    resolve_default_input_dir,
     resolve_output_filename,
 )
 from rhetoric.correction_modes import CORRECTION_MODE_OPTIONS, correction_mode_label, normalize_correction_mode
@@ -297,9 +298,11 @@ class MainWindow(QMainWindow):
         # bundled folders.  They are restored before the UI is built so a
         # first-run wizard choice controls both the initial fields and every
         # subsequent Browse dialog.
-        self._default_input_dir = Path(
-            self._app_settings.get("default_input_dir") or self.paths.input_dir
-        ).expanduser()
+        self._default_input_dir = resolve_default_input_dir(
+            self._app_settings.get("default_input_dir"),
+            self.paths.input_dir,
+            self.repo_root,
+        )
         self._default_output_dir = default_output_directory(
             self._app_settings, self.paths.output_dir
         )

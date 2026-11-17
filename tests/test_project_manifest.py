@@ -124,6 +124,11 @@ def test_manifest_scalar_root_raises_typed_error(tmp_path: Path, raw: str) -> No
         load_project_manifest(manifest_path)
 
 
+def test_manifest_directory_raises_typed_error(tmp_path: Path) -> None:
+    with pytest.raises(ProjectManifestError, match="Project manifest is not a file"):
+        load_project_manifest(tmp_path)
+
+
 def test_a_manifest_saved_with_a_utf8_bom_loads(tmp_path: Path) -> None:
     """A manifest re-saved by Notepad keeps its BOM; it must still load."""
     plan = RenderPlan(

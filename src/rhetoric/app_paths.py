@@ -76,6 +76,31 @@ def ensure_repo_default_paths(repo_root: str | Path) -> RhetoricPaths:
     return paths
 
 
+def resolve_default_input_dir(
+    configured: str | Path | None,
+    app_default: str | Path,
+    repo_root: str | Path,
+) -> Path:
+    """Prefer the live checkout's Input folder over its one-time migrated copy.
+
+    Installed editable checkouts migrate bundled Input files into app data for
+    durability. That copy is not a mirror, so it cannot reflect later edits or
+    deletions in the checkout. Honor custom folder choices, but redirect the
+    app-data default back to the live repository folder when available.
+    """
+    default_path = Path(app_default).expanduser()
+    selected_path = Path(configured).expanduser() if configured else default_path
+    root = Path(repo_root).expanduser()
+    repo_input = root / "Input"
+    try:
+        uses_app_default = selected_path.resolve() == default_path.resolve()
+    except OSError:
+        uses_app_default = selected_path == default_path
+    if uses_app_default and (root / "pyproject.toml").is_file() and repo_input.is_dir():
+        return repo_input
+    return selected_path
+
+
 def render_work_dir() -> Path:
     """The app's working area for render material.
 
