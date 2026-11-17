@@ -71,6 +71,8 @@ _NON_HASH_TOKENS = frozenset(
         "17734646",  # Product Hunt help-article id inside a URL in the market strategy doc — not a commit
         "b0a7fe4c",  # first segment of the production licence's lic_id UUID (LICENSING_OPS, FINAL_RELEASE_READINESS) — not a commit
         "6eb06cccbc14",  # second segment of that same lic_id UUID — not a commit
+        "b2847168",  # first UUID segment of an attached execution-directive path — not a commit
+        "bbca025d503c",  # UUID segment of that attached path — not a commit
     }
 )
 
@@ -312,6 +314,12 @@ def test_every_commit_hash_cited_in_the_records_resolves() -> None:
         "prose rather than a hash, classify it in _NON_HASH_TOKENS:\n  "
         + "\n  ".join(broken)
     )
+
+
+def test_attached_document_uuid_is_not_treated_as_commit_citations() -> None:
+    attached_path = "/attachments/b2847168-41ca-4d81-ae6f-bbca025d503c/Pasted text.txt"
+
+    assert _record_citations("docs/release/EXECUTION_CHECKLIST_2026-11-17.md", attached_path) == []
 
 
 def test_every_resolved_entry_cites_a_resolvable_commit() -> None:

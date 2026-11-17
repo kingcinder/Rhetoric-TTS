@@ -74,10 +74,18 @@ def record_model_provenance(
     try:
         with open_url(Request(url, method="HEAD"), timeout=60) as response:
             resolved_revision = response.headers.get("X-Repo-Commit", "")
+        if not isinstance(resolved_revision, str) or not re.fullmatch(r"[0-9a-f]{40}", resolved_revision):
+            api_url = (
+                f"{endpoint.rstrip('/')}/api/models/{quote(repo, safe='/')}"
+                f"?revision={quote(revision, safe='')}"
+            )
+            with open_url(Request(api_url, headers={"Accept": "application/json"}), timeout=60) as response:
+                model_info = json.loads(response.read().decode("utf-8"))
+            resolved_revision = model_info.get("sha", "") if isinstance(model_info, dict) else ""
     except Exception as exc:
         raise ProvenanceError(f"could not resolve immutable Hugging Face model revision: {exc}") from exc
     if not isinstance(resolved_revision, str) or not re.fullmatch(r"[0-9a-f]{40}", resolved_revision):
-        raise ProvenanceError(f"Hugging Face did not provide an immutable X-Repo-Commit for {repo}")
+        raise ProvenanceError(f"Hugging Face did not provide an immutable model revision for {repo}")
 
     record: dict[str, object] = {
         "format": 1,

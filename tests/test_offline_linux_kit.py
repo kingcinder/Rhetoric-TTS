@@ -3,6 +3,7 @@ from __future__ import annotations
 import importlib.util
 import hashlib
 import json
+import subprocess
 import sys
 from pathlib import Path
 
@@ -44,6 +45,48 @@ def _write_binary_provenance(builder, binary: Path) -> None:
         }),
         encoding="utf-8",
     )
+
+
+def _install_fake_audio_cpp_checkout(builder, repo_root: Path) -> None:
+    """Give kit-builder tests a temporary, pinned source tree and notices."""
+    audio_cpp = repo_root / "audio.cpp"
+    (audio_cpp / "external" / "ggml").mkdir(parents=True)
+    (audio_cpp / "external" / "sentencepiece").mkdir(parents=True)
+    (audio_cpp / "LICENSE").write_text("audio.cpp license\n", encoding="utf-8")
+    (audio_cpp / "external" / "ggml" / "LICENSE").write_text("ggml license\n", encoding="utf-8")
+    (audio_cpp / "external" / "sentencepiece" / "LICENSE").write_text(
+        "sentencepiece license\n", encoding="utf-8"
+    )
+    notices = repo_root / "THIRD_PARTY_LICENSES"
+    notices.mkdir(parents=True)
+    (notices / "MIT.txt").write_text(
+        "Copyright (c) <year> <copyright holders>\nMIT license template\n", encoding="utf-8"
+    )
+    subprocess.run(["git", "init", "--quiet", str(repo_root)], check=True)
+    subprocess.run(["git", "-C", str(repo_root), "add", "."], check=True)
+    subprocess.run(
+        [
+            "git",
+            "-C",
+            str(repo_root),
+            "-c",
+            "user.name=Test",
+            "-c",
+            "user.email=test@example.invalid",
+            "commit",
+            "--quiet",
+            "-m",
+            "fixture",
+        ],
+        check=True,
+    )
+    builder.REPO_ROOT = repo_root
+    builder.AUDIOCPP_COMMIT = subprocess.run(
+        ["git", "-C", str(audio_cpp), "rev-parse", "HEAD"],
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout.strip()
 
 
 def test_model_stage_contains_only_pinned_standard_cpu_and_vulkan_models(tmp_path: Path) -> None:
@@ -136,6 +179,7 @@ def test_audio_cpp_install_and_uninstall_are_scoped_to_kit_owned_paths() -> None
 
 def test_kit_builder_stages_pinned_audio_cpp_binary_and_radv_package(tmp_path: Path) -> None:
     builder = _load_builder()
+    _install_fake_audio_cpp_checkout(builder, tmp_path / "checkout")
     cache = tmp_path / "source-hub"
     repo = cache / "models--ResembleAI--chatterbox"
     snapshot = repo / "snapshots" / builder.CHATTERBOX_REVISION
@@ -171,6 +215,7 @@ def test_kit_builder_stages_pinned_audio_cpp_binary_and_radv_package(tmp_path: P
 
 def test_kit_checksums_cover_the_hub_revision_ref(tmp_path: Path) -> None:
     builder = _load_builder()
+    _install_fake_audio_cpp_checkout(builder, tmp_path / "checkout")
     cache = tmp_path / "source-hub"
     repo = cache / "models--ResembleAI--chatterbox"
     snapshot = repo / "snapshots" / builder.CHATTERBOX_REVISION
@@ -232,6 +277,7 @@ def test_model_stage_rejects_missing_immutable_source_provenance(tmp_path: Path)
 
 def test_audio_cpp_stage_rejects_missing_build_provenance(tmp_path: Path) -> None:
     builder = _load_builder()
+    _install_fake_audio_cpp_checkout(builder, tmp_path / "checkout")
     binary = tmp_path / "audiocpp_cli"
     binary.write_bytes(b"binary")
     binary.chmod(0o755)
@@ -261,6 +307,7 @@ def test_model_stage_rejects_provenance_for_different_model_bytes(tmp_path: Path
 
 def test_audio_cpp_stage_rejects_provenance_for_different_binary_bytes(tmp_path: Path) -> None:
     builder = _load_builder()
+    _install_fake_audio_cpp_checkout(builder, tmp_path / "checkout")
     binary = tmp_path / "audiocpp_cli"
     binary.write_bytes(b"original binary")
     binary.chmod(0o755)
