@@ -1,0 +1,4 @@
+
+The Poetry configuration is invalid:
+  - Either [project.version] or [tool.poetry.version] is required in package mode.
+

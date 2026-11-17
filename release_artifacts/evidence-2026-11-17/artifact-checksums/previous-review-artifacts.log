@@ -1,0 +1,8 @@
+start=2026-11-17T07:58:16.524521-08:00
+command=['sha256sum', '-c', 'checksums-1.5.0.sha256']
+finish=2026-11-17T07:58:56.762326-08:00
+exit_code=0
+rhetoric-1.5.0-ubuntu24.04-amd64-offline.tar.gz: OK
+rhetoric-1.5.0-x86_64.AppImage: OK
+rhetoric_1.5.0_amd64.deb: OK
+sbom.json: OK

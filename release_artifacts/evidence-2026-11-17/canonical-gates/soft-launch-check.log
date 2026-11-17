@@ -1,0 +1,155 @@
+{
+  "ok": false,
+  "status": "blocked",
+  "blockers": 10,
+  "warnings": 1,
+  "findings": [
+    {
+      "key": "version",
+      "ok": true,
+      "severity": "info",
+      "detail": "Version 1.5.0, banners, and CHANGELOG agree (post-cut date state is by design).",
+      "owner_action": ""
+    },
+    {
+      "key": "licensing_key",
+      "ok": true,
+      "severity": "info",
+      "detail": "A production verify key is registered.",
+      "owner_action": ""
+    },
+    {
+      "key": "eula",
+      "ok": true,
+      "severity": "info",
+      "detail": "The EULA is final and names its governing law.",
+      "owner_action": ""
+    },
+    {
+      "key": "third_party_notices",
+      "ok": false,
+      "severity": "blocker",
+      "detail": "THIRD_PARTY_NOTICES.md is missing component 'cuda-bindings'; THIRD_PARTY_NOTICES.md is missing component 'cuda-pathfinder'; THIRD_PARTY_NOTICES.md is missing component 'cuda-toolkit'; THIRD_PARTY_NOTICES.md is missing component 'narwhals'; THIRD_PARTY_NOTICES.md is missing component 'nvidia-cublas'; THIRD_PARTY_NOTICES.md is missing component 'nvidia-cuda-nvrtc'; THIRD_PARTY_NOTICES.md is missing component 'nvidia-cudnn-cu13'; THIRD_PARTY_NOTICES.md is missing component 'nvidia-cusparselt-cu13'; THIRD_PARTY_NOTICES.md is missing component 'nvidia-nccl-cu13'; THIRD_PARTY_NOTICES.md is missing component 'nvidia-nvshmem-cu13'; THIRD_PARTY_NOTICES.md is missing component 'triton'",
+      "owner_action": "Regenerate THIRD_PARTY_NOTICES.md with scripts/generate_third_party_notices.py."
+    },
+    {
+      "key": "license_policy",
+      "ok": false,
+      "severity": "blocker",
+      "detail": "chatterbox-tts is unknown (unknown) and no distribution decision is recorded.",
+      "owner_action": "Replace the component, separate it from the proprietary distribution, or record an allow decision in scripts/license_review.json after legal review."
+    },
+    {
+      "key": "license_policy",
+      "ok": false,
+      "severity": "blocker",
+      "detail": "cloudpickle is unknown (unknown) and no distribution decision is recorded.",
+      "owner_action": "Replace the component, separate it from the proprietary distribution, or record an allow decision in scripts/license_review.json after legal review."
+    },
+    {
+      "key": "license_policy",
+      "ok": false,
+      "severity": "blocker",
+      "detail": "cuda-toolkit is  (unknown) and no distribution decision is recorded.",
+      "owner_action": "Replace the component, separate it from the proprietary distribution, or record an allow decision in scripts/license_review.json after legal review."
+    },
+    {
+      "key": "license_policy",
+      "ok": false,
+      "severity": "blocker",
+      "detail": "deepmultilingualpunctuation is unknown (unknown) and no distribution decision is recorded.",
+      "owner_action": "Replace the component, separate it from the proprietary distribution, or record an allow decision in scripts/license_review.json after legal review."
+    },
+    {
+      "key": "license_policy",
+      "ok": false,
+      "severity": "blocker",
+      "detail": "pillow is HPND (unknown) and no distribution decision is recorded.",
+      "owner_action": "Replace the component, separate it from the proprietary distribution, or record an allow decision in scripts/license_review.json after legal review."
+    },
+    {
+      "key": "license_policy",
+      "ok": false,
+      "severity": "blocker",
+      "detail": "PySide6 is unknown (unknown) and no distribution decision is recorded.",
+      "owner_action": "Replace the component, separate it from the proprietary distribution, or record an allow decision in scripts/license_review.json after legal review."
+    },
+    {
+      "key": "license_policy",
+      "ok": false,
+      "severity": "blocker",
+      "detail": "sounddevice is unknown (unknown) and no distribution decision is recorded.",
+      "owner_action": "Replace the component, separate it from the proprietary distribution, or record an allow decision in scripts/license_review.json after legal review."
+    },
+    {
+      "key": "license_policy",
+      "ok": false,
+      "severity": "blocker",
+      "detail": "symspellpy is unknown (unknown) and no distribution decision is recorded.",
+      "owner_action": "Replace the component, separate it from the proprietary distribution, or record an allow decision in scripts/license_review.json after legal review."
+    },
+    {
+      "key": "license_policy",
+      "ok": false,
+      "severity": "blocker",
+      "detail": "torchvision is unknown (unknown) and no distribution decision is recorded.",
+      "owner_action": "Replace the component, separate it from the proprietary distribution, or record an allow decision in scripts/license_review.json after legal review."
+    },
+    {
+      "key": "license_policy",
+      "ok": true,
+      "severity": "warning",
+      "detail": "Weak-copyleft components require their notices and replacement/source obligations: PySide6 / shiboken6 / Qt, certifi, libsndfile, libsoxr, tqdm",
+      "owner_action": "Keep the notices current and document the LGPL relinking/source offer before distribution."
+    },
+    {
+      "key": "voice_assets",
+      "ok": true,
+      "severity": "info",
+      "detail": "Every shipped voice asset has a documented provenance.",
+      "owner_action": ""
+    },
+    {
+      "key": "checksums",
+      "ok": true,
+      "severity": "info",
+      "detail": "release_checksums/checksums-1.5.0.sha256 is recorded.",
+      "owner_action": ""
+    },
+    {
+      "key": "artifacts",
+      "ok": true,
+      "severity": "info",
+      "detail": "sdist and wheel exist for 1.5.0 (rhetoric-1.5.0.tar.gz, rhetoric-1.5.0-py3-none-any.whl).",
+      "owner_action": ""
+    },
+    {
+      "key": "windows_scope",
+      "ok": true,
+      "severity": "info",
+      "detail": "The alpha runbook names its platform scope.",
+      "owner_action": ""
+    },
+    {
+      "key": "support_bundle",
+      "ok": true,
+      "severity": "info",
+      "detail": "The support-bundle command is installed.",
+      "owner_action": ""
+    },
+    {
+      "key": "bug_report",
+      "ok": true,
+      "severity": "info",
+      "detail": "The local bug-report workflow is installed (compose, package, prefilled links).",
+      "owner_action": ""
+    },
+    {
+      "key": "privacy",
+      "ok": true,
+      "severity": "info",
+      "detail": "PRIVACY.md is present.",
+      "owner_action": ""
+    }
+  ]
+}

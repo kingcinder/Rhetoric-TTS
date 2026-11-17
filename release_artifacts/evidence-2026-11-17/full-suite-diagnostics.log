@@ -1,0 +1,98 @@
+bringing up nodes...
+bringing up nodes...
+
+........................................................................ [  3%]
+........................................................................ [  6%]
+........................................................................ [  9%]
+........................................................................ [ 12%]
+........................................................................ [ 15%]
+........................................................................ [ 18%]
+........................................................................ [ 21%]
+........................................................................ [ 24%]
+........................................................................ [ 27%]
+........................................................................ [ 30%]
+........................................................................ [ 33%]
+........................................................................ [ 36%]
+........................................................................ [ 39%]
+........................................................................ [ 42%]
+........................................................................ [ 45%]
+........................................................................ [ 48%]
+........................................................................ [ 51%]
+........................................................................ [ 54%]
+........................................................................ [ 57%]
+......s.........................F....................Timeout (0:02:00)!
+Thread 0x0000778662dff6c0 (most recent call first):
+  File "/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/execnet/gateway_base.py", line 534 in read
+  File "/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/execnet/gateway_base.py", line 567 in from_io
+  File "/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/execnet/gateway_base.py", line 1160 in _thread_receiver
+  File "/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/execnet/gateway_base.py", line 341 in run
+  File "/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/execnet/gateway_base.py", line 411 in _perform_spawn
+
+Thread 0x00007786641c5140 (most recent call first):
+  File "/usr/lib/python3.12/selectors.py", line 415 in select
+  File "/usr/lib/python3.12/subprocess.py", line 2115 in _communicate
+  File "/usr/lib/python3.12/subprocess.py", line 1209 in communicate
+  File "/usr/lib/python3.12/subprocess.py", line 550 in run
+  File "/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/tests/test_doctor_read_only.py", line 234 in _assert_no_writes_outside_the_declared_output
+  File "/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/tests/test_doctor_read_only.py", line 215 in test_a_doctor_run_writes_nothing_outside_its_declared_output
+  File "/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/_pytest/python.py", line 166 in pytest_pyfunc_call
+  File "/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/pluggy/_execution.py", line 147 in _multicall
+  File "/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/pluggy/_manager.py", line 183 in _hookexec
+  File "/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/pluggy/_caller.py", line 197 in __call__
+  File "/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/_pytest/python.py", line 1720 in runtest
+  File "/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/_pytest/runner.py", line 179 in pytest_runtest_call
+  File "/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/pluggy/_execution.py", line 147 in _multicall
+  File "/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/pluggy/_manager.py", line 183 in _hookexec
+  File "/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/pluggy/_caller.py", line 197 in __call__
+  File "/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/_pytest/runner.py", line 245 in <lambda>
+  File "/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/_pytest/runner.py", line 353 in from_call
+  File "/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/_pytest/runner.py", line 244 in call_and_report
+  File "/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/_pytest/runner.py", line 137 in runtestprotocol
+  File "/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/_pytest/runner.py", line 118 in pytest_runtest_protocol
+  File "/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/pluggy/_execution.py", line 147 in _multicall
+  File "/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/pluggy/_manager.py", line 183 in _hookexec
+  File "/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/pluggy/_caller.py", line 197 in __call__
+  File "/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/xdist/remote.py", line 195 in run_one_test
+  File "/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/xdist/remote.py", line 174 in pytest_runtestloop
+  File "/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/pluggy/_execution.py", line 147 in _multicall
+  File "/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/pluggy/_manager.py", line 183 in _hookexec
+  File "/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/pluggy/_caller.py", line 197 in __call__
+  File "/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/_pytest/main.py", line 372 in _main
+  File "/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/_pytest/main.py", line 318 in wrap_session
+  File "/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/_pytest/main.py", line 365 in pytest_cmdline_main
+  File "/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/pluggy/_execution.py", line 147 in _multicall
+  File "/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/pluggy/_manager.py", line 183 in _hookexec
+  File "/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/pluggy/_caller.py", line 197 in __call__
+  File "/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/xdist/remote.py", line 393 in <module>
+  File "/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/execnet/gateway_base.py", line 1291 in executetask
+  File "/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/execnet/gateway_base.py", line 341 in run
+  File "/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/execnet/gateway_base.py", line 411 in _perform_spawn
+  File "/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/execnet/gateway_base.py", line 389 in integrate_as_primary_thread
+  File "/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/execnet/gateway_base.py", line 1273 in serve
+  File "/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/execnet/gateway_base.py", line 1806 in serve
+  File "<string>", line 8 in <module>
+  File "<string>", line 1 in <module>
+[gw0] node down: Not properly terminated
+F
+=================================== FAILURES ===================================
+____________ test_the_committed_artifacts_match_a_fresh_application ____________
+[gw7] linux -- Python 3.12.3 /media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/bin/python
+tests/test_patch_audio_cpp_shader_generator.py:403: in test_the_committed_artifacts_match_a_fresh_application
+    assert not drifted, "regenerate the artifacts with scripts/patch_audio_cpp_ggml.sh:\n" + "\n".join(drifted)
+E   AssertionError: regenerate the artifacts with scripts/patch_audio_cpp_ggml.sh:
+E     scripts/patches/ggml_shader_compile_robustness.patch: added lines differ; script adds ['    // Wait up to 10s (40 x 250ms) for a slot instead of losing the shader. A\r'], artifact has ['    // Wait up to 10s (40 x 250ms) for a slot instead of losing the shader. A']
+E   assert not ["scripts/patches/ggml_shader_compile_robustness.patch: added lines differ; script adds ['    // Wait up to 10s (40 x ...ng the shader. A\\r'], artifact has ['    // Wait up to 10s (40 x 250ms) for a slot instead of losing the shader. A']"]
+________________________ tests/test_doctor_read_only.py ________________________
+[gw0] linux -- Python 3.12.3 /media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/bin/python
+worker 'gw0' crashed while running 'tests/test_doctor_read_only.py::test_a_doctor_run_writes_nothing_outside_its_declared_output@real_repo_tree'
+1 test(s) did not run here:
+  tests/test_powershell_wrapper.py::test_powershell_wrapper_dispatches_when_python_is_only_a_single_command
+      Skipped: host Snap confinement blocks PowerShell before it starts
+=========================== short test summary info ============================
+FAILED tests/test_patch_audio_cpp_shader_generator.py::test_the_committed_artifacts_match_a_fresh_application
+FAILED tests/test_doctor_read_only.py::test_a_doctor_run_writes_nothing_outside_its_declared_output@real_repo_tree
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 2 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!! xdist.dsession.Interrupted: stopping after 1 failures !!!!!!!!!!!!!
+2 failed, 1419 passed, 1 skipped in 219.06s (0:03:39)
+
+pytest_exit=2

@@ -11,16 +11,15 @@ owner's scope statement.
 
 ## Sample Files
 
-- `Read Aloud transcript.txt` - Example dialogue
-- `What is, reality.txt` - Example dialogue
-- `stream_of_consciousness_dialogue_with_typos.txt` - Intentionally messy
-  sample for testing the text-repair/correction modes
-- `cli_short.txt` - Short CLI test input
-- `local_audio_test.txt` - Local-audio render test input
-- `test.txt` - Basic test input
-- `READ_THIS_TO_RECORD_SEASHELLS.txt` - the teleprompter script the Recording
-  Studio reads aloud when recording a new reference voice; it lives here so
-  the GUI's script picker finds it, and is not a dialogue sample.
+- `Stream_of_Consciousness_Dialogue_2Party_AI_Generated_Test_File.txt` -
+  current two-speaker dialogue render input
+- `Release_Qualification_5Speaker_Test_File.txt` - five-speaker qualification
+  input, derived from the current two-speaker text with utterance text/order
+  preserved and speaker labels rotated across five reference voices
+- `What_Is_Reality_Output_Test_File.txt` - current monologue render input
+- `Recording_Studio_Generic_Teleprompter_File.txt` - recording studio script
+- `High_Quality_Seashells_Instruction_set_and_Teleprompter_Text.txt` - voice
+  recording instructions and calibration text
 
 ## Runtime Subdirectories
 

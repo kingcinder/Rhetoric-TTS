@@ -1,0 +1,21 @@
+[release-check]
+start=2026-11-17T07:45:08.100715-08:00
+command=['python3', 'scripts/release.py', '--check']
+finish=2026-11-17T07:45:09.369037-08:00
+exit_code=0
+log=release-check.log
+
+[soft-launch-check]
+start=2026-11-17T07:45:09.369361-08:00
+command=['python3', 'scripts/soft_launch.py', '--check', '--json']
+finish=2026-11-17T07:45:11.407243-08:00
+exit_code=1
+log=soft-launch-check.log
+
+[third-party-notices-check]
+start=2026-11-17T07:45:11.407481-08:00
+command=['python3', 'scripts/generate_third_party_notices.py', '--check']
+finish=2026-11-17T07:45:11.899225-08:00
+exit_code=1
+log=third-party-notices-check.log
+

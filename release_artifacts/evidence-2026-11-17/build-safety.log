@@ -1,0 +1,6 @@
+2026-11-17 America/Los_Angeles
+An initial build invocation used the repository builder, which passes PyInstaller --clean.
+PyInstaller output confirmed it removed its cache path /home/cody/.cache/pyinstaller.
+The run was interrupted during analysis. The cache path is now absent; its prior contents were not backed up and cannot be restored from this session.
+No application installation, project source, release candidate, or user-data path was changed by that attempt.
+Recovery: subsequent build uses the verified PYINSTALLER_CONFIG_DIR override pointed at a new task-scoped /tmp cache, so --clean will operate only there.

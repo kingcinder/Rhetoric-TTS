@@ -1,0 +1,61 @@
+bringing up nodes...
+bringing up nodes...
+
+........................................................................ [  3%]
+........................................................................ [  6%]
+........................................................................ [  9%]
+........................................................................ [ 12%]
+........................................................................ [ 15%]
+........................................................................ [ 18%]
+........................................................................ [ 21%]
+........................................................................ [ 24%]
+........................................................................ [ 27%]
+........................................................................ [ 30%]
+........................................................................ [ 33%]
+........................................................................ [ 36%]
+........................................................................ [ 39%]
+........................................................................ [ 42%]
+........................................................................ [ 45%]
+........................................................................ [ 48%]
+........................................................................ [ 51%]
+........................................................................ [ 54%]
+........................................................................ [ 57%]
+......s................................................................. [ 61%]
+........................................................................ [ 64%]
+........................................................................ [ 67%]
+........................................................................ [ 70%]
+........................................................................ [ 73%]
+........................................................................ [ 76%]
+........................................................................ [ 79%]
+........................................................................ [ 82%]
+........................................................................ [ 85%]
+........................................................................ [ 88%]
+........................................................................ [ 91%]
+........................s............................................... [ 94%]
+........................................................................ [ 97%]
+.......................................................                  [100%]
+=============================== warnings summary ===============================
+tests/test_review_fixes_concurrency.py::TestSeedCrossesTheSpawnBoundary::test_one_failing_utterance_does_not_abort_render
+tests/test_review_fixes_concurrency.py::TestSeedCrossesTheSpawnBoundary::test_one_failing_utterance_does_not_abort_render
+  /usr/lib/python3.12/multiprocessing/popen_fork.py:66: DeprecationWarning: This process (pid=80) is multi-threaded, use of fork() may lead to deadlocks in the child.
+    self.pid = os.fork()
+
+tests/test_review_fixes_concurrency.py::TestSeedCrossesTheSpawnBoundary::test_abandoning_stream_terminates_pool
+tests/test_review_fixes_concurrency.py::TestSeedCrossesTheSpawnBoundary::test_abandoning_stream_terminates_pool
+  /usr/lib/python3.12/multiprocessing/popen_fork.py:66: DeprecationWarning: This process (pid=45) is multi-threaded, use of fork() may lead to deadlocks in the child.
+    self.pid = os.fork()
+
+tests/test_review_fixes_concurrency.py::TestSeedCrossesTheSpawnBoundary::test_pool_initargs_carry_the_configured_seed
+tests/test_review_fixes_concurrency.py::TestSeedCrossesTheSpawnBoundary::test_pool_initargs_carry_the_configured_seed
+  /usr/lib/python3.12/multiprocessing/popen_fork.py:66: DeprecationWarning: This process (pid=10) is multi-threaded, use of fork() may lead to deadlocks in the child.
+    self.pid = os.fork()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+2 test(s) did not run here:
+  tests/test_powershell_wrapper.py::test_powershell_wrapper_dispatches_when_python_is_only_a_single_command
+      Skipped: host Snap confinement blocks PowerShell before it starts
+  tests/test_vulkan_backend.py::test_vulkan_backend_smoke_requires_device
+      Skipped: No Vulkan device available; Vulkan backend smoke test requires a Vulkan-capable GPU.
+2357 passed, 2 skipped, 6 warnings in 707.34s (0:11:47)
+
+pytest_exit=0
