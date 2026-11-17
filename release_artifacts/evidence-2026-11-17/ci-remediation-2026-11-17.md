@@ -20,6 +20,15 @@ Focused command:
 16 passed in 2.90s
 ```
 
+The official clean-worktree measurement then ran against `6ad8c688143640ed2870e1806552349af2454b70`:
+
+```text
+.venv/bin/python scripts/certify_suite_counts.py HEAD --record --capture-output /tmp/rhetoric-v100a-suite-counts-6ad8c68.log
+passed=2326 skipped=35 failed=0 errors=0 exit_code=0
+```
+
+The recorder wrote the baseline entry and `.venv/bin/python scripts/certify_suite_counts.py --availability` returned `PASS (recorded)` for `6ad8c68`. `tests/test_suite_counts.py` passed 43 tests. Skip-ID coverage is incomplete (`skipped_ids_complete=false`); the test count remains recorded, and the limitation is in the captured log.
+
 ## Limits and next gate
 
-`hf models info audio-cpp/audio.cpp-gguf --revision main --format json` could not resolve DNS from this environment. The fallback is unit-tested against the official Model API response shape, but the live model revision and the workflow's downloaded GGUF digest were not verified here. The exact RC1 archive is unchanged because these changes affect only the provenance recording tool, tests, and release documentation. Record suite counts on the committed changed tree and require a new hosted workflow run before calling the CI issues fixed.
+`hf models info audio-cpp/audio.cpp-gguf --revision main --format json` could not resolve DNS from this environment. The fallback is unit-tested against the official Model API response shape, but the live model revision and the workflow's downloaded GGUF digest were not verified here. The exact RC1 archive is unchanged because these changes affect only the provenance recording tool, tests, and release documentation. Require a new hosted workflow run before calling the CI issues fixed.
