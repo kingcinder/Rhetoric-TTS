@@ -43,6 +43,7 @@ class CrashReport:
 def _render_command(backend: str = "pytorch") -> list[str]:
     """A real render command against a tracked sample input.
 
+    The tracked test script keeps the repro independent of user-owned Input/.
     Output goes to build/crash_hunt/out so runs never touch Output/
     (the doctor's read-only gate only tolerates build/doctor_*).
     """
@@ -52,7 +53,7 @@ def _render_command(backend: str = "pytorch") -> list[str]:
         "rhetoric.cli",
         "render",
         "--input",
-        str(REPO_ROOT / "Input" / "What is, reality.txt"),
+        str(REPO_ROOT / "tests" / "fixtures" / "stream_of_consciousness_dialogue_with_typos.txt"),
         "--outdir",
         str(REPO_ROOT / "build" / "crash_hunt" / "out"),
     ]

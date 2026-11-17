@@ -12,7 +12,7 @@
     drive letters shift), never on the C: development install.
 #>
 param(
-    [string]$VolumeLabel = "RHETORICDATA",
+    [string]$VolumeLabel = "ORACLEDATA",
     [string]$Bundle,
     [string]$InstallRoot,
     [string]$ProofDir,

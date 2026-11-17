@@ -143,11 +143,21 @@ def test_the_armed_task_names_every_path_explicitly(proof) -> None:
 
     script = proof.arm_script(layout)
 
-    assert f"-File \"{layout.guest_script}\"" in script
-    assert "'E:\\bundle'" in script
+    assert f"-File {layout.guest_script}" in script
+    assert "-Bundle E:\\bundle" in script
     assert "'E:\\OracleOffline'" in script
     assert "'E:\\airgap'" in script
     assert "'E:\\hfhub'" in script
+    assert "-VolumeLabel ORACLEDATA" in script
+
+
+def test_guest_arguments_quote_windows_paths_with_spaces(proof) -> None:
+    layout = proof.Layout(root="E:", stage_dir="bundle files")
+
+    arguments = proof.guest_arguments(layout)
+
+    assert '-Bundle "E:\\bundle files"' in arguments
+    assert "'E:\\bundle files'" not in arguments
 
 
 def test_arming_wipes_the_previous_install_and_cache_but_keeps_the_proof(proof) -> None:
@@ -378,6 +388,7 @@ def test_an_incomplete_bundle_never_touches_the_guest(proof, bundle: Path, tmp_p
 def test_the_guest_script_takes_the_paths_the_task_passes() -> None:
     text = GUEST_SCRIPT.read_text(encoding="utf-8")
 
+    assert '[string]$VolumeLabel = "ORACLEDATA"' in text
     for parameter in ("$Bundle", "$InstallRoot", "$ProofDir", "$HubCache"):
         assert parameter in text
     assert "airgap-result.json" in text

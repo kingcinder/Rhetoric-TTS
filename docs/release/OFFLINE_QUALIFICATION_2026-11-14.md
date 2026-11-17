@@ -32,8 +32,12 @@ checksums-1.5.0.sha256` passed. `scripts/check_update_manifest.py` verified the
 AppImage, `.deb`, and offline kit against the update manifest. `pip-audit`
 reported no known vulnerabilities.
 
-The source bundle builder was corrected to exclude tracked `Seashells/` paths
-from its Git archive, with a regression test. The Debian launcher symlink was
+The source bundle builder was configured to exclude tracked `Seashells/` paths
+from its Git archive, with a regression test. This was an implementation
+choice, not an owner-imposed restriction. The owner clarified on 2026-11-17
+that `Seashells/` is not protected or categorically excluded; review this
+builder behavior against [project authority](../PROJECT_AUTHORITY.md) before
+using it for future distribution. The Debian launcher symlink was
 corrected to target the frozen binary directly. The release version scanner
 was narrowed to Rhetoric package artifact names so bundled runtime-library
 versions do not create false release blockers; both corrections have

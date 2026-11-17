@@ -57,6 +57,7 @@ class Layout:
     """
 
     root: str
+    volume_label: str = VOLUME_LABEL
     stage_dir: str = "bundle"
     install_dir: str = "OracleOffline"
     proof_dir: str = "airgap"
@@ -281,7 +282,7 @@ def resolve_layout(runner: Runner, *, volume_label: str = VOLUME_LABEL, **layout
     ).strip()
     if len(letter) != 1 or not letter.isalpha():
         raise ProofError(f"guest has no volume labelled {volume_label}")
-    return Layout(root=letter.upper() + ":", **layout)
+    return Layout(root=letter.upper() + ":", volume_label=volume_label, **layout)
 
 
 # --- 3. arming ---------------------------------------------------------------
@@ -290,11 +291,12 @@ def resolve_layout(runner: Runner, *, volume_label: str = VOLUME_LABEL, **layout
 def guest_arguments(layout: Layout) -> str:
     """The proof's parameters, quoted for the scheduled task's -Argument."""
     return (
-        f'-File "{layout.guest_script}" '
-        f"-Bundle {_ps_string(layout.stage)} "
-        f"-InstallRoot {_ps_string(layout.install)} "
-        f"-ProofDir {_ps_string(layout.proof)} "
-        f"-HubCache {_ps_string(layout.hub)}"
+        f"-File {subprocess.list2cmdline([layout.guest_script])} "
+        f"-VolumeLabel {subprocess.list2cmdline([layout.volume_label])} "
+        f"-Bundle {subprocess.list2cmdline([layout.stage])} "
+        f"-InstallRoot {subprocess.list2cmdline([layout.install])} "
+        f"-ProofDir {subprocess.list2cmdline([layout.proof])} "
+        f"-HubCache {subprocess.list2cmdline([layout.hub])}"
     )
 
 

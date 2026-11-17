@@ -19,6 +19,17 @@ def test_powershell_wrapper_dispatches_when_python_is_only_a_single_command(tmp_
     if powershell is None:
         pytest.skip("PowerShell is unavailable")
 
+    probe = subprocess.run(
+        [powershell, "-NoProfile", "-Command", "$PSVersionTable.PSVersion.ToString()"],
+        capture_output=True,
+        text=True,
+        timeout=15,
+        check=False,
+    )
+    if probe.returncode and "cap_dac_override" in (probe.stdout + probe.stderr):
+        pytest.skip("host Snap confinement blocks PowerShell before it starts")
+    assert probe.returncode == 0, probe.stdout + probe.stderr
+
     bin_dir = tmp_path / "bin"
     bin_dir.mkdir()
     (bin_dir / "python").symlink_to(sys.executable)

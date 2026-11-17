@@ -1,6 +1,6 @@
 # Rhetoric End User License Agreement
 
-**Last updated:** 2026-11-08
+**Last updated:** 2026-11-17
 **Governing law:** Washington, United States
 **Licensor contact:** codysa90@gmail.com
 
@@ -42,7 +42,7 @@ Nothing here restricts rights that cannot lawfully be restricted, including righ
 2. The Licensee must obtain informed, specific permission before cloning, synthesizing, or imitating an identifiable person’s voice or likeness. The Licensee must not impersonate a person, deceive a listener about whether audio is synthetic, commit fraud, create non-consensual sexual or abusive material, or make a statement falsely attributed to a real person. Under chapter 63.60 RCW, a person’s name, voice, signature, photograph, and likeness are that person’s property right, and using them without the right owner’s consent can be an infringement (RCW 63.60.010, RCW 63.60.050); consent under this section is a condition of the license whether or not a particular use falls within that chapter. Washington law also protects an identifiable individual's voice against a forged digital likeness: a digitally created or altered audio recording of the individual's actual voice that is indistinguishable from a genuine recording and that misrepresents the individual's speech or conduct (RCW 63.60.020(3), as amended by chapter 69, Laws of 2026). A person who infringes that right is subject to a civil penalty of $3,000 and liable for the actual damages sustained (RCW 63.60.060).
 3. The Licensee must comply with disclosure, labeling, recordkeeping, privacy, biometric, publicity, consumer-protection, and employment rules that apply to its use. The Software is not legal, medical, financial, identity, safety, or emergency advice.
 4. As between the Licensor and Licensee, the Licensee owns its Output, subject to third-party rights in Licensee Content, models, and components. The Licensor does not claim ownership of the Licensee’s Output. The Licensee bears responsibility for clearance, accuracy, disclosure, and lawful publication of Output.
-5. The Licensor represents, for the proprietary voice recordings shipped with the Software, that the Licensor owns or controls the rights it claims to provide. The authoritative shipped-recording inventory is `Seashells/ASSETS.md`; that inventory does not grant rights in third-party material identified there.
+5. The Developer, as Licensor, is the sole owner of all stock voice files included with the Software, including the files inventoried in `Seashells/ASSETS.md`, except material already covered by applicable fair-use statutes. The file inventory identifies the included materials and any applicable file-specific license or attribution terms, which remain in force.
 6. If the Software writes a watermark, provenance tag, or attribution notice, the Licensee must not remove, disable, or obscure it, and must not represent marked Output as an unmodified human recording when doing so would mislead.
 
 ## 5. Privacy and local processing

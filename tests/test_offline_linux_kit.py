@@ -115,6 +115,8 @@ def test_uninstaller_removes_only_a_gguf_owned_by_the_offline_kit() -> None:
     assert ".rhetoric-offline-kit-owns-gguf" in script
     assert "rm -f /opt/rhetoric/models/Chatterbox-GGUF/chatterbox-q8_0.gguf" in script
     assert ".cache/huggingface" not in script
+    assert 'rm -f "$app_root/rhetoric_license.json"' in script
+    assert 'rmdir "$app_root" /opt/rhetoric/usr/lib /opt/rhetoric/usr /opt/rhetoric' in script
 
 
 def test_audio_cpp_install_and_uninstall_are_scoped_to_kit_owned_paths() -> None:

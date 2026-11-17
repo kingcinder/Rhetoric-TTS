@@ -27,11 +27,18 @@ LOG_FILE = "fake.log"
 @pytest.fixture()
 def wired(tmp_path: Path, monkeypatch):
     """Install handlers against a sandbox root with a tiny fake log."""
+    # A previous test may have armed consented capture in this worker. Close
+    # that process-global file before replacing its root with this test's.
+    handlers.disable_faulthandler_catch()
+    sys.excepthook = sys.__excepthook__
+    threading.excepthook = threading.__excepthook__
+    handlers._STATE.clear()
     log_path = tmp_path / LOG_FILE
     log_path.write_text("INFO | line one\nINFO | line two\n", encoding="utf-8")
     handlers.install(root=tmp_path, log_file=log_path)
     yield tmp_path
     # Restore the real hooks no matter what the test did.
+    handlers.disable_faulthandler_catch()
     sys.excepthook = sys.__excepthook__
     threading.excepthook = threading.__excepthook__
     handlers._STATE.clear()

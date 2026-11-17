@@ -2,6 +2,13 @@
 
 Place dialogue source files here for rendering.
 
+## Content Scope
+
+`Input/` is in-scope project content and is not categorically protected from
+review, editing, source control, or release work. See
+[`docs/PROJECT_AUTHORITY.md`](../docs/PROJECT_AUTHORITY.md) for the project
+owner's scope statement.
+
 ## Sample Files
 
 - `Read Aloud transcript.txt` - Example dialogue

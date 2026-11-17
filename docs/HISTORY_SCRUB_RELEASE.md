@@ -4,12 +4,14 @@ This repository currently contains removed personal recordings in historical
 commits. Do not run these commands against a shared remote without the owner's
 explicit approval.
 
-> **Conflict with the current tree.** `Seashells/ASSETS.md` and `EULA-DRAFT.md`
-> (section 3) record the root-level `Seashells/*.wav` clips and the `fransisco`
-> clips as Owner-owned recordings that ship with the software. The `--path`
-> list below names those same clips as "removed personal recordings". The
-> `filter-repo` command here removes them from every commit, including the
-> working tree the release ships from. Resolve which is true before running it.
+> **Owner scope clarification (2026-11-17).** The owner states that `Input/`
+> and `Seashells/` are not protected or categorically excluded from project
+> work, and is the sole owner of all included stock voice files except
+> material already covered by applicable fair-use statutes. No additional
+> waiver or ownership documentation is required. See [project authority](PROJECT_AUTHORITY.md).
+> The history-rewrite commands below are a separate operation and still
+> require their own explicit authorization; this notice is not a standing
+> instruction to rewrite or force-push history.
 
 ## Verify a scrub in a disposable mirror
 

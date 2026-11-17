@@ -293,11 +293,11 @@ def test_design_token_certification_runs_locally_and_passes(tmp_path: Path) -> N
     """
     from rhetoric.platform_support import user_config_root
 
-    from tests.helpers import repo_tree_snapshot, snapshot_differences
+    from tests.helpers import repo_tree_snapshot, snapshot_differences, workspace_tree_snapshot
 
     config_root = user_config_root() / "rhetoric"
-    before_repo = repo_tree_snapshot(REPO_ROOT)
-    before_config = repo_tree_snapshot(config_root) if config_root.exists() else {}
+    before_repo = workspace_tree_snapshot(REPO_ROOT)
+    before_config = repo_tree_snapshot(config_root, hash_contents=False) if config_root.exists() else {}
 
     proc, leftover = _run_certifier_in_scratch(
         tmp_path / "scratch", "--aspects", "contrast"
@@ -324,11 +324,11 @@ def test_design_token_certification_runs_locally_and_passes(tmp_path: Path) -> N
     )
 
     for label, before, after in (
-        ("real repo tree", before_repo, repo_tree_snapshot(REPO_ROOT)),
+        ("real repo tree", before_repo, workspace_tree_snapshot(REPO_ROOT)),
         (
             "real app-config root",
             before_config,
-            repo_tree_snapshot(config_root) if config_root.exists() else {},
+            repo_tree_snapshot(config_root, hash_contents=False) if config_root.exists() else {},
         ),
     ):
         created, changed, removed = snapshot_differences(before, after)

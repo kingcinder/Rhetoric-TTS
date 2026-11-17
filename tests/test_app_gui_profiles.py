@@ -247,6 +247,8 @@ def _build_window(
     exactly that: settings on disk, then a fresh window reading them.
     """
     import rhetoric.app_gui as app_gui
+    import rhetoric.app_paths as app_paths
+    import rhetoric.audio.recorder as audio_recorder
 
     paths = ensure_repo_default_paths(tmp_path / "repo")
     monkeypatch.setattr(app_gui, "QAudioOutput", _FakeAudioOutput)
@@ -258,6 +260,15 @@ def _build_window(
     monkeypatch.setattr(app_gui, "VulkanSetupThread", _FakeVulkanSetupThread)
     monkeypatch.setattr(app_gui, "ModelDownloadThread", _FakeModelDownloadThread)
     monkeypatch.setattr(app_gui, "ensure_repo_default_paths", lambda _repo_root: paths)
+    monkeypatch.setattr(audio_recorder, "list_input_devices", lambda: [])
+    monkeypatch.setattr(audio_recorder, "have_capture_backend", lambda: False)
+    monkeypatch.setattr(
+        app_gui,
+        "resolve_default_input_dir",
+        lambda configured, app_default, _repo_root: app_paths.resolve_default_input_dir(
+            configured, app_default, paths.repo_root
+        ),
+    )
     monkeypatch.setattr(app_gui, "default_voice_choices", lambda _repo_root, **_kwargs: [])
     monkeypatch.setattr(app_gui, "load_recent_reference_paths", lambda limit=10: [])
     # Vulkan-backend prerequisites are "configured" by default so tests that

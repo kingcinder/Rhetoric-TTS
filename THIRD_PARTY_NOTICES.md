@@ -9,6 +9,11 @@ omission.
 
 Release version: **1.5.0**
 
+The Developer is the sole owner of all stock voice files included
+with Rhetoric, except material already covered by applicable fair-use
+statutes. See `docs/PROJECT_AUTHORITY.md` and `Seashells/ASSETS.md`.
+File-specific licenses and attribution below remain applicable.
+
 ## Distribution obligations at a glance
 
 - **MIT / BSD / Apache-2.0 components** require their copyright and

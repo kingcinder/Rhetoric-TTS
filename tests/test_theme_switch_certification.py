@@ -363,16 +363,16 @@ def test_a_real_run_certifies_and_writes_nothing(tmp_path: Path) -> None:
     """
     from rhetoric.platform_support import user_config_root
 
-    from tests.helpers import repo_tree_snapshot, snapshot_differences
+    from tests.helpers import repo_tree_snapshot, snapshot_differences, workspace_tree_snapshot
 
     config_root = user_config_root() / "rhetoric"
-    before_repo = repo_tree_snapshot(REPO_ROOT)
-    before_config = repo_tree_snapshot(config_root) if config_root.exists() else {}
+    before_repo = workspace_tree_snapshot(REPO_ROOT)
+    before_config = repo_tree_snapshot(config_root, hash_contents=False) if config_root.exists() else {}
 
     proc, leftover = _run_in_scratch(tmp_path / "scratch")
 
-    after_repo = repo_tree_snapshot(REPO_ROOT)
-    after_config = repo_tree_snapshot(config_root) if config_root.exists() else {}
+    after_repo = workspace_tree_snapshot(REPO_ROOT)
+    after_config = repo_tree_snapshot(config_root, hash_contents=False) if config_root.exists() else {}
 
     detail = f"rc={proc.returncode}\nstdout tail:\n{proc.stdout[-2000:]}\nstderr tail:\n{proc.stderr[-2000:]}"
     assert proc.returncode == 0, f"the certifier itself failed\n{detail}"

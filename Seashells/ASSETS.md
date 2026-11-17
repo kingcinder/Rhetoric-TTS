@@ -1,10 +1,17 @@
 # Redistributable voice assets
 
 This inventory covers every voice reference retained in the distributed tree.
-The root-level Seashells entries below are the Owner's own recordings,
-distributed with Rhetoric under the proprietary license; they contain no
-third-party material. The `Seashells/generic/` entries are third-party
-reference clips redistributed under their respective licenses.
+The Developer is the sole owner of all stock voice files included with
+Rhetoric, including every file in `Seashells/`, except material already
+covered by applicable fair-use statutes. See
+[`docs/PROJECT_AUTHORITY.md`](../docs/PROJECT_AUTHORITY.md) for the
+authoritative project statement. Preserve the file-specific license and
+attribution entries below; this assertion does not replace or expand them.
+
+The root-level Seashells entries below are the Developer's own recordings,
+distributed with Rhetoric under the proprietary license. The
+`Seashells/generic/` entries are stock reference clips with their applicable
+license and attribution terms shown in the inventory below.
 
 | File | Source | License | Distribution note |
 |---|---|---|---|

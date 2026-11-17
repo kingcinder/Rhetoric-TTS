@@ -554,6 +554,9 @@ _REAL_REPO_MODULES = frozenset({
     "test_gui_sections_chrome.py",
     "test_gui_theme_certification.py",
     "test_theme_switch_certification.py",
+    # These tests create temporary pytest modules directly under tests/ while
+    # the hermeticity certifier snapshots the same checkout.
+    "test_qt_standalone_guard.py",
 })
 
 

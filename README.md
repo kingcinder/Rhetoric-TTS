@@ -22,6 +22,9 @@ workflow in [docs/SUPPORT.md](docs/SUPPORT.md). Data and privacy:
 [PRIVACY.md](PRIVACY.md) — what is collected (nothing automatically), what
 stays on your disk, and what sharing a crash report means.
 
+Project content and ownership scope, including `Input/` and `Seashells/`, is
+recorded in [docs/PROJECT_AUTHORITY.md](docs/PROJECT_AUTHORITY.md).
+
 Rhetoric is a local PySide6 desktop app and CLI for turning a `.txt` or `.md` two-person dialogue into a single FLAC render with Chatterbox. The repository includes Linux and Windows installer scripts; Windows is experimental.
 
 Chatterbox outputs include built-in Perth watermarking by design. This project does not remove or hide that.

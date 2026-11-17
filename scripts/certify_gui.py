@@ -133,6 +133,7 @@ import shutil
 import sys
 from dataclasses import dataclass
 from pathlib import Path
+from unittest.mock import patch
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
@@ -169,6 +170,7 @@ from rhetoric import gui_settings  # noqa: E402
 from rhetoric.app_gui import MainWindow  # noqa: E402
 from rhetoric.app_paths import ensure_repo_default_paths  # noqa: E402
 from rhetoric.gui_recording import RecordingStudioDialog  # noqa: E402
+from rhetoric.audio import recorder as audio_recorder  # noqa: E402
 from rhetoric.inference_wizard import InferenceSetupWizard  # noqa: E402
 from rhetoric.gui_settings import app_settings_path  # noqa: E402
 from rhetoric.gui_themes import THEMES, contrast_ratio, in_bulk_restyle  # noqa: E402
@@ -684,12 +686,15 @@ def _certify_persistence(
     app: QApplication, key: str, cert: ThemeCertification, window: MainWindow, settings_file: Path
 ) -> None:
     """Mutate layout + settings, persist, reopen, and require it all back."""
+    input_file = Path(_CONFIG_ROOT) / "Input" / "What is, reality.txt"
+    input_file.parent.mkdir(parents=True, exist_ok=True)
+    input_file.write_text("Hello there.\n", encoding="utf-8")
     window.speaker_a.cfg_weight.setValue(1.11)
     window.speaker_a.pause_spin.setValue(432)
     window._sections_splitter.setSizes([500, 300, 260, 140])
     window._lower_splitter.setSizes([500, 220])
     window._paths_splitter.setSizes([420, 900])
-    window.input_path.setText(str(REPO_ROOT / "Input" / "What is, reality.txt"))
+    window.input_path.setText(str(input_file))
     window._persist_workspace_layout()
     saved = json.loads(settings_file.read_text(encoding="utf-8"))
     check(saved.get("theme") == key, f"{key}: theme not persisted ({saved.get('theme')})")
@@ -916,7 +921,13 @@ def _certify_studio(app: QApplication, key: str) -> float:
     and no visible widget is zero-sized or clipped.
     """
     voice_dir, input_dir = _studio_files()
-    dialog = RecordingStudioDialog(_CONFIG_ROOT, voice_dir, input_dir)
+    # Theme certification does not need to enumerate host microphones. Keep
+    # this visual sweep deterministic and avoid blocking in PortAudio discovery.
+    with (
+        patch.object(audio_recorder, "list_input_devices", return_value=[]),
+        patch.object(audio_recorder, "have_capture_backend", return_value=False),
+    ):
+        dialog = RecordingStudioDialog(_CONFIG_ROOT, voice_dir, input_dir)
     dialog.show()
     _pump(app)
     share = _certify_themed_surface(app, key, "the recording studio", dialog)

@@ -3,10 +3,15 @@
 
 from pathlib import Path
 
-from PyInstaller.utils.hooks import collect_data_files
+from PyInstaller.utils.hooks import collect_data_files, copy_metadata
 
 repo = Path(SPECPATH).parents[1]
 datas = collect_data_files("rhetoric")
+datas.extend(collect_data_files("perth"))
+datas.extend(collect_data_files("symspellpy"))
+# diffusers validates requests through importlib.metadata when loading the
+# Chatterbox pipeline; PyInstaller does not collect this metadata transitively.
+datas.extend(copy_metadata("requests"))
 datas.extend(
     [
         (str(repo / "LICENSE"), "."),

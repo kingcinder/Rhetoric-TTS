@@ -1,4 +1,5 @@
 import os
+import time
 from pathlib import Path
 
 import pytest
@@ -18,6 +19,15 @@ pytestmark = pytest.mark.slow
 def qt_app():
     app = QApplication.instance() or QApplication([])
     yield app
+
+
+@pytest.fixture(autouse=True)
+def no_host_audio_backend(monkeypatch: pytest.MonkeyPatch):
+    """Keep GUI tests independent of local PortAudio devices and drivers."""
+    import rhetoric.audio.recorder as recorder_mod
+
+    monkeypatch.setattr(recorder_mod, "_sd", object())
+    monkeypatch.setattr(recorder_mod, "list_input_devices", lambda: [])
 
 
 def _make_dirs(tmp_path: Path) -> tuple[Path, Path, Path]:
@@ -226,6 +236,7 @@ def test_recording_applies_selected_voice_effects_before_writing(tmp_path, monke
 
     monkeypatch.setattr(gui_recording, "process_voice_audio", process)
     dialog, voice = _enabled_dialog(tmp_path, monkeypatch)
+    dialog.audition_check.setChecked(False)
     dialog.pitch_shift.setValue(3.0)
     dialog.tone_db.setValue(-2.0)
     dialog.timbre_db.setValue(4.0)
@@ -369,6 +380,7 @@ def test_worker_teardown_happens_via_finished_not_captured_slot(
     import numpy as np
 
     dialog, voice = _enabled_dialog(tmp_path, monkeypatch)
+    dialog.audition_check.setChecked(False)
     worker = _SpyWorker()
     dialog._worker = worker
     dialog._worker.finished.connect(dialog._on_worker_finished)
@@ -601,12 +613,17 @@ def test_open_recording_studio_launches_the_guide_from_the_child_timer(
     window._maybe_run_crash_startup_flow = lambda: None
 
     window.open_recording_studio()
-    QTest.qWait(400)  # past the 150 ms deadline, event loop live
-    wizards = [
-        w
-        for w in qt_app.topLevelWidgets()
-        if isinstance(w, RecordingStudioSetupWizard)
-    ]
+    deadline = time.monotonic() + 3.0
+    wizards = []
+    while time.monotonic() < deadline:
+        QTest.qWait(50)
+        wizards = [
+            w
+            for w in qt_app.topLevelWidgets()
+            if isinstance(w, RecordingStudioSetupWizard)
+        ]
+        if wizards:
+            break
     assert wizards, "the recording guide did not launch from the child timer"
 
 

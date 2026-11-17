@@ -102,13 +102,26 @@ def test_sweep_never_touches_the_real_repo_or_config() -> None:
     scored SURVIVED. Watching only where a leak was expected is not a net."""
     from rhetoric.platform_support import user_config_root, user_data_root
 
-    from tests.helpers import repo_tree_snapshot, snapshot_differences
+    from tests.helpers import DEFAULT_SNAPSHOT_EXCLUDED_DIRS, repo_tree_snapshot, snapshot_differences
+
+    # These paths are user data or generated offline deliverables, outside the
+    # certifier's write surface. Never open user content or recurse into the
+    # extracted frozen app while checking source-tree hermeticity.
+    snapshot_exclusions = DEFAULT_SNAPSHOT_EXCLUDED_DIRS | {
+        "Input",
+        "Seashells",
+        "crash_reports",
+        "release_artifacts",
+        "squashfs-root",
+    }
 
     config_root = user_config_root() / "rhetoric"
     data_root = user_data_root() / "rhetoric"
-    before_repo = repo_tree_snapshot(REPO_ROOT)
-    before_config = repo_tree_snapshot(config_root) if config_root.exists() else {}
-    before_data = repo_tree_snapshot(data_root) if data_root.exists() else {}
+    before_repo = repo_tree_snapshot(
+        REPO_ROOT, excluded_dirs=snapshot_exclusions, hash_contents=False
+    )
+    before_config = repo_tree_snapshot(config_root, hash_contents=False) if config_root.exists() else {}
+    before_data = repo_tree_snapshot(data_root, hash_contents=False) if data_root.exists() else {}
 
     proc = subprocess.run(
         [sys.executable, "scripts/certify_gui.py"],
@@ -119,9 +132,11 @@ def test_sweep_never_touches_the_real_repo_or_config() -> None:
         env={**os.environ, "QT_QPA_PLATFORM": "offscreen"},
     )
 
-    after_repo = repo_tree_snapshot(REPO_ROOT)
-    after_config = repo_tree_snapshot(config_root) if config_root.exists() else {}
-    after_data = repo_tree_snapshot(data_root) if data_root.exists() else {}
+    after_repo = repo_tree_snapshot(
+        REPO_ROOT, excluded_dirs=snapshot_exclusions, hash_contents=False
+    )
+    after_config = repo_tree_snapshot(config_root, hash_contents=False) if config_root.exists() else {}
+    after_data = repo_tree_snapshot(data_root, hash_contents=False) if data_root.exists() else {}
 
     detail = (
         f"rc={proc.returncode}\n"

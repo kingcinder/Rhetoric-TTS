@@ -30,7 +30,9 @@ open remote retention issue and are not covered by the clean-ref claims below.
 - `/home/USER` and `/media/USER` were replaced with neutral placeholders;
   `/home/test-user` remains an intentional test fixture.
 - The three current voice/audio blobs were preserved because the owner directed
-  that Seashells recordings are not scrub targets.
+  that Seashells recordings are not scrub targets. This preservation was not
+  a protection from ordinary project work; see the owner's 2026-11-17 scope
+  clarification in [project authority](../PROJECT_AUTHORITY.md).
 - `git log --all -- <scrubbed path>` returned zero entries for every scrubbed
   path in the rewritten mirror’s retained branches and tags. This does not
   cover GitHub-managed pull-request refs.

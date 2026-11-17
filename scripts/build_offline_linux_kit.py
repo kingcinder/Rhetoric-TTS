@@ -256,6 +256,8 @@ if [ -f "$model_marker" ]; then
   rmdir /opt/rhetoric/models/Chatterbox-GGUF /opt/rhetoric/models 2>/dev/null || true
 fi
 dpkg --remove rhetoric
+rm -f "$app_root/rhetoric_license.json"
+rmdir "$app_root" /opt/rhetoric/usr/lib /opt/rhetoric/usr /opt/rhetoric 2>/dev/null || true
 """
 
 

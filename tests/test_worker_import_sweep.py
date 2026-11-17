@@ -43,10 +43,21 @@ ONE_HOP_TARGETS = (
     "tts_engines/vulkan_backend.py",
 )
 
+# PortAudio is optional and its import initializes the host backend. It is
+# loaded only from the GUI's device-list path; RecordStudioWorker calls
+# record_until_stop with the already initialized backend and must not load it.
+ALLOWED_FUNCTION_IMPORTS = {
+    ("audio/recorder.py", "initialize_capture_backend"): {"sounddevice"},
+}
+
 
 def test_no_worker_thread_first_imports_suite_wide() -> None:
     """Every QThread file and every one-hop target must be module-scoped."""
-    violations = helpers.worker_module_import_violations(SRC, one_hop_targets=ONE_HOP_TARGETS)
+    violations = helpers.worker_module_import_violations(
+        SRC,
+        one_hop_targets=ONE_HOP_TARGETS,
+        allowed_function_imports=ALLOWED_FUNCTION_IMPORTS,
+    )
     assert not violations, (
         "worker-thread first-import hazards (shiboken import hook): "
         + "; ".join(violations)

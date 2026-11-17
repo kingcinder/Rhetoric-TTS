@@ -173,7 +173,7 @@ def test_the_generator_patch_is_applied_and_idempotent(tmp_path: Path) -> None:
     assert "#include <chrono>" in patched
     # The comment states the window actually compiled in, both as the total and
     # as the attempt count that produces it.
-    assert "Wait up to 10000ms (40 x 250ms)" in patched
+    assert "Wait up to 10s (40 x 250ms)" in patched
     # The wait is bounded per generator, not per shader: 40 x 250ms, and the
     # compile latch it then sets stops every other waiter immediately.
     assert "rhetoric_fork_attempt < 40" in patched
@@ -228,7 +228,7 @@ def test_the_retry_window_override_reaches_the_generated_cpp(tmp_path: Path) -> 
     assert completed.returncode == 0, completed.stderr + completed.stdout
     patched = generator.read_text(encoding="utf-8")
     assert "rhetoric_fork_attempt < 7" in patched
-    assert "Wait up to 1750ms (7 x 250ms)" in patched, "the comment must track the override"
+    assert "Wait up to 1.75s (7 x 250ms)" in patched, "the comment must track the override"
     assert "FORK_FAIL_RETRY_COUNT" not in patched
 
 
@@ -256,7 +256,7 @@ def test_a_leading_zero_retry_window_is_decimal_not_octal(tmp_path: Path) -> Non
     assert "value too great for base" not in completed.stderr + completed.stdout
     patched = generator.read_text(encoding="utf-8")
     assert "rhetoric_fork_attempt < 8" in patched
-    assert "Wait up to 2000ms (8 x 250ms)" in patched
+    assert "Wait up to 2s (8 x 250ms)" in patched
 
 
 def test_an_out_of_range_retry_window_is_refused_before_bash_arithmetic(tmp_path: Path) -> None:

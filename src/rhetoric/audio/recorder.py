@@ -20,10 +20,7 @@ from pathlib import Path
 import numpy as np
 import soundfile as sf
 
-try:  # sounddevice ships its own PortAudio; degrade gracefully if absent.
-    import sounddevice as _sd  # type: ignore[import-not-found]
-except Exception:  # pragma: no cover - depends on local install state
-    _sd = None  # type: ignore[assignment]
+_sd = None
 
 _SeashellNameRe = re.compile(r"Seashell_No_(\d+)", re.IGNORECASE)
 
@@ -44,12 +41,27 @@ class RecorderUnavailableError(RuntimeError):
     """Raised when no capture backend (sounddevice) is importable."""
 
 
+def initialize_capture_backend() -> bool:
+    """Load PortAudio only when microphone capture is requested."""
+    global _sd
+    if _sd is not None:
+        return True
+    try:  # sounddevice ships its own PortAudio; degrade gracefully if absent.
+        import sounddevice as backend  # type: ignore[import-not-found]
+    except Exception:  # pragma: no cover - depends on local install state
+        return False
+    _sd = backend
+    return True
+
+
 def have_capture_backend() -> bool:
     return _sd is not None
 
 
 def list_input_devices() -> list[InputDevice]:
     """Input devices detected by the backend, default input device first."""
+    if _sd is None:
+        initialize_capture_backend()
     if _sd is None:
         return []
     try:

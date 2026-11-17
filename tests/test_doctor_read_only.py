@@ -1,4 +1,4 @@
-"""A doctor run must not write outside the one directory it declares.
+"""A doctor run must not write outside its smoke and crash-report outputs.
 
 Two gate regressions came from checks grading state they had created: reference
 clips written into ``build/real_engine_smoke/inputs`` were counted by the
@@ -9,16 +9,16 @@ for every check in the doctor, including checks added later, without anyone havi
 to think about it.
 
 The comparison is a whole-tree content snapshot either side of a real run, taken
-with the real ``doctor.py`` in the mode CI gates on. The single exception is the
-deterministic smoke's own project directory: that check renders a real project and
-verifies the artifact it produced, so its output there is its subject rather than a
-side effect of grading. Everything else -- source, tests, scripts, docs, and every
-git-ignored artifact directory a check might be tempted to cache into -- must be
-byte-identical afterwards.
+with the real ``doctor.py`` in the mode CI gates on. The deterministic smoke's own
+project directory is its declared output; consent-gated crash reports are also
+allowed and independently covered by crash-consent tests. Everything else -- source,
+tests, scripts, docs, and every git-ignored artifact directory a check might be
+tempted to cache into -- must be byte-identical afterwards.
 """
 
 from __future__ import annotations
 
+import os
 import shutil
 import subprocess
 import sys
@@ -26,12 +26,12 @@ from pathlib import Path
 
 import pytest
 
-from tests.helpers import repo_tree_snapshot, snapshot_differences
+from tests.helpers import repo_tree_snapshot, snapshot_differences, workspace_tree_snapshot
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 BUILD_DIR = REPO_ROOT / "build"
 
-#: The only place a doctor run may add, change or remove anything. Taken from a
+#: Doctor's deterministic smoke output. Taken from a
 #: measured run rather than assumed: with this directory excluded, a full
 #: `--skip-model-init --ci` doctor run leaves a 7000-file tree untouched.
 WRITABLE_BY_A_DOCTOR_RUN = "build/doctor_deterministic_smoke/"
@@ -43,7 +43,18 @@ PARKED_BUILD = REPO_ROOT / "build.__readonly_test_parked"
 
 
 def _outside_writable(paths: list[str]) -> list[str]:
-    return [path for path in paths if not path.startswith(WRITABLE_BY_A_DOCTOR_RUN)]
+    outside = []
+    for path in paths:
+        if path.startswith(WRITABLE_BY_A_DOCTOR_RUN):
+            continue
+        # Crash capture is a separate opt-in output; its consent contract is
+        # covered by the crash tests, and this check must not read consent.
+        if path.startswith("crash_reports/crash-") and path.endswith(".json"):
+            continue
+        if path == "crash_reports/native-crash.txt":
+            continue
+        outside.append(path)
+    return outside
 
 
 def _describe(created: list[str], changed: list[str], removed: list[str]) -> str:
@@ -149,7 +160,7 @@ def test_parking_is_a_no_op_without_a_build_tree(monkeypatch, tmp_path: Path) ->
 
 def test_snapshot_of_this_repository_is_not_vacuous() -> None:
     """An empty or truncated snapshot would make the check below pass for free."""
-    snapshot = repo_tree_snapshot(REPO_ROOT)
+    snapshot = workspace_tree_snapshot(REPO_ROOT)
 
     assert len(snapshot) > 100
     assert "src/rhetoric/cli.py" in snapshot
@@ -191,7 +202,7 @@ def _restore_build_tree(parked: Path | None) -> None:
 
 
 @pytest.mark.slow
-def test_a_doctor_run_writes_nothing_outside_its_declared_output() -> None:
+def test_a_doctor_run_writes_nothing_outside_its_declared_output(tmp_path: Path) -> None:
     """Two runs, starting from a tree with no generated artifacts at all.
 
     The first run is the fresh-clone case, where a check that writes its own
@@ -201,14 +212,24 @@ def test_a_doctor_run_writes_nothing_outside_its_declared_output() -> None:
     """
     parked = _park_build_tree()
     try:
-        _assert_no_writes_outside_the_declared_output()
+        _assert_no_writes_outside_the_declared_output(tmp_path)
     finally:
         _restore_build_tree(parked)
 
 
-def _assert_no_writes_outside_the_declared_output() -> None:
+def _assert_no_writes_outside_the_declared_output(tmp_path: Path) -> None:
+    isolated_home = tmp_path / "home"
+    isolated_config = isolated_home / "config"
+    isolated_data = isolated_home / "data"
+    env = {
+        **os.environ,
+        "XDG_CONFIG_HOME": str(isolated_config),
+        "APPDATA": str(isolated_config),
+        "XDG_DATA_HOME": str(isolated_data),
+        "LOCALAPPDATA": str(isolated_data),
+    }
     for attempt in range(2):
-        before = repo_tree_snapshot(REPO_ROOT)
+        before = workspace_tree_snapshot(REPO_ROOT)
 
         completed = subprocess.run(
             [
@@ -225,10 +246,15 @@ def _assert_no_writes_outside_the_declared_output() -> None:
             encoding="utf-8",
             errors="replace",
             timeout=600,
+            env=env,
         )
 
-        created, changed, removed = snapshot_differences(before, repo_tree_snapshot(REPO_ROOT))
-        offending = _outside_writable(created), _outside_writable(changed), _outside_writable(removed)
+        created, changed, removed = snapshot_differences(before, workspace_tree_snapshot(REPO_ROOT))
+        offending = (
+            _outside_writable(created),
+            _outside_writable(changed),
+            _outside_writable(removed),
+        )
         detail = _describe(*offending)
 
         # The doctor must reach a verdict rather than crashing; whether that verdict
