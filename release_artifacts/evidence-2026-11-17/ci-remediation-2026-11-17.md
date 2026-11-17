@@ -20,14 +20,14 @@ Focused command:
 16 passed in 2.90s
 ```
 
-The official clean-worktree measurement ran against `6ad8c688143640ed2870e1806552349af2454b70`, then against documentation revision `c38cfb325e2bc261bd31ef424dd4739c98a91895`:
+The official clean-worktree measurement ran against `6ad8c688143640ed2870e1806552349af2454b70`, documentation revisions `c38cfb325e2bc261bd31ef424dd4739c98a91895` and `c412eb079ac24fa9fdf7de7745bda5c7b5b3c5a3`:
 
 ```text
 .venv/bin/python scripts/certify_suite_counts.py HEAD --record --capture-output /tmp/rhetoric-v100a-suite-counts-6ad8c68.log
 passed=2326 skipped=35 failed=0 errors=0 exit_code=0
 ```
 
-Both runs observed `passed=2326 skipped=35 failed=0 errors=0 exit_code=0`; raw output is in `suite-counts-6ad8c68.log` and `suite-counts-c38cfb3.log`. The recorder wrote a baseline entry for each measured commit. `.venv/bin/python scripts/certify_suite_counts.py --availability` returned `PASS (recorded)` for `6ad8c68`. `tests/test_suite_counts.py` passed 43 tests. Skip-ID coverage is incomplete (`skipped_ids_complete=false`); the test count remains recorded, and the limitation is in each captured log. The currently updated checklist and this note require one final clean-worktree count run.
+All three runs observed `passed=2326 skipped=35 failed=0 errors=0 exit_code=0`; raw output is in `suite-counts-6ad8c68.log`, `suite-counts-c38cfb3.log`, and `suite-counts-c412eb0.log`. The recorder wrote a baseline entry for each measured commit. `.venv/bin/python scripts/certify_suite_counts.py --availability` passes for `a6b1f19` by inheriting the exact `c412eb0` suite tree; the only tree difference is `scripts/suite_counts_baseline.json`. `tests/test_suite_counts.py` passed 43 tests. Skip-ID coverage is incomplete (`skipped_ids_complete=false`); the test count remains recorded, and the limitation is in each captured log.
 
 ## Limits and next gate
 
