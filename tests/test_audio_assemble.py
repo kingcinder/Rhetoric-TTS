@@ -1,5 +1,5 @@
-"""Regression and feature tests for audio assembly order, voice blending, and
-monologue speaker profiles."""
+"""Regression and feature tests for audio assembly order and monologue
+speaker profiles."""
 
 from pathlib import Path
 from unittest.mock import patch
@@ -7,12 +7,11 @@ from unittest.mock import patch
 import numpy as np
 import pytest
 
-from the_oracle.audio.assemble import AudioSegment, assemble_dialogue, normalize_loudness
-from the_oracle.audio.blend import blend_references
-from the_oracle.models.project import VoiceSettings
-from the_oracle.models.settings import RenderSettings, SpeakerSettings; from the_oracle.pipeline import OraclePipeline
-from the_oracle.smoke import _SmokeEmotionClassifier, _write_reference
-from the_oracle.text_repair.repairer import RepairResult
+from rhetoric.audio.assemble import AudioSegment, assemble_dialogue, normalize_loudness
+from rhetoric.models.project import VoiceSettings
+from rhetoric.models.settings import RenderSettings, SpeakerSettings; from rhetoric.pipeline import RhetoricPipeline
+from rhetoric.smoke import _SmokeEmotionClassifier, _write_reference
+from rhetoric.text_repair.repairer import RepairResult
 
 
 class _StubTextRepairPipeline:
@@ -82,40 +81,6 @@ def test_loudness_normalization_reduces_gain_before_hard_clipping() -> None:
     assert float(np.max(np.abs(normalized))) < 0.999
 
 
-def test_blend_references_is_deterministic_and_honors_weight(tmp_path: Path) -> None:
-    clip_a = _write_reference(tmp_path / "voice_a.wav", 220.0)
-    clip_b = _write_reference(tmp_path / "voice_b.wav", 440.0)
-    out_dir = tmp_path / "blends"
-
-    pure_a = blend_references(clip_a, clip_b, weight_a=1.0, mode="mix", out_dir=out_dir)
-    pure_b = blend_references(clip_a, clip_b, weight_a=0.0, mode="mix", out_dir=out_dir)
-    assert pure_a.exists() and pure_b.exists()
-    # Deterministic: same inputs -> same cached file.
-    assert blend_references(clip_a, clip_b, weight_a=1.0, mode="mix", out_dir=out_dir) == pure_a
-
-    import soundfile as sf
-
-    audio_a, _ = sf.read(str(pure_a), dtype="float32")
-    audio_b, _ = sf.read(str(pure_b), dtype="float32")
-    assert np.corrcoef(audio_a, audio_b)[0, 1] < 0.5
-    # Pure A correlates with A and not with B.
-    source_a, _ = sf.read(str(clip_a), dtype="float32")
-    source_b, _ = sf.read(str(clip_b), dtype="float32")
-    n = min(len(audio_a), len(source_a))
-    assert np.corrcoef(audio_a[:n], source_a[:n])[0, 1] > 0.95
-    n = min(len(audio_b), len(source_b))
-    assert np.corrcoef(audio_b[:n], source_b[:n])[0, 1] > 0.95
-
-
-def test_blend_references_rejects_bad_mode_and_missing_file(tmp_path: Path) -> None:
-    clip_a = _write_reference(tmp_path / "voice_a.wav", 220.0)
-    clip_b = _write_reference(tmp_path / "voice_b.wav", 440.0)
-    with pytest.raises(ValueError, match="blend mode"):
-        blend_references(clip_a, clip_b, mode="chorus", out_dir=tmp_path / "blends")
-    with pytest.raises(FileNotFoundError):
-        blend_references(clip_a, tmp_path / "missing.wav", out_dir=tmp_path / "blends")
-
-
 def test_monologue_plan_skips_unused_speaker_profiles(tmp_path: Path) -> None:
     """Monologue with only Speaker A configured must not carry a Speaker B
     profile with an empty reference (which used to balk the render with
@@ -131,10 +96,10 @@ def test_monologue_plan_skips_unused_speaker_profiles(tmp_path: Path) -> None:
     settings = RenderSettings(monologue=True, loudness_preset="off")
 
     with (
-        patch("the_oracle.pipeline.GoEmotionsClassifier", _SmokeEmotionClassifier),
-        patch("the_oracle.pipeline.TextRepairPipeline", _StubTextRepairPipeline),
+        patch("rhetoric.pipeline.GoEmotionsClassifier", _SmokeEmotionClassifier),
+        patch("rhetoric.pipeline.TextRepairPipeline", _StubTextRepairPipeline),
     ):
-        plan = OraclePipeline().prepare_plan(dialogue, tmp_path / "output", speakers, settings)
+        plan = RhetoricPipeline().prepare_plan(dialogue, tmp_path / "output", speakers, settings)
 
     assert set(plan.voice_profiles) == {"A"}
     assert all(utterance.speaker == "A" for utterance in plan.utterances)
@@ -153,9 +118,9 @@ def test_dual_speaker_plan_keeps_both_profiles(tmp_path: Path) -> None:
     settings = RenderSettings(loudness_preset="off")
 
     with (
-        patch("the_oracle.pipeline.GoEmotionsClassifier", _SmokeEmotionClassifier),
-        patch("the_oracle.pipeline.TextRepairPipeline", _StubTextRepairPipeline),
+        patch("rhetoric.pipeline.GoEmotionsClassifier", _SmokeEmotionClassifier),
+        patch("rhetoric.pipeline.TextRepairPipeline", _StubTextRepairPipeline),
     ):
-        plan = OraclePipeline().prepare_plan(dialogue, tmp_path / "output", speakers, settings)
+        plan = RhetoricPipeline().prepare_plan(dialogue, tmp_path / "output", speakers, settings)
 
     assert set(plan.voice_profiles) == {"A", "B"}

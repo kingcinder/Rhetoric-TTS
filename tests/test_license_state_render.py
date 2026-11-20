@@ -11,8 +11,8 @@ import pytest
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
-from the_oracle import cli, pipeline, smoke  # noqa: E402
-from the_oracle.licensing import policy, store, tokens  # noqa: E402
+from rhetoric import cli, pipeline, smoke  # noqa: E402
+from rhetoric.licensing import policy, store, tokens  # noqa: E402
 from tests.licensing_fixtures import TEST_SEED, payload  # noqa: E402
 
 pytestmark = pytest.mark.usefixtures("test_license_registry")
@@ -20,7 +20,7 @@ pytestmark = pytest.mark.usefixtures("test_license_registry")
 
 def _isolate(monkeypatch: pytest.MonkeyPatch, root: Path) -> Path:
     root.mkdir(parents=True, exist_ok=True)
-    monkeypatch.setattr("the_oracle.offline.repo_root", lambda: root)
+    monkeypatch.setattr("rhetoric.offline.repo_root", lambda: root)
     return root
 
 
@@ -70,7 +70,7 @@ def test_a_render_refuses_unlicensed_states(
 
     # Assert the state really is the state (vacuity guard): the licence verdict
     # is read through the same call the feature gates use.
-    from the_oracle.licensing import current_license
+    from rhetoric.licensing import current_license
 
     state = current_license().state
     assert state == expected_state, f"expected {expected_state}, got {state}"
@@ -85,7 +85,7 @@ def test_a_valid_serial_number_renders(
 ) -> None:
     """A valid serial number enables the normal render path."""
     _studio(monkeypatch, tmp_path / "install")
-    from the_oracle.licensing import current_license
+    from rhetoric.licensing import current_license
 
     assert current_license().state == "valid"
 
@@ -102,5 +102,5 @@ def test_the_render_path_contains_the_serial_gate() -> None:
     assert "require(" not in handler, "CLI dispatch owns the command gate"
 
     pipeline_source = Path(pipeline.__file__).read_text(encoding="utf-8")
-    assert 'importlib.import_module("the_oracle.licensing")' in pipeline_source
+    assert 'importlib.import_module("rhetoric.licensing")' in pipeline_source
     assert pipeline_source.count("_require_license(") >= 4

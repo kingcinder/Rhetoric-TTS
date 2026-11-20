@@ -29,7 +29,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
 def _load_doctor():
-    spec = importlib.util.spec_from_file_location("oracle_doctor", DOCTOR_PATH)
+    spec = importlib.util.spec_from_file_location("rhetoric_doctor", DOCTOR_PATH)
     module = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
     spec.loader.exec_module(module)
@@ -37,7 +37,7 @@ def _load_doctor():
 
 
 def _load_release():
-    spec = importlib.util.spec_from_file_location("oracle_release_tool_probe", RELEASE_PATH)
+    spec = importlib.util.spec_from_file_location("rhetoric_release_tool_probe", RELEASE_PATH)
     module = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
     # Registered first: release.py's dataclasses look their module up in
@@ -68,13 +68,13 @@ def _write_consistent_repo(
     ``shipped`` adds the tracked checksum manifest, which is how a tree says
     this version's release already ran (the post-cut shape).
     """
-    (tmp_path / "src" / "the_oracle").mkdir(parents=True)
-    (tmp_path / "src" / "the_oracle" / "__init__.py").write_text(
+    (tmp_path / "src" / "rhetoric").mkdir(parents=True)
+    (tmp_path / "src" / "rhetoric" / "__init__.py").write_text(
         f'__version__ = "{version}"\n', encoding="utf-8"
     )
     (tmp_path / "pyproject.toml").write_text(
         '[project]\nname = "rhetoric"\ndynamic = ["version"]\n'
-        '[tool.setuptools.dynamic]\nversion = { attr = "the_oracle.__version__" }\n',
+        '[tool.setuptools.dynamic]\nversion = { attr = "rhetoric.__version__" }\n',
         encoding="utf-8",
     )
     (tmp_path / "README.md").write_text(
@@ -178,6 +178,27 @@ def test_probe_survives_a_broken_release_module(tmp_path: Path, monkeypatch) -> 
     assert "could not be loaded" in status["error"]
 
 
+def test_python_probe_timeout_decodes_partial_bytes(monkeypatch) -> None:
+    doctor = _load_doctor()
+    monkeypatch.setattr(
+        doctor,
+        "_run_command",
+        lambda *_args, **_kwargs: {
+            "ok": False,
+            "timed_out": True,
+            "error": "Timed out after 1s",
+            "stdout": b"partial stdout\n",
+            "stderr": b"partial stderr\n",
+        },
+    )
+
+    result = doctor._run_python_probe(Path.cwd(), "pass", timeout=1)
+
+    assert result["ok"] is False
+    assert result["stdout_tail"] == "partial stdout"
+    assert result["stderr_tail"] == "partial stderr"
+
+
 def test_probe_is_read_only(tmp_path: Path) -> None:
     """No file may be created or modified by the probe (same contract the
     whole-tree doctor gate enforces for the rest of the report)."""
@@ -207,7 +228,7 @@ def _full_report(release_metadata: dict) -> dict:
         "ci_mode": False,
         "python": {"ok": True, "executable": "python3", "version": "3.12.0"},
         "ffmpeg": {"ok": True, "path": "/usr/bin/ffmpeg"},
-        "entrypoint": {"ok": True, "fresh_shell_path": "/bin/the-oracle", "path_entrypoint": "", "venv_entrypoint": ""},
+        "entrypoint": {"ok": True, "fresh_shell_path": "/bin/rhetoric", "path_entrypoint": "", "venv_entrypoint": ""},
         "chatterbox_import": {"ok": True, "target": "from chatterbox.tts import ChatterboxTTS", "error": ""},
         "chatterbox_init": {"ok": True, "seconds": 1.0, "skipped": False, "error": ""},
         "perth": {"ok": True, "watermarker_symbol": "PerthImplicitWatermarker", "error": ""},

@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from the_oracle.emotion.goemotions import GoEmotionsClassifier
-from the_oracle.emotion.infer import EmotionInferer
+from rhetoric.emotion.goemotions import GoEmotionsClassifier
+from rhetoric.emotion.infer import EmotionInferer
 
 
 def test_offline_classifier_skips_transformers_pipeline() -> None:

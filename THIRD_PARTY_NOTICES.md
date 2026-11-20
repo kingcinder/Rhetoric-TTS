@@ -7,7 +7,12 @@ commercial launch gate (`python scripts/soft_launch.py --check`), so a
 dependency that is missing here is a release blocker, not a documentation
 omission.
 
-Release version: **1.4.2**
+Release version: **1.5.0**
+
+The Developer is the sole owner of all stock voice files included
+with Rhetoric, except material already covered by applicable fair-use
+statutes. See `docs/PROJECT_AUTHORITY.md` and `Seashells/ASSETS.md`.
+File-specific licenses and attribution below remain applicable.
 
 ## Distribution obligations at a glance
 
@@ -31,6 +36,8 @@ Release version: **1.4.2**
 
 | Component | Version / pin | License | Source |
 |---|---|---|---|
+| `libsndfile` | 1.2.2 | LGPL-2.1 | [source](https://github.com/libsndfile/libsndfile) |
+| `libsoxr` | 0.1.3 | LGPL-2.1 | [source](https://sourceforge.net/projects/soxr/) |
 | `PySide6 / shiboken6 / Qt` | 6.8.2.1 | LGPL-3.0 (or commercial Qt license) | [source](https://code.qt.io/cgit/pyside/pyside-setup.git/) |
 | `audio.cpp` | built at install time from a pinned clone | Apache-2.0 | [source](https://github.com/0xShug0/audio.cpp) |
 | `ffmpeg` | host-provided | LGPL/GPL depending on the build | [source](https://ffmpeg.org/) |
@@ -40,24 +47,19 @@ Release version: **1.4.2**
 | `ResembleAI/chatterbox-turbo` | pinned (models/pins.py) | MIT | [source](https://huggingface.co/ResembleAI/chatterbox-turbo) |
 | `SamLowe/roberta-base-go_emotions` | pinned (models/pins.py) | MIT | [source](https://huggingface.co/SamLowe/roberta-base-go_emotions) |
 | `chinese_female_1.wav` | — | Apache-2.0 | Seashells/generic/ATTRIBUTION.md |
-| `chinese_male_1.wav` | — | Apache-2.0 | Seashells/generic/ATTRIBUTION.md |
 | `chinese_male_2.wav` | — | Apache-2.0 | Seashells/generic/ATTRIBUTION.md |
-| `chinese_speaker_1.wav` | — | Apache-2.0 | Seashells/generic/ATTRIBUTION.md |
 | `Cody's Seashell.wav` | — | Owner-owned; all rights reserved | Seashells/ASSETS.md |
 | `Cody's Seashell1.wav` | — | Owner-owned; all rights reserved | Seashells/ASSETS.md |
+| `confidant_chinese_male_1.wav` | — | Apache-2.0 | Seashells/generic/ATTRIBUTION.md |
 | `english_male_1.wav` | — | Apache-2.0 | Seashells/generic/ATTRIBUTION.md |
-| `english_reader_1.wav` | — | CC BY 4.0 | Seashells/generic/ATTRIBUTION.md |
-| `english_reader_2.wav` | — | CC BY 4.0 | Seashells/generic/ATTRIBUTION.md |
-| `english_reader_3.wav` | — | CC BY 4.0 | Seashells/generic/ATTRIBUTION.md |
-| `english_reader_4.wav` | — | CC BY 4.0 | Seashells/generic/ATTRIBUTION.md |
+| `exuberant_chinese_female.wav` | — | Apache-2.0 | Seashells/generic/ATTRIBUTION.md |
 | `Fransisco_MONSTER.wav` | — | Owner-owned; all rights reserved | Seashells/ASSETS.md |
+| `Fransisco_MONSTER_Edited.wav` | — | Owner-owned; all rights reserved | Seashells/ASSETS.md |
 | `seashell fransisco.wav` | — | Owner-owned; all rights reserved | Seashells/ASSETS.md |
 | `seashell fransisco_TTS_clean_v5_aggressive_targeted_cleanup.wav` | — | Owner-owned; all rights reserved | Seashells/ASSETS.md |
 | `Seashell_ fransisco.wav` | — | Owner-owned; all rights reserved | Seashells/ASSETS.md |
-| `Seashell_No_1.wav` | — | Owner-owned; all rights reserved | Seashells/ASSETS.md |
-| `Seashell_No_2.wav` | — | Owner-owned; all rights reserved | Seashells/ASSETS.md |
 
-Model revisions are pinned in `src/the_oracle/models/pins.py`; this
+Model revisions are pinned in `src/rhetoric/models/pins.py`; this
 table names each model and its license without duplicating the
 revision hashes, which are external identifiers rather than citations
 in this repository's history.
@@ -71,7 +73,7 @@ tools are not part of the shipped environment.
 | Component | Version | License | Source |
 |---|---|---|---|
 | `annotated-doc` | installed metadata | see installed metadata | — |
-| `antlr4-python3-runtime` | installed metadata | see installed metadata | — |
+| `annotated-types` | installed metadata | see installed metadata | — |
 | `anyio` | installed metadata | see installed metadata | — |
 | `audioread` | installed metadata | see installed metadata | — |
 | `catalogue` | installed metadata | see installed metadata | — |
@@ -102,6 +104,7 @@ tools are not part of the shipped environment.
 | `importlib_metadata` | installed metadata | see installed metadata | — |
 | `Jinja2` | installed metadata | see installed metadata | — |
 | `joblib` | installed metadata | see installed metadata | — |
+| `lazy-importer` | installed metadata | see installed metadata | — |
 | `lazy-loader` | installed metadata | see installed metadata | — |
 | `librosa` | installed metadata | see installed metadata | — |
 | `llvmlite` | installed metadata | see installed metadata | — |
@@ -124,6 +127,8 @@ tools are not part of the shipped environment.
 | `pre_commit` | installed metadata | see installed metadata | — |
 | `protobuf` | installed metadata | see installed metadata | — |
 | `pycparser` | installed metadata | see installed metadata | — |
+| `pydantic` | installed metadata | see installed metadata | — |
+| `pydantic_core` | installed metadata | see installed metadata | — |
 | `pydub` | installed metadata | see installed metadata | — |
 | `Pygments` | installed metadata | see installed metadata | — |
 | `pyloudnorm` | installed metadata | see installed metadata | — |
@@ -159,6 +164,7 @@ tools are not part of the shipped environment.
 | `transformers` | installed metadata | see installed metadata | — |
 | `typer` | installed metadata | see installed metadata | — |
 | `typing_extensions` | installed metadata | see installed metadata | — |
+| `typing-inspection` | installed metadata | see installed metadata | — |
 | `urllib3` | installed metadata | see installed metadata | — |
 | `virtualenv` | installed metadata | see installed metadata | — |
 | `zipp` | installed metadata | see installed metadata | — |
@@ -168,6 +174,8 @@ tools are not part of the shipped environment.
 The following notices must accompany the distribution. The standard
 license texts are in `THIRD_PARTY_LICENSES/`.
 
+- **libsndfile** — LGPL-2.1. Shipped as a separate shared library inside the soundfile wheel (_soundfile_data/), with its COPYING (LGPL-2.1 text) beside it. Replaceable: substitute a same-ABI build at that path. See docs/release/LGPL_FULFILLMENT.md.
+- **libsoxr** — LGPL-2.1. Statically linked into the soxr extension module; the soxr wheel carries libsoxr's COPYING.LGPL. Relink path: rebuild the soxr package against a modified libsoxr and replace the installed soxr module. See docs/release/LGPL_FULFILLMENT.md.
 - **PySide6 / shiboken6 / Qt** — LGPL-3.0. A proprietary application may use the LGPL path while keeping its own source proprietary, provided the LGPL-covered libraries remain replaceable/relinkable, their complete corresponding source is made available (or a written offer is given), and the LGPL notice and text accompany the distribution. A Qt commercial license is the alternative.
 - **audio.cpp** — Copyright 2026 ShugoAI LLC. Apache-2.0. Modified by Rhetoric's vendored patches; see scripts/patches/.
 - **ffmpeg** — Not bundled. The host supplies ffmpeg; its own build determines the exact license.
@@ -177,22 +185,17 @@ license texts are in `THIRD_PARTY_LICENSES/`.
 - **ResembleAI/chatterbox-turbo** — MIT license; commercial use permitted.
 - **SamLowe/roberta-base-go_emotions** — Copyright (c) 2023 SamLowe. MIT license.
 - **chinese_female_1.wav** — audio.cpp demo voice, Copyright 2026 ShugoAI LLC
-- **chinese_male_1.wav** — audio.cpp demo voice, Copyright 2026 ShugoAI LLC
 - **chinese_male_2.wav** — audio.cpp demo voice, Copyright 2026 ShugoAI LLC
-- **chinese_speaker_1.wav** — audio.cpp demo voice, Copyright 2026 ShugoAI LLC
 - **Cody's Seashell.wav** — Original recording by the Owner; no third-party rights.
 - **Cody's Seashell1.wav** — Original recording by the Owner; no third-party rights.
+- **confidant_chinese_male_1.wav** — audio.cpp demo voice, Copyright 2026 ShugoAI LLC
 - **english_male_1.wav** — audio.cpp demo voice, Copyright 2026 ShugoAI LLC
-- **english_reader_1.wav** — LibriSpeech clip; attribution in Seashells/generic/ATTRIBUTION.md
-- **english_reader_2.wav** — LibriSpeech clip; attribution in Seashells/generic/ATTRIBUTION.md
-- **english_reader_3.wav** — LibriSpeech clip; attribution in Seashells/generic/ATTRIBUTION.md
-- **english_reader_4.wav** — LibriSpeech clip; attribution in Seashells/generic/ATTRIBUTION.md
+- **exuberant_chinese_female.wav** — audio.cpp demo voice, Copyright 2026 ShugoAI LLC
 - **Fransisco_MONSTER.wav** — Original recording by the Owner; no third-party rights.
+- **Fransisco_MONSTER_Edited.wav** — Original recording by the Owner; no third-party rights.
 - **seashell fransisco.wav** — Original recording by the Owner; no third-party rights.
 - **seashell fransisco_TTS_clean_v5_aggressive_targeted_cleanup.wav** — Original recording by the Owner; no third-party rights.
 - **Seashell_ fransisco.wav** — Original recording by the Owner; no third-party rights.
-- **Seashell_No_1.wav** — Original recording by the Owner; no third-party rights.
-- **Seashell_No_2.wav** — Original recording by the Owner; no third-party rights.
 - **certifi** — See the installed distribution metadata and bundled license text.
 - **PySide6** — See the installed distribution metadata and bundled license text.
 - **PySide6_Addons** — See the installed distribution metadata and bundled license text.

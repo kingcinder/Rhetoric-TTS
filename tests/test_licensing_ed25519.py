@@ -1,4 +1,4 @@
-"""The vendored Ed25519 (the_oracle/_ed25519.py) against RFC 8032 itself.
+"""The vendored Ed25519 (rhetoric/_ed25519.py) against RFC 8032 itself.
 
 The licensing scheme's trust root is this module, so it is pinned to the
 spec's own test vectors rather than to self-consistent roundtrips — a
@@ -39,8 +39,8 @@ import pytest
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
-from the_oracle import _ed25519 as ed  # noqa: E402
-from the_oracle.licensing import keys as license_keys  # noqa: E402
+from rhetoric import _ed25519 as ed  # noqa: E402
+from rhetoric.licensing import keys as license_keys  # noqa: E402
 
 pytestmark = pytest.mark.usefixtures("test_license_registry")
 

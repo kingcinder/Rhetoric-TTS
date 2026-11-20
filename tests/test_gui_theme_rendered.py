@@ -17,7 +17,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 from PySide6.QtGui import QColor, QImage
 from PySide6.QtWidgets import QApplication
 
-from the_oracle.gui_themes import THEMES, apply_theme, contrast_ratio
+from rhetoric.gui_themes import THEMES, apply_theme, contrast_ratio
 
 from tests.test_app_gui_profiles import _build_window
 
@@ -32,7 +32,7 @@ def qt_app():
 
 def _region_luminance_range(image: QImage, x0: int, y0: int, w: int, h: int) -> tuple[float, float]:
     """Return (min, max) relative luminance over a rectangle of the grab."""
-    from the_oracle.gui_themes import relative_luminance
+    from rhetoric.gui_themes import relative_luminance
 
     lows, highs = [], []
     step = max(1, min(w, h) // 24)
@@ -74,7 +74,7 @@ def test_mainwindow_paints_readable_text_per_theme(
             ("status panel", window.error_panel),
             ("review table header", window.table.horizontalHeader()),
         ]
-        from the_oracle.gui_themes import THEMES as _T
+        from rhetoric.gui_themes import THEMES as _T
 
         tokens = _T[theme_key]
         # The guaranteed text/bg spread for this theme's body pairs — used as

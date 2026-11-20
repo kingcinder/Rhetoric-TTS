@@ -1,0 +1,98 @@
+"""EULA acceptance record (first-run click-through).
+
+Writable source checkouts keep the record locally; system installs use the
+per-user config directory. It stores the SHA-256 of the exact EULA text the
+user accepted, so a changed agreement asks again. Missing, unreadable, or
+malformed record = NOT accepted.
+"""
+
+from __future__ import annotations
+
+import datetime as dt
+import hashlib
+import json
+import os
+import sys
+from pathlib import Path
+
+from rhetoric.platform_support import app_config_dir
+
+ACCEPTANCE_FILENAME = "eula_acceptance.json"
+EULA_FILENAME = "EULA.md"
+
+
+def eula_path(root: str | Path) -> Path:
+    """The EULA the user must accept.
+
+    The packaged copy (next to this module) is authoritative, so an installed
+    wheel always has it. ``root`` is the fallback for a bare checkout layout.
+
+    In a PyInstaller frozen build ``__file__`` is a pseudo-path inside the
+    bundle archive, not a real file, so the packaged check misses even when
+    the data was collected. The real bundle base is ``sys._MEIPASS``: check
+    the collected package location and the bundle root there first.
+    """
+    meipass = getattr(sys, "_MEIPASS", None)
+    if meipass:
+        for candidate in (
+            Path(meipass) / "rhetoric" / EULA_FILENAME,
+            Path(meipass) / EULA_FILENAME,
+        ):
+            if candidate.is_file():
+                return candidate
+    packaged = Path(__file__).resolve().parent / EULA_FILENAME
+    if packaged.is_file():
+        return packaged
+    return Path(root) / EULA_FILENAME
+
+
+def acceptance_path(root: str | Path) -> Path:
+    install_root = Path(root)
+    if os.access(install_root, os.W_OK):
+        return install_root / ACCEPTANCE_FILENAME
+    return app_config_dir() / ACCEPTANCE_FILENAME
+
+
+def eula_text_and_digest(root: str | Path) -> tuple[str, str] | None:
+    """The EULA text and its digest, or None when the file is missing."""
+    try:
+        text = eula_path(root).read_text(encoding="utf-8")
+    except (OSError, ValueError):
+        return None
+    return text, hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def is_accepted(root: str | Path) -> bool:
+    """True only when the stored digest matches the current EULA text."""
+    current = eula_text_and_digest(root)
+    if current is None:
+        return False
+    try:
+        # utf-8-sig: an editor that saves the record with a BOM must not revoke
+        # an acceptance the user already gave (a BOM is not JSON to json.loads).
+        data = json.loads(acceptance_path(root).read_text(encoding="utf-8-sig"))
+    except (OSError, ValueError):
+        return False
+    if not isinstance(data, dict):
+        return False
+    return data.get("eula_sha256") == current[1]
+
+
+def record_acceptance(root: str | Path) -> Path:
+    """Persist acceptance of the current EULA text, atomically."""
+    current = eula_text_and_digest(root)
+    if current is None:
+        raise FileNotFoundError(eula_path(root))
+    path = acceptance_path(root)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "eula_sha256": current[1],
+        "accepted_at": dt.datetime.now(dt.timezone.utc).isoformat(),
+    }
+    temp_path = path.with_name(path.name + ".tmp")
+    with open(temp_path, "w", encoding="utf-8") as handle:
+        json.dump(payload, handle, indent=2)
+        handle.flush()
+        os.fsync(handle.fileno())
+    os.replace(temp_path, path)
+    return path

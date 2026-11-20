@@ -12,6 +12,13 @@ Environmental honesty: the net needs this repository's git history. In a
 source archive (no ``.git``) or a shallow clone (history past the boundary is
 simply absent) it skips with a visible reason — neither failing for something
 the tree cannot know, nor passing blind.
+
+Archived pre-migration records are the one declared exception: a file under
+``docs/release/archive/`` whose opening blockquote calls itself superseded
+provenance cites the pre-migration repository's commits, which no clone of
+this repository carries. Such a file stays in the record set but its
+citations are not resolved (``_is_provenance_only``); live records carry no
+such marker and are always checked in full.
 """
 
 from __future__ import annotations
@@ -60,8 +67,44 @@ _NON_HASH_TOKENS = frozenset(
         "749d1c1a46eb10492095d68fbcf55691ccf137cd",  # external model revision
         "d75048347613a25d77de8cf6412eaae9fa7b26be",  # external model revision
         "748c5e28f6a7228b8f38ad7142ca97d29584544b",  # external audio.cpp revision
+        "4365833",  # Westlaw citation fragment (2010 WL 4365833, Attachmate v. Health Net) in the EULA validation memo — not a commit
+        "17734646",  # Product Hunt help-article id inside a URL in the market strategy doc — not a commit
+        "b0a7fe4c",  # first segment of the production licence's lic_id UUID (LICENSING_OPS, FINAL_RELEASE_READINESS) — not a commit
+        "6eb06cccbc14",  # second segment of that same lic_id UUID — not a commit
+        "b2847168",  # first UUID segment of an attached execution-directive path — not a commit
+        "bbca025d503c",  # UUID segment of that attached path — not a commit
     }
 )
+
+
+#: Archived records declare in their opening blockquote that they are
+#: superseded historical material retained as provenance. Their hashes name
+#: the pre-migration repository's history, which no clone of this repository
+#: contains, so resolution can only report them as broken. The declaration is
+#: the exclusion, and it only counts under ``docs/release/archive/`` — a live
+#: record cannot opt itself out of the net.
+_ARCHIVE_PREFIX = "docs/release/archive/"
+
+
+def _is_provenance_only(name: str, text: str) -> bool:
+    """True when an archived record declares its citations are provenance only."""
+    if not name.startswith(_ARCHIVE_PREFIX):
+        return False
+    head = "\n".join(text.splitlines()[:4]).lower()
+    return "superseded historical" in head and (
+        "provenance" in head or "pre-migration" in head
+    )
+
+
+def _record_citations(name: str, text: str) -> list[str]:
+    """The citations this record is checked against.
+
+    Provenance-only archives keep their hashes as history, not evidence: the
+    commits belong to the pre-migration repository, which this clone does not
+    carry, so the net must not fail on them. Everything else is checked in
+    full; see :func:`_is_provenance_only` for the narrow exclusion rule.
+    """
+    return [] if _is_provenance_only(name, text) else _cited_hashes(text)
 
 
 def _cited_hashes(text: str) -> list[str]:
@@ -243,7 +286,7 @@ def test_every_commit_hash_cited_in_the_records_resolves() -> None:
     record_lines: dict[str, list[str]] = {}
     for name in record_files:
         text = (REPO_ROOT / name).read_text(encoding="utf-8")
-        per_file[name] = _cited_hashes(text)
+        per_file[name] = _record_citations(name, text)
         record_lines[name] = text.splitlines()
 
     # Vacuity: the extractor must demonstrably see the trail in both records.
@@ -273,6 +316,12 @@ def test_every_commit_hash_cited_in_the_records_resolves() -> None:
     )
 
 
+def test_attached_document_uuid_is_not_treated_as_commit_citations() -> None:
+    attached_path = "/attachments/b2847168-41ca-4d81-ae6f-bbca025d503c/Pasted text.txt"
+
+    assert _record_citations("docs/release/EXECUTION_CHECKLIST_2026-11-17.md", attached_path) == []
+
+
 def test_every_resolved_entry_cites_a_resolvable_commit() -> None:
     """A ``RESOLVED <date>`` entry claims specific landed work closed it; the
     records-hygiene doctrine requires that claim to carry its holding commit.
@@ -292,6 +341,8 @@ def test_every_resolved_entry_cites_a_resolvable_commit() -> None:
     uncited: list[str] = []
     for name in record_files:
         text = (REPO_ROOT / name).read_text(encoding="utf-8")
+        if _is_provenance_only(name, text):
+            continue
         for lineno, entry in _resolved_entries(text, log_style=name.endswith(".log")):
             tokens = {t.lower() for t in _cited_hashes(entry)}
             if not any(_resolves(t) for t in tokens):
@@ -304,6 +355,26 @@ def test_every_resolved_entry_cites_a_resolvable_commit() -> None:
         "status marker, reword it out of the RESOLVED <date> shape):\n  "
         + "\n  ".join(uncited)
     )
+
+
+def test_provenance_only_archives_are_excluded_from_commit_resolution() -> None:
+    """The pre-migration archive cites another repository's history.
+
+    Its own opening declaration is the exclusion, and it only applies under
+    ``docs/release/archive/`` — the same text in a live record is still
+    checked, and an archive without the declaration is still checked.
+    """
+    declared = (
+        "> Superseded historical record. **Provenance: pre-migration repository.**\n"
+        "\n# Final Release Readiness\n\nArtifact source commit: `6ba1a16`\n"
+    )
+    assert _is_provenance_only("docs/release/archive/OLD.md", declared)
+    assert _record_citations("docs/release/archive/OLD.md", declared) == []
+
+    assert not _is_provenance_only("STATE.md", declared)
+    assert _record_citations("STATE.md", declared) == ["6ba1a16"]
+
+    assert not _is_provenance_only("docs/release/archive/OLD.md", "# Old\n\n`6ba1a16`\n")
 
 
 def test_a_broken_citation_is_attributed_to_every_line_carrying_it() -> None:

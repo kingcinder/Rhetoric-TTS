@@ -6,7 +6,7 @@ import pytest
 
 pytestmark = pytest.mark.slow
 
-from the_oracle.tts_engines import chatterbox_engine
+from rhetoric.tts_engines import chatterbox_engine
 
 
 def test_download_turbo_checkpoint_does_not_force_true_token(

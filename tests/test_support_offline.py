@@ -21,10 +21,10 @@ from pathlib import Path
 
 import pytest
 
-from the_oracle import support
+from rhetoric import support
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-SRC = REPO_ROOT / "src" / "the_oracle"
+SRC = REPO_ROOT / "src" / "rhetoric"
 SUPPORT_FILES = sorted((SRC / "support").glob("*.py")) + [SRC / "support_bundle.py"]
 
 FORBIDDEN_IMPORTS = {
@@ -98,7 +98,7 @@ def test_report_and_package_work_with_sockets_blocked(tmp_path: Path, monkeypatc
 def test_importing_the_support_layer_stays_light() -> None:
     code = (
         "import sys\n"
-        "import the_oracle.support\n"
+        "import rhetoric.support\n"
         "heavy = [name for name in ('torch', 'PySide6', 'huggingface_hub', 'transformers') "
         "if name in sys.modules]\n"
         "print('|'.join(heavy))\n"

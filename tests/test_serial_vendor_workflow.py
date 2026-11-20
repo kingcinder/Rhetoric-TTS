@@ -8,11 +8,11 @@ from pathlib import Path
 
 import pytest
 
-from the_oracle import cli, offline
-from the_oracle.licensing import clear_token, current_license, keys, tokens
-from the_oracle.licensing.keys import VerifyKey
+from rhetoric import cli, offline
+from rhetoric.licensing import clear_token, current_license, keys, tokens
+from rhetoric.licensing.keys import VerifyKey
 from tests.licensing_fixtures import TEST_SEED
-from the_oracle import _ed25519
+from rhetoric import _ed25519
 
 
 def _mint(_monkeypatch: pytest.MonkeyPatch, _capsys: pytest.CaptureFixture[str], key_id: str, seed: bytes) -> str:

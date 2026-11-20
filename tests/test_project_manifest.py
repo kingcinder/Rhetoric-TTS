@@ -4,10 +4,10 @@ from unittest.mock import patch
 
 import pytest
 
-from the_oracle.project_manifest import ProjectManifestError, build_saved_project, load_project_manifest, save_project_manifest
-from the_oracle.models.settings import RenderSettings, SpeakerSettings; from the_oracle.pipeline import OraclePipeline
-from the_oracle.smoke import _DeterministicChatterboxEngine, _SmokeEmotionClassifier, _write_reference
-from the_oracle.models.project import RenderPlan, VoiceSettings
+from rhetoric.project_manifest import ProjectManifestError, build_saved_project, load_project_manifest, save_project_manifest
+from rhetoric.models.settings import RenderSettings, SpeakerSettings; from rhetoric.pipeline import RhetoricPipeline
+from rhetoric.smoke import _DeterministicChatterboxEngine, _SmokeEmotionClassifier, _write_reference
+from rhetoric.models.project import RenderPlan, VoiceSettings
 
 
 def _sample_project(tmp_path: Path):
@@ -33,10 +33,10 @@ def _sample_project(tmp_path: Path):
         "A": SpeakerSettings(reference_path=str(speaker_a), voice_settings=voice),
         "B": SpeakerSettings(reference_path=str(speaker_b), voice_settings=voice),
     }
-    with patch("the_oracle.pipeline.GoEmotionsClassifier", _SmokeEmotionClassifier):
-        pipeline = OraclePipeline()
+    with patch("rhetoric.pipeline.GoEmotionsClassifier", _SmokeEmotionClassifier):
+        pipeline = RhetoricPipeline()
         plan = pipeline.prepare_plan(source, tmp_path / "output", speakers, settings)
-    plan.metadata["artist"] = "Oracle QA"
+    plan.metadata["artist"] = "Rhetoric QA"
     return pipeline, plan, settings, speakers
 
 
@@ -49,7 +49,7 @@ def test_project_manifest_round_trip_preserves_key_fields(tmp_path: Path) -> Non
     loaded = load_project_manifest(manifest_path)
 
     assert loaded.title == plan.title
-    assert loaded.artist == "Oracle QA"
+    assert loaded.artist == "Rhetoric QA"
     assert loaded.input_path == plan.source_path
     assert loaded.output_path == plan.output_dir
     assert loaded.engine == "chatterbox"
@@ -122,6 +122,35 @@ def test_manifest_scalar_root_raises_typed_error(tmp_path: Path, raw: str) -> No
 
     with pytest.raises(ProjectManifestError, match="root must be a JSON object"):
         load_project_manifest(manifest_path)
+
+
+def test_manifest_directory_raises_typed_error(tmp_path: Path) -> None:
+    with pytest.raises(ProjectManifestError, match="Project manifest is not a file"):
+        load_project_manifest(tmp_path)
+
+
+def test_a_manifest_saved_with_a_utf8_bom_loads(tmp_path: Path) -> None:
+    """A manifest re-saved by Notepad keeps its BOM; it must still load."""
+    plan = RenderPlan(
+        title="BOM project",
+        source_path="in.txt",
+        output_dir=str(tmp_path / "output"),
+        engine="chatterbox",
+        correction_mode="moderate",
+    )
+    speakers = {
+        "A": SpeakerSettings(reference_path="a.wav", voice_settings=VoiceSettings()),
+        "B": SpeakerSettings(reference_path="b.wav", voice_settings=VoiceSettings()),
+    }
+    payload = build_saved_project(plan, RenderSettings(), speakers).to_dict()
+    manifest_path = tmp_path / "bom-project.json"
+    manifest_path.write_bytes(b"\xef\xbb\xbf" + json.dumps(payload).encode("utf-8"))
+
+    loaded = load_project_manifest(manifest_path)
+
+    assert loaded.title == "BOM project"
+    assert loaded.render_settings.correction_mode == "moderate"
+    assert loaded.speaker_settings["A"].reference_path == "a.wav"
 
 
 def test_manifest_default_artist_uses_rhetoric_brand(tmp_path: Path) -> None:
@@ -211,9 +240,39 @@ def test_loaded_project_renders_with_deterministic_engine(tmp_path: Path) -> Non
     loaded = load_project_manifest(manifest_path)
 
     with (
-        patch("the_oracle.pipeline.ChatterboxEngine", _DeterministicChatterboxEngine),
-        patch("the_oracle.pipeline.GoEmotionsClassifier", _SmokeEmotionClassifier),
+        patch("rhetoric.pipeline.ChatterboxEngine", _DeterministicChatterboxEngine),
+        patch("rhetoric.pipeline.GoEmotionsClassifier", _SmokeEmotionClassifier),
     ):
         output_path = pipeline.render(loaded.plan, loaded.render_settings)
 
     assert output_path.exists()
+    # A first render synthesizes everything and says so.
+    assert loaded.plan.metadata["cache_hit_segments"] == "0"
+    assert loaded.plan.metadata["rendered_from_cache"] == "0"
+    # Rendering the same plan again reuses every stem; the plan must disclose
+    # that instead of presenting a cache assembly as a fresh render.
+    # Second render under the same deterministic engine: the cache key
+    # includes the engine version, so this render must run inside the same
+    # patch as the first or it is not the same render at all.
+    with (
+        patch("rhetoric.pipeline.ChatterboxEngine", _DeterministicChatterboxEngine),
+        patch("rhetoric.pipeline.GoEmotionsClassifier", _SmokeEmotionClassifier),
+    ):
+        pipeline.render(loaded.plan, loaded.render_settings)
+    assert loaded.plan.metadata["rendered_from_cache"] == "1"
+    assert (
+        loaded.plan.metadata["cache_hit_segments"]
+        == loaded.plan.metadata["segment_count"]
+    )
+    # The output folder holds ONLY the finished audio: stems, cache, logs and
+    # render_plan.json live in the app's render-work home.
+    from rhetoric.app_paths import render_project_dir
+
+    output_dir = Path(loaded.plan.output_dir)
+    entries = list(output_dir.iterdir())
+    assert output_path.name in {entry.name for entry in entries}
+    assert not any(entry.is_dir() for entry in entries), "working folders in the output folder"
+    assert {entry.suffix for entry in entries} <= {".flac", ".srt"}, "non-audio file in the output folder"
+    work_project = render_project_dir(loaded.plan.source_path)
+    assert (work_project / "render_plan.json").is_file()
+    assert (work_project / "cache").is_dir()

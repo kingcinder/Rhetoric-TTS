@@ -11,7 +11,7 @@ analytics service, no crash upload, and no account system.
 
 *Mechanism:* the only network code in the suite is model downloading, and
 offline installs disable even that; the diagnostics packages
-(`the_oracle.crash`, `the_oracle.licensing`) are source-pinned to import no
+(`rhetoric.crash`, `rhetoric.licensing`) are source-pinned to import no
 network module at all (`tests/test_offline_guarantee.py`).
 
 ## Crash reports stay on your disk until you choose to share one
@@ -21,7 +21,7 @@ sanitized report into this install's `crash_reports/` folder — capped at 20
 reports of at most 32 KiB each. Nothing is ever uploaded: there is no
 upload code to review or distrust. You can read a report as plain JSON
 before deciding to share it, and delete everything with
-`the-oracle privacy-opt-out --purge` (or manage consent with
+`rhetoric privacy-opt-out --purge` (or manage consent with
 `privacy-status` / `privacy-opt-in` / `privacy-opt-out`).
 
 *Mechanism:* fail-closed consent stored separately from your settings —
@@ -32,7 +32,7 @@ read-only (`tests/test_doctor_crash.py`).
 
 ## Bug reports are composed, packaged, and sent by you
 
-`the-oracle bug-report` (and **Help → Report a Problem…**) collects a
+`rhetoric bug-report` (and **Help → Report a Problem…**) collects a
 read-only diagnostics snapshot, stores the draft in this install's
 `support_reports/` folder, and builds a zip only when you ask for one. The
 CLI prints prefilled issue and email links; the GUI copies or opens them when
@@ -75,7 +75,7 @@ hash-only with a fail-open skip when unavailable
 
 When *you* fetch a voice model or grammar tool, the download goes to the
 model cache on your disk; nobody sees it. Offline installs (the
-`.oracle_offline` marker) never download at all — model resolution is
+`.rhetoric_offline` marker) never download at all — model resolution is
 pinned to the local cache with outbound connections forbidden.
 
 *Mechanism:* `tests/test_offline_guarantee.py` — every model-resolving
@@ -90,6 +90,16 @@ time; it is recreated on demand and git-ignored.
 
 *Mechanism:* the rotation contract and repo-local default path
 (`tests/test_logging_rotation.py`).
+
+## Washington consumer health data (My Health My Data Act, RCW 19.373)
+
+Rhetoric runs entirely on your own computer. Your voice reference recordings, custom voice models, and generated audio are created, stored, and processed only on your device, under your control. They are not transmitted to us, and we do not collect, access, retain, share, or sell them. We operate no user account system, and Rhetoric sends us no telemetry by default.
+
+The only way we can receive any of your data is if you choose to send it to us for support: a crash report you approve before it is sent, or a support bundle you create and choose to send. Support submissions are used only to diagnose and respond to the problem you reported. Support bundles contain diagnostic logs and settings only; they do not contain voice recordings, voice models, or generated audio, and you should not attach those files to any support submission or to a public issue. A voice recording is biometric data, and biometric data is consumer health data under Washington's My Health My Data Act. If you send us a voice recording or voice model anyway, we will treat it as consumer health data: we will use it only for your support request, restrict access to the people working on that request, share it with no one, never sell it, and delete it when your request is closed or within 30 days after closure, whichever is sooner.
+
+We do not sell consumer health data, we do not share consumer health data with third parties or affiliates, and we do not use geofencing technology. We collect consumer health data from one source only: directly from you, if you choose to include it in a support submission.
+
+If you are a Washington consumer, you may confirm whether we hold consumer health data about you, access it, withdraw any consent you have given, and have it deleted, by contacting codysa90@gmail.com. We will respond within 45 days as required by RCW 19.373.040. If we decline a request, you may appeal by replying to our response; if your appeal is denied, we will tell you how to submit a complaint to the Washington State Attorney General. You do not need an account to make a request: we do not have accounts.
 
 ## Questions or a report to share
 

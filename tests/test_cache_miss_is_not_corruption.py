@@ -17,14 +17,14 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from the_oracle.pipeline import _load_cached_stem, _load_servable_stem
-from the_oracle.audio.assemble import save_wav
+from rhetoric.pipeline import _load_cached_stem, _load_servable_stem
+from rhetoric.audio.assemble import save_wav
 
 
 def test_missing_stem_is_silent_cache_miss(tmp_path: Path, caplog):
     """Reading a stem that was never written must not log the corrupt warning."""
     missing = tmp_path / "never_written.wav"
-    with caplog.at_level(logging.WARNING, logger="the_oracle.pipeline"):
+    with caplog.at_level(logging.WARNING, logger="rhetoric.pipeline"):
         assert _load_cached_stem(missing) is None
         assert _load_servable_stem(missing) is None
     assert "unreadable" not in caplog.text, (
@@ -35,7 +35,7 @@ def test_missing_stem_is_silent_cache_miss(tmp_path: Path, caplog):
 
 def test_missing_stem_does_not_attempt_unlink(tmp_path: Path, monkeypatch):
     """The miss path must not pretend to delete a file it never found."""
-    from the_oracle import pipeline
+    from rhetoric import pipeline
 
     missing = tmp_path / "never_written.wav"
     attempted = []
@@ -54,7 +54,7 @@ def test_corrupt_stem_still_warns_and_is_deleted(tmp_path: Path, caplog):
     """The real corruption path must keep its warning (vacuity guard)."""
     corrupt = tmp_path / "corrupt.wav"
     corrupt.write_bytes(b"not a wav at all")
-    with caplog.at_level(logging.WARNING, logger="the_oracle.pipeline"):
+    with caplog.at_level(logging.WARNING, logger="rhetoric.pipeline"):
         assert _load_cached_stem(corrupt) is None
     assert "unreadable" in caplog.text
     assert not corrupt.exists(), "the corrupt entry must still be deleted"

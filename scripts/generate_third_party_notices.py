@@ -29,8 +29,8 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
-from the_oracle import __version__  # noqa: E402
-from the_oracle import third_party  # noqa: E402
+from rhetoric import __version__  # noqa: E402
+from rhetoric import third_party  # noqa: E402
 
 DEFAULT_OUTPUT = REPO_ROOT / "THIRD_PARTY_NOTICES.md"
 
@@ -112,7 +112,7 @@ def main(argv: list[str] | None = None) -> int:
 
 
 def _version_from_tree(root: Path) -> str:
-    init = root / "src" / "the_oracle" / "__init__.py"
+    init = root / "src" / "rhetoric" / "__init__.py"
     if not init.is_file():
         return "unknown"
     for line in init.read_text(encoding="utf-8").splitlines():

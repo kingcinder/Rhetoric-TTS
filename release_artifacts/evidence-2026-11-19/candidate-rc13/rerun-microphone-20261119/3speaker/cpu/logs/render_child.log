@@ -1,0 +1,14 @@
+2026-11-20 04:15:22,536 | INFO | rhetoric.pipeline | Queuing segment 1/6 | utterance=0 | speaker=A
+2026-11-20 04:15:22,537 | INFO | rhetoric.pipeline | Queuing segment 2/6 | utterance=1 | speaker=B
+2026-11-20 04:15:22,537 | INFO | rhetoric.pipeline | Queuing segment 3/6 | utterance=2 | speaker=C
+2026-11-20 04:15:22,537 | INFO | rhetoric.pipeline | Queuing segment 4/6 | utterance=3 | speaker=B
+2026-11-20 04:15:22,537 | INFO | rhetoric.pipeline | Queuing segment 5/6 | utterance=4 | speaker=A
+2026-11-20 04:15:22,537 | INFO | rhetoric.pipeline | Queuing segment 6/6 | utterance=5 | speaker=C
+2026-11-20 04:15:38,499 | INFO | root | input frame rate=25
+2026-11-20 04:15:39,304 | INFO | perth.perth_net.perth_net_implicit.model.perth_net | loaded PerthNet (Implicit) at step 250,000
+2026-11-20 04:15:51,502 | INFO | chatterbox.models.t3.t3 | ✅ EOS token detected! Stopping generation at step 55
+2026-11-20 04:16:13,999 | INFO | chatterbox.models.t3.t3 | ✅ EOS token detected! Stopping generation at step 78
+2026-11-20 04:16:36,704 | INFO | chatterbox.models.t3.t3 | ✅ EOS token detected! Stopping generation at step 80
+2026-11-20 04:17:04,441 | INFO | chatterbox.models.t3.t3 | ✅ EOS token detected! Stopping generation at step 113
+2026-11-20 04:17:31,200 | INFO | chatterbox.models.t3.t3 | ✅ EOS token detected! Stopping generation at step 97
+2026-11-20 04:17:55,182 | INFO | chatterbox.models.t3.t3 | ✅ EOS token detected! Stopping generation at step 89

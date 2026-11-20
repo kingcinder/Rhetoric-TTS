@@ -25,7 +25,7 @@ from pathlib import Path
 
 import pytest
 
-from the_oracle.gui_themes import (
+from rhetoric.gui_themes import (
     DEFAULT_THEME,
     THEMES,
     USED_PAIRS,
@@ -61,13 +61,25 @@ def _run_certifier_in_scratch(
     be graded against other runs' litter as much as its own.
     """
     scratch.mkdir(parents=True, exist_ok=True)
+    # A controlled XDG_RUNTIME_DIR beside (not inside) the scratch: with no
+    # runtime dir in the environment, libpulse falls back to a
+    # ``pulse-<hash>`` directory under TMPDIR that is never removed, which
+    # would land in the scratch and read as the certifier leaving litter.
+    runtime = scratch.with_name(scratch.name + "-runtime")
+    runtime.mkdir(parents=True, exist_ok=True)
+    runtime.chmod(0o700)
     proc = subprocess.run(
         [sys.executable, str(CERTIFIER), *args],
         cwd=REPO_ROOT,
         capture_output=True,
         text=True,
         timeout=300,
-        env={**os.environ, "QT_QPA_PLATFORM": "offscreen", "TMPDIR": str(scratch)},
+        env={
+            **os.environ,
+            "QT_QPA_PLATFORM": "offscreen",
+            "TMPDIR": str(scratch),
+            "XDG_RUNTIME_DIR": str(runtime),
+        },
     )
     return proc, sorted(path.name for path in scratch.iterdir())
 
@@ -279,13 +291,13 @@ def test_design_token_certification_runs_locally_and_passes(tmp_path: Path) -> N
     without certifying a single theme. tests/test_fast_subset.py asks pytest's
     own collector whether the fast subset still keeps this gate.
     """
-    from the_oracle.platform_support import user_config_root
+    from rhetoric.platform_support import user_config_root
 
-    from tests.helpers import repo_tree_snapshot, snapshot_differences
+    from tests.helpers import repo_tree_snapshot, snapshot_differences, workspace_tree_snapshot
 
-    config_root = user_config_root() / "the_oracle"
-    before_repo = repo_tree_snapshot(REPO_ROOT)
-    before_config = repo_tree_snapshot(config_root) if config_root.exists() else {}
+    config_root = user_config_root() / "rhetoric"
+    before_repo = workspace_tree_snapshot(REPO_ROOT)
+    before_config = repo_tree_snapshot(config_root, hash_contents=False) if config_root.exists() else {}
 
     proc, leftover = _run_certifier_in_scratch(
         tmp_path / "scratch", "--aspects", "contrast"
@@ -312,11 +324,11 @@ def test_design_token_certification_runs_locally_and_passes(tmp_path: Path) -> N
     )
 
     for label, before, after in (
-        ("real repo tree", before_repo, repo_tree_snapshot(REPO_ROOT)),
+        ("real repo tree", before_repo, workspace_tree_snapshot(REPO_ROOT)),
         (
             "real app-config root",
             before_config,
-            repo_tree_snapshot(config_root) if config_root.exists() else {},
+            repo_tree_snapshot(config_root, hash_contents=False) if config_root.exists() else {},
         ),
     ):
         created, changed, removed = snapshot_differences(before, after)
@@ -421,7 +433,7 @@ def test_the_dialog_report_parser_cannot_pass_on_a_truncated_report() -> None:
 # --- the geometry scan's report shape ------------------------------------------
 
 
-def _load_certifier(name: str = "oracle_certify_gui_for_geometry"):
+def _load_certifier(name: str = "rhetoric_certify_gui_for_geometry"):
     """The certifier, imported as a file (the suite's own script-test idiom).
 
     Importing the real module runs its preamble (config root + app import),

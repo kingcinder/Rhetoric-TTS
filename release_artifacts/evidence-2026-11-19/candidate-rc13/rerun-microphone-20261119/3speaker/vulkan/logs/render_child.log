@@ -1,0 +1,6 @@
+2026-11-20 04:18:23,808 | INFO | rhetoric.pipeline | Queuing segment 1/6 | utterance=0 | speaker=A
+2026-11-20 04:18:23,808 | INFO | rhetoric.pipeline | Queuing segment 2/6 | utterance=1 | speaker=B
+2026-11-20 04:18:23,808 | INFO | rhetoric.pipeline | Queuing segment 3/6 | utterance=2 | speaker=C
+2026-11-20 04:18:23,808 | INFO | rhetoric.pipeline | Queuing segment 4/6 | utterance=3 | speaker=B
+2026-11-20 04:18:23,809 | INFO | rhetoric.pipeline | Queuing segment 5/6 | utterance=4 | speaker=A
+2026-11-20 04:18:23,809 | INFO | rhetoric.pipeline | Queuing segment 6/6 | utterance=5 | speaker=C

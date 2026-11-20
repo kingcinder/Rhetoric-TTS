@@ -48,7 +48,7 @@ PAYLOAD = {
 
 
 def _load_doctor():
-    spec = importlib.util.spec_from_file_location("oracle_doctor_licensing", DOCTOR_PATH)
+    spec = importlib.util.spec_from_file_location("rhetoric_doctor_licensing", DOCTOR_PATH)
     module = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
     spec.loader.exec_module(module)
@@ -56,7 +56,7 @@ def _load_doctor():
 
 
 def _store_token(root: Path, payload: dict) -> None:
-    from the_oracle.licensing import store, tokens
+    from rhetoric.licensing import store, tokens
 
     token = tokens.mint(payload, SEED)
     result = store.save_token(root, token, verify_before_save=lambda t: tokens.verify_token(t))
@@ -67,7 +67,7 @@ def _write_token_direct(root: Path, payload: dict) -> None:
     """Write a token bypassing the save gate — the shape of an install whose
     stored token AGED past its exp (the save gate correctly refuses such a
     token at activation time; it cannot prevent one from expiring later)."""
-    from the_oracle.licensing import store, tokens
+    from rhetoric.licensing import store, tokens
 
     token = tokens.mint(payload, SEED)
     store.store_path(root).write_text(json.dumps({"token": token}), encoding="utf-8")
@@ -110,7 +110,7 @@ def test_expired_license_fails_its_own_check(tmp_path: Path) -> None:
 
 
 def test_corrupted_store_reports_store_error_with_remedy(tmp_path: Path) -> None:
-    from the_oracle.licensing import store
+    from rhetoric.licensing import store
 
     doctor = _load_doctor()
     store.store_path(tmp_path).write_text("{broken", encoding="utf-8")
@@ -137,7 +137,7 @@ def test_check_is_read_only_and_idempotent(tmp_path: Path) -> None:
 def test_all_remedy_strings_are_offline_safe(tmp_path: Path) -> None:
     """No failure detail may instruct a network action (design doc §5/§6)."""
     doctor = _load_doctor()
-    from the_oracle.licensing import store
+    from rhetoric.licensing import store
 
     # Scenario 1: no token at all.
     status = doctor._licensing_status(tmp_path)

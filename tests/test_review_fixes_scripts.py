@@ -7,7 +7,7 @@ Covers:
     forwarded as ``revision=`` to the download call.
   * scripts/manage_install.py: generated Unix wrappers shell-quote paths with
     shlex.quote instead of bare double quotes.
-  * oracle (bash): the ``gui`` action is wired to the backend parser's real
+  * rhetoric (bash): the ``gui`` action is wired to the backend parser's real
     GUI action (``run``) instead of being passed through dead.
   * scripts/doctor.py: the deterministic smoke status no longer reports
     success unless the smoke output file exists and is non-empty; the
@@ -20,8 +20,8 @@ Covers:
     runs it once, after the launchers are registered — each doctor run builds
     the Chatterbox model, so a fresh install used to pay for two identical
     model loads. That single run stays a full (non-CI) run, so a broken
-    ``the-oracle`` entrypoint still fails the install.
-  * oracle.ps1: static checks that Invoke-Expression is gone and extra
+    ``rhetoric`` entrypoint still fails the install.
+  * rhetoric.ps1: static checks that Invoke-Expression is gone and extra
     arguments are forwarded (PowerShell cannot execute in this Linux
     runtime, so runtime behavior of the .ps1 still needs verification on
     Windows).
@@ -61,13 +61,13 @@ def _load_script_module(name: str, filename: str):
 def download_models(monkeypatch):
     """Load scripts/download_models.py with the heavy chatterbox engine stubbed.
 
-    The real ``the_oracle.tts_engines.chatterbox_engine`` imports
+    The real ``rhetoric.tts_engines.chatterbox_engine`` imports
     huggingface_hub/torch, which are unavailable (and unwanted) in this
     runtime; stubbing keeps these tests dependency-light.
     """
-    tts_pkg = types.ModuleType("the_oracle.tts_engines")
+    tts_pkg = types.ModuleType("rhetoric.tts_engines")
     tts_pkg.__path__ = []  # type: ignore[attr-defined]
-    engine_mod = types.ModuleType("the_oracle.tts_engines.chatterbox_engine")
+    engine_mod = types.ModuleType("rhetoric.tts_engines.chatterbox_engine")
 
     class FakeChatterboxEngine:
         def __init__(self, *args, **kwargs):
@@ -77,14 +77,14 @@ def download_models(monkeypatch):
             pass
 
     engine_mod.ChatterboxEngine = FakeChatterboxEngine
-    monkeypatch.setitem(sys.modules, "the_oracle.tts_engines", tts_pkg)
-    monkeypatch.setitem(sys.modules, "the_oracle.tts_engines.chatterbox_engine", engine_mod)
-    return _load_script_module("oracle_download_models", "download_models.py")
+    monkeypatch.setitem(sys.modules, "rhetoric.tts_engines", tts_pkg)
+    monkeypatch.setitem(sys.modules, "rhetoric.tts_engines.chatterbox_engine", engine_mod)
+    return _load_script_module("rhetoric_download_models", "download_models.py")
 
 
 @pytest.fixture()
 def manage_install():
-    return _load_script_module("oracle_manage_install_scripts", "manage_install.py")
+    return _load_script_module("rhetoric_manage_install_scripts", "manage_install.py")
 
 
 def test_bootstrap_installs_packaging_before_doctor(manage_install) -> None:
@@ -93,7 +93,7 @@ def test_bootstrap_installs_packaging_before_doctor(manage_install) -> None:
 
 @pytest.fixture()
 def doctor_module():
-    return _load_script_module("oracle_doctor_scripts", "doctor.py")
+    return _load_script_module("rhetoric_doctor_scripts", "doctor.py")
 
 
 # --- download_models.py: failure propagation ---------------------------------
@@ -203,7 +203,7 @@ def test_unix_wrapper_shell_quotes_nasty_paths(manage_install, monkeypatch, tmp_
     # double quotes that the shell would re-expand.
     assert f"REPO_ROOT={shlex.quote(str(nasty))}" in contents
     assert f'REPO_ROOT="{nasty}"' not in contents
-    assert f'VENV_ENTRYPOINT="{manage_install.venv_entrypoint_path(nasty, "the-oracle")}"' not in contents
+    assert f'VENV_ENTRYPOINT="{manage_install.venv_entrypoint_path(nasty, "rhetoric")}"' not in contents
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="bash scripts require a POSIX shell")
@@ -222,14 +222,14 @@ def test_unix_wrapper_still_execs_entrypoint(manage_install, tmp_path: Path, mon
     monkeypatch.setattr(manage_install, "REPO_ROOT", tmp_path / "plain")
     contents = manage_install.managed_wrapper_contents()
     assert 'exec "$VENV_ENTRYPOINT" "$@"' in contents
-    assert "ORACLE_TTS_WRAPPER" in contents
+    assert "RHETORIC_TTS_WRAPPER" in contents
 
 
-# --- oracle (bash): gui action wiring ------------------------------------------
+# --- rhetoric (bash): gui action wiring ------------------------------------------
 
 
 def _build_fake_repo(tmp_path: Path) -> tuple[Path, Path, Path]:
-    """Copy the real bash `oracle` into a fake repo with a shim python.
+    """Copy the real bash `rhetoric` into a fake repo with a shim python.
 
     The shim exits 0 when probed with no args (the version check) and
     otherwise records its argv, so we can assert exactly what the wrapper
@@ -237,7 +237,7 @@ def _build_fake_repo(tmp_path: Path) -> tuple[Path, Path, Path]:
     """
     fakerepo = tmp_path / "fakerepo"
     (fakerepo / "scripts").mkdir(parents=True)
-    shutil.copy2(REPO_ROOT / "oracle", fakerepo / "oracle")
+    shutil.copy2(REPO_ROOT / "rhetoric", fakerepo / "rhetoric")
     shutil.copy2(REPO_ROOT / "rhetoric", fakerepo / "rhetoric")
     recorded = tmp_path / "recorded_args.txt"
     bindir = tmp_path / "bin"
@@ -247,7 +247,7 @@ def _build_fake_repo(tmp_path: Path) -> tuple[Path, Path, Path]:
         # The version probe invokes the candidate as `candidate -` with the
         # check script on stdin: treat that as a successful probe.
         'if [ "$#" -eq 1 ] && [ "$1" = "-" ]; then exit 0; fi\n'
-        'printf \'%s\\n\' "$@" >> "$ORACLE_TEST_RECORDED"\n'
+        'printf \'%s\\n\' "$@" >> "$RHETORIC_TEST_RECORDED"\n'
     )
     for name in ("python3.12", "python3.11", "python3"):
         path = bindir / name
@@ -256,12 +256,12 @@ def _build_fake_repo(tmp_path: Path) -> tuple[Path, Path, Path]:
     return fakerepo, bindir, recorded
 
 
-def _run_oracle(fakerepo: Path, bindir: Path, recorded: Path, *args: str) -> subprocess.CompletedProcess:
+def _run_rhetoric(fakerepo: Path, bindir: Path, recorded: Path, *args: str) -> subprocess.CompletedProcess:
     env = os.environ.copy()
     env["PATH"] = f"{bindir}{os.pathsep}{env.get('PATH', '')}"
-    env["ORACLE_TEST_RECORDED"] = str(recorded)
+    env["RHETORIC_TEST_RECORDED"] = str(recorded)
     return subprocess.run(
-        ["bash", str(fakerepo / "oracle"), *args],
+        ["bash", str(fakerepo / "rhetoric"), *args],
         capture_output=True,
         text=True,
         env=env,
@@ -269,9 +269,9 @@ def _run_oracle(fakerepo: Path, bindir: Path, recorded: Path, *args: str) -> sub
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="bash scripts require a POSIX shell")
-def test_bash_oracle_gui_is_wired_to_run(tmp_path: Path) -> None:
+def test_bash_rhetoric_gui_is_wired_to_run(tmp_path: Path) -> None:
     fakerepo, bindir, recorded = _build_fake_repo(tmp_path)
-    completed = _run_oracle(fakerepo, bindir, recorded, "gui", "--skip-model-init")
+    completed = _run_rhetoric(fakerepo, bindir, recorded, "gui", "--skip-model-init")
     assert completed.returncode == 0, completed.stderr
     argv = recorded.read_text(encoding="utf-8").splitlines()
     # gui must reach the backend parser as its real GUI action, with extras forwarded.
@@ -279,18 +279,18 @@ def test_bash_oracle_gui_is_wired_to_run(tmp_path: Path) -> None:
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="bash scripts require a POSIX shell")
-def test_bash_oracle_start_still_maps_to_run(tmp_path: Path) -> None:
+def test_bash_rhetoric_start_still_maps_to_run(tmp_path: Path) -> None:
     fakerepo, bindir, recorded = _build_fake_repo(tmp_path)
-    completed = _run_oracle(fakerepo, bindir, recorded, "start")
+    completed = _run_rhetoric(fakerepo, bindir, recorded, "start")
     assert completed.returncode == 0, completed.stderr
     argv = recorded.read_text(encoding="utf-8").splitlines()
     assert argv == [f"{fakerepo}/scripts/manage_install.py", "run"]
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="bash scripts require a POSIX shell")
-def test_bash_oracle_rejects_unknown_action(tmp_path: Path) -> None:
+def test_bash_rhetoric_rejects_unknown_action(tmp_path: Path) -> None:
     fakerepo, bindir, recorded = _build_fake_repo(tmp_path)
-    completed = _run_oracle(fakerepo, bindir, recorded, "bogus")
+    completed = _run_rhetoric(fakerepo, bindir, recorded, "bogus")
     assert completed.returncode != 0
     assert not recorded.exists()
 
@@ -302,16 +302,16 @@ def _stub_smoke(monkeypatch, output_path: Path):
     # The doctor delegates the output-verdict policy to the smoke module, so
     # the fake module carries the real helper -- these tests then still
     # exercise the real policy (missing/empty fail, present passes).
-    from the_oracle.smoke import smoke_output_problem
+    from rhetoric.smoke import smoke_output_problem
 
-    fake_smoke = types.ModuleType("the_oracle.smoke")
+    fake_smoke = types.ModuleType("rhetoric.smoke")
     fake_smoke.run_deterministic_smoke_render = lambda output_root, source_format="txt": SimpleNamespace(
         output_path=output_path,
         project_dir=output_root / "project",
         cache_reused_on_second_pass=False,
     )
     fake_smoke.smoke_output_problem = smoke_output_problem
-    monkeypatch.setitem(sys.modules, "the_oracle.smoke", fake_smoke)
+    monkeypatch.setitem(sys.modules, "rhetoric.smoke", fake_smoke)
 
 
 def test_deterministic_smoke_fails_when_output_missing(
@@ -352,19 +352,19 @@ def test_deterministic_smoke_is_skipped_until_serial_activation(doctor_module, t
     assert "serial number" in status["reason"]
 
 
-# --- oracle.ps1: static regression checks ---------------------------------------
+# --- rhetoric.ps1: static regression checks ---------------------------------------
 # PowerShell cannot execute in this Linux runtime; these assertions guard the
 # source against reintroducing Invoke-Expression / dropped arguments. The
 # runtime behavior still needs a check on Windows.
 
 
-def test_oracle_ps1_has_no_invoke_expression() -> None:
-    text = (REPO_ROOT / "oracle.ps1").read_text(encoding="utf-8")
+def test_rhetoric_ps1_has_no_invoke_expression() -> None:
+    text = (REPO_ROOT / "rhetoric.ps1").read_text(encoding="utf-8")
     # No *command* usage of Invoke-Expression (mentions in comments are fine).
     assert not re.search(r"(?m)^\s*(\$null\s*=\s*)?Invoke-Expression\b", text)
 
 
-def test_oracle_ps1_forwards_remaining_arguments() -> None:
+def test_rhetoric_ps1_forwards_remaining_arguments() -> None:
     text = (REPO_ROOT / "rhetoric.ps1").read_text(encoding="utf-8")
     assert "ValueFromRemainingArguments" in text
     assert "RemainingArgs" in text
@@ -379,13 +379,13 @@ def test_oracle_ps1_forwards_remaining_arguments() -> None:
 
 
 def _stub_real_engine(monkeypatch, output: Path, *, ready: bool = True):
-    fake = types.ModuleType("the_oracle.real_engine_smoke")
+    fake = types.ModuleType("rhetoric.real_engine_smoke")
     fake.ensure_real_engine_inputs = lambda output_root: {}
     fake.real_engine_smoke_prerequisites = lambda output_root: {
         "ready": ready,
         "expected_paths": {"output": str(output)},
     }
-    monkeypatch.setitem(sys.modules, "the_oracle.real_engine_smoke", fake)
+    monkeypatch.setitem(sys.modules, "rhetoric.real_engine_smoke", fake)
 
 
 def test_real_engine_readiness_flags_missing_output(doctor_module, tmp_path: Path, monkeypatch) -> None:
@@ -415,7 +415,7 @@ def _report_with_real_engine(real_engine: dict) -> dict:
         "python": {"ok": True, "executable": "python3", "version": "3.12"},
         "ffmpeg": {"ok": True, "path": "ffmpeg"},
         "entrypoint": {
-            "ok": True, "fresh_shell_path": "the-oracle", "path_entrypoint": "",
+            "ok": True, "fresh_shell_path": "rhetoric", "path_entrypoint": "",
             "venv_entrypoint": "", "fresh_shell_error": "", "help_error": "",
         },
         "chatterbox_import": {"ok": True, "target": "x", "error": ""},
@@ -481,7 +481,7 @@ def test_human_report_cites_present_smoke_output(doctor_module, capsys) -> None:
 def _stub_prereqs_only(monkeypatch, output: Path, *, ready: bool = True) -> None:
     """Stub only the prerequisites probe, keeping the real
     ``ensure_real_engine_inputs`` so any write the check performs is caught."""
-    real_mod = importlib.import_module("the_oracle.real_engine_smoke")
+    real_mod = importlib.import_module("rhetoric.real_engine_smoke")
     monkeypatch.setattr(
         real_mod,
         "real_engine_smoke_prerequisites",
@@ -506,9 +506,9 @@ def _stub_heavy_probes(doctor_module, monkeypatch) -> None:
     monkeypatch.setattr(doctor_module, "_ffmpeg_status", lambda: {"ok": True, "path": "ffmpeg"})
     monkeypatch.setattr(doctor_module, "_entrypoint_status", lambda repo: {
         "ok": True, "venv_entrypoint": "", "venv_entrypoint_exists": False,
-        "path_entrypoint": "the-oracle", "managed_wrapper_path": "", "managed_wrapper_installed": True,
+        "path_entrypoint": "rhetoric", "managed_wrapper_path": "", "managed_wrapper_installed": True,
         "help_ok": True, "help_error": "", "fresh_shell_help_ok": True,
-        "fresh_shell_path": "the-oracle", "fresh_shell_error": "", "path_has_local_bin": True,
+        "fresh_shell_path": "rhetoric", "fresh_shell_error": "", "path_has_local_bin": True,
     })
     monkeypatch.setattr(doctor_module, "_chatterbox_probe", lambda *a, **k: {
         "import_ok": True, "perth_ok": True, "watermarker_callable": True, "init_skipped": True,
@@ -650,7 +650,7 @@ def test_install_fails_when_the_entrypoint_is_broken(
     manage_install, doctor_module, monkeypatch, tmp_path: Path, capsys
 ) -> None:
     """Bootstrap's doctor is skipped, so install()'s single run is the only thing
-    between a broken ``the-oracle`` entrypoint and a report of success."""
+    between a broken ``rhetoric`` entrypoint and a report of success."""
     repo = tmp_path / "repo"
     (repo / "Seashells" / "generic").mkdir(parents=True)
     (repo / "Seashells" / "generic" / "english_1.wav").write_bytes(b"RIFF")
@@ -658,16 +658,16 @@ def test_install_fails_when_the_entrypoint_is_broken(
     _stub_real_engine(monkeypatch, repo / "build" / "real_engine_smoke" / "real_engine_smoke.flac")
     monkeypatch.setattr(doctor_module, "_entrypoint_status", lambda _repo: {
         "ok": False,
-        "venv_entrypoint": str(repo / ".venv" / "bin" / "the-oracle"),
+        "venv_entrypoint": str(repo / ".venv" / "bin" / "rhetoric"),
         "venv_entrypoint_exists": False,
         "path_entrypoint": "",
         "managed_wrapper_path": "",
         "managed_wrapper_installed": False,
         "help_ok": False,
-        "help_error": "the-oracle: command not found",
+        "help_error": "rhetoric: command not found",
         "fresh_shell_help_ok": False,
         "fresh_shell_path": "",
-        "fresh_shell_error": "the-oracle is not available in a fresh shell PATH",
+        "fresh_shell_error": "rhetoric is not available in a fresh shell PATH",
         "path_has_local_bin": False,
     })
 

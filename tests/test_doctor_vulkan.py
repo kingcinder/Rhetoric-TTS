@@ -8,13 +8,13 @@ from pathlib import Path
 
 import pytest
 
-from the_oracle.tts_engines import vulkan_backend
+from rhetoric.tts_engines import vulkan_backend
 
 DOCTOR_PATH = Path(__file__).resolve().parents[1] / "scripts" / "doctor.py"
 
 
 def _load_doctor():
-    spec = importlib.util.spec_from_file_location("oracle_doctor", DOCTOR_PATH)
+    spec = importlib.util.spec_from_file_location("rhetoric_doctor", DOCTOR_PATH)
     module = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
     spec.loader.exec_module(module)
@@ -23,8 +23,8 @@ def _load_doctor():
 
 def test_vulkan_backend_status_reports_missing_pieces(monkeypatch, tmp_path: Path) -> None:
     doctor = _load_doctor()
-    monkeypatch.delenv("ORACLE_AUDIOCPP_CLI", raising=False)
-    monkeypatch.delenv("ORACLE_AUDIOCPP_MODEL", raising=False)
+    monkeypatch.delenv("RHETORIC_AUDIOCPP_CLI", raising=False)
+    monkeypatch.delenv("RHETORIC_AUDIOCPP_MODEL", raising=False)
     # The doctor lazy-imports find_audiocpp_binary; patch it at its source so
     # the test is independent of what is actually on disk in this workspace
     # (e.g. a previously built audio.cpp/ binary under the repo root).
@@ -54,8 +54,8 @@ def test_vulkan_backend_status_ready_with_rdna1_caveat(monkeypatch, tmp_path: Pa
     binary.chmod(0o755)
     model = tmp_path / "chatterbox-q8_0.gguf"
     model.write_bytes(b"stub-model")
-    monkeypatch.setenv("ORACLE_AUDIOCPP_CLI", str(binary))
-    monkeypatch.setenv("ORACLE_AUDIOCPP_MODEL", str(model))
+    monkeypatch.setenv("RHETORIC_AUDIOCPP_CLI", str(binary))
+    monkeypatch.setenv("RHETORIC_AUDIOCPP_MODEL", str(model))
     monkeypatch.setattr(
         doctor,
         "_vulkaninfo_summary",
@@ -85,8 +85,8 @@ def test_vulkan_backend_status_flags_missing_vendored_patch(monkeypatch, tmp_pat
     binary.chmod(0o755)
     model = tmp_path / "chatterbox-q8_0.gguf"
     model.write_bytes(b"stub-model")
-    monkeypatch.setenv("ORACLE_AUDIOCPP_CLI", str(binary))
-    monkeypatch.setenv("ORACLE_AUDIOCPP_MODEL", str(model))
+    monkeypatch.setenv("RHETORIC_AUDIOCPP_CLI", str(binary))
+    monkeypatch.setenv("RHETORIC_AUDIOCPP_MODEL", str(model))
     monkeypatch.setattr(doctor, "_vulkaninfo_summary", lambda: (True, "deviceName = some gpu"))
     monkeypatch.setattr(doctor, "_vulkan_patches_applied", lambda repo_root: False)
 
@@ -98,14 +98,14 @@ def test_vulkan_backend_status_flags_missing_vendored_patch(monkeypatch, tmp_pat
 
 
 def test_vulkan_backend_status_flags_missing_model_file(monkeypatch, tmp_path: Path) -> None:
-    """A set-but-dangling ORACLE_AUDIOCPP_MODEL must not count as ready."""
+    """A set-but-dangling RHETORIC_AUDIOCPP_MODEL must not count as ready."""
     doctor = _load_doctor()
     binary = tmp_path / "audiocpp_cli"
     binary.write_text("#!/bin/sh\nexit 0\n")
     binary.chmod(0o755)
     missing = tmp_path / "no-such-model.gguf"
-    monkeypatch.setenv("ORACLE_AUDIOCPP_CLI", str(binary))
-    monkeypatch.setenv("ORACLE_AUDIOCPP_MODEL", str(missing))
+    monkeypatch.setenv("RHETORIC_AUDIOCPP_CLI", str(binary))
+    monkeypatch.setenv("RHETORIC_AUDIOCPP_MODEL", str(missing))
     monkeypatch.setattr(doctor, "_vulkaninfo_summary", lambda: (True, "deviceName = some gpu"))
     monkeypatch.setattr(doctor, "_vulkan_patches_applied", lambda repo_root: True)
 
@@ -217,8 +217,8 @@ def test_vulkan_backend_is_not_ok_when_the_binary_exists_but_cannot_run(monkeypa
     binary.write_text("#!/bin/sh\nexit 0\n")  # deliberately not chmod +x
     model = tmp_path / "chatterbox-q8_0.gguf"
     model.write_bytes(b"model")
-    monkeypatch.setenv("ORACLE_AUDIOCPP_CLI", str(binary))
-    monkeypatch.setenv("ORACLE_AUDIOCPP_MODEL", str(model))
+    monkeypatch.setenv("RHETORIC_AUDIOCPP_CLI", str(binary))
+    monkeypatch.setenv("RHETORIC_AUDIOCPP_MODEL", str(model))
     monkeypatch.setattr(doctor, "_vulkaninfo_summary", lambda: (True, "deviceName = some gpu"))
     monkeypatch.setattr(doctor, "_vulkan_patches_applied", lambda repo_root: True)
 
@@ -240,8 +240,8 @@ def test_vulkan_backend_is_ok_when_everything_runs(monkeypatch, tmp_path: Path) 
     binary.chmod(0o755)
     model = tmp_path / "chatterbox-q8_0.gguf"
     model.write_bytes(b"model")
-    monkeypatch.setenv("ORACLE_AUDIOCPP_CLI", str(binary))
-    monkeypatch.setenv("ORACLE_AUDIOCPP_MODEL", str(model))
+    monkeypatch.setenv("RHETORIC_AUDIOCPP_CLI", str(binary))
+    monkeypatch.setenv("RHETORIC_AUDIOCPP_MODEL", str(model))
     monkeypatch.setattr(doctor, "_vulkaninfo_summary", lambda: (True, "deviceName = some gpu"))
     monkeypatch.setattr(doctor, "_vulkan_patches_applied", lambda repo_root: True)
     monkeypatch.setattr(
@@ -261,8 +261,8 @@ def test_run_command_tolerates_non_executable_binary(monkeypatch, tmp_path: Path
     doctor = _load_doctor()
     binary = tmp_path / "audiocpp_cli"
     binary.write_text("#!/bin/sh\nexit 0\n")  # deliberately not chmod +x
-    monkeypatch.setenv("ORACLE_AUDIOCPP_CLI", str(binary))
-    monkeypatch.setenv("ORACLE_AUDIOCPP_MODEL", "/models/chatterbox")
+    monkeypatch.setenv("RHETORIC_AUDIOCPP_CLI", str(binary))
+    monkeypatch.setenv("RHETORIC_AUDIOCPP_MODEL", "/models/chatterbox")
     monkeypatch.setattr(doctor, "_vulkaninfo_summary", lambda: (True, "deviceName = some gpu"))
     monkeypatch.setattr(doctor, "_vulkan_patches_applied", lambda repo_root: True)
 
@@ -289,8 +289,8 @@ def test_vulkan_backend_status_includes_audio_cpp_devices(monkeypatch, tmp_path:
     doctor = _load_doctor()
     binary = tmp_path / "audiocpp_cli"
     binary.write_text("#!/bin/sh\nexit 0\n")
-    monkeypatch.setenv("ORACLE_AUDIOCPP_CLI", str(binary))
-    monkeypatch.setenv("ORACLE_AUDIOCPP_MODEL", "/models/chatterbox")
+    monkeypatch.setenv("RHETORIC_AUDIOCPP_CLI", str(binary))
+    monkeypatch.setenv("RHETORIC_AUDIOCPP_MODEL", "/models/chatterbox")
     monkeypatch.setattr(doctor, "_vulkaninfo_summary", lambda: (True, "deviceName = some gpu"))
     monkeypatch.setattr(doctor, "_vulkan_patches_applied", lambda repo_root: True)
     monkeypatch.setattr(
@@ -334,11 +334,11 @@ def test_next_steps_hints_device_pick_on_multi_gpu(monkeypatch) -> None:
 
     steps = doctor._build_next_steps(report, ci_mode=True)
 
-    assert any("ORACLE_AUDIOCPP_DEVICE" in step for step in steps)
+    assert any("RHETORIC_AUDIOCPP_DEVICE" in step for step in steps)
 
 
 def test_next_steps_suggests_download_script_when_model_unset(monkeypatch) -> None:
-    """Binary built but ORACLE_AUDIOCPP_MODEL unset: point at the download
+    """Binary built but RHETORIC_AUDIOCPP_MODEL unset: point at the download
     script (and the one-shot build), not just at the variable."""
     doctor = _load_doctor()
     report = {
@@ -370,7 +370,7 @@ def test_next_steps_suggests_download_script_when_model_unset(monkeypatch) -> No
 
 
 def test_next_steps_flags_missing_model_file(monkeypatch) -> None:
-    """ORACLE_AUDIOCPP_MODEL set but dangling: the step names the broken path
+    """RHETORIC_AUDIOCPP_MODEL set but dangling: the step names the broken path
     and points at the download script to re-fetch."""
     doctor = _load_doctor()
     report = {
@@ -398,7 +398,7 @@ def test_next_steps_flags_missing_model_file(monkeypatch) -> None:
 
     steps = doctor._build_next_steps(report, ci_mode=True)
 
-    model_steps = [step for step in steps if "ORACLE_AUDIOCPP_MODEL" in step]
+    model_steps = [step for step in steps if "RHETORIC_AUDIOCPP_MODEL" in step]
     assert model_steps, "expected a step flagging the dangling model path"
     assert "/broken/models/chatterbox.gguf" in model_steps[0]
     assert "missing model file" in model_steps[0]
@@ -430,7 +430,7 @@ def test_next_steps_omit_device_hint_when_env_already_set(monkeypatch) -> None:
 
     steps = doctor._build_next_steps(report, ci_mode=True)
 
-    assert not any("ORACLE_AUDIOCPP_DEVICE" in step for step in steps)
+    assert not any("RHETORIC_AUDIOCPP_DEVICE" in step for step in steps)
 
 
 def test_human_report_lists_device_indexes(monkeypatch, capsys) -> None:
@@ -441,7 +441,7 @@ def test_human_report_lists_device_indexes(monkeypatch, capsys) -> None:
         "platform": "linux",
         "python": {"ok": True, "executable": "python3", "version": "3.12"},
         "ffmpeg": {"ok": True, "path": "ffmpeg"},
-        "entrypoint": {"ok": True, "fresh_shell_path": "the-oracle", "path_entrypoint": "", "venv_entrypoint": "", "fresh_shell_error": "", "help_error": ""},
+        "entrypoint": {"ok": True, "fresh_shell_path": "rhetoric", "path_entrypoint": "", "venv_entrypoint": "", "fresh_shell_error": "", "help_error": ""},
         "chatterbox_import": {"ok": True, "target": "x", "error": ""},
         "chatterbox_init": {"ok": True, "seconds": 1.0, "skipped": False, "error": ""},
         "perth": {"ok": True, "watermarker_symbol": "w", "error": ""},
@@ -485,12 +485,12 @@ def test_human_report_lists_device_indexes(monkeypatch, capsys) -> None:
     assert "audio.cpp Vulkan devices" in captured
     assert "0=GPU A" in captured
     assert "1=GPU B" in captured
-    assert "ORACLE_AUDIOCPP_DEVICE" in captured
+    assert "RHETORIC_AUDIOCPP_DEVICE" in captured
 
 
 @pytest.mark.skipif(os.name == "nt", reason="uses a POSIX executable stub and Linux Vulkan device output")
 def test_vulkan_backend_status_ready_via_auto_detected_model(monkeypatch, tmp_path: Path) -> None:
-    """A repo-local model with no ORACLE_AUDIOCPP_MODEL counts as ready --
+    """A repo-local model with no RHETORIC_AUDIOCPP_MODEL counts as ready --
     the exact case this machine hit (binary built, model downloaded, env
     never exported)."""
     doctor = _load_doctor()
@@ -500,8 +500,8 @@ def test_vulkan_backend_status_ready_via_auto_detected_model(monkeypatch, tmp_pa
     model = tmp_path / "audio.cpp" / "models" / "Chatterbox-GGUF" / "chatterbox-q8_0.gguf"
     model.parent.mkdir(parents=True)
     model.write_bytes(b"stub-model")
-    monkeypatch.setenv("ORACLE_AUDIOCPP_CLI", str(binary))
-    monkeypatch.delenv("ORACLE_AUDIOCPP_MODEL", raising=False)
+    monkeypatch.setenv("RHETORIC_AUDIOCPP_CLI", str(binary))
+    monkeypatch.delenv("RHETORIC_AUDIOCPP_MODEL", raising=False)
     monkeypatch.setattr(vulkan_backend, "find_audiocpp_model", lambda: model)
     monkeypatch.setattr(doctor, "_vulkaninfo_summary", lambda: (True, "deviceName = some gpu"))
     monkeypatch.setattr(doctor, "_vulkan_patches_applied", lambda repo_root: True)
@@ -520,10 +520,10 @@ def test_vulkan_backend_status_reports_device_and_threads_env(monkeypatch, tmp_p
     binary = tmp_path / "audiocpp_cli"
     binary.write_text("#!/bin/sh\nexit 0\n")
     binary.chmod(0o755)
-    monkeypatch.setenv("ORACLE_AUDIOCPP_CLI", str(binary))
-    monkeypatch.setenv("ORACLE_AUDIOCPP_MODEL", "/models/chatterbox")
-    monkeypatch.setenv("ORACLE_AUDIOCPP_DEVICE", "1")
-    monkeypatch.setenv("ORACLE_AUDIOCPP_THREADS", "8")
+    monkeypatch.setenv("RHETORIC_AUDIOCPP_CLI", str(binary))
+    monkeypatch.setenv("RHETORIC_AUDIOCPP_MODEL", "/models/chatterbox")
+    monkeypatch.setenv("RHETORIC_AUDIOCPP_DEVICE", "1")
+    monkeypatch.setenv("RHETORIC_AUDIOCPP_THREADS", "8")
     monkeypatch.setattr(doctor, "_vulkaninfo_summary", lambda: (True, "deviceName = some gpu"))
     monkeypatch.setattr(doctor, "_vulkan_patches_applied", lambda repo_root: True)
 
@@ -540,23 +540,23 @@ def test_vulkan_backend_status_reports_effective_batch_cap(monkeypatch, tmp_path
     binary = tmp_path / "audiocpp_cli"
     binary.write_text("#!/bin/sh\nexit 0\n")
     binary.chmod(0o755)
-    monkeypatch.setenv("ORACLE_AUDIOCPP_CLI", str(binary))
-    monkeypatch.setenv("ORACLE_AUDIOCPP_MODEL", "/models/chatterbox")
+    monkeypatch.setenv("RHETORIC_AUDIOCPP_CLI", str(binary))
+    monkeypatch.setenv("RHETORIC_AUDIOCPP_MODEL", "/models/chatterbox")
     monkeypatch.setattr(doctor, "_vulkaninfo_summary", lambda: (True, "deviceName = some gpu"))
     monkeypatch.setattr(doctor, "_vulkan_patches_applied", lambda repo_root: True)
 
-    monkeypatch.delenv("ORACLE_AUDIOCPP_MAX_BATCH", raising=False)
+    monkeypatch.delenv("RHETORIC_AUDIOCPP_MAX_BATCH", raising=False)
     status = doctor._vulkan_backend_status(tmp_path)
     assert status["batch_env"] == ""
     assert status["effective_batch_cap"] == 32
 
-    monkeypatch.setenv("ORACLE_AUDIOCPP_MAX_BATCH", "16")
+    monkeypatch.setenv("RHETORIC_AUDIOCPP_MAX_BATCH", "16")
     status = doctor._vulkan_backend_status(tmp_path)
     assert status["batch_env"] == "16"
     assert status["effective_batch_cap"] == 16
 
     # Out-of-range values are clamped exactly like the engine (>= 1).
-    monkeypatch.setenv("ORACLE_AUDIOCPP_MAX_BATCH", "0")
+    monkeypatch.setenv("RHETORIC_AUDIOCPP_MAX_BATCH", "0")
     status = doctor._vulkan_backend_status(tmp_path)
     assert status["effective_batch_cap"] == 1
 
@@ -630,7 +630,7 @@ def test_human_report_lists_batch_cap(monkeypatch, capsys) -> None:
         "platform": "linux",
         "python": {"ok": True, "executable": "python3", "version": "3.12"},
         "ffmpeg": {"ok": True, "path": "ffmpeg"},
-        "entrypoint": {"ok": True, "fresh_shell_path": "the-oracle", "path_entrypoint": "", "venv_entrypoint": "", "fresh_shell_error": "", "help_error": ""},
+        "entrypoint": {"ok": True, "fresh_shell_path": "rhetoric", "path_entrypoint": "", "venv_entrypoint": "", "fresh_shell_error": "", "help_error": ""},
         "chatterbox_import": {"ok": True, "target": "x", "error": ""},
         "chatterbox_init": {"ok": True, "seconds": 1.0, "skipped": False, "error": ""},
         "perth": {"ok": True, "watermarker_symbol": "w", "error": ""},
@@ -673,8 +673,8 @@ def test_vulkan_backend_status_not_ready_without_model_env(monkeypatch, tmp_path
     binary = tmp_path / "audiocpp_cli"
     binary.write_text("#!/bin/sh\nexit 0\n")
     binary.chmod(0o755)
-    monkeypatch.setenv("ORACLE_AUDIOCPP_CLI", str(binary))
-    monkeypatch.delenv("ORACLE_AUDIOCPP_MODEL", raising=False)
+    monkeypatch.setenv("RHETORIC_AUDIOCPP_CLI", str(binary))
+    monkeypatch.delenv("RHETORIC_AUDIOCPP_MODEL", raising=False)
     monkeypatch.setattr(vulkan_backend, "find_audiocpp_model", lambda: None)
     monkeypatch.setattr(doctor, "_vulkaninfo_summary", lambda: (True, "deviceName = some gpu"))
     monkeypatch.setattr(doctor, "_vulkan_patches_applied", lambda repo_root: True)

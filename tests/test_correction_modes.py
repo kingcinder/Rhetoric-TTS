@@ -1,4 +1,4 @@
-from the_oracle.correction_modes import (
+from rhetoric.correction_modes import (
     CORRECTION_MODE_OPTIONS,
     correction_mode_label,
     normalize_correction_mode,

@@ -3,10 +3,10 @@ from unittest.mock import patch
 
 import pytest
 
-from the_oracle.models.project import VoiceSettings
-from the_oracle.models.settings import RenderSettings, SpeakerSettings; from the_oracle.pipeline import OraclePipeline
-from the_oracle.smoke import _DeterministicChatterboxEngine, _SmokeEmotionClassifier, _write_reference
-from the_oracle.text_repair.repairer import RepairResult
+from rhetoric.models.project import VoiceSettings
+from rhetoric.models.settings import RenderSettings, SpeakerSettings; from rhetoric.pipeline import RhetoricPipeline
+from rhetoric.smoke import _DeterministicChatterboxEngine, _SmokeEmotionClassifier, _write_reference
+from rhetoric.text_repair.repairer import RepairResult
 
 
 class _StubTextRepairPipeline:
@@ -31,11 +31,11 @@ def test_target_wpm_adjusts_pause_mapping(tmp_path: Path) -> None:
     settings = RenderSettings(model_variant="standard", loudness_preset="off", target_wpm=90.0, pause_between_turns_ms=180)
 
     with (
-        patch("the_oracle.pipeline.ChatterboxEngine", _DeterministicChatterboxEngine),
-        patch("the_oracle.pipeline.GoEmotionsClassifier", _SmokeEmotionClassifier),
-        patch("the_oracle.pipeline.TextRepairPipeline", _StubTextRepairPipeline),
+        patch("rhetoric.pipeline.ChatterboxEngine", _DeterministicChatterboxEngine),
+        patch("rhetoric.pipeline.GoEmotionsClassifier", _SmokeEmotionClassifier),
+        patch("rhetoric.pipeline.TextRepairPipeline", _StubTextRepairPipeline),
     ):
-        plan = OraclePipeline().prepare_plan(dialogue, tmp_path / "output", speakers, settings)
+        plan = RhetoricPipeline().prepare_plan(dialogue, tmp_path / "output", speakers, settings)
 
     pauses = [utterance.pause_after_ms for utterance in plan.utterances]
     assert all(pause >= settings.pause_between_turns_ms for pause in pauses)
@@ -58,12 +58,12 @@ def test_measured_wpm_matches_word_count_and_duration(tmp_path: Path) -> None:
     )
 
     with (
-        patch("the_oracle.pipeline.ChatterboxEngine", _DeterministicChatterboxEngine),
-        patch("the_oracle.pipeline.GoEmotionsClassifier", _SmokeEmotionClassifier),
-        patch("the_oracle.pipeline._should_use_worker_pool", return_value=False),
-        patch("the_oracle.pipeline.TextRepairPipeline", _StubTextRepairPipeline),
+        patch("rhetoric.pipeline.ChatterboxEngine", _DeterministicChatterboxEngine),
+        patch("rhetoric.pipeline.GoEmotionsClassifier", _SmokeEmotionClassifier),
+        patch("rhetoric.pipeline._should_use_worker_pool", return_value=False),
+        patch("rhetoric.pipeline.TextRepairPipeline", _StubTextRepairPipeline),
     ):
-        pipeline = OraclePipeline()
+        pipeline = RhetoricPipeline()
         plan = pipeline.prepare_plan(dialogue, tmp_path / "output", speakers, settings)
         pipeline.render(plan, settings)
 

@@ -10,7 +10,7 @@ Audit date: 2026-10-25 UTC
 
 ## Recovery anchor
 
-- Full-ref bundle: `/tmp/the-oracle-pre-scrub-20261025T143643Z.bundle`
+- Full-ref bundle: `/tmp/rhetoric-pre-scrub-20261025T143643Z.bundle`
 - SHA-256: `3c2133098a5d9c875afe987941d3d42822bf3b7e42808eb04fbabd22efe97623`
 - The bundle was created outside the repository with `git bundle create ... --all`
   before rewriting.
@@ -30,7 +30,9 @@ open remote retention issue and are not covered by the clean-ref claims below.
 - `/home/USER` and `/media/USER` were replaced with neutral placeholders;
   `/home/test-user` remains an intentional test fixture.
 - The three current voice/audio blobs were preserved because the owner directed
-  that Seashells recordings are not scrub targets.
+  that Seashells recordings are not scrub targets. This preservation was not
+  a protection from ordinary project work; see the owner's 2026-11-17 scope
+  clarification in [project authority](../PROJECT_AUTHORITY.md).
 - `git log --all -- <scrubbed path>` returned zero entries for every scrubbed
   path in the rewritten mirror’s retained branches and tags. This does not
   cover GitHub-managed pull-request refs.

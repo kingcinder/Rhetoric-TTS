@@ -14,10 +14,10 @@ from pathlib import Path
 
 import pytest
 
-import the_oracle.cli as cli
-import the_oracle.offline as offline
-from the_oracle import crash, support
-from the_oracle.licensing import store, tokens
+import rhetoric.cli as cli
+import rhetoric.offline as offline
+from rhetoric import crash, support
+from rhetoric.licensing import store, tokens
 from tests.licensing_fixtures import TEST_SEED, payload
 
 pytestmark = pytest.mark.usefixtures("test_license_registry")
@@ -31,6 +31,21 @@ def root(tmp_path: Path, monkeypatch) -> Path:
     token = tokens.mint(payload(), TEST_SEED)
     assert store.save_token(install, token, verify_before_save=tokens.verify_token).state == "saved"
     return install
+
+
+@pytest.fixture(autouse=True)
+def _support_gate_session_current(monkeypatch):
+    """The share actions are support-gated now: they need a session whose
+    automated update check already found the install current. Seed that
+    session state so these tests exercise the share flow itself."""
+    from rhetoric import update_service
+
+    session = update_service.UpdateSession()
+    session.record(
+        update_service.UpdateCheckResult(status="current", current_version="1.5.0")
+    )
+    monkeypatch.setattr(update_service, "SESSION", session)
+
 
 
 def _new(root: Path, *extra: str) -> dict:

@@ -43,7 +43,7 @@ from PySide6.QtWidgets import QApplication, QWidget
 
 from tests.test_app_gui_profiles import _build_window
 
-APP_GUI = Path(__file__).resolve().parents[1] / "src" / "the_oracle" / "app_gui.py"
+APP_GUI = Path(__file__).resolve().parents[1] / "src" / "rhetoric" / "app_gui.py"
 
 #: Every registered section key, in registration order.
 ALL_SECTION_KEYS = ("shared", "speaker_a", "speaker_b", "extra_voices", "table", "status", "paths", "live")
@@ -216,7 +216,7 @@ def test_persist_keeps_deferred_sections_unbuilt_and_preserves_their_slice(
         for key in ("shared", "paths", "status", "table"):
             assert window._section_content_built(key) is False, f"persist forced {key} alive"
 
-        from the_oracle.gui_settings import load_app_settings
+        from rhetoric.gui_settings import load_app_settings
 
         saved = load_app_settings()
         assert saved["gui"]["project"]["crossfade_ms"] == 55, (
@@ -312,7 +312,7 @@ def test_section_builders_assign_exactly_the_mapped_attributes() -> None:
     workspace has that section collapsed. Unmapped assignments are allowed
     only for the explicit plain-data allowlist above.
     """
-    import the_oracle.app_gui as app_gui
+    import rhetoric.app_gui as app_gui
 
     owned = dict(app_gui._SECTION_OWNED_ATTRS)
     tree = ast.parse(APP_GUI.read_text(encoding="utf-8"))

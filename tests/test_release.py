@@ -1,6 +1,6 @@
 """Release tooling: the single-source version invariant, banner sync, and checksums.
 
-The contract under test: ``src/the_oracle/__init__.py`` is the only tracked
+The contract under test: ``src/rhetoric/__init__.py`` is the only tracked
 place a release version is written; pyproject.toml reads it dynamically and
 the README / STATE.md banners agree with it. scripts/release.py enforces that
 invariant and produces versioned artifacts with a sha256 manifest. The
@@ -67,8 +67,8 @@ def _write_fake_repo(
     checksum manifest Step 4 commits, which is the repository fact that says
     this version's release already ran.
     """
-    (tmp_path / "src" / "the_oracle").mkdir(parents=True)
-    (tmp_path / "src" / "the_oracle" / "__init__.py").write_text(
+    (tmp_path / "src" / "rhetoric").mkdir(parents=True)
+    (tmp_path / "src" / "rhetoric" / "__init__.py").write_text(
         f'__all__ = ["__version__"]\n\n__version__ = "{version}"\n', encoding="utf-8"
     )
     # A product tree carries a license verify-key registry, and release mode
@@ -76,7 +76,7 @@ def _write_fake_repo(
     # The fixture supplies a well-formed, NON-vector key so the release path
     # exercises the gate's passing branch; the gate's refusal branches have
     # their own tests.
-    licensing = tmp_path / "src" / "the_oracle" / "licensing"
+    licensing = tmp_path / "src" / "rhetoric" / "licensing"
     licensing.mkdir(parents=True, exist_ok=True)
     (licensing / "__init__.py").write_text("", encoding="utf-8")
     (licensing / "keys.py").write_text(
@@ -91,11 +91,11 @@ def _write_fake_repo(
         encoding="utf-8",
     )
     if pyproject_literal:
-        project = f'[project]\nname = "the-oracle"\nversion = "1.2.3"\n'
+        project = f'[project]\nname = "rhetoric"\nversion = "1.2.3"\n'
         dynamic = ""
     else:
-        project = '[project]\nname = "the-oracle"\ndynamic = ["version"]\n'
-        dynamic = '[tool.setuptools.dynamic]\nversion = { attr = "the_oracle.__version__" }\n'
+        project = '[project]\nname = "rhetoric"\ndynamic = ["version"]\n'
+        dynamic = '[tool.setuptools.dynamic]\nversion = { attr = "rhetoric.__version__" }\n'
     (tmp_path / "pyproject.toml").write_text(project + "\n" + dynamic, encoding="utf-8")
     (tmp_path / "README.md").write_text(
         "# Rhetoric\n\n"
@@ -126,6 +126,19 @@ def _write_fake_repo(
     return tmp_path
 
 
+def test_the_readme_developer_setup_uses_the_managed_installer() -> None:
+    """The documented dev install must be the one the resolver accepts.
+
+    README advertised `pip install -e ".[dev,ml,chatterbox]"`, which cannot
+    resolve ([ml] pins transformers 5.20.0; chatterbox-tts 0.1.7 pins another
+    version). The managed installer is the working path; this pins the two
+    together so the README cannot drift back to a command that always fails.
+    """
+    readme = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
+    assert 'pip install -e ".[dev,ml,chatterbox]"' not in readme
+    assert "manage_install.py bootstrap --include-dev" in readme
+
+
 def test_pyproject_is_generated_from_the_package_version() -> None:
     """The collapse pin: no version literal in pyproject; it reads __version__."""
     data = tomllib.loads((REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8"))
@@ -133,7 +146,7 @@ def test_pyproject_is_generated_from_the_package_version() -> None:
     assert "version" not in project
     assert "version" in project["dynamic"]
     attr = data["tool"]["setuptools"]["dynamic"]["version"]["attr"]
-    assert attr == "the_oracle.__version__"
+    assert attr == "rhetoric.__version__"
 
 
 def test_check_passes_on_this_repo_on_its_own_release_day() -> None:
@@ -351,6 +364,19 @@ def test_release_check_flags_packaging_and_artifact_version_drift(tmp_path: Path
     assert any("packaging/linux/README.md" in item for item in problems)
     assert any("packaging/windows/Rhetoric.iss" in item for item in problems)
     assert any("release_artifacts/rhetoric-9.9.8-x86_64.AppImage" in item for item in problems)
+
+
+def test_release_check_ignores_nested_runtime_dependency_versions(tmp_path: Path) -> None:
+    repo = _write_fake_repo(tmp_path)
+    artifacts = repo / "release_artifacts"
+    appdir = artifacts / "linux-frozen" / "AppDir" / "usr" / "lib" / "rhetoric"
+    wheels = artifacts / "offline-bundle" / "wheels"
+    appdir.mkdir(parents=True)
+    wheels.mkdir(parents=True)
+    (appdir / "libXau-6.0.0.so").write_bytes(b"runtime library")
+    (wheels / "torch-2.15.0+cpu-cp312-cp312-manylinux.whl").write_bytes(b"dependency wheel")
+
+    assert release.check(repo) == []
 
 
 def test_check_flags_invalid_changelog_date(tmp_path: Path) -> None:
@@ -897,7 +923,7 @@ def test_release_mode_records_the_tracked_manifest(
 
 
 def _write_registry(repo: Path, body: str) -> Path:
-    path = repo / "src" / "the_oracle" / "licensing" / "keys.py"
+    path = repo / "src" / "rhetoric" / "licensing" / "keys.py"
     path.write_text(body, encoding="utf-8")
     return path
 
@@ -946,7 +972,7 @@ def test_a_published_test_vector_key_blocks_the_release(tmp_path: Path) -> None:
 def test_the_gate_does_not_read_the_running_installation(tmp_path: Path) -> None:
     """The subject is the tree under release, not whatever is on sys.path.
 
-    A regression to ``import the_oracle.licensing`` would report the installed
+    A regression to ``import rhetoric.licensing`` would report the installed
     package's state for every tree, which is how a gate silently certifies the
     wrong thing.
     """

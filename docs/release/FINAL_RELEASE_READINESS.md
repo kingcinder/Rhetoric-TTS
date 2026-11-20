@@ -1,108 +1,150 @@
 # Final Release Readiness — Rhetoric 1.5.0
 
-- **Assessment date:** 2026-10-26
+- **Assessment date:** 2026-11-14 (final cleanup pass; fix pass 2026-11-12)
 - **Branch:** `release/1.5.0-final`
-**Distribution:** Not authorized or performed.
+- **Distribution:** Not authorized or performed. No tag, no GitHub release.
 
 ## Status
 
-**ENGINEERING STATUS: NOT READY for customer release.** The customer-facing
-rename, distribution names, compatibility shims, support routing, version
-guards, package-content rules, and experimental GPU labels are implemented.
-The canonical release command passed the full suite and rebuilt the source
-archive and wheel. Exact-head hosted CI, Linux frozen-artifact installation,
-first-user lifecycle acceptance, and current-corpus audio review remain open.
+**ENGINEERING STATUS: READY for the owner's release decision**, with the
+release-publication steps below still open and owner-only. Every functional
+hosted job passed at `17fdab9` (run 43605100480), `f6cc182` (run
+43613200483), and the cleanup head `cf2dfd0` (run 43621773933). At `cf2dfd0`
+only the suite-counts bookkeeping gate is red, because that head's entry is
+recorded on the follow-up commit; the Ubuntu 3.12 job measured **2,280 passed,
+35 skipped, 0 failed** in 505.84 s. The remaining engineering work is installed-
+lifecycle qualification on the frozen Linux artifacts and human listening
+review of the CJK and Arabic corpus cases (see "Acceptance still open").
 
-**COMMERCIAL STATUS: BLOCKED.** The EULA is a draft awaiting owner and
-qualified-counsel approval. The last observed soft-launch check reported the
-draft EULA blocker and an LGPL notice/source/replacement obligation warning.
-The check was not rerun after final edits because its automated asset review is
-outside the authorized scope.
+**COMMERCIAL STATUS: CLOSED by owner decision.** The owner decided on
+2026-11-12 that the EULA ships as written and that independent counsel review
+is waived. The storefront (§ "Owner-only decisions") is still open.
 
-## Verified evidence
+**Update (2026-11-14):** at `17fdab9`, hosted run
+[43605100480](https://github.com/kingcinder/Rhetoric-TTS/actions/runs/43605100480)
+passed every job — Ubuntu and Windows suites on both Pythons, Vulkan, frozen
+Linux packaging, the license core, and the Windows installer end-to-end,
+including the ten-consecutive six-theme certification step on both Windows
+legs. A local Windows 11 Pro guest also passed the Inno Setup installer,
+activation and ten consecutive certifications; see
+[Windows guest acceptance](WINDOWS_GUEST_ACCEPTANCE_1.5.0.md). Windows stays
+experimental and excluded from the paid offer, and its installer is unsigned.
 
-- Canonical release command: `./.venv/bin/python scripts/release.py` on
-  `92c55b86ff86` — **2,144 passed, 6 warnings, 0 failed in 395.90 seconds**;
-  the version invariant passed and the command built the Rhetoric 1.5.0 sdist,
-  wheel, and checksum manifest.
-- Fresh-worktree recorder: `d39a94573d35` — **2,141 passed, 3 skipped,
-  0 failed/errors**. The Vulkan device smoke was the identified environment
-  skip. Skip IDs are incomplete because `tests/test_skip_audit.py` clears the
-  ledger during the run.
-- `sha256sum -c checksums-1.5.0.sha256` passed both source artifacts:
-  wheel `879733b64fbc73bbbf41616d9046d1ba3dbb555b7d452f80167da3ce908466ba`;
-  sdist `07b92f8d4fd26a20327d455e93466818e76e342f952160143c7f7b7c332d72a8`.
-- Filtered package inventory: 153 sdist entries and 118 wheel entries outside
-  the excluded owner-data area. Required release docs are present; tests,
-  `scripts/ci_smoke_render.py`, and the test-only license-status shim are
-  absent. The suite-count baseline and tracked checksum copy are also absent
-  from the sdist/wheel, so subsequent release-record commits do not change the
-  built package bytes.
-- `scripts/release.py --check` and `--check-packaging` pass; versions agree at
-  1.5.0. The changelog heading was re-stamped for 2026-10-26 with the release
-  tool.
-- Fresh Python 3.12.3 editable dev install, `pip check`, and `pip-audit`
-  completed. No broken requirements or known vulnerabilities were reported in
-  auditable installed packages; local/non-PyPI dependencies were skipped.
-- A local CycloneDX run emitted a valid CycloneDX SBOM with 168 components and
-  no known vulnerabilities. The frozen Linux CI builder now emits its own
-  SBOM from the build environment and checksums it. Hosted run
-  [40290354035](https://github.com/kingcinder/Rhetoric-TTS/actions/runs/40290354035)
-  built and uploaded the frozen Linux artifacts and SBOM; the artifact has not
-  yet been installed in a clean container.
-- `gitleaks git --log-opts='--all' --redact --no-banner`: no findings across
-  1,110 commits. `detect-secrets` reported 147 candidates across 18 files
-  (144 high-entropy hex, 1 keyword, 2 Base64); these are not asserted to be
-  findings or clean. Values are not reproduced here.
-- Exact-head hosted CI ran on `079b5745e33d80adeffdb36dbdc8f56adbd696cd`.
-  Linux Python 3.11/3.12 suites, Linux smoke/theme checks, Vulkan no-skip suite,
-  Linux frozen AppImage/deb build, Windows installer E2E, Windows GUI event
-  filter diagnostic, and ten consecutive Windows theme certification runs
-  passed. Both Windows full-suite matrix jobs failed; their causes remain
-  undetermined because the hosted job logs were unavailable through the
-  connected GitHub interface. Their uploaded 10-run certification logs were
-  downloaded and inspected: all six themes passed the contrast, section/layout,
-  studio, and inference-tour checks on each run for both Python versions. The
-  manual Windows certifier fault-capture job was skipped because this was a
-  push-triggered run.
+- **Full suite:** the last locally recorded baseline is `f6cc182`
+  (**2,277 passed / 35 skipped**, recorded 2026-11-14 in a fresh worktree). The
+  cleanup head `cf2dfd0` was measured by the hosted Ubuntu 3.12 job: **2,280
+  passed, 35 skipped, 0 failed** (505.84 s). This workstation could not
+  re-measure it because its GPU driver wedged: `drm_open` blocks
+  uninterruptibly and cannot be killed, so every Qt or Vulkan probe that opens
+  the device hangs. The 35 skips are runtime-gated; the repository's skip audit
+  names only the Vulkan skip and marks its list incomplete, so this record does
+  not claim a complete skip list.
+- **Hosted CI at `f6cc182`** (run 43613200483) and `17fdab9` (run 43605100480):
+  all jobs passed, including the Ubuntu and Windows suites, the Vulkan no-skip
+  suite, the Linux frozen AppImage/deb build, the Windows installer end-to-end,
+  the compiled license core, and the suite-counts bookkeeping gate (the
+  `f6cc182` entry is recorded in `scripts/suite_counts_baseline.json`).
+- **This fix pass** is covered by targeted tests per fix plus hosted CI at the
+  final head. Per-fix evidence is listed below.
+
+## Public-surface cleanup (2026-11-14)
+
+- `docs/WINDOWS_VM.md` is out of the tracked tree, ignored, and preserved for the
+owner outside the repository; the evidence doc no longer links to it and
+`scripts/airgap_proof.py` requires explicit `--vm-script` and `--ssh-key` paths.
+- Owner paths in test fixtures and two release notes are replaced with neutral
+names; the working tree scans clean for `/home/cody` and `/media/cody`.
+- README's developer setup points at the managed installer, and a test pins it
+so the documented install cannot drift back to the extras combination that pip
+refuses to resolve (pins unchanged).
+- Two suite hangs found and fixed: the Vulkan probe no longer re-waits on a child
+it could not kill, and the non-tty formatting test fakes the pipeline instead of
+starting a model download.
+
+## This fix pass (2026-11-12 → 13)
+
+| Item | Verdict | Evidence | Commit |
+| --- | --- | --- | --- |
+| Vulkan timeout death (owner's settings held `audio_cpp_timeout: 3` against a 600 s default, and model load + shader compile was charged inside every per-synthesis budget) | **Fixed and verified** | 60 s floor at the engine choke point + 120 s startup allowance per subprocess budget; settings-load clamp. The owner's exact scenario now completes: RC 0 in 28 s, FLAC 24 kHz / 16.58 s / decode OK. 15 new tests, 2 updated. Logs: `~/vulkan-measure-2026-11-12.log`, `~/vulkan-verify-a-2026-11-12.log`. | `eaba85e` |
+| Automated-updates opt-out sat in Shared Render Settings | **Fixed** | The opt-out is a checkable Settings-menu action (Advanced, default on); same `automatic_updates_enabled` key, same warning text, same support gate. 3 new tests + placement pins updated. | `9e5ee1f` |
+| Mouse wheel hijacked spin boxes / combo boxes / sliders in scrollable panels | **Fixed** | The controls themselves are focus-gated subclasses (`gui_wheel.WheelSpinBox`, `WheelComboBox`, `WheelSlider`), and every spin box, combo box and slider in the GUI is one of them: an unfocused control scrolls its enclosing panel, a focused one keeps the wheel. Implemented this way after both event-filter designs crashed hosted runners inside Qt's filter dispatch; no filter is installed anywhere now. Pinned by `tests/test_wheel_focus_guard.py`. | `fe56d8a` |
+| Output filename default overwrote earlier renders | **Fixed** | The field defaults to `<input stem>_No_<n>` (the recorder's `Seashell_No_N` scheme), taking the next free number in the chosen folder; re-derived at render time; a typed name is never renumbered. Tests pin numbering, gaps, and typed names. | `aab6ce3` |
+| Working material scattered into the user's output folder | **Fixed** | Stems, cache, logs, previews, `render_plan.json`, and the hidden subprocess job directory now live in the app's `render-work` home (`~/.local/share/rhetoric/render-work`, `RHETORIC_RENDER_WORK` override). The chosen folder receives only the finished FLAC (and SRT when enabled). The tracked `Output/.gitkeep` was removed. A deterministic render test asserts the output folder holds exactly the FLAC. | `b7f8494` |
+| Legacy path values inside settings (`the oracle tts` Documents folders, `the_oracle` data dir) | **Fixed** | Load-time migration rewrites default input/output, saved project output dir, speaker reference paths, and the recorder's folder onto the current Rhetoric homes; the next save persists it. 4 new tests. The owner's live file still needs one GUI restart to pick the migration up (his GUI was open during this pass, so it was not hand-edited). | `4262a13` |
+| Cache assembly presented as a fresh render | **Fixed** | The render plan records `cache_hit_segments` / `segment_count` before dispatch; the completion log states either "no audio was synthesized in this run" or "reused N of M segments". A second deterministic render of the same plan is asserted to report `rendered_from_cache=1`. The stem-cache key was audited against every audio-changing input (text, speaker, reference hash, variant, backend, voice settings, engine version, seed) with a new sensitivity test; no gap was found — correction mode is covered because the key hashes the post-correction text. | `4262a13` |
+| Hybridized voices (GUI section, blend logic, settings, tooltips, wizard, tests) | **Removed entirely** | `audio/blend.py`, the blend voice catalog, `SpeakerSettings`/`VoiceProfile` blend fields, the cast-panel controls, the tooltip/wizard text, and the tests that pinned them are gone. Existing cast entries carrying blend fields still load: the loaders ignore the dropped keys. Non-hybrid cast management and rendering are unchanged (233 tests green across the affected modules). | `59999d6` |
+
+Additional bookkeeping commit: `49686ad` adjudicates the wheel guard's Qt
+readership pairs in the patch-couple policy and prunes the removed blend
+catalog's sanctioned split.
+
+## Earlier evidence carried forward
+
+- **Windows edition fix** (`3652354`, `78630fe`): the Inno Setup installer and
+  its launcher/edition behavior are qualified end to end — install smoke,
+  certification soak, and a fully offline install, activation, and render.
+- **Windows installed-product acceptance** (`17fdab9`, 2026-11-14): the
+  unsigned Inno Setup installer installed silently in 65.5 s, recorded an EULA
+  digest matching the installed text, created the Start Menu/uninstall entries,
+  and the frozen GUI reported `mainwindow_built` at 2.5 s with the `k2` license
+  valid and model prewarm successful; the Phase 4 acceptance set passed (104
+  tests) and ten consecutive six-theme certifications passed with no retries
+  ([record](WINDOWS_GUEST_ACCEPTANCE_1.5.0.md)).
+- **Rename purge** (`a98a307`, `86df7ee`, `a37c8b4`): package
+  `the_oracle` → `rhetoric`, `ORACLE_*` → `RHETORIC_*`, data-folder migration,
+  brand guard restored.
+- **Pins audit (report-only; owner's decision, pins unchanged):** the base
+  install resolves and `[ml]` alone resolves. `[chatterbox]` and
+  `[ml,chatterbox]` do **not** co-resolve today (`transformers==5.20.0` in
+  `[ml]` vs `chatterbox-tts 0.1.7` wanting `transformers==5.2.0`;
+  `Pillow>=13.0.0` vs `gradio 6.8.0` wanting `pillow<13`). The product's
+  managed install path (`manage_install`, chatterbox `--no-deps`,
+  hash-verified from the offline bundle) is unaffected and was proven end to
+  end in the 2026-11-11 airgap proof.
+- **Vulkan backend sound** (two independent renders): with a sane timeout the
+  script renders clean on the RX 5700 XT — exit 0, FLAC 24 kHz mono,
+  ~16.5–17.4 s. Per-utterance synthesis 1.9–3.6 s; audio.cpp subprocess
+  startup (2 GB GGUF load + RADV shader compile) ~10–14 s cold. Evidence
+  renders in `~/rhetoric-parallel-verify/`.
+- **Audio acceptance:** the owner's verdict "Those renders sound fine" covers
+  the ENGLISH corpus cases 1, 2, 3 and 6 only. Case 4 (CJK) and case 5
+  (Arabic) are **automated-metrics-only**; human listening review is
+  outstanding. The corpus must not be presented as fully human-reviewed.
 
 ## Acceptance still open
 
-1. Diagnose the failed Windows full-suite jobs and run the manual Windows
-   certifier fault-capture workflow.
-2. Install the frozen Linux AppImage and deb in fresh Ubuntu 24.04 containers
-   with only documented prerequisites. Exercise activation using a throwaway
-   test key, cold download/resume/offline/low-disk behavior, doctor, first
-   render, GUI, project save/reopen, settings persistence, update, rollback,
-   uninstall, and data-retention behavior.
-3. Verify the installed LGPL library-replacement path and document fulfillment
-   of source/replacement obligations.
-4. Complete the six-case production audio corpus and independent human review
-   described in [`REAL_AUDIO_ACCEPTANCE_1.5.0.md`](REAL_AUDIO_ACCEPTANCE_1.5.0.md).
-   Historical 1.4.2 outputs are not evidence for this candidate.
-5. Measure CPU real-time factor, peak RAM, and disk per audio hour; run the
-   100-cycle render/cancel/close soak; and record keyboard-only, high-DPI,
-   1366x768, theme contrast, and failure-path acceptance.
-6. Windows remains explicitly unsupported and excluded from the proposed paid
-   offer. CUDA and Vulkan remain experimental and are labeled that way in the
-   UI, documentation, CLI help, and EULA draft.
+1. **Installed-lifecycle qualification** on the frozen Linux AppImage and deb
+   in fresh Ubuntu 24.04 containers. Verified 2026-11-14: checksums, `.deb`
+   install, installed EULA digest, EULA click-through, the unlicensed activation
+   dialog, the inert main window after Cancel, uninstall, and the AppImage
+   extract-and-run start ([evidence](LINUX_FROZEN_ACCEPTANCE_1.5.0.md)). Still
+   open: activation with a production serial, cold download/resume/offline/
+   low-disk, doctor, first render, project save/reopen, settings persistence,
+   update, rollback, and the LGPL library swap. The container run also found
+   and fixed the missing `.deb` `Depends`; the rebuilt package needs re-checking.
+2. **Human listening review of corpus cases 4 (CJK) and 5 (Arabic).**
+3. **Data-cleanup follow-up (pending, GUI was open during this pass):** the
+   owner's GUI was running, so the remaining working material in the repo
+   `Output/` folder (`cache/`, `logs/`, `stems/`, `render_plan.json`) and the
+   legacy Documents folder were not moved into `render-work/`. The source-side
+   fix means new renders write there; moving the old material is a follow-up
+   once the GUI is closed.
+4. **Local suite re-record for the cleanup head:** blocked on 2026-11-14 by the
+   host GPU-driver wedge described above. The hosted count is recorded from run
+   43621773933; after a reboot the owner can re-derive it with
+   `scripts/certify_suite_counts.py --record <head>`.
+
 
 ## Owner-only decisions and actions
 
-1. Have qualified counsel review the EULA and proposed license decisions,
-   including whether the no-refund term is enforceable with the payment
-   processor and across relevant jurisdictions. Keep the draft marker until
-   approval.
-2. Confirm production signing-key custody in the secret manager and remove the
-   owner's local seed copy at `~/.config/the-oracle/license-signing-seed`.
-   No production seed was generated, displayed, or used in this work.
-3. Have an independent human reviewer listen to exact final-head outputs and
-   record reviewer, date, commit, intelligibility, speaker assignment,
-   transitions, pauses, clipping/silence, usability, and defects. The verdict
-   must remain **PENDING** until supplied by that reviewer.
-4. Confirm the old repository is deleted or private and whether forks remain;
-   remove old local clones and the private recovery bundle when no longer
-   needed.
-5. Authorize publication only after all engineering and commercial gates pass.
+1. **Dependency pins:** the `[chatterbox]` / `[ml,chatterbox]` co-resolution
+   conflict above is a product decision; pins were not changed.
+2. **Storefront:** Lemon Squeezy store creation remains blocked (bot-walled;
+   support ticket pending). No payment path ships in this repository.
+3. **v1.5.0 tag and publish:** explicitly the owner's decision. This pass
+   pushed commits only.
+4. **Publication** of the GitHub release and any store listing.
+5. Whether the owner's ~62 MB of reference WAVs stay in the public history
+   (left untouched).
 
 Ordinary branch push is authorized; history rewriting and publication are not.

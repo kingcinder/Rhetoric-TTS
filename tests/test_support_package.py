@@ -14,8 +14,8 @@ from pathlib import Path
 
 import pytest
 
-from the_oracle import crash, support
-from the_oracle import support_bundle
+from rhetoric import crash, support
+from rhetoric import support_bundle
 
 
 def _root(tmp_path: Path) -> Path:

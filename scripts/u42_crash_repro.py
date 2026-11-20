@@ -31,14 +31,14 @@ REPO2 = Path(sys.argv[2]) if len(sys.argv) > 2 else None
 
 from unittest.mock import patch  # noqa: E402
 
-from the_oracle import pipeline as pipeline_mod  # noqa: E402
-from the_oracle.smoke import (  # noqa: E402
+from rhetoric import pipeline as pipeline_mod  # noqa: E402
+from rhetoric.smoke import (  # noqa: E402
     _DeterministicChatterboxEngine,
     _SmokeEmotionClassifier,
     _write_reference,
 )
-from the_oracle.app_paths import ensure_repo_default_paths  # noqa: E402
-from the_oracle.crash import handlers as crash_handlers  # noqa: E402
+from rhetoric.app_paths import ensure_repo_default_paths  # noqa: E402
+from rhetoric.crash import handlers as crash_handlers  # noqa: E402
 
 
 def wait_until(pred, timeout_s: float, what: str) -> None:
@@ -92,15 +92,15 @@ def write_input(path: Path) -> None:
 
 
 def build_window(repo: Path):
-    import the_oracle.app_gui as app_gui
+    import rhetoric.app_gui as app_gui
 
     # Pre-seed crash-report consent at the repo root (the U1 contract: consent
     # is the only gate on the faulthandler net) so the candidate-state passes
     # run with native-crash capture LIVE, exactly like the fatal real session.
-    from the_oracle.crash import consent as crash_consent
+    from rhetoric.crash import consent as crash_consent
 
     crash_consent.write_consent(repo, True)
-    from the_oracle.crash import handlers as crash_handlers
+    from rhetoric.crash import handlers as crash_handlers
 
     # Mirror what a consented launch is supposed to do (design §3): arm the
     # native net for this scripted session.
@@ -252,7 +252,7 @@ def force_in_process_workers() -> None:
     other piece of the choreography real: the QThread workers, their signal
     wiring, and the GUI-side slots.
     """
-    import the_oracle.gui_render as gui_render
+    import rhetoric.gui_render as gui_render
 
     orig_render_init = gui_render.RenderWorker.__init__
 
@@ -274,7 +274,7 @@ def force_in_process_workers() -> None:
 def auto_dismiss_modals() -> None:
     """Auto-answer every QMessageBox so a failure modal can't deadlock the
     scripted session (a modal exec spins its own loop and never returns)."""
-    import the_oracle.app_gui as app_gui
+    import rhetoric.app_gui as app_gui
     from PySide6.QtWidgets import QMessageBox
 
     def answer(name, ret):
@@ -290,6 +290,15 @@ def auto_dismiss_modals() -> None:
     app_gui.QMessageBox.information = staticmethod(answer("information", ok))
     app_gui.QMessageBox.warning = staticmethod(answer("warning", ok))
     QMessageBox.exec = lambda self, *a, **k: (print("[modal] exec auto-dismissed", flush=True), ok)[1]
+    # The startup crash-review is a QDialog, not a QMessageBox — it slipped
+    # this net and hung the driver on its modal exec() in the Windows guest
+    # on 2026-11-09 (py-spy: MainThread parked in run_next_session_review).
+    # This driver exists to create crash records, so the review fires on
+    # every window it builds. Returning Rejected leaves the review's verdict
+    # at its 'dismissed' default.
+    from PySide6.QtWidgets import QDialog
+
+    QDialog.exec = lambda self, *a, **k: (print("[modal] dialog exec auto-dismissed", flush=True), 0)[1]
 
 
 def main() -> int:

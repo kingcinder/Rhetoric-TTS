@@ -23,7 +23,7 @@ Usage:
 The slice file format (``#`` starts a comment; blank lines are skipped):
 
     # --- <slice title shown in the summary> ---
-    src/the_oracle/gui_vulkan.py
+    src/rhetoric/gui_vulkan.py
     tests/test_gui_vulkan_owner.py
     ! QT_QPA_PLATFORM=offscreen .venv/bin/python -m pytest tests/test_gui_vulkan_owner.py -q
     >> Commit message body line one.

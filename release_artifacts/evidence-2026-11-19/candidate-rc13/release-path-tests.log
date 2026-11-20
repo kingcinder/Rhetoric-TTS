@@ -1,0 +1,5 @@
+Command:
+.venv/bin/python -m pytest -q tests/test_frozen_linux_packaging.py tests/test_offline_bundle.py tests/test_offline_linux_kit.py tests/test_install_boundary.py tests/test_release.py tests/test_licensing_store.py tests/test_eula_acceptance.py tests/test_linux_entrypoint.py tests/test_sign_release_artifact.py tests/test_recorder.py tests/test_recording_studio.py
+
+Result: 176 passed in 26.61s.
+Execution note: GPG-backed tests used only temporary pytest keys in /tmp under the temporary fixture GNUPGHOME. No production key was used. This is source-regression evidence and does not replace exact-candidate installation/runtime evidence.

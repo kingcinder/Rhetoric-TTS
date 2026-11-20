@@ -1,0 +1,7 @@
+COMMAND: /media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/bin/python scripts/generate_third_party_notices.py --check
+EXIT: 0
+
+STDOUT:
+Third-party notices are current (118 components).
+
+STDERR:

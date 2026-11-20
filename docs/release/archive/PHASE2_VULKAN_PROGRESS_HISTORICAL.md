@@ -8,7 +8,7 @@
 - `scripts/package_vulkan_binary.py` packages the CI-built
   `audiocpp_cli` as an unsigned Linux x86_64 tarball and records the pinned
   commit, size, and SHA-256 in `audiocpp-vulkan-manifest.json`.
-- `the_oracle.vulkan_prebuilt.install_from_manifest` verifies the archive hash,
+- `rhetoric.vulkan_prebuilt.install_from_manifest` verifies the archive hash,
   rejects path traversal and symlinks, and installs the executable only after
   verification. A changed archive is refused.
 - `download_and_install` and `scripts/install_vulkan_prebuilt.py` fetch the

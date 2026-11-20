@@ -1,0 +1,14 @@
+# Post-microphone CPU/Vulkan dialogue rerenders (owner-confirmed, host run)
+
+These four files were regenerated after the Recording Studio microphone fix and the owner confirming the microphones enumerate and record properly, through the exact RC13 installed frozen GUI RenderWorker on the host (installed /usr/bin/rhetoric, offline model caches, HF_HUB_OFFLINE=1, TRANSFORMERS_OFFLINE=1). Each backend/case used a fresh independent render-work directory; all four reports show zero cache hits. Every output fully decodes as mono 24 kHz signed 16-bit FLAC. CPU/Vulkan parity is exact for selected current Input path/hash, turns, speaker labels, and reference audio hashes. Human listening has not been performed.
+
+| Case | Backend | Output | Duration | SHA-256 | Device |
+|---|---|---|---:|---|---|
+| 2speaker | cpu | [rc13-micconfirmed-20261120-2speaker-cpu-7341.flac](/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/release_artifacts/evidence-2026-11-20/candidate-rc13/rerun-microphone-owner-confirmed-20261120/2speaker/cpu/rc13-micconfirmed-20261120-2speaker-cpu-7341.flac) | 13.10s | `8b68e6c61c4953a4b791f58f1245676a0524a6efaa4cb739f08ce8423b1011cb` | CPU / system DRAM |
+| 2speaker | vulkan | [rc13-micconfirmed-20261120-2speaker-vulkan-7342.flac](/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/release_artifacts/evidence-2026-11-20/candidate-rc13/rerun-microphone-owner-confirmed-20261120/2speaker/vulkan/rc13-micconfirmed-20261120-2speaker-vulkan-7342.flac) | 10.58s | `c022bb66344cc8fa7bdc5809721d5ab33ac9bcf390cbcd16514d70aa1e5f36e7` | AMD Radeon RX 5700 XT (RADV NAVI10) |
+| 3speaker | cpu | [rc13-micconfirmed-20261120-3speaker-cpu-7441.flac](/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/release_artifacts/evidence-2026-11-20/candidate-rc13/rerun-microphone-owner-confirmed-20261120/3speaker/cpu/rc13-micconfirmed-20261120-3speaker-cpu-7441.flac) | 21.22s | `dec9f0877e31aee0b7425d36c34ab47c946bb66f7150d36ea7a83cdbfd830f8f` | CPU / system DRAM |
+| 3speaker | vulkan | [rc13-micconfirmed-20261120-3speaker-vulkan-7442.flac](/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/release_artifacts/evidence-2026-11-20/candidate-rc13/rerun-microphone-owner-confirmed-20261120/3speaker/vulkan/rc13-micconfirmed-20261120-3speaker-vulkan-7442.flac) | 16.14s | `b0c2ee0de3b505ae9d04df10ca88fb74b94b2f1fc673be4ca0be946996c8f710` | AMD Radeon RX 5700 XT (RADV NAVI10) |
+
+Casting: A = Cody1; B = Fransisco Monster Edited; C = Christopher2. The 2-speaker case uses A/B. The 3-speaker case uses only A/B/C (six turns) from the current `Input/Release_Qualification_5Speaker_Test_File.txt`; no D/E turns or voices were rendered.
+
+Input path/hash, every selected line/text, casting reference path/hash, device label, synthesis timing, output hash/size, FLAC metadata, full-decode status, cache status, and source candidate are recorded in each backend directory as `render-record.json`. CPU/Vulkan parity evidence is `cpu-vulkan-parity.json`.

@@ -1,0 +1,14 @@
+start=2026-11-17T07:59:39.318526-08:00
+command=['sha256sum', '-c', 'SHA256SUMS']
+finish=2026-11-17T08:00:01.674448-08:00
+exit_code=0
+Chatterbox-GGUF/chatterbox-q8_0.gguf: OK
+MODEL_NOTICES.md: OK
+THIRD_PARTY_LICENSES/ResembleAI-Chatterbox-MIT.txt: OK
+hf_cache/models--ResembleAI--chatterbox/refs/main: OK
+hf_cache/models--ResembleAI--chatterbox/snapshots/5bb1f6ee58e50c3b8d408bc82a6d3740c2db6e18/conds.pt: OK
+hf_cache/models--ResembleAI--chatterbox/snapshots/5bb1f6ee58e50c3b8d408bc82a6d3740c2db6e18/s3gen.safetensors: OK
+hf_cache/models--ResembleAI--chatterbox/snapshots/5bb1f6ee58e50c3b8d408bc82a6d3740c2db6e18/t3_cfg.safetensors: OK
+hf_cache/models--ResembleAI--chatterbox/snapshots/5bb1f6ee58e50c3b8d408bc82a6d3740c2db6e18/tokenizer.json: OK
+hf_cache/models--ResembleAI--chatterbox/snapshots/5bb1f6ee58e50c3b8d408bc82a6d3740c2db6e18/ve.safetensors: OK
+manifest.json: OK

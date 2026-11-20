@@ -1,7 +1,7 @@
 # Phase 0 Baseline — Rhetoric 1.5.0
 
 Date: 2026-10-25  
-Canonical checkout: `/media/cody/Data/DOCUMENTS_PROJECT_FILES/the oracle tts`  
+Canonical checkout: `/media/USER/Data/DOCUMENTS_PROJECT_FILES/Rhetoric tts`  
 Branch: `release/1.5.0-final`  
 Base commit: `93a55d4` (`main`)
 
@@ -12,8 +12,10 @@ Base commit: `93a55d4` (`main`)
 - The checked-in `.venv` runs through its Python binary; generated wrappers
   have a stale absolute shebang, so verification used the interpreter directly.
 - Initial source inventory: 445 tracked files, 30,831 Python LOC under `src`,
-  and 169 `test_*.py` files. The user-excluded `Seashells/` area was not
-  inventoried or inspected.
+  and 169 `test_*.py` files. The `Seashells/` area was not inventoried or
+  inspected in that run. Its characterization as "user-excluded" was wrong;
+  the owner clarified on 2026-11-17 that it is not protected or categorically
+  excluded. See [project authority](../PROJECT_AUTHORITY.md).
 - Initial working tree was clean on `main`; `release/1.5.0-final` was created
   from `93a55d4`.
 

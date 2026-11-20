@@ -1,6 +1,6 @@
 """The cache sweep: maintenance counterpart of the servable-stem gate.
 
-The read-side gate (:func:`the_oracle.pipeline._load_servable_stem`) deletes a
+The read-side gate (:func:`rhetoric.pipeline._load_servable_stem`) deletes a
 degenerate entry when a render reads it. But entries sit in project caches
 between renders, and an operator may want the cache clean *now*:
 ``sweep_project_cache`` (and the ``sweep-cache`` CLI command) classifies every
@@ -30,10 +30,11 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from the_oracle.audio.assemble import save_wav
-from the_oracle.cli import build_parser, handle_sweep_cache
-from the_oracle.models.cache import ProjectCache
-from the_oracle.pipeline import _write_pause_only_stem, sweep_project_cache
+from rhetoric.audio.assemble import save_wav
+from rhetoric.cli import build_parser, handle_sweep_cache
+from rhetoric.app_paths import render_project_dir
+from rhetoric.models.cache import ProjectCache
+from rhetoric.pipeline import _write_pause_only_stem, sweep_project_cache
 
 
 RATE = 24000
@@ -87,6 +88,21 @@ class TestSweepVerdicts:
 
         assert report["scanned"] == 0 and report["purged"] == 0
         assert "nothing to sweep" in report["cache_missing_warning"]
+
+    def test_a_file_where_the_stem_cache_dir_belongs_warns_instead_of_crashing(
+        self, tmp_path: Path
+    ) -> None:
+        """A corrupt layout used to reach ProjectCache's mkdir and raise
+        FileExistsError from the sweep."""
+        project = tmp_path / "proj"
+        (project / "cache").mkdir(parents=True)
+        (project / "cache" / "utterances").write_bytes(b"not a directory")
+
+        report = sweep_project_cache(project, apply=True)
+
+        assert report["scanned"] == 0 and report["purged"] == 0
+        assert "not a directory" in report["cache_missing_warning"]
+        assert (project / "cache" / "utterances").is_file(), "the warning must not delete it"
 
 
 class TestPauseAmbiguity:
@@ -190,16 +206,16 @@ def test_sweep_purge_list_is_exactly_the_resynthesis_set(tmp_path: Path) -> None
     work exactly.
     """
     from tests.test_synthesis_retry_visibility import _seeded_determinism_render
-    from the_oracle.smoke import _DeterministicChatterboxEngine
+    from rhetoric.smoke import _DeterministicChatterboxEngine
 
     plan_a, _events, _out, stems_a = _seeded_determinism_render(tmp_path, "sweep_e2e", _DeterministicChatterboxEngine)
-    cache = ProjectCache(plan_a.output_dir)
+    cache = ProjectCache(render_project_dir(plan_a.source_path))
 
     victim_hash = sorted(stems_a)[0]
     victim_path = cache.stem_cache_dir / f"{victim_hash}.wav"
     save_wav(victim_path, np.zeros(28800, dtype=np.float32), RATE)  # plant non-canonical silence
 
-    report = sweep_project_cache(plan_a.output_dir, expected_sample_rate=RATE, apply=True)
+    report = sweep_project_cache(render_project_dir(plan_a.source_path), expected_sample_rate=RATE, apply=True)
     assert report["purged_hashes"] == [victim_hash], "exactly the planted entry is reported"
 
     _plan_b, _events, _out, stems_b = _seeded_determinism_render(tmp_path, "sweep_e2e", _DeterministicChatterboxEngine)
@@ -217,7 +233,7 @@ def test_stem_cache_dir_helper_cannot_drift_from_the_constructor_layout() -> Non
     """The sweep probes existence via the no-mkdir static helper; if that
     path ever drifted from ProjectCache.__init__'s layout, real caches would
     report "missing" and the drift would only surface in the slow e2e."""
-    from the_oracle.models.cache import ProjectCache as _PC
+    from rhetoric.models.cache import ProjectCache as _PC
 
     # The helper side never touches the filesystem; the constructor side
     # creates its layout under /tmp (disposable scratch), which is exactly

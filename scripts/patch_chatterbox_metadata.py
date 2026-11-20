@@ -1,4 +1,4 @@
-"""Align Chatterbox metadata with the audited Oracle runtime stack."""
+"""Align Chatterbox metadata with the audited Rhetoric runtime stack."""
 
 from __future__ import annotations
 
@@ -16,6 +16,8 @@ _REQUIREMENT_UPDATES = {
     "transformers==5.2.0": "transformers==5.20.0",
     "diffusers==0.29.0": "diffusers==0.38.0",
     "safetensors==0.5.3": "safetensors==0.8.0",
+    'torch==2.6.0; python_version < "3.14"': 'torch==2.15.0; python_version < "3.14"',
+    'torchaudio==2.6.0; python_version < "3.14"': 'torchaudio==2.11.1; python_version < "3.14"',
 }
 
 
@@ -23,8 +25,8 @@ def _replace_metadata(path: Path) -> None:
     metadata_path = path / "METADATA"
     text = metadata_path.read_text(encoding="utf-8")
     if "Version: 0.1.7\n" in text:
-        text = text.replace("Version: 0.1.7\n", "Version: 0.1.7+oracle1\n", 1)
-    elif "Version: 0.1.7+oracle1\n" not in text:
+        text = text.replace("Version: 0.1.7\n", "Version: 0.1.7+rhetoric1\n", 1)
+    elif "Version: 0.1.7+rhetoric1\n" not in text:
         raise ValueError(f"unexpected Chatterbox version metadata in {metadata_path}")
 
     for old, new in _REQUIREMENT_UPDATES.items():
@@ -42,7 +44,7 @@ def _replace_metadata(path: Path) -> None:
     text = "".join(
         line
         for line in text.splitlines(keepends=True)
-        # The shipped Oracle uses its Qt UI; Chatterbox's Gradio demo is unused.
+        # The shipped Rhetoric uses its Qt UI; Chatterbox's Gradio demo is unused.
         if not line.startswith(("Requires-Dist: pykakasi", "Requires-Dist: gradio"))
     )
 

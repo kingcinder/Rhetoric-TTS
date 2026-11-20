@@ -1,8 +1,8 @@
 """Shared pytest fixtures for Rhetoric's test suite.
 
-Two jobs live here. :func:`_restore_oracle_env` is an autouse fixture that makes
-``ORACLE_*`` environment variables a per-test sandbox: without it, a test that (or
-whose code under test) writes ``ORACLE_AUDIOCPP_MODEL`` / ``ORACLE_AUDIOCPP_CLI``
+Two jobs live here. :func:`_restore_rhetoric_env` is an autouse fixture that makes
+``RHETORIC_*`` environment variables a per-test sandbox: without it, a test that (or
+whose code under test) writes ``RHETORIC_AUDIOCPP_MODEL`` / ``RHETORIC_AUDIOCPP_CLI``
 straight into ``os.environ`` silently changes the state every later test sees —
 the classic cross-file pollution that made ``test_vulkan_backend.py`` fail only
 when suites ran together.
@@ -16,6 +16,7 @@ pass).
 from __future__ import annotations
 
 import ast
+import faulthandler
 import inspect
 import io
 import os
@@ -57,32 +58,32 @@ def _licensed_gui_operations_for_functional_tests(request, monkeypatch):
     }
     if request.module.__name__.rsplit(".", 1)[-1] in gate_tests:
         return
-    from the_oracle.licensing.tokens import LicenseStatus
+    from rhetoric.licensing.tokens import LicenseStatus
 
     monkeypatch.setattr(
-        sys.modules["the_oracle.licensing"],
+        sys.modules["rhetoric.licensing"],
         "current_license",
         lambda *_args, **_kwargs: LicenseStatus(
             ok=True, state="valid", licensee="GUI test", key_id="ktest"
         ),
     )
 
-_ORACLE_ENV_PREFIX = "ORACLE_"
+_RHETORIC_ENV_PREFIX = "RHETORIC_"
 
 #: Every skip reported this session, in the order pytest reports them.
 _SKIPS: list[skip_audit.SkipRecord] = []
 
 
 @pytest.fixture(autouse=True)
-def _restore_oracle_env():
-    """Snapshot and restore every ``ORACLE_*`` environment variable per test.
+def _restore_rhetoric_env():
+    """Snapshot and restore every ``RHETORIC_*`` environment variable per test.
 
     ``monkeypatch`` alone cannot guarantee a clean session env: it only
     restores the keys a test *explicitly* patched, whereas the code under test
     (``vulkan_setup.run_vulkan_setup``, the GUI's Vulkan handlers) writes
-    ``ORACLE_AUDIOCPP_MODEL`` / ``ORACLE_AUDIOCPP_CLI`` directly into
+    ``RHETORIC_AUDIOCPP_MODEL`` / ``RHETORIC_AUDIOCPP_CLI`` directly into
     ``os.environ`` — and tests exercise that code. This fixture therefore
-    snapshots the whole ``ORACLE_*`` set before every test and restores it in
+    snapshots the whole ``RHETORIC_*`` set before every test and restores it in
     teardown: values changed are put back, keys deleted are re-added, and keys
     created during the test are removed. Tests can never leak session state
     (e.g. a downloaded model path) into a later test or suite.
@@ -90,19 +91,31 @@ def _restore_oracle_env():
     saved = {
         key: value
         for key, value in os.environ.items()
-        if key.startswith(_ORACLE_ENV_PREFIX)
+        if key.startswith(_RHETORIC_ENV_PREFIX)
     }
     yield
     # Walk the union of saved and current keys: a key created by the test is
     # popped, a changed key is put back, and a pre-existing key that the test
     # *deleted* (absent from the current env, so a walk of os.environ alone
     # would never see it) is re-added.
-    for key in set(saved) | {key for key in os.environ if key.startswith(_ORACLE_ENV_PREFIX)}:
+    for key in set(saved) | {key for key in os.environ if key.startswith(_RHETORIC_ENV_PREFIX)}:
         if key in saved:
             if os.environ.get(key) != saved[key]:
                 os.environ[key] = saved[key]
         else:
             os.environ.pop(key, None)
+
+
+@pytest.fixture(autouse=True)
+def _isolate_render_work(tmp_path, monkeypatch):
+    """Give every test its own render-work home.
+
+    Renders write stems, cache, logs, previews and render_plan.json into the
+    app's render-work directory. Without this, a test render would write into
+    the developer's real ``~/.local/share/rhetoric/render-work`` (or, before
+    the layout fix, into a tmp output folder the test also inspects).
+    """
+    monkeypatch.setenv("RHETORIC_RENDER_WORK", str(tmp_path / "render-work"))
 
 
 # --- standalone Qt app-fixture guard ----------------------------------------
@@ -352,6 +365,65 @@ def pytest_sessionstart(session) -> None:
     _SKIPS.clear()
 
 
+# --- native-fault diagnostics -------------------------------------------------
+
+#: Last-resort descriptor if pytest's own saved stderr is unavailable (e.g.
+#: ``-p no:faulthandler``). Never assume this is the terminal: by the time
+#: conftest is imported pytest's global capture may already have replaced fd 2.
+_NATIVE_FAULT_FD = os.dup(2)
+
+
+def _fault_report_fd(config) -> int:
+    """The descriptor pytest's faulthandler writes its first dump to.
+
+    pytest's plugin duplicates the real stderr in ``pytest_configure`` --
+    before per-test capture can redirect it -- and stashes the descriptor. A
+    dump written to ``sys.stderr`` during a test lands in the capture file and
+    dies with the process that was supposed to report it (measured: a
+    deliberately disarmed run re-armed against fd 2 still uploaded no stack).
+    """
+    try:
+        from _pytest.faulthandler import fault_handler_stderr_fd_key
+
+        fd = config.stash.get(fault_handler_stderr_fd_key, None)
+        if isinstance(fd, int):
+            return fd
+    except Exception:  # noqa: BLE001 - a pytest without that plugin still runs
+        pass
+    return _NATIVE_FAULT_FD
+
+
+def arm_faulthandler_if_disabled(config) -> bool:
+    """Re-arm the process-wide native-fault handler; return whether we did.
+
+    ``rhetoric.crash.handlers.disable_faulthandler_catch`` calls
+    ``faulthandler.disable()``, which is right for the app (consent off must
+    mean no capture) but affects the whole process. The crash-handler tests run
+    at about 19% of the suite, so before this existed every later test -- every
+    GUI test that builds and destroys real windows included -- ran unarmed. The
+    hosted py3.11 leg died at 88% with a SIGSEGV whose uploaded ``pytest.txt``
+    stopped mid-line and carried no stack at all: this is why.
+    """
+    if faulthandler.is_enabled():
+        return False
+    faulthandler.enable(file=_fault_report_fd(config))
+    return True
+
+
+@pytest.fixture(autouse=True)
+def _keep_faulthandler_armed(request):
+    """Keep the native-fault dump available to every test.
+
+    Runs before each test and again after it returns, so a crash in another
+    fixture's teardown is covered too. A test that disarms the handler on
+    purpose (the crash-consent ones) re-arms at the next boundary instead of
+    silently removing the diagnostic from the rest of the run.
+    """
+    arm_faulthandler_if_disabled(request.config)
+    yield
+    arm_faulthandler_if_disabled(request.config)
+
+
 # --- window lifetime ----------------------------------------------------------
 
 
@@ -381,8 +453,8 @@ def destroy_leftover_main_windows(app=None) -> None:
     app = app or QApplication.instance()
     if app is None:
         return
-    from the_oracle.app_gui import MainWindow
-    from the_oracle.inference_wizard import InferenceSetupWizard
+    from rhetoric.app_gui import MainWindow
+    from rhetoric.inference_wizard import InferenceSetupWizard
 
     leftovers = [
         w
@@ -482,6 +554,9 @@ _REAL_REPO_MODULES = frozenset({
     "test_gui_sections_chrome.py",
     "test_gui_theme_certification.py",
     "test_theme_switch_certification.py",
+    # These tests create temporary pytest modules directly under tests/ while
+    # the hermeticity certifier snapshots the same checkout.
+    "test_qt_standalone_guard.py",
 })
 
 
@@ -489,3 +564,14 @@ def pytest_collection_modifyitems(items) -> None:
     for item in items:
         if item.path.name in _REAL_REPO_MODULES:
             item.add_marker(pytest.mark.xdist_group("real_repo_tree"))
+
+
+def pytest_itemcollected(item) -> None:
+    # xdist decides loadgroup placement from the marks present when ITS
+    # collection hooks run; marks added in pytest_collection_modifyitems
+    # land too late and the grouping silently never happened (proven by
+    # worker spread: group members ran on gw0..gw3 simultaneously and
+    # raced through the shared repo tree / settings store). Applying the
+    # same mark at item-collected time puts it in front of xdist.
+    if item.path.name in _REAL_REPO_MODULES:
+        item.add_marker(pytest.mark.xdist_group("real_repo_tree"))

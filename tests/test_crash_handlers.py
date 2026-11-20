@@ -18,8 +18,8 @@ import pytest
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
-from the_oracle import crash  # noqa: E402
-from the_oracle.crash import bundle, consent, handlers  # noqa: E402
+from rhetoric import crash  # noqa: E402
+from rhetoric.crash import bundle, consent, handlers  # noqa: E402
 
 LOG_FILE = "fake.log"
 
@@ -27,11 +27,18 @@ LOG_FILE = "fake.log"
 @pytest.fixture()
 def wired(tmp_path: Path, monkeypatch):
     """Install handlers against a sandbox root with a tiny fake log."""
+    # A previous test may have armed consented capture in this worker. Close
+    # that process-global file before replacing its root with this test's.
+    handlers.disable_faulthandler_catch()
+    sys.excepthook = sys.__excepthook__
+    threading.excepthook = threading.__excepthook__
+    handlers._STATE.clear()
     log_path = tmp_path / LOG_FILE
     log_path.write_text("INFO | line one\nINFO | line two\n", encoding="utf-8")
     handlers.install(root=tmp_path, log_file=log_path)
     yield tmp_path
     # Restore the real hooks no matter what the test did.
+    handlers.disable_faulthandler_catch()
     sys.excepthook = sys.__excepthook__
     threading.excepthook = threading.__excepthook__
     handlers._STATE.clear()
@@ -101,13 +108,13 @@ def test_threading_hook_captures_with_thread_name(wired: Path) -> None:
     except RuntimeError:
         args = threading.ExceptHookArgs(
             (RuntimeError, RuntimeError("thread boom"), sys.exc_info()[2],
-             threading.Thread(target=lambda: None, name="oracle-worker")),
+             threading.Thread(target=lambda: None, name="rhetoric-worker")),
         )
     handlers._threading_excepthook(args)
     records = crash.list_records(wired)
     assert len(records) == 1
     record = json.loads(records[0].read_text(encoding="utf-8"))
-    assert record["thread"] == "oracle-worker"
+    assert record["thread"] == "rhetoric-worker"
     assert record["exception"]["message"] == "thread boom"
 
 
@@ -150,6 +157,35 @@ def test_arm_native_capture_fails_closed_without_consent(wired: Path) -> None:
     assert handlers.arm_native_capture() is False
     assert handlers._STATE.get("native_dump_handle") is None
     assert not (wired / "crash_reports").exists()
+
+
+def test_the_harness_rearms_the_faulthandler_the_app_path_disarms(
+    wired: Path, pytestconfig
+) -> None:
+    """Consent teardown is process-global; the suite must undo it.
+
+    ``disable_faulthandler_catch`` is right for the app and wrong for a test
+    process that keeps running: every later test lost native-fault
+    diagnostics, and the hosted py3.11 leg's 88% SIGSEGV consequently uploaded
+    a ``pytest.txt`` with no stack in it. ``tests/conftest.py`` re-arms at each
+    test boundary; this drives that helper directly so the guarantee cannot
+    disappear with nobody noticing.
+    """
+    import faulthandler
+
+    from tests import conftest
+
+    consent.write_consent(wired, True)
+    assert handlers.enable_faulthandler_catch(wired) is True
+    handlers.disable_faulthandler_catch()
+    assert faulthandler.is_enabled() is False, (
+        "the app-path teardown disarms the shared process handler"
+    )
+
+    assert conftest.arm_faulthandler_if_disabled(pytestconfig) is True
+    assert faulthandler.is_enabled() is True
+    # Already armed: a second call is a no-op, not a second handler.
+    assert conftest.arm_faulthandler_if_disabled(pytestconfig) is False
 
 
 def test_arm_native_capture_arms_and_is_idempotent(wired: Path) -> None:

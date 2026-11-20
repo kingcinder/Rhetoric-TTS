@@ -1,0 +1,8 @@
+start=2026-11-17T08:22:16.349149-08:00
+finish=2026-11-17T08:22:51.248329-08:00
+kit=/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/release_artifacts/linux-rc-b9ee597/kit
+source_commit=b9ee5979757d3d731c4189c3b53a2069405bb8a
+files=116
+app_sha256=ac5d69f7a96a0498ad8e6d8c6eeff8dd02474dc3db234b5889e944f11ffbe759
+sbom_sha256=46f508b042fe34b4a60039bb70ecc9887996418543fce23ce465fbbec75764c1
+sha_entries=116

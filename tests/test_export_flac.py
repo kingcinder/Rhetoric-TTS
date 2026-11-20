@@ -3,9 +3,9 @@ from pathlib import Path
 import numpy as np
 import soundfile as sf
 
-from the_oracle.audio.export_flac import next_available_output_path, write_flac
-from the_oracle.audio.flac_tags import read_vorbis_comments, write_vorbis_comments
-from the_oracle.audio.flac_tags import _read_blocks, _read_u32
+from rhetoric.audio.export_flac import next_available_output_path, write_flac
+from rhetoric.audio.flac_tags import read_vorbis_comments, write_vorbis_comments
+from rhetoric.audio.flac_tags import _read_blocks, _read_u32
 
 
 def test_next_available_output_path_uses_desktop_suffixes(tmp_path: Path) -> None:
@@ -20,11 +20,11 @@ def test_next_available_output_path_uses_desktop_suffixes(tmp_path: Path) -> Non
 
 def test_write_flac_does_not_overwrite_existing_output(tmp_path: Path) -> None:
     audio = np.linspace(-0.1, 0.1, num=2400, dtype=np.float32)
-    first = write_flac(tmp_path / "oracle.flac", audio, 24000, {"title": "First"})
-    second = write_flac(tmp_path / "oracle.flac", audio, 24000, {"title": "Second"})
+    first = write_flac(tmp_path / "rhetoric.flac", audio, 24000, {"title": "First"})
+    second = write_flac(tmp_path / "rhetoric.flac", audio, 24000, {"title": "Second"})
 
-    assert first == tmp_path / "oracle.flac"
-    assert second == tmp_path / "oracle (1).flac"
+    assert first == tmp_path / "rhetoric.flac"
+    assert second == tmp_path / "rhetoric (1).flac"
     assert first.exists()
     assert second.exists()
 
@@ -71,7 +71,7 @@ def test_new_files_use_rhetoric_vendor_and_read_legacy_vendor_files(tmp_path: Pa
     length, offset = _read_u32(payload, 0)
     assert payload[offset : offset + length].decode("utf-8") == "Rhetoric"
 
-    legacy = b"The Oracle"
+    legacy = b"Rhetoric"
     old_payload = len(legacy).to_bytes(4, "little") + legacy + payload[offset + length :]
     legacy_blocks, audio = _read_blocks(destination.read_bytes())
     output = bytearray(b"fLaC")

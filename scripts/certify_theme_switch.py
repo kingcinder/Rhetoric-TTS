@@ -52,6 +52,14 @@ structure, stylesheet inventory, and safe polling ownership, but does not
 install event filters or claim event-fan-out measurements. The report labels
 those measurements as unavailable.
 
+Headless platforms (``offscreen``/``minimal``) are a different split: the
+product polls there too (``gui_tooltips._use_event_filters``), so the
+product-filter term certifies in its polling form — but this script's own
+counter is installed and the fan-out measurements stay live. The verdicts
+therefore key fan-out on ``instrumented`` (the counter was installed) and
+the product-filter term on ``safe_polling_mode``, never on one proxy for
+both.
+
 Scope, stated plainly: this certifies the *scope* across the real storm, which
 the unit tests cannot — they drive ``apply_theme`` with a duck-typed app stand-in
 and a synthetic event, so no real Qt fan-out is involved. That the filter's own
@@ -60,7 +68,7 @@ branches are skipped belongs to
 which is where the line-by-line contract lives.
 
 Writes nothing: the app config root is redirected to a throwaway before any
-``the_oracle`` import, and the window's default paths are drained into it, so the
+``rhetoric`` import, and the window's default paths are drained into it, so the
 settings rewrites and the ``Output/logs`` timing writes land there. That
 directory is removed again on every exit path (``main``'s window teardown plus
 the ``atexit`` hook ``scripts/certifier_isolation.py`` registers with the root),
@@ -80,17 +88,17 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 # Offscreen before Qt is imported, and the throwaway config root before any
-# the_oracle import (both must precede their readers, not merely be intended).
+# rhetoric import (both must precede their readers, not merely be intended).
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 # The throwaway root, its environment redirect and the reap that covers every
 # exit path are the certifier family's shared preamble — policy, retries and the
 # measurements behind them in scripts/certifier_isolation.py. The one rule that
-# stays at this call site is the order: above any the_oracle import.
+# stays at this call site is the order: above any rhetoric import.
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from certifier_isolation import isolated_config_root, reap_isolated_root  # noqa: E402
 
-_CONFIG_ROOT = isolated_config_root("oracle_theme_switch_cfg_")
+_CONFIG_ROOT = isolated_config_root("rhetoric_theme_switch_cfg_")
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT / "src"))
@@ -98,18 +106,18 @@ sys.path.insert(0, str(REPO_ROOT / "src"))
 from PySide6.QtCore import QCoreApplication, QEvent, QObject, qInstallMessageHandler  # noqa: E402
 from PySide6.QtWidgets import QApplication, QWidget  # noqa: E402
 
-from the_oracle import app_gui as _app_gui  # noqa: E402
-from the_oracle import gui_tooltips  # noqa: E402
-from the_oracle.app_gui import MainWindow  # noqa: E402
-from the_oracle.app_paths import ensure_repo_default_paths  # noqa: E402
-from the_oracle.gui_themes import (  # noqa: E402
+from rhetoric import app_gui as _app_gui  # noqa: E402
+from rhetoric import gui_tooltips  # noqa: E402
+from rhetoric.app_gui import MainWindow  # noqa: E402
+from rhetoric.app_paths import ensure_repo_default_paths  # noqa: E402
+from rhetoric.gui_themes import (  # noqa: E402
     DEFAULT_THEME,
     THEMES,
     apply_theme,
     build_stylesheet,
     in_bulk_restyle,
 )
-from the_oracle.platform_support import is_windows  # noqa: E402
+from rhetoric.platform_support import is_windows  # noqa: E402
 
 #: The event types Qt sends while repolishing. The storm's size is the
 #: propagation term; the exact mix is reported, not asserted (Qt's choice).
@@ -178,6 +186,11 @@ class Measure:
     #: The app's OWN Ctrl+hover filter, counted from inside it (see measure()).
     filter_installed: bool = False
     safe_polling_mode: bool = False
+    #: The script's own storm counter was installed (withheld only where
+    #: native event-filter callbacks are unsafe for the harness itself —
+    #: Windows). Fan-out measurements exist exactly when this is set,
+    #: whatever mode the product's own filter is in.
+    instrumented: bool = False
     #: The filter is bound to the window (the 1.4.0 crash contract) and was
     #: installed on no object at application scope while the product bound it.
     filter_window_scoped: bool = False
@@ -231,9 +244,10 @@ def evaluate(measured: Measure) -> list[str]:
             "it is supposed to be a minimal one"
         )
 
-    # Windows safe mode deliberately installs no native Qt event filters;
-    # filter-based fan-out measurements are unavailable there.
-    if not measured.safe_polling_mode:
+    # The fan-out measurements come from this script's own event
+    # counter; where the counter is not installed (Windows), they are
+    # unavailable. The product's polling mode does not affect them.
+    if measured.instrumented:
         # 2. propagation -- a genuine switch fans out a storm, inside the call.
         if measured.storm_change_events < MIN_STORM_CHANGE_EVENTS:
             failures.append(
@@ -299,7 +313,7 @@ def evaluate(measured: Measure) -> list[str]:
     if measured.safe_polling_mode:
         if measured.filter_calls_switch or measured.filter_calls_ungated:
             failures.append(
-                "ours: Windows polling mode unexpectedly installed a native Qt event filter"
+                "ours: safe polling mode unexpectedly installed a native Qt event filter"
             )
     elif measured.filter_calls_switch < MIN_FILTER_VIEW_EVENTS:
         failures.append(
@@ -314,7 +328,7 @@ def evaluate(measured: Measure) -> list[str]:
             f"{measured.filter_calls_ungated} events (floor {MIN_FILTER_VIEW_EVENTS}) -- if "
             "the before-picture is not a full storm, 'the scope spares it' is unproven"
         )
-    if not measured.safe_polling_mode and measured.redundant_change_events:
+    if measured.instrumented and measured.redundant_change_events:
         failures.append(
             f"ours: re-applying the current theme fanned out "
             f"{measured.redundant_change_events} events -- the redundant-restyle early "
@@ -479,6 +493,7 @@ def measure(
 ) -> Measure:
     """Run every measurement once against a live window."""
     measured = Measure()
+    measured.instrumented = counter is not None
     measured.widgets = len(window.findChildren(QWidget)) + 1
     measured.depth = _widget_depth(window)
     # Bind the product's filter exactly the way app_gui does — on the real
@@ -500,7 +515,9 @@ def measure(
     measured.filter_installed = helper is not None
     measured.filter_window_scoped = helper is not None and helper.window is window
     measured.safe_polling_mode = (
-        is_windows() and helper is not None and helper._sweep_timer.isActive()
+        not gui_tooltips._use_event_filters()
+        and helper is not None
+        and helper._sweep_timer.isActive()
     )
     measured.filter_app_scope_installs = sum(
         1 for obj in app_scope_installs if isinstance(obj, gui_tooltips.CtrlHoverHelp)
@@ -610,11 +627,11 @@ def measure(
 
 def _report(measured: Measure) -> None:
     print(f"  structure      : {measured.widgets} widgets, depth {measured.depth}")
-    if measured.safe_polling_mode:
-        print("  propagation    : not instrumented; Windows mode disables native event filters")
+    if not measured.instrumented:
+        print("  propagation    : not instrumented; this platform disables native event filters")
         print(
             f"  rule matching  : {measured.real_rules} real rules, {measured.small_rules} "
-            "comparison rules; event fan-out comparison not instrumented on Windows"
+            "comparison rules; event fan-out comparison not instrumented on this platform"
         )
     else:
         print(
@@ -631,7 +648,7 @@ def _report(measured: Measure) -> None:
         f"installs on the QApplication: {measured.filter_app_scope_installs}"
     )
     if measured.safe_polling_mode:
-        print("  ours (Windows safe mode): timer polling active; no Qt event filters installed")
+        print("  ours (safe polling mode): timer polling active; no Qt event filters installed")
     else:
         print(
             "  ours (the gate): that filter was invoked "
@@ -640,8 +657,8 @@ def _report(measured: Measure) -> None:
             f"filter saw the scope closed for {measured.filter_closed_ungated} of its "
             f"{measured.filter_calls_ungated} events"
         )
-    if measured.safe_polling_mode:
-        print("  redundant switch: style key unchanged; event count not instrumented on Windows")
+    if not measured.instrumented:
+        print("  redundant switch: style key unchanged; event count not instrumented on this platform")
     else:
         print(
             f"  redundant switch: {measured.redundant_change_events} events, "
@@ -689,7 +706,7 @@ def main(argv: list[str] | None = None) -> int:
         return 1
     if measured.safe_polling_mode:
         print(
-            "All good: the real window and genuine theme switches passed; Windows safe mode "
+            "All good: the real window and genuine theme switches passed; safe polling mode "
             "uses timer polling and intentionally omits native event-filter fan-out metrics."
         )
     else:

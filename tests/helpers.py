@@ -180,14 +180,22 @@ DEFAULT_SNAPSHOT_EXCLUDED_DIRS = frozenset(
 SNAPSHOT_HASH_LIMIT_BYTES = 1 << 20
 
 
-def repo_tree_snapshot(root, *, excluded_dirs=DEFAULT_SNAPSHOT_EXCLUDED_DIRS) -> dict[str, str]:
+def repo_tree_snapshot(
+    root,
+    *,
+    excluded_dirs=DEFAULT_SNAPSHOT_EXCLUDED_DIRS,
+    hash_contents: bool = True,
+) -> dict[str, str]:
     """Fingerprint every file under ``root``, for before/after comparison.
 
     Returns ``{relative path: signature}``. Two snapshots of an unchanged tree are
     equal, and any file created, removed, rewritten or merely touched between them
     shows up as a difference -- so a check that writes where it should only read
-    is caught by comparing snapshots taken either side of it. Paths are relative
-    to ``root`` with forward slashes, so a diff reads the same on every platform.
+    is caught by comparing snapshots taken either side of it. Set
+    ``hash_contents=False`` for user-owned trees: size and modification time
+    still detect ordinary writes without opening file contents. Paths are
+    relative to ``root`` with forward slashes, so a diff reads the same on every
+    platform.
     """
     import hashlib
     import os
@@ -203,7 +211,9 @@ def repo_tree_snapshot(root, *, excluded_dirs=DEFAULT_SNAPSHOT_EXCLUDED_DIRS) ->
             try:
                 stat = path.stat()
                 size = stat.st_size
-                if size <= SNAPSHOT_HASH_LIMIT_BYTES:
+                if not hash_contents:
+                    digest = "not-read"
+                elif size <= SNAPSHOT_HASH_LIMIT_BYTES:
                     digest = hashlib.sha256(path.read_bytes()).hexdigest()
                 else:
                     digest = f"not-hashed-above-{SNAPSHOT_HASH_LIMIT_BYTES}"
@@ -211,6 +221,16 @@ def repo_tree_snapshot(root, *, excluded_dirs=DEFAULT_SNAPSHOT_EXCLUDED_DIRS) ->
             except OSError as exc:  # pragma: no cover - unreadable entries are reported, not fatal
                 snapshot[relative] = f"unreadable: {type(exc).__name__}"
     return snapshot
+
+
+def workspace_tree_snapshot(root) -> dict[str, str]:
+    """Stat the source checkout without opening user data or frozen bundles."""
+    return repo_tree_snapshot(
+        root,
+        excluded_dirs=DEFAULT_SNAPSHOT_EXCLUDED_DIRS
+        | {"Input", "Seashells", "release_artifacts", "squashfs-root"},
+        hash_contents=False,
+    )
 
 
 def snapshot_differences(before: dict[str, str], after: dict[str, str]) -> tuple[list[str], list[str], list[str]]:
@@ -250,6 +270,23 @@ def function_level_imports(tree: ast.AST) -> set[str]:
                     found.update(alias.name for alias in sub.names)
                 elif isinstance(sub, ast.ImportFrom) and sub.module:
                     found.add(sub.module)
+    return found
+
+
+def function_level_imports_by_function(tree: ast.AST) -> dict[str, set[str]]:
+    """Map each function that imports locally to its imported module names."""
+    found: dict[str, set[str]] = {}
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef):
+            continue
+        imported: set[str] = set()
+        for sub in ast.walk(node):
+            if isinstance(sub, ast.Import):
+                imported.update(alias.name for alias in sub.names)
+            elif isinstance(sub, ast.ImportFrom) and sub.module:
+                imported.add(sub.module)
+        if imported:
+            found[node.name] = imported
     return found
 
 
@@ -298,6 +335,7 @@ def worker_module_import_violations(
     source_root: Path,
     *,
     one_hop_targets: tuple[str, ...] = (),
+    allowed_function_imports: dict[tuple[str, str], set[str]] | None = None,
 ) -> list[str]:
     """The shiboken invariant, as a list of violation strings (empty = clean).
 
@@ -321,6 +359,7 @@ def worker_module_import_violations(
         if lazy:
             violations.append(f"{rel}::{cls}: QThread methods carry function-level imports ({sorted(lazy)})")
 
+    allowed_function_imports = allowed_function_imports or {}
     for target in one_hop_targets:
         path = source_root / target
         if path in checked:
@@ -329,7 +368,11 @@ def worker_module_import_violations(
         if not path.exists():
             violations.append(f"{target}: one-hop target missing")
             continue
-        lazy = function_level_imports(ast.parse(path.read_text(encoding="utf-8"), filename=str(path)))
+        tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+        lazy: set[str] = set()
+        for function_name, imported in function_level_imports_by_function(tree).items():
+            allowed = allowed_function_imports.get((target, function_name), set())
+            lazy.update(imported - allowed)
         if lazy:
             violations.append(f"{target}: worker-reachable module carries function-level imports ({sorted(lazy)})")
 
@@ -340,9 +383,9 @@ def isolate_user_config(monkeypatch, config_dir) -> None:
     """Point the platform config root at ``config_dir`` for one test.
 
     ``XDG_CONFIG_HOME`` is only the POSIX config root: on Windows
-    :func:`the_oracle.platform_support.user_config_root` reads ``%APPDATA%``
+    :func:`rhetoric.platform_support.user_config_root` reads ``%APPDATA%``
     instead. Patching just ``XDG_CONFIG_HOME`` therefore still lets Windows
-    tests read and *write* the developer's real ``%APPDATA%\\the_oracle``
+    tests read and *write* the developer's real ``%APPDATA%\\rhetoric``
     settings — and leak state between test files (e.g. a remembered backend
     flag written by one file breaking another file's defaults test). Patch
     both roots so the suite is hermetic on every platform.

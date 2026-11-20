@@ -31,12 +31,24 @@ def main() -> int:
     # builds the REAL MainWindow and touches QMediaPlayer in-process — the
     # exact crash classes in crash-evidence §A — without ever passing through
     # cli.main's install+arm. Idempotent; fails closed without consent.
-    from the_oracle.crash import handlers as crash_handlers
+    from rhetoric.crash import handlers as crash_handlers
 
     crash_handlers.arm_native_capture()
     from PySide6.QtWidgets import QApplication
 
-    from the_oracle.app_gui import MainWindow
+    from rhetoric import gui_crash
+    from rhetoric.app_gui import MainWindow
+
+    # Unattended-harness bypass: the startup crash-review / first-run consent
+    # flow ends in a MODAL dialog (gui_crash.maybe_run_startup_flow ->
+    # dialog.exec()). On any tree with stored crash reports it fires from the
+    # window's startup timer during processEvents() and waits forever for a
+    # click no driver will ever make — this script hung at 'cycle 1/3:
+    # analyze' in the Windows guest on 2026-11-09 (py-spy: MainThread parked
+    # in run_next_session_review <- maybe_run_startup_flow). The drive arms
+    # native capture itself above, the only flow side effect it needs.
+    gui_crash.maybe_run_startup_flow = lambda *args, **kwargs: None
+    print('DRIVE: startup crash-review/consent flow bypassed (unattended)', flush=True)
 
     app = QApplication(sys.argv)
     window = MainWindow()

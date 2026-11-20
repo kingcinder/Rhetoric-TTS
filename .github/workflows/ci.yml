@@ -7,6 +7,11 @@ on:
   # pull request, so it is gated to non-PR events (see that job's `if:`) and these
   # two triggers are what keep it running regularly.
   workflow_dispatch:
+    inputs:
+      force-failure:
+        description: 'Force the Linux suite step to fail for testing'
+        default: 'false'
+        required: false
   schedule:
     - cron: "0 4 * * 1"
 
@@ -28,6 +33,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -128,15 +135,85 @@ jobs:
         shell: pwsh
         run: powershell -ExecutionPolicy Bypass -File .\doctor_rhetoric.ps1 --skip-model-init --ci
 
+      # Suite output is teed to a file so a red job leaves its failing node ids
+      # behind as a downloadable artifact: the Actions log endpoint needs
+      # repository admin rights, and a failure nobody can read is not
+      # diagnosable. `set -o pipefail` keeps pytest's status authoritative.
+      #
+      # The workflow_dispatch force-failure input does NOT exit here. It reaches
+      # the suite as an environment variable and a test fails on it, so a
+      # deliberate red run still produces pytest.txt: exiting before pytest ran
+      # left the capture path itself unproven, and the artifact held only the
+      # two headroom files. A push event has no inputs context, and the `||`
+      # fallback is what makes this read 'false' there.
       - name: Run Test Suite (Linux)
         if: runner.os == 'Linux'
         shell: bash
-        run: ./.venv/bin/pytest
+        env:
+          # Read through the expression context rather than spliced into the
+          # shell: the input is user-controlled text.
+          RHETORIC_FORCE_TEST_FAILURE: "${{ github.event.inputs['force-failure'] || 'false' }}"
+        run: |
+          set -o pipefail
+          mkdir -p ci-test-logs
+          # A crash in Qt or torch kills pytest with no Python frames, so record
+          # the headroom first.
+          { free -m; df -h /tmp /dev/shm; } | tee ci-test-logs/resources-before.txt
+          # Printed so a run's own log says which way the input resolved.
+          echo "Forced suite failure requested: ${RHETORIC_FORCE_TEST_FAILURE:-<unset>}"
+          # Native faults: the suite keeps faulthandler armed itself (the crash-
+          # consent tests disarm the process-wide handler at ~19%, and
+          # tests/conftest.py re-arms at every test boundary). Deliberately no
+          # PYTHONFAULTHANDLER here: the consent-aware entry-point test runs a
+          # subprocess and asserts the handler is OFF with consent off, and an
+          # ambient variable would overwrite the thing it measures.
+          # Keep pytest's own status in the artifact. The runner log said
+          # "exit code 139", but that log needs admin rights to read and the
+          # artifact is what survives; the number also separates a signal death
+          # (128+N) from an ordinary test failure.
+          status=0
+          ./.venv/bin/pytest 2>&1 | tee ci-test-logs/pytest.txt || status=$?
+          echo "$status" | tee ci-test-logs/suite-exit-code.txt
+          exit "$status"
+
+      # The headroom print above is a before-picture, taken while the box is
+      # healthy. Memory, disk and tmpfs exhaustion are the resource causes of a
+      # SIGBUS, and a native fault needs the state at the moment it happened:
+      # this runs only after a failed step and lands in the same artifact
+      # directory the failure upload collects.
+      - name: Post-Crash Headroom (Linux)
+        # Linux only: `free` is not on the Windows runners, and their suite step
+        # has no such crash history to explain.
+        if: failure() && runner.os == 'Linux'
+        shell: bash
+        run: |
+          mkdir -p ci-test-logs
+          # Every probe is best-effort: this step must never mask the failure it
+          # describes, and a runner without /dev/shm must still report RAM.
+          { free -m || true; df -h /tmp /dev/shm || true; } 2>&1 \
+            | tee ci-test-logs/resources-after.txt
+          # The kernel records a segfault or an OOM kill in its ring buffer, and
+          # that line is the difference between "our code crashed" and "the box
+          # killed it". Best-effort: hosted kernels often restrict dmesg.
+          { dmesg 2>/dev/null | tail -30 || true; } \
+            | tee ci-test-logs/kernel-log-tail.txt
 
       - name: Run Test Suite (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
-        run: .\.venv\Scripts\pytest.exe
+        run: |
+          New-Item -ItemType Directory -Force -Path ci-test-logs | Out-Null
+          .\.venv\Scripts\pytest.exe 2>&1 | Tee-Object -FilePath ci-test-logs\pytest.txt
+          exit $LASTEXITCODE
+
+      - name: Upload suite failure log
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: suite-log-${{ matrix.os }}-py${{ matrix.python-version }}
+          path: ci-test-logs/
+          if-no-files-found: warn
+          retention-days: 7
 
       - name: Windows Tooltip Lifecycle - 50 real window cycles
         if: runner.os == 'Windows'
@@ -300,7 +377,7 @@ jobs:
       # build, and reference clips that change what the gate says. This runs the
       # gate and the documented entry points in a clean `git archive HEAD` tree
       # and fails if anything differs from this tree for a reason nobody has
-      # registered -- which is how `./oracle` being tracked 100644 was found. The
+      # registered -- which is how `./rhetoric` being tracked 100644 was found. The
       # suite leg is left out here because the step above already runs it; run
       # this script with no --only to get all three legs.
       # Linux only: the matrix's rows are the .sh wrappers, which do not exist on
@@ -351,7 +428,7 @@ jobs:
   # none of them. A skip looks exactly like a pass in a green run, so the suite
   # covered nothing here and said so only to whoever read the skip summary.
   #
-  # This job provides all three and then runs the suite with ORACLE_FAIL_ON_SKIP=1,
+  # This job provides all three and then runs the suite with RHETORIC_FAIL_ON_SKIP=1,
   # so a skip fails the job instead of hiding in it.
   vulkan-smoke:
     name: Vulkan backend (audio.cpp built, no skips allowed)
@@ -421,11 +498,11 @@ jobs:
       - name: Cache The Chatterbox GGML Model
         uses: actions/cache@v4
         with:
-          path: ${{ runner.temp }}/oracle-vulkan-models
+          path: ${{ runner.temp }}/rhetoric-vulkan-models
           key: vulkan-smoke-model-chatterbox_q8_0-v1
 
       # scripts/vulkan_ci_smoke.py builds the CLI, fetches the model, asserts the
-      # smoke's three gates resolve, then runs the suite with ORACLE_FAIL_ON_SKIP=1.
+      # smoke's three gates resolve, then runs the suite with RHETORIC_FAIL_ON_SKIP=1.
       - name: Build audio.cpp, Fetch The Model, Run The Suite Without Skips
         shell: bash
         # Outside the clone path on purpose: scripts/build_audio_cpp.sh clones
@@ -435,13 +512,13 @@ jobs:
         # the two cannot diverge, and `runner` is a legal context here (step
         # level) where it was not at job level.
         env:
-          AUDIOCPP_MODELS_ROOT: ${{ runner.temp }}/oracle-vulkan-models
+          AUDIOCPP_MODELS_ROOT: ${{ runner.temp }}/rhetoric-vulkan-models
         run: ./.venv/bin/python scripts/vulkan_ci_smoke.py
 
       - name: Package The Pinned Vulkan Binary
         shell: bash
         env:
-          AUDIOCPP_MODELS_ROOT: ${{ runner.temp }}/oracle-vulkan-models
+          AUDIOCPP_MODELS_ROOT: ${{ runner.temp }}/rhetoric-vulkan-models
         run: |
           set -Eeuo pipefail
           version="$(./.venv/bin/python -c 'from pathlib import Path; from scripts.release import read_version; print(read_version(Path(".")))')"
@@ -482,9 +559,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: |
-            ${{ runner.temp }}/oracle-smoke/hf
-            ${{ runner.temp }}/oracle-smoke/pip-cache
-          key: install-smoke-${{ runner.os }}-${{ hashFiles('src/the_oracle/models/pins.py') }}
+            ${{ runner.temp }}/rhetoric-smoke/hf
+            ${{ runner.temp }}/rhetoric-smoke/pip-cache
+          key: install-smoke-${{ runner.os }}-${{ hashFiles('src/rhetoric/models/pins.py') }}
 
       - name: Ensure ffmpeg Is Available
         shell: pwsh
@@ -502,9 +579,9 @@ jobs:
         shell: pwsh
         run: |
           python scripts/windows_install_smoke.py `
-            --profile "${{ runner.temp }}\oracle smoke profile" `
-            --hf-home "${{ runner.temp }}\oracle-smoke\hf" `
-            --pip-cache "${{ runner.temp }}\oracle-smoke\pip-cache"
+            --profile "${{ runner.temp }}\rhetoric smoke profile" `
+            --hf-home "${{ runner.temp }}\rhetoric-smoke\hf" `
+            --pip-cache "${{ runner.temp }}\rhetoric-smoke\pip-cache"
 
   linux-frozen-artifacts:
     name: Linux frozen AppImage and deb (unsigned rehearsal)

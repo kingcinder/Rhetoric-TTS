@@ -15,9 +15,9 @@ import pytest
 
 pytestmark = pytest.mark.slow  # exercises the full repair pipeline
 
-from the_oracle.models.project import VoiceSettings
-from the_oracle.models.settings import RenderSettings, SpeakerSettings; from the_oracle.pipeline import OraclePipeline
-from the_oracle.smoke import _write_reference
+from rhetoric.models.project import VoiceSettings
+from rhetoric.models.settings import RenderSettings, SpeakerSettings; from rhetoric.pipeline import RhetoricPipeline
+from rhetoric.smoke import _write_reference
 
 
 class _MixedClassifier:
@@ -54,8 +54,8 @@ def _plans(tmp_path: Path) -> tuple[dict, dict]:
     }
     cpu = RenderSettings(model_variant="standard", language="en", inference_backend="pytorch")
     vulkan = RenderSettings(model_variant="standard", language="en", inference_backend="vulkan")
-    with patch("the_oracle.pipeline.GoEmotionsClassifier", _MixedClassifier):
-        pipeline = OraclePipeline()
+    with patch("rhetoric.pipeline.GoEmotionsClassifier", _MixedClassifier):
+        pipeline = RhetoricPipeline()
         cpu_plan = pipeline.prepare_plan(dialogue, tmp_path / "out_cpu", settings, cpu)
         vulkan_plan = pipeline.prepare_plan(dialogue, tmp_path / "out_vulkan", settings, vulkan)
     return {u.index: u for u in cpu_plan.utterances}, {u.index: u for u in vulkan_plan.utterances}

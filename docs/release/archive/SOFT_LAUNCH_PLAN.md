@@ -20,7 +20,7 @@
 - The production signing seed must never appear in the repo, logs, tests, or chat. Only the public verify key is committed.
 - `Seashells/generic/` remains third-party licensed material with its existing attribution. The eight root-level recordings are Owner-owned, per the owner's 2026-10-19 decision.
 - The EULA remains a draft for counsel review; the commercial gate must refuse distribution until the governing-law section is completed and approved.
-- Version metadata has one source: `src/the_oracle/__init__.py`; banners and CHANGELOG are synchronized by `scripts/release.py`.
+- Version metadata has one source: `src/rhetoric/__init__.py`; banners and CHANGELOG are synchronized by `scripts/release.py`.
 - No existing workflow is gated. Community remains everything that shipped before 1.4.0.
 
 ---
@@ -28,18 +28,18 @@
 ### Task 1: Provision the production verify key
 
 **Files:**
-- Modify: `src/the_oracle/licensing/keys.py`
-- Create (outside repo, never committed): `~/.config/the-oracle/license-signing-seed`
+- Modify: `src/rhetoric/licensing/keys.py`
+- Create (outside repo, never committed): `~/.config/rhetoric/license-signing-seed`
 - Modify: `docs/LICENSING_OPS.md`
 - Test: `tests/test_licensing_registry_hygiene.py`, `tests/test_release.py`
 
 **Interfaces:**
 - Produces: `KEYS: tuple[VerifyKey, ...]` containing exactly one `VerifyKey(key_id="k2", public_key=bytes)`.
-- Consumes: `the_oracle._ed25519.public_key(seed: bytes) -> bytes`.
+- Consumes: `rhetoric._ed25519.public_key(seed: bytes) -> bytes`.
 
 - [ ] **Step 1: Generate the seed without printing it**
 
-Run a Python one-off that imports `_ed25519`, generates 32 random bytes, writes the hex seed to `~/.config/the-oracle/license-signing-seed` with mode `0600`, and prints only the public verify key and the seed file path. Never print the seed.
+Run a Python one-off that imports `_ed25519`, generates 32 random bytes, writes the hex seed to `~/.config/rhetoric/license-signing-seed` with mode `0600`, and prints only the public verify key and the seed file path. Never print the seed.
 
 - [ ] **Step 2: Register only the public key**
 
@@ -110,7 +110,7 @@ Expected: PASS.
 ### Task 3: Generate the third-party inventory and notices
 
 **Files:**
-- Create: `src/the_oracle/third_party.py`
+- Create: `src/rhetoric/third_party.py`
 - Create: `scripts/generate_third_party_notices.py`
 - Create: `THIRD_PARTY_NOTICES.md`
 - Create: `THIRD_PARTY_LICENSES/LGPL-3.0.txt`
@@ -205,7 +205,7 @@ Expected: PASS, and the generated file contains no draft/TODO language.
 7. `checksums` — `release_checksums/checksums-<version>.sha256` exists.
 8. `artifacts` — the version's sdist and wheel exist in `release_artifacts/`.
 9. `windows_scope` — `docs/SOFT_LAUNCH.md` names Windows as experimental.
-10. `support_bundle` — `the_oracle.support_bundle` imports.
+10. `support_bundle` — `rhetoric.support_bundle` imports.
 
 **License policy file:**
 
@@ -239,8 +239,8 @@ Expected at this stage: nonzero, with blockers for the draft EULA and the three 
 ### Task 5: Implement the redacted support bundle
 
 **Files:**
-- Create: `src/the_oracle/support_bundle.py`
-- Modify: `src/the_oracle/cli.py`
+- Create: `src/rhetoric/support_bundle.py`
+- Modify: `src/rhetoric/cli.py`
 - Test: `tests/test_support_bundle.py`
 
 **Interfaces:**
@@ -250,7 +250,7 @@ Expected at this stage: nonzero, with blockers for the draft EULA and the three 
 
 **Bundle contents:**
 - `manifest.json` — bundle version, UTC timestamp, app version, platform, Python, included/skipped, redaction statement.
-- `environment.json` — OS, Python, CPU count, presence (not values) of `ORACLE_*`/`HF_HUB_OFFLINE`/CUDA variables.
+- `environment.json` — OS, Python, CPU count, presence (not values) of `RHETORIC_*`/`HF_HUB_OFFLINE`/CUDA variables.
 - `license.json` — `ok`, `state`, `edition`, `key_id`, `exp`, `machine_locked`; never the token or licensee.
 - `settings.json` — redacted settings; no paths, tokens, or license values.
 - `logs/` — newest 3 logs, capped at 256 KiB each, sanitized.
@@ -259,8 +259,8 @@ Expected at this stage: nonzero, with blockers for the draft EULA and the three 
 - `README.txt` — what is included, what is not, and how to share it.
 
 **Redaction rules:**
-- Reuse `the_oracle.crash.sanitize.sanitize_text`.
-- Redact `ORACLE1.` tokens, home-directory prefixes, email addresses in licensee fields, and common API-key shapes.
+- Reuse `rhetoric.crash.sanitize.sanitize_text`.
+- Redact `RHETORIC1.` tokens (and legacy `ORACLE1.` tokens), home-directory prefixes, email addresses in licensee fields, and common API-key shapes.
 - Recursively redact keys named `token`, `license`, `licensee`, `machine_hash`, `secret`, `password`, `api_key`, `path`, `file`, `dir`, `recent`, `input`, `output`.
 - Never include input text, audio, reference clips, or recordings.
 
@@ -317,7 +317,7 @@ Expected: every new doc is linked from at least one existing entry point.
 ### Task 7: Cut 1.4.0 and verify the whole tree
 
 **Files:**
-- Modify: `src/the_oracle/__init__.py`
+- Modify: `src/rhetoric/__init__.py`
 - Modify: `CHANGELOG.md` (via `--sync-changelog`)
 - Modify: `README.md` (via `--sync-banners`)
 - Create: `release_checksums/checksums-1.4.0.sha256` (via release build)
@@ -346,7 +346,7 @@ Expected: PASS. If the theme certifier reports a parked crash-report directory, 
 - [ ] **Step 5: Build the release**
 
 Commit the tree first so `release.py` sees a clean worktree, then run: `.venv/bin/python scripts/release.py`
-Expected: full suite passes; `release_artifacts/the_oracle-1.4.0-*.{tar.gz,whl}` and `release_checksums/checksums-1.4.0.sha256` exist. Amend the commit to include the checksum (the commit is not pushed yet) or add a separate release-record commit.
+Expected: full suite passes; `release_artifacts/rhetoric-1.4.0-*.{tar.gz,whl}` and `release_checksums/checksums-1.4.0.sha256` exist. Amend the commit to include the checksum (the commit is not pushed yet) or add a separate release-record commit.
 
 - [ ] **Step 6: Run the commercial gate**
 

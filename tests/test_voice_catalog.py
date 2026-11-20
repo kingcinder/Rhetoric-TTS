@@ -1,9 +1,9 @@
 from pathlib import Path
 
-from the_oracle.voice_catalog import default_voice_choices, voice_catalog_audit
+from rhetoric.voice_catalog import default_voice_choices, voice_catalog_audit
 
 def test_default_voice_choices_are_capped_and_real_paths(tmp_path: Path) -> None:
-    seashell = tmp_path / "Seashells" / "oracle.wav"
+    seashell = tmp_path / "Seashells" / "rhetoric.wav"
     extra = tmp_path / "build" / "smoke_render" / "fallback.wav"
     seashell.parent.mkdir(parents=True, exist_ok=True)
     extra.parent.mkdir(parents=True, exist_ok=True)
@@ -18,7 +18,7 @@ def test_default_voice_choices_are_capped_and_real_paths(tmp_path: Path) -> None
 
 
 def test_default_voice_choices_prefer_repo_local_seashells(tmp_path: Path) -> None:
-    seashell = tmp_path / "Seashells" / "oracle.wav"
+    seashell = tmp_path / "Seashells" / "rhetoric.wav"
     fallback = tmp_path / "build" / "smoke_render" / "fallback.wav"
     seashell.parent.mkdir(parents=True, exist_ok=True)
     fallback.parent.mkdir(parents=True, exist_ok=True)
@@ -42,3 +42,30 @@ def test_voice_catalog_audit_reports_fallback_sources_and_no_low_risk_mixing(tmp
     assert audit["fallback_clip_count"] == 1
     assert audit["seashell_clip_count"] == 0
     assert audit["voice_mixing_low_risk"] is False
+
+
+def test_voice_labels_keep_apostrophes_inside_the_word(tmp_path: Path) -> None:
+    """A clip named after its owner must read "Cody's", not "Cody'S".
+
+    ``str.title()`` uppercases the letter following an apostrophe.
+    """
+    seashells = tmp_path / "Seashells"
+    seashells.mkdir()
+    (seashells / "cody's seashell.wav").write_bytes(b"RIFF")
+
+    choices = default_voice_choices(tmp_path)
+
+    assert choices
+    assert choices[0].label == "Cody's Seashell"
+
+
+def test_voice_labels_collapse_separator_runs(tmp_path: Path) -> None:
+    """``name_ file.wav`` must not produce a doubled space in the label."""
+    seashells = tmp_path / "Seashells"
+    seashells.mkdir()
+    (seashells / "Seashell_ fransisco.wav").write_bytes(b"RIFF")
+
+    choices = default_voice_choices(tmp_path)
+
+    assert choices
+    assert choices[0].label == "Seashell Fransisco"

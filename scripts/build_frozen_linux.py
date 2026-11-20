@@ -79,6 +79,8 @@ def write_cyclonedx_sbom(repo: Path, output: Path) -> Path:
     subprocess.run(
         [
             _require_tool("pip-audit"),
+            "--vulnerability-service",
+            "osv",
             "--format",
             "cyclonedx-json",
             "--output",
@@ -137,7 +139,7 @@ def stage_appdir(appdir: Path, frozen_dist: Path) -> Path:
     apprun.write_text(
         "#!/bin/sh\n"
         "set -eu\n"
-        "# Per-user settings and models stay in ~/.config/the-oracle and ~/.cache;\n"
+        "# Per-user settings and models stay in ~/.config/rhetoric and ~/.cache;\n"
         "# uninstall removes this application tree only.\n"
         'HERE="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"\n'
         'exec "$HERE/usr/bin/rhetoric" "$@"\n',
@@ -148,6 +150,16 @@ def stage_appdir(appdir: Path, frozen_dist: Path) -> Path:
     return appdir
 
 
+DEB_DEPENDS = (
+    "libgl1, libegl1, libxkbcommon0, libxkbcommon-x11-0, libdbus-1-3, "
+    "libfontconfig1, libglib2.0-0, libxcb-cursor0, libxcb-icccm4, "
+    "libxcb-image0, libxcb-keysyms1, libxcb-randr0, libxcb-render-util0, "
+    "libxcb-shape0, libxcb-xfixes0, libxcb-xinerama0, libxcb-sync1, "
+    "libxcb-xkb1, libx11-xcb1, libxrender1, libxi6, libxtst6, libsm6, "
+    "libice6, libnss3, libnspr4, libcups2, libpulse0, libgomp1"
+)
+
+
 def _build_deb(appdir: Path, outdir: Path, version: str) -> Path:
     root = outdir / "deb-root"
     if root.exists():
@@ -156,7 +168,7 @@ def _build_deb(appdir: Path, outdir: Path, version: str) -> Path:
     (root / "usr" / "bin").mkdir(parents=True, exist_ok=True)
     (root / "usr" / "share" / "applications").mkdir(parents=True, exist_ok=True)
     link = root / "usr" / "bin" / "rhetoric"
-    link.symlink_to("/opt/rhetoric/usr/bin/rhetoric")
+    link.symlink_to("/opt/rhetoric/usr/lib/rhetoric/rhetoric")
     shutil.copy2(
         appdir / "usr" / "share" / "applications" / "rhetoric.desktop",
         root / "usr" / "share" / "applications",
@@ -167,6 +179,7 @@ def _build_deb(appdir: Path, outdir: Path, version: str) -> Path:
         "Package: rhetoric\n"
         f"Version: {version}\n"
         "Section: sound\nPriority: optional\nArchitecture: amd64\n"
+        f"Depends: {DEB_DEPENDS}\n"
         "Maintainer: Rhetoric\n"
         "Description: Rhetoric local text-to-speech application\n"
         " Frozen application; models are downloaded after activation.\n",

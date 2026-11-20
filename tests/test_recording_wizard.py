@@ -8,8 +8,8 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 import pytest
 from PySide6.QtWidgets import QApplication
 
-from the_oracle.app_gui import RecordingStudioDialog
-from the_oracle.recording_wizard import RecordingStudioSetupWizard, STAGES
+from rhetoric.app_gui import RecordingStudioDialog
+from rhetoric.recording_wizard import RecordingStudioSetupWizard, STAGES
 
 
 pytestmark = pytest.mark.slow
@@ -22,7 +22,7 @@ def qt_app():
 
 
 def _dialog(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
-    import the_oracle.audio.recorder as recorder
+    import rhetoric.audio.recorder as recorder
 
     class Device:
         index = 2
@@ -128,7 +128,7 @@ def test_highlight_tooltip_stays_on_screen_for_bottom_edge_target(
     bottom it must not render offscreen or clipped."""
     from PySide6.QtCore import QPoint, Qt
     from PySide6.QtWidgets import QToolTip
-    from the_oracle.recording_wizard import RecordingStudioSetupWizard
+    from rhetoric.recording_wizard import RecordingStudioSetupWizard
 
     dialog, _voice, _script = _dialog(tmp_path, monkeypatch)
     wizard = RecordingStudioSetupWizard(dialog)
@@ -170,7 +170,7 @@ def test_highlight_tooltip_stays_on_screen_for_bottom_edge_target(
 
 
 def test_no_microphone_is_explicitly_explained(tmp_path, monkeypatch, qt_app):
-    import the_oracle.audio.recorder as recorder
+    import rhetoric.audio.recorder as recorder
 
     monkeypatch.setattr(recorder, "_sd", object())
     monkeypatch.setattr(recorder, "list_input_devices", lambda: [])

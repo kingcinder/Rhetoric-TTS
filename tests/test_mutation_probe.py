@@ -35,7 +35,7 @@ AFTER = 'def value():\n    return "new"\n'
 @pytest.fixture(scope="module")
 def probe_module():
     """The harness, imported by path — the idiom this repo's tests use."""
-    spec = importlib.util.spec_from_file_location("oracle_mutation_probe", PROBE_PATH)
+    spec = importlib.util.spec_from_file_location("rhetoric_mutation_probe", PROBE_PATH)
     assert spec is not None and spec.loader is not None
     module = importlib.util.module_from_spec(spec)
     # The harness uses @dataclass, whose decorator looks the module up in
@@ -313,7 +313,7 @@ def test_each_run_gets_a_fresh_cache_root_under_a_reaped_scratch(
     )
 
     scratch = probe.scratch
-    assert scratch.name.startswith("oracle_mutation_probe_") and scratch.exists()
+    assert scratch.name.startswith("rhetoric_mutation_probe_") and scratch.exists()
     probe.close()
     assert not scratch.exists(), "close() reaps the root the probe created"
     assert sorted(path.name for path in temp.iterdir()) == [], "the scratch parent is empty"

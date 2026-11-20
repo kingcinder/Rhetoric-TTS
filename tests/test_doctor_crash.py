@@ -22,7 +22,7 @@ DOCTOR_PATH = REPO_ROOT / "scripts" / "doctor.py"
 
 
 def _load_doctor():
-    spec = importlib.util.spec_from_file_location("oracle_doctor_crash", DOCTOR_PATH)
+    spec = importlib.util.spec_from_file_location("rhetoric_doctor_crash", DOCTOR_PATH)
     module = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
     spec.loader.exec_module(module)
@@ -42,7 +42,7 @@ def test_opted_out_is_a_valid_state(tmp_path: Path) -> None:
 
 
 def test_opted_in_never_crashed_install_is_not_a_failure(tmp_path: Path) -> None:
-    from the_oracle import crash
+    from rhetoric import crash
 
     crash.write_consent(tmp_path, True)
     status = _status(tmp_path)
@@ -53,7 +53,7 @@ def test_opted_in_never_crashed_install_is_not_a_failure(tmp_path: Path) -> None
 
 
 def test_records_are_counted_and_newest_exception_named(tmp_path: Path) -> None:
-    from the_oracle import crash
+    from rhetoric import crash
 
     crash.write_consent(tmp_path, True)
     crash.write_record(tmp_path, {"exception": {"type": "ValueError", "message": "x"}, "log_tail": []})
@@ -66,7 +66,7 @@ def test_records_are_counted_and_newest_exception_named(tmp_path: Path) -> None:
 
 
 def test_cap_state_is_reported(tmp_path: Path) -> None:
-    from the_oracle import crash
+    from rhetoric import crash
 
     crash.write_consent(tmp_path, True)
     for i in range(crash.MAX_RECORDS):
@@ -77,7 +77,7 @@ def test_cap_state_is_reported(tmp_path: Path) -> None:
 
 
 def test_native_dump_is_surfaced(tmp_path: Path) -> None:
-    from the_oracle import crash
+    from rhetoric import crash
 
     crash.write_consent(tmp_path, True)
     dump = crash.crash_dir(tmp_path) / "native-crash.txt"
@@ -88,7 +88,7 @@ def test_native_dump_is_surfaced(tmp_path: Path) -> None:
 
 
 def test_unwritable_directory_fails_with_local_remedy(tmp_path: Path, monkeypatch) -> None:
-    from the_oracle import crash
+    from rhetoric import crash
 
     crash.write_consent(tmp_path, True)
     directory = crash.crash_dir(tmp_path)
@@ -107,7 +107,7 @@ def test_unwritable_directory_fails_with_local_remedy(tmp_path: Path, monkeypatc
 
 
 def test_check_is_read_only_and_idempotent(tmp_path: Path) -> None:
-    from the_oracle import crash
+    from rhetoric import crash
 
     crash.write_consent(tmp_path, True)
     crash.write_record(tmp_path, {"exception": {"type": "T", "message": "m"}, "log_tail": []})

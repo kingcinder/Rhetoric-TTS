@@ -27,7 +27,7 @@ up any changes), rebuilds the managed launchers, and keeps **all user data**:
 
 ## What you are running
 
-- The version number lives in one place (`src/the_oracle/__init__.py`);
+- The version number lives in one place (`src/rhetoric/__init__.py`);
   `rhetoric --version` prints it.
 - What changed between your version and the new one is in
   [`CHANGELOG.md`](../CHANGELOG.md).
@@ -53,7 +53,7 @@ An offline install (created from a bundle with
 `update --offline-bundle <dir>` with the bundle it was installed from, and
 the update reinstalls from the bundled wheels without touching the network.
 
-The `.oracle_offline` marker in the install root is what forces every model
+The `.rhetoric_offline` marker in the install root is what forces every model
 load to resolve locally. Deleting it re-enables network model fetches (for
 example, to run `rhetoric setup-vulkan`); the offline installers and
 launchers re-establish the environment on the next start.

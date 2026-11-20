@@ -11,14 +11,14 @@ import pytest
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
-from the_oracle import cli  # noqa: E402
-from the_oracle.licensing import store, tokens  # noqa: E402
-from the_oracle.licensing.policy import (  # noqa: E402
+from rhetoric import cli  # noqa: E402
+from rhetoric.licensing import store, tokens  # noqa: E402
+from rhetoric.licensing.policy import (  # noqa: E402
     LicenseRequired,
     is_licensed,
     require,
 )
-from the_oracle.licensing.tokens import LicenseStatus  # noqa: E402
+from rhetoric.licensing.tokens import LicenseStatus  # noqa: E402
 from tests.licensing_fixtures import TEST_KEY_ID, TEST_SEED  # noqa: E402
 
 #: Verified statuses come from the INJECTED test-only registry: the production
@@ -98,7 +98,7 @@ def test_a_real_expired_key_is_unlicensed() -> None:
 
 @pytest.fixture()
 def sandbox_root(tmp_path: Path, monkeypatch) -> Path:
-    from the_oracle import offline
+    from rhetoric import offline
 
     monkeypatch.setattr(offline, "repo_root", lambda: tmp_path)
     return tmp_path
@@ -147,7 +147,7 @@ def test_license_status_fails_closed_on_a_corrupted_store(sandbox_root: Path, ca
 
 
 def test_unlicensed_cli_commands_require_activation(monkeypatch, capsys) -> None:
-    from the_oracle import licensing
+    from rhetoric import licensing
 
     monkeypatch.setattr(
         licensing,

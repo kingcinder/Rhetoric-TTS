@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from the_oracle.srt_ingest import (
+from rhetoric.srt_ingest import (
     _decode_subtitle_bytes,
     convert_srt_file,
     ensure_subtitle_script,
@@ -14,7 +14,7 @@ from the_oracle.srt_ingest import (
     parse_srt,
     srt_to_dialogue_text,
 )
-from the_oracle.text_ingest import TextIngestor
+from rhetoric.text_ingest import TextIngestor
 
 SAMPLE = """1
 00:00:01,000 --> 00:00:04,000
@@ -367,8 +367,8 @@ def test_pause_directives_round_trip_through_ingester(tmp_path) -> None:
     source.write_text(srt, encoding="utf-8")
     target, _cues, _speakers = convert_srt_file(source)
     assert "[pause=1000]" in target.read_text(encoding="utf-8")
-    from the_oracle.text_repair.directives import apply_directives, parse_directives
-    from the_oracle.models.project import VoiceSettings
+    from rhetoric.text_repair.directives import apply_directives, parse_directives
+    from rhetoric.models.project import VoiceSettings
 
     line = next(
         line for line in target.read_text(encoding="utf-8").splitlines() if "[pause=" in line

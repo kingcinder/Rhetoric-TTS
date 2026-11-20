@@ -31,8 +31,8 @@ sys.path.insert(0, str(REPO_ROOT / "src"))
 
 from PySide6.QtWidgets import QApplication, QPushButton, QWidget
 
-from the_oracle import gui_license
-from the_oracle.licensing import store, tokens
+from rhetoric import gui_license
+from rhetoric.licensing import store, tokens
 from tests.licensing_fixtures import TEST_KEY_ID, TEST_SEED  # noqa: E402
 
 #: The flow tests activate tokens minted for the INJECTED test-only registry:
@@ -189,7 +189,7 @@ def test_activation_good_token_stores_and_reports_true(root: Path, parent, monke
     result = store.load_token(root)
     assert result.state == "loaded"
     # StoredToken carries the raw token; verify its payload says studio.
-    from the_oracle.licensing import tokens as _tokens
+    from rhetoric.licensing import tokens as _tokens
 
     verdict = _tokens.verify_token(result.stored.token)
     assert verdict.ok and verdict.state == "valid"
@@ -272,10 +272,10 @@ def test_about_panel_names_license_state_and_privacy(root: Path, parent, monkeyp
     # Activated install: names the licensed state and the licensee.
     labels.clear()
     store.save_token(root, _good_token(), verify_before_save=tokens.verify_token)
-    from the_oracle.licensing import current_license as _real_current
+    from rhetoric.licensing import current_license as _real_current
 
     def fake_current_license():
-        from the_oracle.licensing.tokens import LicenseStatus
+        from rhetoric.licensing.tokens import LicenseStatus
 
         return LicenseStatus(
             ok=True, state="valid", licensee="Cody",

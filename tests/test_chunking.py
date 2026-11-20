@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from the_oracle.utils.chunking import (
+from rhetoric.utils.chunking import (
     TextChunk,
     chunk_utterance,
     reassemble_chunks,

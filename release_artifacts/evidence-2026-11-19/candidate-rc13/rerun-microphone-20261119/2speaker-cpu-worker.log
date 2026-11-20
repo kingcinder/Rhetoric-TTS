@@ -1,0 +1,68 @@
+{
+  "candidate": "RC13",
+  "worker_result": "PASS",
+  "candidate_version": "1.5.0",
+  "runtime_execution": "RC13 offline-kit installed frozen package",
+  "case": "2speaker",
+  "backend": "cpu",
+  "seed": 7341,
+  "selected_input": "Input/Stream_of_Consciousness_Dialogue_2Party_AI_Generated_Test_File.txt",
+  "input_sha256": "eff1483d75d391440ff01d5d97c7106bd1296d68fe5a348c9817506d76c4b2f2",
+  "source_lines": [
+    3,
+    5,
+    7,
+    9
+  ],
+  "utterance_count": 4,
+  "utterance_word_count": 32,
+  "selected_utterances": [
+    {
+      "speaker": "A",
+      "source_line": 3,
+      "text": "I woke up alreayd in the middle of"
+    },
+    {
+      "speaker": "B",
+      "source_line": 5,
+      "text": "That hapens to me too, like there\u2019s some"
+    },
+    {
+      "speaker": "A",
+      "source_line": 7,
+      "text": "The strange part is how convincing it feels,"
+    },
+    {
+      "speaker": "B",
+      "source_line": 9,
+      "text": "Mood is the residue, isn\u2019t it, the ash"
+    }
+  ],
+  "casting": {
+    "A": {
+      "voice": "Cody1",
+      "reference_path": "/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/Seashells/Cody's Seashell1.wav",
+      "reference_origin": "project Seashells",
+      "reference_sha256": "2dd90d2bb9fb029ef53c48af515a0431b555506457fb7b8415285df97fad0e92"
+    },
+    "B": {
+      "voice": "Fransisco Monster Edited",
+      "reference_path": "/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/Seashells/Fransisco_MONSTER_Edited.wav",
+      "reference_origin": "project Seashells",
+      "reference_sha256": "70f65e9b1aac3c9d7420aa581c22e5ba62d4b4152754a84214ac79458ab62fca"
+    }
+  },
+  "offline_child_environment": {
+    "HF_HUB_OFFLINE": "1",
+    "TRANSFORMERS_OFFLINE": "1",
+    "VK_ICD_FILENAMES": "/usr/share/vulkan/icd.d/radeon_icd.json"
+  },
+  "output_path": "/mnt/evidence/rerun-microphone-20261119/2speaker/cpu/rc13-micfixed-2speaker-cpu-7341.flac",
+  "final_progress": {
+    "stage": "Complete",
+    "backend": "pytorch",
+    "device_label": "CPU / system DRAM",
+    "elapsed_seconds": 167.81891450300463,
+    "synth_seconds_total": 91.864452
+  }
+}

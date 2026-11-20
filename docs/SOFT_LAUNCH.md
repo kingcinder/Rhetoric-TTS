@@ -1,11 +1,15 @@
 # Rhetoric 1.5.0 — Commercial Release Gate
 
-Status: **commercial distribution is blocked; this is the Rhetoric 1.5.0
-engineering candidate**. Linux x86_64 is the intended qualification target, but
-clean installed-artifact and real-audio acceptance are still open. Windows is
-**unsupported**. `python scripts/soft_launch.py --check` is the authority for
-distribution readiness; the current run has one blocker (draft EULA) and one
-warning (LGPL notice and replacement/source obligations).
+Status as of **2026-11-19**: the project `.venv` soft-launch gate reports
+**ready, 0 blockers, 1 weak-copyleft warning**. This is not commercial
+clearance. The exact RC13 offline kit passed a network-disabled clean install
+on Ubuntu 24.04.5 amd64. Owner desktop GUI review, human listening, and
+hosted CI against an owner-selected source revision, and independent counsel
+review remain open; release signing and publication also require owner
+authorization. Windows is **unsupported** for this release.
+`python scripts/soft_launch.py --check` is the authority for the automated
+gate. Exact-candidate evidence and owner actions are tracked in
+[`release/V100A_SHIP_TODAY_CHECKLIST.md`](release/V100A_SHIP_TODAY_CHECKLIST.md).
 
 ## Product model
 
@@ -64,13 +68,14 @@ server.
 
 The storefront and payment workflow are deferred. Do not direct customers to
 email for a purchase or serial request. The owner mints serials after an
-authorized sale using the sibling `oracle-license-generator/license_sign.py`;
+authorized sale using the sibling `rhetoric-license-generator/license_sign.py`;
 the production signing seed stays in the owner's secret manager. See
 [LICENSING_OPS.md](LICENSING_OPS.md)
 for custody and test-key procedures.
 
+`RHETORIC1` is the token prefix from the 2026-11-12 rename onward.
 `ORACLE1` is the historical token prefix for 1.5.0 and remains accepted for
-compatibility. It is not the product name.
+compatibility. Neither is the product name.
 
 ## Support
 
@@ -95,7 +100,7 @@ rhetoric support-bundle
 ```
 
 The bundle is written under `Output/` and is never uploaded. It contains the
-app version and platform, whether `ORACLE_*` variables are present (not their
+app version and platform, whether `RHETORIC_*` variables are present (not their
 values), the license state (never the serial number or licensee), redacted settings,
 the newest redacted logs, and a doctor report. Crash reports are included only
 with `--include-crash-reports` **and** when local crash-reporting consent is
@@ -132,36 +137,40 @@ changed.
 
 ## Known limitations
 
-- **Windows is unsupported.** Current-head hosted Windows evidence and clean
-  Windows 11 installer acceptance are not verified; see the readiness report.
+- **Windows is experimental.** Hosted Windows CI and a clean Windows 11 guest
+  installer acceptance plus ten consecutive GUI certifications passed at
+  `17fdab9` ([evidence](release/WINDOWS_GUEST_ACCEPTANCE_1.5.0.md)); the
+  installer is unsigned, and Windows remains excluded from the proposed paid
+  offer.
 - **First run downloads models.** The first render may need a multi-GB model
   download; the doctor announces it before it starts. Offline installs use the
   bundle instead.
 - **Third-party obligations remain.** The soft-launch gate reports LGPL
   notice and replacement/source obligations for Qt and other weak-copyleft
   components. They require a documented fulfillment path before distribution.
-- **The EULA is a draft.** Owner and counsel must approve it before the draft
-  marker is removed or the release gate can pass.
+- **The EULA was finalized by the owner on 2026-11-08.** It is adopted as EULA.md and validated against Washington primary sources (docs/release/EULA_WA_VALIDATION.md); independent counsel review remains outstanding and is still required before the release gate can be treated as commercially cleared.
 - **A serial number gates functional features.** `render-report` and every
   other render or editing workflow require activation; help and status remain
   available without one.
 
 ## Owner go-live checklist
 
-Run the gate, then clear each blocker:
+Run the gate and review each finding; an automated ready result is not
+commercial clearance:
 
 ```bash
 .venv/bin/python scripts/soft_launch.py --check
 ```
 
-| Blocker | Owner action |
+| Finding | Owner action |
 |---|---|
-| `eula` | Complete the governing-law/venue section, rename `EULA-DRAFT.md` to `EULA.md`, remove the DRAFT marker, and have counsel review it. |
-| `third_party_notices` | Regenerate with `python scripts/generate_third_party_notices.py --check` and commit the diff. |
+| `eula` | The EULA is adopted and the automated check passes. Obtain independent counsel review before commercial clearance. |
+| `license_policy` warning | Keep the notices and source-offer/replacement instructions current; the exact RC13 Qt library set was hash-matched to the previously replacement-tested set. See `release/LGPL_FULFILLMENT.md` and the RC13 release evidence. |
+| `third_party_notices` | Keep generated notices current with `python scripts/generate_third_party_notices.py --check`; exact RC13 package notice evidence is in the release checklist. |
 | `version` | Keep `__version__`, the README banner, and `CHANGELOG.md` in agreement (`scripts/release.py --check`). |
 | `checksums` | The 1.5.0 manifest is generated locally and must be committed with the release record; rebuilds must not silently replace it. |
 | `windows_scope` | Keep Windows explicitly unsupported until current-head qualification passes. |
-| `support_bundle` | Keep `the_oracle.support_bundle` importable. |
+| `support_bundle` | Keep `rhetoric.support_bundle` importable. |
 
 Warnings (weak-copyleft LGPL/MPL packages such as PySide6, certifi, `orjson`,
 `soxr`, and `tqdm`) do not block the gate, but their notice and

@@ -23,7 +23,7 @@ Four rules, all born from real slices:
    ``app_gui`` reads anymore. ANY app_gui-level patch of it is a silent
    no-op; repoint the patch at the owner (or un-move the name).
 2. SPLIT_OWNED — a name with split readership after the gui_render slice:
-   ``OraclePipeline`` is constructed by MainWindow (and PrewarmThread) from
+   ``RhetoricPipeline`` is constructed by MainWindow (and PrewarmThread) from
    app_gui globals AND by the workers' direct fallback from gui_render
    globals. app_gui-level patches stay legitimate for window-assembly tests
    and are REQUIRED to be gui_render-level in the worker-path test files.
@@ -62,12 +62,12 @@ handles both):
   * ``monkeypatch.setattr(app_gui, "name", ...)`` / ``delattr``
   * ``monkeypatch.setattr(app_gui, name_var, ...)`` — non-literal names are
     reported as unresolved so nothing slips through unreviewed
-  * ``mock.patch("the_oracle.app_gui.name")`` / ``patch("app_gui.name")``
-  * ``monkeypatch.setattr("the_oracle.app_gui.name", ...)`` — the string
-    form resolves ``the_oracle.app_gui`` by import; identical hazard, and
+  * ``mock.patch("rhetoric.app_gui.name")`` / ``patch("app_gui.name")``
+  * ``monkeypatch.setattr("rhetoric.app_gui.name", ...)`` — the string
+    form resolves ``rhetoric.app_gui`` by import; identical hazard, and
     invisible to any scan that only handles module-object first arguments
   * ``mock.patch.object(app_gui, "name")``
-  * ``mock.patch.multiple("the_oracle.app_gui", name=value, ...)`` — each
+  * ``mock.patch.multiple("rhetoric.app_gui", name=value, ...)`` — each
     keyword is one patch site (the string form again); the module-object
     form would need the target as a *value*, which AST cannot bind, so
     only the string form is scanned
@@ -256,12 +256,12 @@ def load_payload_policy(manifest_path: Path = MANIFEST_PATH) -> dict[str, object
 #: app_gui-level patch is legitimate for window-assembly tests but a silent
 #: no-op for the worker path.
 SPLIT_OWNED: dict[str, tuple[str, str]] = {
-    "OraclePipeline": ("the_oracle.app_gui", "the_oracle.gui_render"),
+    "RhetoricPipeline": ("rhetoric.app_gui", "rhetoric.gui_render"),
 }
 
-#: Test files whose OraclePipeline patches feed the WORKERS' direct
+#: Test files whose RhetoricPipeline patches feed the WORKERS' direct
 #: (non-subprocess) fallback — the path gui_render owns. Everything else
-#: patching app_gui.OraclePipeline feeds window assembly / prewarm, which
+#: patching app_gui.RhetoricPipeline feeds window assembly / prewarm, which
 #: app_gui still owns.
 WORKER_PATH_TESTS: frozenset[str] = frozenset(
     {
@@ -277,14 +277,14 @@ WORKER_PATH_TESTS: frozenset[str] = frozenset(
 #: are still built from app_gui's.) Unlike SPLIT_OWNED this is not scoped to
 #: worker-path files: every app_gui-level patch of the name is partial.
 PARTIAL_OWNED: dict[str, tuple[str, str]] = {
-    "QHSectionGroup": ("the_oracle.app_gui", "the_oracle.gui_chrome"),
+    "QHSectionGroup": ("rhetoric.app_gui", "rhetoric.gui_chrome"),
     # The gui_cast slice (2026-10-05, slice 9): MainWindow builds SpeakerGroup
     # panels (A/B + extras) and reads the two settings helpers from app_gui
     # globals, while CastManagementDialog builds/reads them from gui_cast's —
     # an app_gui-level patch covers only app_gui's sites.
-    "SpeakerGroup": ("the_oracle.app_gui", "the_oracle.gui_cast"),
-    "_speaker_settings_from_group": ("the_oracle.app_gui", "the_oracle.gui_cast"),
-    "_apply_speaker_settings_to_group": ("the_oracle.app_gui", "the_oracle.gui_cast"),
+    "SpeakerGroup": ("rhetoric.app_gui", "rhetoric.gui_cast"),
+    "_speaker_settings_from_group": ("rhetoric.app_gui", "rhetoric.gui_cast"),
+    "_apply_speaker_settings_to_group": ("rhetoric.app_gui", "rhetoric.gui_cast"),
 }
 
 #: Every name the scan must catch, for the failure message.
@@ -363,13 +363,13 @@ def _string_constants(call: ast.Call) -> list[str]:
 def _patch_string_target(value: str) -> tuple[str, str] | None:
     """Split a dotted patch string into (module, name) if it targets app_gui.
 
-    Both the fully-qualified ``the_oracle.app_gui.X`` and the abbreviated
+    Both the fully-qualified ``rhetoric.app_gui.X`` and the abbreviated
     ``app_gui.X`` (mock's string form also resolves the last two components
     against the calling namespace) route through app_gui's globals — the
     same silent-no-op hazard as ``setattr(app_gui, "X", ...)``. Everything
     else returns None.
     """
-    if value.startswith("the_oracle.app_gui."):
+    if value.startswith("rhetoric.app_gui."):
         module, _, name = value.rpartition(".")
         return module, name
     if value.startswith("app_gui."):
@@ -425,7 +425,7 @@ def _scan_call(path: str, call: ast.Call) -> list[PatchTarget]:
                 target_desc = ast.dump(name_arg) if name_arg is not None else "?"
                 targets.append(PatchTarget(path, call.lineno, f"monkeypatch.{method}(app_gui, ...)", target_desc, False))
         elif args and isinstance(args[0], ast.Constant) and isinstance(args[0].value, str):
-            # setattr("the_oracle.app_gui.name", value): the string form
+            # setattr("rhetoric.app_gui.name", value): the string form
             # imports the module and sets the attribute on it — identical
             # hazard to the module-object form, and invisible to any scan
             # that only inspects first-argument expressions.
@@ -434,7 +434,7 @@ def _scan_call(path: str, call: ast.Call) -> list[PatchTarget]:
                 module, name = target
                 targets.append(PatchTarget(path, call.lineno, f"monkeypatch.{method}({module!r}, ...)", name, True))
     elif method == "patch":
-        # patch("the_oracle.app_gui.name") / patch("app_gui.name") — mock's
+        # patch("rhetoric.app_gui.name") / patch("app_gui.name") — mock's
         # string form imports the module, so both spellings hit app_gui's
         # globals (the abbreviated form resolves the last two components
         # against the calling module's namespace).
@@ -451,12 +451,12 @@ def _scan_call(path: str, call: ast.Call) -> list[PatchTarget]:
                 target_desc = ast.dump(name_arg) if name_arg is not None else "?"
                 targets.append(PatchTarget(path, call.lineno, "patch.object(app_gui, ...)", target_desc, False))
     elif method == "patch.multiple":
-        # patch.multiple("the_oracle.app_gui", name=value, ...): the string is
+        # patch.multiple("rhetoric.app_gui", name=value, ...): the string is
         # the BARE module (names come from the keywords), so the module.name
         # splitter does not apply — only the exact module spellings route
         # through app_gui's globals. (The module-object form would need the
         # target bound to a value AST cannot statically know.)
-        if any(s in {"the_oracle.app_gui", "app_gui"} for s in _string_constants(call)):
+        if any(s in {"rhetoric.app_gui", "app_gui"} for s in _string_constants(call)):
             for kw in call.keywords:
                 if kw.arg is not None:
                     targets.append(PatchTarget(path, call.lineno, "patch.multiple(app_gui)", kw.arg, True))
@@ -508,9 +508,9 @@ def test_scan_finds_the_known_app_gui_surface() -> None:
     )
     resolved_names = {t.name for t in targets if t.resolved}
     # Names the suite demonstrably patches today (subset spot-checks).
-    assert {"find_audiocpp_binary", "OraclePipeline", "QMediaPlayer"} <= resolved_names
+    assert {"find_audiocpp_binary", "RhetoricPipeline", "QMediaPlayer"} <= resolved_names
     # The string form is part of the live surface: this very module patches
-    # 'the_oracle.app_gui.QFileDialog.getOpenFileName' by string.
+    # 'rhetoric.app_gui.QFileDialog.getOpenFileName' by string.
     assert any(t.form.startswith("monkeypatch.setattr('") or t.form.startswith('monkeypatch.setattr("') for t in targets), (
         "no string-form setattr target was found; the string-form scan went blind"
     )
@@ -531,7 +531,7 @@ def _scanner(tmp_path: Path, source: str) -> list[PatchTarget]:
 
 def test_string_form_setattr_is_caught(tmp_path: Path) -> None:
     """The bypass this extension closes: monkeypatch's string form imports
-    'the_oracle.app_gui' and patches it — invisible to any scan that only
+    'rhetoric.app_gui' and patches it — invisible to any scan that only
     inspects module-object first arguments."""
     targets = _scanner(
         tmp_path,
@@ -539,13 +539,13 @@ def test_string_form_setattr_is_caught(tmp_path: Path) -> None:
         import monkeypatch_target as app_gui
 
         def test_uses_string_form(monkeypatch):
-            monkeypatch.setattr("the_oracle.app_gui.OraclePipeline", object)
+            monkeypatch.setattr("rhetoric.app_gui.RhetoricPipeline", object)
             monkeypatch.setattr("app_gui.find_audiocpp_binary", lambda: None)
-            monkeypatch.delattr("the_oracle.app_gui.QMediaPlayer")
+            monkeypatch.delattr("rhetoric.app_gui.QMediaPlayer")
         """,
     )
     names = {t.name for t in targets}
-    assert names == {"OraclePipeline", "find_audiocpp_binary", "QMediaPlayer"}
+    assert names == {"RhetoricPipeline", "find_audiocpp_binary", "QMediaPlayer"}
     assert all(t.resolved for t in targets)
 
 
@@ -556,7 +556,7 @@ def test_string_form_owned_name_is_an_offender(tmp_path: Path) -> None:
         tmp_path,
         """
         def test_offender(monkeypatch):
-            monkeypatch.setattr("the_oracle.app_gui.default_gui_settings_payload", lambda: {})
+            monkeypatch.setattr("rhetoric.app_gui.default_gui_settings_payload", lambda: {})
         """,
     )
     offenders = [t.as_offender() for t in targets]
@@ -579,17 +579,17 @@ def test_bare_app_gui_prefix_is_caught(tmp_path: Path) -> None:
 
 
 def test_patch_multiple_keywords_are_individual_targets(tmp_path: Path) -> None:
-    """patch.multiple("the_oracle.app_gui", a=1, b=2) is two patch sites; an
+    """patch.multiple("rhetoric.app_gui", a=1, b=2) is two patch sites; an
     owned name hidden in a keyword must not escape the net."""
     targets = _scanner(
         tmp_path,
         """
         def test_multiple(monkeypatch):
-            mock.patch.multiple("the_oracle.app_gui", QMediaPlayer=object, OraclePipeline=object)
+            mock.patch.multiple("rhetoric.app_gui", QMediaPlayer=object, RhetoricPipeline=object)
         """,
     )
     names = {t.name for t in targets}
-    assert names == {"QMediaPlayer", "OraclePipeline"}
+    assert names == {"QMediaPlayer", "RhetoricPipeline"}
     assert all("patch.multiple" in t.form for t in targets)
 
 
@@ -600,9 +600,9 @@ def test_unrelated_strings_are_ignored(tmp_path: Path) -> None:
         tmp_path,
         """
         def test_unrelated(monkeypatch):
-            monkeypatch.setattr("the_oracle.gui_render.RenderWorker", object)
-            monkeypatch.setattr("the_oracle.pipeline.OraclePipeline", object)
-            mock.patch("the_oracle.app_gui_render.Thing")
+            monkeypatch.setattr("rhetoric.gui_render.RenderWorker", object)
+            monkeypatch.setattr("rhetoric.pipeline.RhetoricPipeline", object)
+            mock.patch("rhetoric.app_gui_render.Thing")
         """,
     )
     assert targets == []
@@ -650,15 +650,15 @@ def test_a_malformed_manifest_fails_loudly(tmp_path: Path) -> None:
     with pytest.raises(AssertionError, match="non-empty object"):
         load_moved_owners(bad)
 
-    bad.write_text('{"moved_owners": {"the_oracle.gui_render": []}}', encoding="utf-8")
+    bad.write_text('{"moved_owners": {"rhetoric.gui_render": []}}', encoding="utf-8")
     with pytest.raises(AssertionError, match="must map to an object"):
         load_moved_owners(bad)
 
-    bad.write_text('{"moved_owners": {"the_oracle.gui_render": {"names": []}}}', encoding="utf-8")
+    bad.write_text('{"moved_owners": {"rhetoric.gui_render": {"names": []}}}', encoding="utf-8")
     with pytest.raises(AssertionError, match="non-empty 'names' list"):
         load_moved_owners(bad)
 
-    bad.write_text('{"moved_owners": {"the_oracle.gui_render": {"names": "x"}}}', encoding="utf-8")
+    bad.write_text('{"moved_owners": {"rhetoric.gui_render": {"names": "x"}}}', encoding="utf-8")
     with pytest.raises(AssertionError, match="non-empty 'names' list"):
         load_moved_owners(bad)
 
@@ -675,19 +675,19 @@ def test_a_malformed_manifest_fails_loudly(tmp_path: Path) -> None:
             "read_accessors": ["text"],
             "sanctioned_readers": ["_widget_snapshot"],
             "policy_references": ["WidgetSnapshot"],
-            "policy_owners": {"the_oracle.gui_settings": "definition"},
+            "policy_owners": {"rhetoric.gui_settings": "definition"},
             "schema_keys": ["model_variant"],
-            "schema_exempt_modules": ["the_oracle.gui_settings"],
+            "schema_exempt_modules": ["rhetoric.gui_settings"],
         }
         policy.update(overrides)
         return json.dumps(
             {
-                "moved_owners": {"the_oracle.gui_render": {"names": ["x"]}},
+                "moved_owners": {"rhetoric.gui_render": {"names": ["x"]}},
                 "payload_policy": policy,
             }
         )
 
-    bad.write_text('{"moved_owners": {"the_oracle.gui_render": {"names": ["x"]}}}', encoding="utf-8")
+    bad.write_text('{"moved_owners": {"rhetoric.gui_render": {"names": ["x"]}}}', encoding="utf-8")
     with pytest.raises(AssertionError, match="'payload_policy' must be an object"):
         load_payload_policy(bad)
 
@@ -722,12 +722,12 @@ def test_a_malformed_manifest_fails_loudly(tmp_path: Path) -> None:
         writer.update(overrides)
         return json.dumps(
             {
-                "moved_owners": {"the_oracle.gui_render": {"names": ["x"]}},
+                "moved_owners": {"rhetoric.gui_render": {"names": ["x"]}},
                 "writer_manifest": writer,
             }
         )
 
-    bad.write_text('{"moved_owners": {"the_oracle.gui_render": {"names": ["x"]}}}', encoding="utf-8")
+    bad.write_text('{"moved_owners": {"rhetoric.gui_render": {"names": ["x"]}}}', encoding="utf-8")
     with pytest.raises(AssertionError, match="'writer_manifest' must be an object"):
         load_writer_manifest(bad)
 
@@ -739,7 +739,7 @@ def test_a_malformed_manifest_fails_loudly(tmp_path: Path) -> None:
     with pytest.raises(AssertionError, match=r"writer_manifest\.min_preview_sites must be a positive integer"):
         load_writer_manifest(bad)
 
-    bad.write_text(writer_json(preview_writers=["the_oracle/pipeline.py"]), encoding="utf-8")
+    bad.write_text(writer_json(preview_writers=["rhetoric/pipeline.py"]), encoding="utf-8")
     with pytest.raises(AssertionError, match="owners must be bare source file names"):
         load_writer_manifest(bad)
 
@@ -753,7 +753,7 @@ def test_a_malformed_manifest_fails_loudly(tmp_path: Path) -> None:
             "min_census_names": 1,
             "min_modules_scanned": 1,
             "min_bare_pairs": 1,
-            "sanctioned_exemptions": {"gui_render.py": {"OraclePipeline": "why"}},
+            "sanctioned_exemptions": {"gui_render.py": {"RhetoricPipeline": "why"}},
             "latent_split_readership": {"gui_themes.py": {"THEMES": "why"}},
             "latent_anchor_names": ["THEMES"],
             "min_latent_pairs": 1,
@@ -761,7 +761,7 @@ def test_a_malformed_manifest_fails_loudly(tmp_path: Path) -> None:
         couple.update(overrides)
         return json.dumps(
             {
-                "moved_owners": {"the_oracle.gui_render": {"names": ["x"]}},
+                "moved_owners": {"rhetoric.gui_render": {"names": ["x"]}},
                 "patch_couple_policy": couple,
             }
         )
@@ -932,14 +932,14 @@ def load_patch_couple_policy(manifest_path: Path = MANIFEST_PATH) -> dict[str, o
 
 
 def _is_app_gui_expr(node: ast.expr) -> bool:
-    """True for ``app_gui`` or ``the_oracle.app_gui`` as a patch target."""
+    """True for ``app_gui`` or ``rhetoric.app_gui`` as a patch target."""
     if isinstance(node, ast.Name):
         return node.id == "app_gui"
     if isinstance(node, ast.Attribute):
         return (
             node.attr == "app_gui"
             and isinstance(node.value, ast.Name)
-            and node.value.id == "the_oracle"
+            and node.value.id == "rhetoric"
         )
     return False
 
@@ -949,8 +949,8 @@ def _app_gui_rebind_census(tests_dir: Path) -> set[str]:
 
     Same no-import/no-execution contract as the committed scanner above:
     ``setattr(app_gui, "NAME", ...)`` (positional or ``name=`` keyword, on
-    ``app_gui`` or ``the_oracle.app_gui``) and the string spellings
-    ``patch("app_gui.NAME")`` / ``patch("the_oracle.app_gui.NAME")`` count;
+    ``app_gui`` or ``rhetoric.app_gui``) and the string spellings
+    ``patch("app_gui.NAME")`` / ``patch("rhetoric.app_gui.NAME")`` count;
     everything else does not. The census is DERIVED from the tests so it
     self-updates as patch sites move — no hand-maintained name list.
     """
@@ -982,7 +982,7 @@ def _app_gui_rebind_census(tests_dir: Path) -> set[str]:
             ):
                 spelling = node.args[0]
                 if isinstance(spelling, ast.Constant) and isinstance(spelling.value, str):
-                    for prefix in ("the_oracle.app_gui.", "app_gui."):
+                    for prefix in ("rhetoric.app_gui.", "app_gui."):
                         if spelling.value.startswith(prefix):
                             tail = spelling.value[len(prefix):]
                             if tail.isidentifier():
@@ -1004,7 +1004,7 @@ def _gui_module_bare_uses(module_name: str, coupled: set[str]) -> set[str]:
     shadowing would false-positive here; if that ever fires, rename the local
     or adjudicate the pair in the record.
     """
-    path = Path(__file__).resolve().parents[1] / "src" / "the_oracle" / module_name
+    path = Path(__file__).resolve().parents[1] / "src" / "rhetoric" / module_name
     tree = ast.parse(path.read_text(encoding="utf-8"))
     loads = {
         n.id for n in ast.walk(tree) if isinstance(n, ast.Name) and isinstance(n.ctx, ast.Load)
@@ -1035,7 +1035,7 @@ def test_moved_gui_modules_resolve_every_patch_coupled_name_by_the_seam_rule():
             "the scanner broke; adjudicate before removing the anchor"
         )
 
-    modules = sorted((Path(__file__).resolve().parents[1] / "src" / "the_oracle").glob("gui_*.py"))
+    modules = sorted((Path(__file__).resolve().parents[1] / "src" / "rhetoric").glob("gui_*.py"))
     assert len(modules) >= policy["min_modules_scanned"], (
         f"only {len(modules)} gui_* modules found (floor {policy['min_modules_scanned']})"
     )
@@ -1187,10 +1187,10 @@ def test_latent_split_readership_pairs_are_adjudicated() -> None:
     policy = load_patch_couple_policy()
     census = _app_gui_rebind_census(root / "tests") - set(policy["census_noise_names"])
     app_gui_side = _app_gui_patchable_reads(
-        (root / "src" / "the_oracle" / "app_gui.py").read_text(encoding="utf-8")
+        (root / "src" / "rhetoric" / "app_gui.py").read_text(encoding="utf-8")
     )
 
-    modules = sorted((root / "src" / "the_oracle").glob("gui_*.py"))
+    modules = sorted((root / "src" / "rhetoric").glob("gui_*.py"))
     assert len(modules) >= policy["min_modules_scanned"], (
         f"only {len(modules)} gui_* modules found (floor {policy['min_modules_scanned']})"
     )
@@ -1249,7 +1249,7 @@ def test_latent_scan_flags_real_splits_and_skips_non_runtime_reads() -> None:
         """\
         from PySide6.QtWidgets import QLabel
 
-        THEMES = {"oracle_light": ("body", "accent")}
+        THEMES = {"rhetoric_light": ("body", "accent")}
         DECORATION = QLabel
 
         def helper():
@@ -1274,7 +1274,7 @@ def test_latent_scan_flags_real_splits_and_skips_non_runtime_reads() -> None:
     assert latent(
         """\
         from PySide6.QtWidgets import QLabel
-        from the_oracle.gui_themes import THEMES
+        from rhetoric.gui_themes import THEMES
 
         widget = QLabel(THEMES)
         """

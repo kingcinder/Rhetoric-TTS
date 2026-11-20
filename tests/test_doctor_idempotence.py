@@ -27,7 +27,7 @@ WORKFLOW = REPO_ROOT / ".github" / "workflows" / "ci.yml"
 @pytest.fixture()
 def checker():
     spec = importlib.util.spec_from_file_location(
-        "oracle_doctor_idempotence", SCRIPTS_DIR / "doctor_idempotence.py"
+        "rhetoric_doctor_idempotence", SCRIPTS_DIR / "doctor_idempotence.py"
     )
     module = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
@@ -293,7 +293,7 @@ def test_workflow_runs_the_idempotence_check_on_every_runner() -> None:
     doctor_steps = [
         s
         for s in steps
-        if "manage_install.py doctor" in s.get("run", "") or "doctor_oracle_tts" in s.get("run", "")
+        if "manage_install.py doctor" in s.get("run", "") or "doctor_rhetoric" in s.get("run", "")
     ]
     assert doctor_steps
     for doctor_step in doctor_steps:

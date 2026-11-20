@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pytest
 
-from the_oracle import support
+from rhetoric import support
 
 
 def _report(tmp_path: Path, *, offset_minutes: int = 0, title: str = "Render stops at the last line"):

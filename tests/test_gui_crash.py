@@ -31,9 +31,9 @@ sys.path.insert(0, str(REPO_ROOT / "src"))
 from PySide6.QtCore import QMessageLogContext, QtMsgType, qInstallMessageHandler
 from PySide6.QtWidgets import QApplication, QPushButton, QWidget
 
-from the_oracle import gui_crash
-from the_oracle.crash import bundle, consent
-from the_oracle.crash import handlers as crash_handlers
+from rhetoric import gui_crash
+from rhetoric.crash import bundle, consent
+from rhetoric.crash import handlers as crash_handlers
 
 
 @pytest.fixture(scope="module")
@@ -246,7 +246,7 @@ def test_review_summary_names_the_exception(root: Path, parent) -> None:
         dialog.programmed = ["Close"]
         return dialog
 
-    import the_oracle.gui_crash as gc
+    import rhetoric.gui_crash as gc
 
     gc.QLabel = _RecordingLabel
     try:
@@ -343,7 +343,7 @@ def test_launch_gui_arms_before_mainwindow_is_built() -> None:
     launch_gui is a public entry reachable without cli.main, so it must arm
     the net itself — before MainWindow() is constructed, not after (the
     window-build phase is native-crash territory; see the 08:06:51 segfault)."""
-    from the_oracle import app_gui
+    from rhetoric import app_gui
 
     source = Path(app_gui.__file__).read_text(encoding="utf-8")
     assert "crash_handlers.arm_native_capture()" in source
@@ -353,7 +353,7 @@ def test_launch_gui_arms_before_mainwindow_is_built() -> None:
 
 
 def test_first_run_gui_order_is_eula_then_activation_then_window() -> None:
-    from the_oracle import app_gui
+    from rhetoric import app_gui
 
     source = Path(app_gui.__file__).read_text(encoding="utf-8")
     eula = source.index("run_eula_acceptance(None, eula_root")
@@ -372,15 +372,15 @@ def test_qt_message_handler_records_crash_class_only(root: Path) -> None:
     try:
         # Retrieve the just-installed handler: installing None returns the
         # previous one (PySide6 contract).
-        oracle_handler = qInstallMessageHandler(None)
-        assert callable(oracle_handler)
+        rhetoric_handler = qInstallMessageHandler(None)
+        assert callable(rhetoric_handler)
         context = QMessageLogContext()
 
-        oracle_handler(QtMsgType.QtFatalMsg, context, "native fatal from Qt")
+        rhetoric_handler(QtMsgType.QtFatalMsg, context, "native fatal from Qt")
         assert not bundle.list_records(root) or json.loads(
             bundle.list_records(root)[0].read_text(encoding="utf-8")
         )["exception"]["type"].startswith("Qt")
-        oracle_handler(QtMsgType.QtWarningMsg, context, "a warning must not become a crash record")
+        rhetoric_handler(QtMsgType.QtWarningMsg, context, "a warning must not become a crash record")
         records = bundle.list_records(root)
         assert len(records) == 1, "only the fatal message is crash-class"
         payload = json.loads(records[0].read_text(encoding="utf-8"))

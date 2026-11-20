@@ -28,14 +28,14 @@ import soundfile as sf
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from the_oracle.audio import assemble as assemble_mod
-from the_oracle.audio import export_flac as flac_mod
-from the_oracle.audio.assemble import AudioSegment, _crossfade_overlap, assemble_dialogue
-from the_oracle.models.cache import ProjectCache, _resample_linear, build_chunk_cache_key
-from the_oracle.utils import audio as audio_util_mod
-from the_oracle.utils.audio import resample_audio
-from the_oracle.utils.chunking import MAX_CHUNK_SIZE, chunk_utterance
-from the_oracle.utils.hashing import build_chunk_hash
+from rhetoric.audio import assemble as assemble_mod
+from rhetoric.audio import export_flac as flac_mod
+from rhetoric.audio.assemble import AudioSegment, _crossfade_overlap, assemble_dialogue
+from rhetoric.models.cache import ProjectCache, _resample_linear, build_chunk_cache_key
+from rhetoric.utils import audio as audio_util_mod
+from rhetoric.utils.audio import resample_audio
+from rhetoric.utils.chunking import MAX_CHUNK_SIZE, chunk_utterance
+from rhetoric.utils.hashing import build_chunk_hash
 
 # --- pipeline imports need huggingface_hub stubbed (heavy dep, absent here) ---
 _hub = types.ModuleType("huggingface_hub")
@@ -50,8 +50,8 @@ sys.modules.setdefault("huggingface_hub", _hub)
 sys.modules.setdefault("huggingface_hub.errors", _hub_errors)
 sys.modules.setdefault("huggingface_hub.utils", _hub_utils)
 
-from the_oracle.models.project import VoiceSettings  # noqa: E402
-from the_oracle.pipeline import (  # noqa: E402
+from rhetoric.models.project import VoiceSettings  # noqa: E402
+from rhetoric.pipeline import (  # noqa: E402
     SynthesisTask,
     _load_cached_stem,
     _write_pause_only_stem,
@@ -268,8 +268,8 @@ class TestCorruptCachedStems:
         engine = _FakeEngine()
         task = _make_task("hello there")
         # Pre-compute the hash the task will use, then plant garbage there.
-        from the_oracle.utils.hashing import build_chunk_hash as bch
-        from the_oracle.pipeline import _chunk_engine_key
+        from rhetoric.utils.hashing import build_chunk_hash as bch
+        from rhetoric.pipeline import _chunk_engine_key
 
         chunk_hash = bch(
             speaker=task.speaker, repaired_text=task.text,

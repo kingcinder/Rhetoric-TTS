@@ -3,7 +3,7 @@ from __future__ import annotations
 import sys
 import types
 
-from the_oracle.text_repair.punctuation import PunctuationRestorer
+from rhetoric.text_repair.punctuation import PunctuationRestorer
 
 
 def test_legacy_punctuation_model_maps_grouped_entities_for_transformers_five(monkeypatch) -> None:

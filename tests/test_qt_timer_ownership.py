@@ -21,7 +21,7 @@ from __future__ import annotations
 import ast
 from pathlib import Path
 
-_SRC_ROOT = Path(__file__).resolve().parents[1] / "src" / "the_oracle"
+_SRC_ROOT = Path(__file__).resolve().parents[1] / "src" / "rhetoric"
 
 
 def _contextless_single_shots() -> list[str]:
@@ -69,7 +69,7 @@ def test_the_scanner_sees_a_synthetic_offender() -> None:
         "    QTimer.singleShot(0, self, lambda: None)\n"
     )
     with tempfile.TemporaryDirectory() as tmp:
-        root = Path(tmp) / "the_oracle"
+        root = Path(tmp) / "rhetoric"
         root.mkdir()
         (root / "probe_mod.py").write_text(src, encoding="utf-8")
         global _SRC_ROOT

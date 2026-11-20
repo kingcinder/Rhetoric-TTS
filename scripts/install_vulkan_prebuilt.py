@@ -5,7 +5,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from the_oracle.vulkan_prebuilt import download_and_install
+from rhetoric.vulkan_prebuilt import download_and_install
 
 
 def main(argv: list[str] | None = None) -> int:

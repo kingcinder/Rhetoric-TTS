@@ -14,7 +14,7 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO / "src"))
 
-from the_oracle.gui_tooltips import CtrlHoverHelp  # noqa: E402
+from rhetoric.gui_tooltips import CtrlHoverHelp  # noqa: E402
 
 
 def _ignore_events(self, _watched, _event) -> bool:

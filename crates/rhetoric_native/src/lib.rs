@@ -1,6 +1,6 @@
 //! Compiled license-verification core for Rhetoric.
 //!
-//! `the_oracle.licensing.tokens.verify_token` delegates to [`verify_serial`]
+//! `rhetoric.licensing.tokens.verify_token` delegates to [`verify_serial`]
 //! when this extension is built and importable; the pure-Python implementation
 //! remains the reference and the development fallback. Delegation order,
 //! payload canonicalisation and every user-visible detail string are pinned by
@@ -33,7 +33,11 @@ use sha2::{Digest, Sha256};
 //: in RHETORIC_ATTEST_MANIFEST. Empty for development builds.
 include!(concat!(env!("OUT_DIR"), "/integrity_manifest.rs"));
 
-pub const TOKEN_PREFIX: &str = "ORACLE1";
+pub const TOKEN_PREFIX: &str = "RHETORIC1";
+
+/// Tokens issued before the rename carry this prefix (all 1.5.0 serials);
+/// verification accepts it so already-issued licenses keep working.
+pub const LEGACY_TOKEN_PREFIX: &str = "ORACLE1";
 
 const KNOWN_PAYLOAD_KEYS: [&str; 7] = [
     "v",
@@ -118,7 +122,7 @@ enum Verdict {
 /// Python `parse()` returning None (malformed envelope).
 fn split_token(token: &str) -> Option<(Map<String, Value>, Vec<u8>)> {
     let parts: Vec<&str> = token.trim().split('.').collect();
-    if parts.len() != 3 || parts[0] != TOKEN_PREFIX {
+    if parts.len() != 3 || (parts[0] != TOKEN_PREFIX && parts[0] != LEGACY_TOKEN_PREFIX) {
         return None;
     }
     let body = decode_b64url(parts[1])?;
@@ -428,7 +432,7 @@ fn payload_dict(py: Python<'_>, payload: &Payload) -> PyResult<Py<PyAny>> {
 
 /// The compiled-in production registry as ``{key_id: public_key}``. Public keys
 /// only — this exists so the Python suite can pin the shipped bytes against
-/// ``the_oracle.licensing.keys`` (no test holds the k2 signing seed). The
+/// ``rhetoric.licensing.keys`` (no test holds the k2 signing seed). The
 /// development test key is deliberately never returned.
 #[pyfunction]
 fn production_keys(py: Python<'_>) -> PyResult<Py<PyAny>> {
@@ -443,7 +447,7 @@ fn production_keys(py: Python<'_>) -> PyResult<Py<PyAny>> {
 ///
 /// The core reads and hashes the files itself instead of accepting digests from
 /// Python: otherwise a patched install could simply report whatever it liked.
-/// The root is supplied by the caller (the directory holding `the_oracle`), and
+/// The root is supplied by the caller (the directory holding `rhetoric`), and
 /// entries are relative to it.
 fn mismatched_modules(root: &Path, entries: &[(&str, [u8; 32])]) -> Vec<String> {
     let mut mismatched = Vec::new();

@@ -8,13 +8,13 @@ while unattached '~' characters are read verbatim.
 
 from __future__ import annotations
 
-from the_oracle.models.project import Utterance, strip_pain_point_markers
+from rhetoric.models.project import Utterance, strip_pain_point_markers
 
 
 def test_engine_boundaries_strip_markers_before_synthesis(monkeypatch, tmp_path) -> None:
     """The annotation must be removed even when callers bypass the pipeline."""
     import numpy as np
-    from the_oracle.tts_engines import chatterbox_engine
+    from rhetoric.tts_engines import chatterbox_engine
 
     class FakeConditionals:
         @classmethod
@@ -82,13 +82,13 @@ def test_utterance_text_for_tts_strips_markers_in_verbatim_mode() -> None:
 
 
 def test_prepare_plan_removes_markers_before_repair_and_keeps_review_annotation(tmp_path) -> None:
-    from the_oracle.models.settings import RenderSettings, SpeakerSettings; from the_oracle.pipeline import OraclePipeline
-    from the_oracle.smoke import _write_reference
+    from rhetoric.models.settings import RenderSettings, SpeakerSettings; from rhetoric.pipeline import RhetoricPipeline
+    from rhetoric.smoke import _write_reference
 
     source = tmp_path / "marked.txt"
     source.write_text("What if syncronized~lockstep works?\n", encoding="utf-8")
     reference = _write_reference(tmp_path / "ref.wav", 220.0)
-    pipeline = OraclePipeline(use_transformers=False, use_language_tool=False, use_punctuation_model=False)
+    pipeline = RhetoricPipeline(use_transformers=False, use_language_tool=False, use_punctuation_model=False)
     plan = pipeline.prepare_plan(
         source,
         tmp_path / "out",

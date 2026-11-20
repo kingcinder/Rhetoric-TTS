@@ -25,9 +25,9 @@
 ### Task 1: Native FLAC Vorbis comments
 
 **Files:**
-- Create: `src/the_oracle/audio/flac_tags.py`
-- Modify: `src/the_oracle/audio/export_flac.py`
-- Modify: `src/the_oracle/gui_render.py`
+- Create: `src/rhetoric/audio/flac_tags.py`
+- Modify: `src/rhetoric/audio/export_flac.py`
+- Modify: `src/rhetoric/gui_render.py`
 - Test: `tests/test_export_flac.py`, `tests/test_review_fixes_audio.py`, `tests/test_gui_render_import_safety.py`
 
 **Interfaces:**
@@ -44,8 +44,8 @@
 ### Task 2: Remove the optional LanguageTool client
 
 **Files:**
-- Modify: `src/the_oracle/text_repair/grammar.py`
-- Modify: `src/the_oracle/cli.py`, `src/the_oracle/smoke.py`, `src/the_oracle/pipeline.py`, `src/the_oracle/app_gui.py` (stale comments)
+- Modify: `src/rhetoric/text_repair/grammar.py`
+- Modify: `src/rhetoric/cli.py`, `src/rhetoric/smoke.py`, `src/rhetoric/pipeline.py`, `src/rhetoric/app_gui.py` (stale comments)
 - Modify: `scripts/manage_install.py`
 - Delete: `tests/test_grammar_language_tool.py`, `tests/test_grammar_self_join.py`
 - Test: `tests/test_review_fixes_text.py`, `tests/test_vulkan_render.py`, `tests/test_worker_import_sweep.py`
@@ -79,8 +79,8 @@
 **Files:**
 - Modify: `pyproject.toml` (drop `mutagen`, drop `language-tool-python`)
 - Modify: `scripts/license_review.json` (empty review table)
-- Modify: `src/the_oracle/third_party.py` (drop LanguageTool as an invoked external component)
-- Modify: `src/the_oracle/__init__.py`, `CHANGELOG.md`, `README.md`, `docs/SOFT_LAUNCH.md`
+- Modify: `src/rhetoric/third_party.py` (drop LanguageTool as an invoked external component)
+- Modify: `src/rhetoric/__init__.py`, `CHANGELOG.md`, `README.md`, `docs/SOFT_LAUNCH.md`
 - Regenerate: `THIRD_PARTY_NOTICES.md`
 - Test: `tests/test_third_party_notices.py`, `tests/test_soft_launch_gate.py`, `tests/test_release.py`, `tests/test_release_hygiene.py`, `tests/test_doctor_dependency_pins.py`
 

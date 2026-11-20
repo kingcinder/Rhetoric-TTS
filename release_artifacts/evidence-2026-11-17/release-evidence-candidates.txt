@@ -1,0 +1,4 @@
+release_artifacts/linux-frozen-33618789/qualification-2026-11-16/RELEASE_QUALIFICATION_REPORT.md
+release_artifacts/linux-v100a-review/RELEASE_QUALIFICATION_REPORT.md
+/home/cody/Downloads/Rhetoric_Codex_Prompt_01_Ubuntu24_Airgap_V1.00a_Release.md
+/home/cody/Downloads/Rhetoric_Codex_Prompt_01_Ubuntu24_Airgap_V1.00a_Release.txt

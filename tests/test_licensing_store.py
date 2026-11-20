@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import json
 import os
+import stat
 import sys
 import time
 from pathlib import Path
@@ -23,7 +24,7 @@ import pytest
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
-from the_oracle.licensing import store, tokens  # noqa: E402
+from rhetoric.licensing import store, tokens  # noqa: E402
 from tests.licensing_fixtures import TEST_KEY_ID, TEST_SEED  # noqa: E402
 
 #: Tokens are minted for the INJECTED test-only registry: the production
@@ -63,6 +64,55 @@ def test_save_then_load_roundtrip(tmp_path: Path) -> None:
     loaded = store.load_token(tmp_path)
     assert loaded.state == "loaded"
     assert loaded.stored.token == token
+
+
+def test_readonly_install_saves_activation_in_user_config(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    install_root = tmp_path / "opt" / "rhetoric"
+    install_root.mkdir(parents=True)
+    config_home = tmp_path / "home" / ".config"
+    monkeypatch.setenv("XDG_CONFIG_HOME", str(config_home))
+    monkeypatch.setattr(
+        store.os,
+        "access",
+        lambda path, mode: Path(path) != install_root,
+    )
+
+    token = _good_token()
+    result = store.save_token(install_root, token, verify_before_save=_verifier())
+
+    user_store = config_home / "rhetoric" / store.STORE_FILENAME
+    assert result.state == "saved"
+    assert user_store.is_file()
+    assert stat.S_IMODE(user_store.stat().st_mode) == 0o600
+    assert not (install_root / store.STORE_FILENAME).exists()
+    loaded = store.load_token(install_root)
+    assert loaded.state == "loaded"
+    assert loaded.stored.token == token
+
+
+def test_readonly_install_reads_and_preserves_shared_activation(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    install_root = tmp_path / "opt" / "rhetoric"
+    install_root.mkdir(parents=True)
+    shared_store = install_root / store.STORE_FILENAME
+    token = _good_token()
+    shared_store.write_text(json.dumps({"token": token}), encoding="utf-8")
+    monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "home" / ".config"))
+    monkeypatch.setattr(
+        store.os,
+        "access",
+        lambda path, mode: Path(path) != install_root,
+    )
+
+    loaded = store.load_token(install_root)
+
+    assert loaded.state == "loaded"
+    assert loaded.stored.token == token
+    assert store.clear_token(install_root) is False
+    assert shared_store.is_file()
 
 
 def test_refuses_to_store_an_invalid_token(tmp_path: Path) -> None:
@@ -140,6 +190,6 @@ def test_store_never_holds_a_token_the_verifier_rejects(tmp_path: Path) -> None:
     expired = tokens.mint(dict(PAYLOAD, exp=int(time.time()) - 5), SEED)
     result = store.save_token(tmp_path, expired, verify_before_save=_verifier())
     assert result.state == "refused"
-    from the_oracle.licensing import current_license
+    from rhetoric.licensing import current_license
 
     assert current_license(tmp_path).state == "no_token"

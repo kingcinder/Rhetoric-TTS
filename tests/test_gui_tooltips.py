@@ -1,4 +1,4 @@
-"""Tests for Ctrl+hover help tooltips (the_oracle.gui_tooltips.py).
+"""Tests for Ctrl+hover help tooltips (rhetoric.gui_tooltips.py).
 
 The GUI is involved, so these follow the repo convention of slow-marking
 Qt-backed tests; the poller itself is exercised through injected test seams
@@ -24,7 +24,7 @@ from PySide6.QtWidgets import (
     QToolTip,
 )
 
-from the_oracle.gui_tooltips import CtrlHoverHelp, install_ctrl_hover_help
+from rhetoric.gui_tooltips import CtrlHoverHelp, install_ctrl_hover_help
 
 pytestmark = pytest.mark.slow
 
@@ -301,7 +301,7 @@ def test_event_filter_short_circuits_during_a_bulk_restyle(qt_app):
     is behavior-identical, and no user input can arrive until the call
     returns to the event loop.
     """
-    from the_oracle.gui_themes import bulk_restyle
+    from rhetoric.gui_themes import bulk_restyle
 
     help_obj = install_ctrl_hover_help(qt_app)
     help_obj._ctrl_down = False

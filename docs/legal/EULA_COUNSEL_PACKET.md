@@ -1,11 +1,13 @@
 # EULA Counsel Packet — 1.5.0 RC
 
-Status: draft for owner and qualified counsel. No legal approval is claimed.
+**Addendum (2026-11-08, second pass):** the EULA has since been finalized as EULA.md (version 1.5.0-final) and revised in a second research pass covering Washington Article 2 applicability, payment-channel refund law, and the My Health My Data Act, with an adversarial comb-through. The finalized text and the packaged copy are byte-identical and are not drafts; the commercial defaults are adopted terms, not proposals. The current record is docs/release/EULA_WA_VALIDATION.md, which supersedes the draft-era summary below. Counsel review remains outstanding; no legal approval is claimed.
+
+Status: owner-finalized 2026-11-08 by owner order. Counsel review remains outstanding; no legal approval is claimed.
 
 ## Documents
 
-- Draft agreement: [`EULA-DRAFT.md`](../../EULA-DRAFT.md).
-- Packaged copy: [`src/the_oracle/EULA-DRAFT.md`](../../src/the_oracle/EULA-DRAFT.md).
+- Draft agreement: [`EULA.md`](../../EULA.md).
+- Packaged copy: [`src/rhetoric/EULA.md`](../../src/rhetoric/EULA.md).
 - The two copies are byte-identical and remain named `DRAFT` until counsel and
   the owner approve them.
 
@@ -70,7 +72,7 @@ locations:
 ## Owner decisions still required
 
 - Approve or revise the proposed commercial defaults.
-- Provide counsel's written approval before renaming the draft to `EULA.md`.
+- Owner renamed the finalized text to EULA.md on 2026-11-08; counsel written review remains outstanding.
 - Approve each component decision in `docs/legal/LICENSE_DECISIONS_PROPOSED.md`.
 - Confirm final payment, refund, and support language before publication.
 - Confirm the legal seller identity, address, selected venue county, and

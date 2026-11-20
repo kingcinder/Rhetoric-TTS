@@ -14,7 +14,14 @@ import time
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
-VENV_PY = REPO / ".venv" / "bin" / "python"
+# The venv interpreter lives under Scripts/ on Windows, bin/ on POSIX —
+# hardcoding the POSIX path made this capture tool unrunnable on Windows
+# (it died with FileNotFoundError after capturing its evidence).
+if os.name == 'nt':
+    VENV_PY = REPO / '.venv' / 'Scripts' / 'python.exe'
+else:
+    VENV_PY = REPO / '.venv' / 'bin' / 'python'
+
 
 # ── where the capture lands ──────────────────────────────────────────────────
 # certify_gui.py arms into its throwaway config root (certifier_isolation.isolated_config_root),

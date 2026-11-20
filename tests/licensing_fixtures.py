@@ -9,7 +9,7 @@ enforces that), and the licensing tests must not need it to:
 
 registers this table for the module, and every payload that the tests mint uses
 ``TEST_KEY_ID``. The key id is not secret; what matters is that it exists only
-in this file, never in ``the_oracle.licensing.keys``.
+in this file, never in ``rhetoric.licensing.keys``.
 
 Deliberately NOT autouse: a suite-wide patch of the production registry would
 hide a real regression in it (the doctor and the shipped install read that
@@ -21,8 +21,8 @@ from __future__ import annotations
 
 import pytest
 
-from the_oracle.licensing import keys
-from the_oracle.licensing.keys import VerifyKey
+from rhetoric.licensing import keys
+from rhetoric.licensing.keys import VerifyKey
 
 #: The key id every test-minted payload carries. Not a production id.
 TEST_KEY_ID = "ktest"
@@ -75,7 +75,7 @@ def payload(**overrides: object) -> dict[str, object]:
 @pytest.fixture
 def test_license_registry(monkeypatch: pytest.MonkeyPatch) -> str:
     """Install the test-only registry for one test and return its key id."""
-    from the_oracle.licensing import keys
+    from rhetoric.licensing import keys
 
     monkeypatch.setattr(keys, "KEYS", make_registry())
     return TEST_KEY_ID

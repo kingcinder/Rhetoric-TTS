@@ -1,0 +1,1067 @@
+{
+  "version": "1.5.0",
+  "components": [
+    {
+      "name": "annotated-doc",
+      "version": "0.0.6",
+      "license": "MIT",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "https://github.com/fastapi/annotated-doc",
+      "notice": ""
+    },
+    {
+      "name": "annotated-types",
+      "version": "0.8.0",
+      "license": "MIT",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "https://github.com/annotated-types/annotated-types",
+      "notice": ""
+    },
+    {
+      "name": "anyio",
+      "version": "4.16.0",
+      "license": "MIT",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "https://anyio.readthedocs.io/en/latest/",
+      "notice": ""
+    },
+    {
+      "name": "audioread",
+      "version": "3.1.0",
+      "license": "MIT",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "https://github.com/beetbox/audioread/issues",
+      "notice": ""
+    },
+    {
+      "name": "catalogue",
+      "version": "2.0.10",
+      "license": "MIT",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "https://github.com/explosion/catalogue",
+      "notice": ""
+    },
+    {
+      "name": "certifi",
+      "version": "2026.10.23",
+      "license": "MPL-2.0",
+      "classification": "weak-copyleft",
+      "kind": "python",
+      "source": "https://github.com/certifi/python-certifi",
+      "notice": ""
+    },
+    {
+      "name": "cffi",
+      "version": "2.1.1",
+      "license": "MIT-0",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "https://cffi.readthedocs.io/",
+      "notice": ""
+    },
+    {
+      "name": "cfgv",
+      "version": "3.5.0",
+      "license": "MIT",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "https://github.com/asottile/cfgv",
+      "notice": ""
+    },
+    {
+      "name": "charset-normalizer",
+      "version": "3.5.2",
+      "license": "MIT",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "https://github.com/jawah/charset_normalizer/blob/master/CHANGELOG.md",
+      "notice": ""
+    },
+    {
+      "name": "chatterbox-tts",
+      "version": "0.1.7+oracle1",
+      "license": "MIT",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "https://github.com/resemble-ai/chatterbox",
+      "notice": ""
+    },
+    {
+      "name": "click",
+      "version": "8.5.1",
+      "license": "BSD-3-Clause",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "https://click.palletsprojects.com/page/changes/",
+      "notice": ""
+    },
+    {
+      "name": "cloudpickle",
+      "version": "3.1.2",
+      "license": "BSD-3-Clause",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "https://github.com/cloudpipe/cloudpickle",
+      "notice": ""
+    },
+    {
+      "name": "colorama",
+      "version": "0.4.6",
+      "license": "BSD-3-Clause",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "https://github.com/tartley/colorama",
+      "notice": ""
+    },
+    {
+      "name": "conformer",
+      "version": "0.3.2",
+      "license": "MIT",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "https://github.com/lucidrains/conformer",
+      "notice": ""
+    },
+    {
+      "name": "decorator",
+      "version": "5.3.1",
+      "license": "BSD-3-Clause",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "",
+      "notice": ""
+    },
+    {
+      "name": "deepmultilingualpunctuation",
+      "version": "1.0.1",
+      "license": "MIT",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "https://github.com/oliverguhr/deepmultilingualpunctuation",
+      "notice": ""
+    },
+    {
+      "name": "diffusers",
+      "version": "0.38.0",
+      "license": "Apache-2.0",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "https://github.com/huggingface/diffusers",
+      "notice": ""
+    },
+    {
+      "name": "distlib",
+      "version": "0.4.4",
+      "license": "PSF-2.0",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "https://github.com/pypa/distlib",
+      "notice": ""
+    },
+    {
+      "name": "editdistpy",
+      "version": "0.5.0",
+      "license": "MIT",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "https://github.com/mammothb/editdistpy/blob/master/CHANGELOG.md",
+      "notice": ""
+    },
+    {
+      "name": "einops",
+      "version": "0.8.2",
+      "license": "MIT",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "https://github.com/arogozhnikov/einops",
+      "notice": ""
+    },
+    {
+      "name": "filelock",
+      "version": "4.2.4",
+      "license": "MIT",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "https://py-filelock.readthedocs.io",
+      "notice": ""
+    },
+    {
+      "name": "fsspec",
+      "version": "2026.9.0",
+      "license": "BSD-3-Clause",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "https://filesystem-spec.readthedocs.io/en/latest/changelog.html",
+      "notice": ""
+    },
+    {
+      "name": "h11",
+      "version": "0.16.0",
+      "license": "MIT",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "https://github.com/python-hyper/h11",
+      "notice": ""
+    },
+    {
+      "name": "hf-xet",
+      "version": "1.8.0",
+      "license": "Apache-2.0",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "https://huggingface.co/docs/hub/xet/index",
+      "notice": ""
+    },
+    {
+      "name": "httpcore",
+      "version": "1.0.9",
+      "license": "BSD-3-Clause",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "https://www.encode.io/httpcore",
+      "notice": ""
+    },
+    {
+      "name": "httpx",
+      "version": "0.28.1",
+      "license": "BSD-3-Clause",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "https://github.com/encode/httpx/blob/master/CHANGELOG.md",
+      "notice": ""
+    },
+    {
+      "name": "huggingface_hub",
+      "version": "1.33.0",
+      "license": "Apache-2.0",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "https://github.com/huggingface/huggingface_hub",
+      "notice": ""
+    },
+    {
+      "name": "identify",
+      "version": "2.6.20",
+      "license": "MIT",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "https://github.com/pre-commit/identify",
+      "notice": ""
+    },
+    {
+      "name": "idna",
+      "version": "3.20",
+      "license": "BSD-3-Clause",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "https://github.com/kjd/idna/blob/master/HISTORY.md",
+      "notice": ""
+    },
+    {
+      "name": "importlib_metadata",
+      "version": "10.2.0",
+      "license": "Apache-2.0",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "https://github.com/python/importlib_metadata",
+      "notice": ""
+    },
+    {
+      "name": "Jinja2",
+      "version": "3.1.6",
+      "license": "BSD-3-Clause",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "https://jinja.palletsprojects.com/changes/",
+      "notice": ""
+    },
+    {
+      "name": "joblib",
+      "version": "1.6.0",
+      "license": "BSD-3-Clause",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "https://joblib.readthedocs.io",
+      "notice": ""
+    },
+    {
+      "name": "lazy-importer",
+      "version": "0.1.0",
+      "license": "Apache-2.0",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "",
+      "notice": ""
+    },
+    {
+      "name": "lazy-loader",
+      "version": "0.6",
+      "license": "BSD-3-Clause",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "https://scientific-python.org/specs/spec-0001/",
+      "notice": ""
+    },
+    {
+      "name": "librosa",
+      "version": "0.11.0",
+      "license": "ISC",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "https://librosa.org",
+      "notice": ""
+    },
+    {
+      "name": "llvmlite",
+      "version": "0.50.0",
+      "license": "BSD-2-Clause AND Apache-2.0 WITH LLVM-exception",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "http://llvmlite.readthedocs.io",
+      "notice": ""
+    },
+    {
+      "name": "markdown-it-py",
+      "version": "3.0.0",
+      "license": "MIT",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "https://markdown-it-py.readthedocs.io",
+      "notice": ""
+    },
+    {
+      "name": "MarkupSafe",
+      "version": "3.0.3",
+      "license": "BSD-3-Clause",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "https://palletsprojects.com/donate",
+      "notice": ""
+    },
+    {
+      "name": "mdurl",
+      "version": "0.1.2",
+      "license": "MIT",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "https://github.com/executablebooks/mdurl",
+      "notice": ""
+    },
+    {
+      "name": "ml_dtypes",
+      "version": "0.5.4",
+      "license": "Apache-2.0",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "https://github.com/jax-ml/ml_dtypes",
+      "notice": ""
+    },
+    {
+      "name": "mpmath",
+      "version": "1.3.0",
+      "license": "BSD-3-Clause",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "http://mpmath.org/",
+      "notice": ""
+    },
+    {
+      "name": "msgpack",
+      "version": "1.2.4",
+      "license": "Apache-2.0",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "https://msgpack.org/",
+      "notice": ""
+    },
+    {
+      "name": "networkx",
+      "version": "3.7",
+      "license": "BSD-3-Clause",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "https://networkx.org/",
+      "notice": ""
+    },
+    {
+      "name": "nodeenv",
+      "version": "1.12.0",
+      "license": "BSD-3-Clause",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "https://github.com/ekalinin/nodeenv",
+      "notice": ""
+    },
+    {
+      "name": "numba",
+      "version": "0.68.1",
+      "license": "BSD-3-Clause",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "https://numba.pydata.org",
+      "notice": ""
+    },
+    {
+      "name": "numpy",
+      "version": "1.26.4",
+      "license": "BSD-3-Clause",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "https://numpy.org",
+      "notice": ""
+    },
+    {
+      "name": "omegaconf",
+      "version": "2.4.0",
+      "license": "BSD-3-Clause",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "https://github.com/hydra-ecosystem/omegaconf",
+      "notice": ""
+    },
+    {
+      "name": "onnx",
+      "version": "1.23.2",
+      "license": "Apache-2.0",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "https://onnx.ai/",
+      "notice": ""
+    },
+    {
+      "name": "packaging",
+      "version": "26.3",
+      "license": "Apache-2.0 OR BSD-2-Clause",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "https://packaging.pypa.io/",
+      "notice": ""
+    },
+    {
+      "name": "pillow",
+      "version": "13.0.0",
+      "license": "MIT-CMU",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "https://pillow.readthedocs.io/en/stable/releasenotes/index.html",
+      "notice": ""
+    },
+    {
+      "name": "platformdirs",
+      "version": "4.14.5",
+      "license": "MIT",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "https://platformdirs.readthedocs.io/en/latest/changelog.html",
+      "notice": ""
+    },
+    {
+      "name": "pooch",
+      "version": "1.9.0",
+      "license": "BSD-3-Clause",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "https://www.fatiando.org/pooch",
+      "notice": ""
+    },
+    {
+      "name": "pre_commit",
+      "version": "4.7.0",
+      "license": "MIT",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "https://github.com/pre-commit/pre-commit",
+      "notice": ""
+    },
+    {
+      "name": "protobuf",
+      "version": "7.36.2",
+      "license": "BSD-3-Clause",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "https://developers.google.com/protocol-buffers/",
+      "notice": ""
+    },
+    {
+      "name": "pycparser",
+      "version": "3.12",
+      "license": "BSD-3-Clause",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "https://github.com/eliben/pycparser",
+      "notice": ""
+    },
+    {
+      "name": "pydantic",
+      "version": "2.14.3",
+      "license": "MIT",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "https://github.com/pydantic/pydantic",
+      "notice": ""
+    },
+    {
+      "name": "pydantic_core",
+      "version": "2.50.4",
+      "license": "MIT",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "https://github.com/pydantic/pydantic",
+      "notice": ""
+    },
+    {
+      "name": "pydub",
+      "version": "0.25.1",
+      "license": "MIT",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "http://pydub.com",
+      "notice": ""
+    },
+    {
+      "name": "Pygments",
+      "version": "2.21.0",
+      "license": "BSD-2-Clause",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "https://pygments.org",
+      "notice": ""
+    },
+    {
+      "name": "pyloudnorm",
+      "version": "0.2.0",
+      "license": "MIT",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "https://github.com/csteinmetz1/pyloudnorm",
+      "notice": ""
+    },
+    {
+      "name": "PySide6",
+      "version": "6.8.2.1",
+      "license": "LGPL-3.0",
+      "classification": "weak-copyleft",
+      "kind": "python",
+      "source": "https://pyside.org",
+      "notice": ""
+    },
+    {
+      "name": "PySide6_Addons",
+      "version": "6.8.2.1",
+      "license": "LGPL-3.0",
+      "classification": "weak-copyleft",
+      "kind": "python",
+      "source": "https://pyside.org",
+      "notice": ""
+    },
+    {
+      "name": "PySide6_Essentials",
+      "version": "6.8.2.1",
+      "license": "LGPL-3.0",
+      "classification": "weak-copyleft",
+      "kind": "python",
+      "source": "https://pyside.org",
+      "notice": ""
+    },
+    {
+      "name": "python-discovery",
+      "version": "1.9.5",
+      "license": "MIT",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "https://github.com/tox-dev/python-discovery/blob/main/docs/changelog.rst",
+      "notice": ""
+    },
+    {
+      "name": "PyYAML",
+      "version": "6.0.3",
+      "license": "MIT",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "https://pyyaml.org/",
+      "notice": ""
+    },
+    {
+      "name": "regex",
+      "version": "2026.11.9",
+      "license": "Apache-2.0 AND CNRI-Python",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "https://github.com/mrabarnett/mrab-regex",
+      "notice": ""
+    },
+    {
+      "name": "requests",
+      "version": "2.34.2",
+      "license": "Apache-2.0",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "https://requests.readthedocs.io",
+      "notice": ""
+    },
+    {
+      "name": "resemble-perth",
+      "version": "1.1.0",
+      "license": "MIT",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "https://github.com/resemble-ai/perth",
+      "notice": ""
+    },
+    {
+      "name": "rich",
+      "version": "15.0.0",
+      "license": "MIT",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "https://rich.readthedocs.io/en/latest/",
+      "notice": ""
+    },
+    {
+      "name": "s3tokenizer",
+      "version": "0.3.0",
+      "license": "Apache-2.0",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "https://github.com/xingchensong/S3Tokenizer",
+      "notice": ""
+    },
+    {
+      "name": "safetensors",
+      "version": "0.8.0",
+      "license": "Apache-2.0",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "https://github.com/huggingface/safetensors",
+      "notice": ""
+    },
+    {
+      "name": "scikit-learn",
+      "version": "1.6.1",
+      "license": "BSD-3-Clause",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "https://scikit-learn.org",
+      "notice": ""
+    },
+    {
+      "name": "scipy",
+      "version": "1.15.2",
+      "license": "BSD-3-Clause",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "https://scipy.org/",
+      "notice": ""
+    },
+    {
+      "name": "setuptools",
+      "version": "84.2.1",
+      "license": "MIT",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "https://github.com/pypa/setuptools",
+      "notice": ""
+    },
+    {
+      "name": "shellingham",
+      "version": "1.5.4",
+      "license": "ISC",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "https://github.com/sarugaku/shellingham",
+      "notice": ""
+    },
+    {
+      "name": "shiboken6",
+      "version": "6.8.2.1",
+      "license": "LGPL-3.0",
+      "classification": "weak-copyleft",
+      "kind": "python",
+      "source": "https://pyside.org",
+      "notice": ""
+    },
+    {
+      "name": "sounddevice",
+      "version": "0.5.6",
+      "license": "MIT",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "https://python-sounddevice.readthedocs.io/",
+      "notice": ""
+    },
+    {
+      "name": "soundfile",
+      "version": "0.13.1",
+      "license": "BSD-3-Clause",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "https://github.com/bastibe/python-soundfile",
+      "notice": ""
+    },
+    {
+      "name": "soxr",
+      "version": "1.1.0",
+      "license": "LGPL-2.1-or-later",
+      "classification": "weak-copyleft",
+      "kind": "python",
+      "source": "https://github.com/dofuuz/python-soxr",
+      "notice": ""
+    },
+    {
+      "name": "spacy_pkuseg",
+      "version": "1.0.2",
+      "license": "MIT",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "https://github.com/explosion/spacy-pkuseg",
+      "notice": ""
+    },
+    {
+      "name": "srsly",
+      "version": "2.5.6",
+      "license": "MIT",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "https://github.com/explosion/srsly",
+      "notice": ""
+    },
+    {
+      "name": "sympy",
+      "version": "1.13.1",
+      "license": "BSD-3-Clause",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "https://sympy.org",
+      "notice": ""
+    },
+    {
+      "name": "symspellpy",
+      "version": "6.9.0",
+      "license": "MIT",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "https://github.com/mammothb/symspellpy",
+      "notice": ""
+    },
+    {
+      "name": "threadpoolctl",
+      "version": "3.8.0",
+      "license": "BSD-3-Clause",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "https://github.com/joblib/threadpoolctl",
+      "notice": ""
+    },
+    {
+      "name": "tokenizers",
+      "version": "0.23.3",
+      "license": "Apache-2.0",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "https://github.com/huggingface/tokenizers",
+      "notice": ""
+    },
+    {
+      "name": "torch",
+      "version": "2.6.0+cpu",
+      "license": "BSD-3-Clause",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "https://pytorch.org/",
+      "notice": ""
+    },
+    {
+      "name": "torchaudio",
+      "version": "2.6.0+cpu",
+      "license": "BSD-3-Clause",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "https://github.com/pytorch/audio",
+      "notice": ""
+    },
+    {
+      "name": "torchvision",
+      "version": "0.21.0+cpu",
+      "license": "BSD-3-Clause",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "https://github.com/pytorch/vision",
+      "notice": ""
+    },
+    {
+      "name": "tqdm",
+      "version": "4.70.1",
+      "license": "MPL-2.0",
+      "classification": "weak-copyleft",
+      "kind": "python",
+      "source": "https://tqdm.github.io",
+      "notice": ""
+    },
+    {
+      "name": "transformers",
+      "version": "5.20.0",
+      "license": "Apache-2.0",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "https://github.com/huggingface/transformers",
+      "notice": ""
+    },
+    {
+      "name": "typer",
+      "version": "0.29.1",
+      "license": "MIT",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "https://github.com/fastapi/typer",
+      "notice": ""
+    },
+    {
+      "name": "typing_extensions",
+      "version": "4.16.0",
+      "license": "PSF-2.0",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "https://github.com/python/typing_extensions/issues",
+      "notice": ""
+    },
+    {
+      "name": "typing-inspection",
+      "version": "0.4.5",
+      "license": "MIT",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "https://github.com/pydantic/typing-inspection",
+      "notice": ""
+    },
+    {
+      "name": "urllib3",
+      "version": "2.8.0",
+      "license": "MIT",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "https://github.com/urllib3/urllib3/blob/main/CHANGES.rst",
+      "notice": ""
+    },
+    {
+      "name": "virtualenv",
+      "version": "21.15.6",
+      "license": "MIT",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "https://thanks.dev/u/gh/gaborbernat",
+      "notice": ""
+    },
+    {
+      "name": "zipp",
+      "version": "4.1.2",
+      "license": "MIT",
+      "classification": "permissive",
+      "kind": "python",
+      "source": "https://github.com/jaraco/zipp",
+      "notice": ""
+    },
+    {
+      "name": "PySide6 / shiboken6 / Qt",
+      "version": "6.8.2.1",
+      "license": "LGPL-3.0 (or commercial Qt license)",
+      "classification": "weak-copyleft",
+      "kind": "bundled-binary",
+      "source": "https://code.qt.io/cgit/pyside/pyside-setup.git/",
+      "notice": "LGPL-3.0. A proprietary application may use the LGPL path while keeping its own source proprietary, provided the LGPL-covered libraries remain replaceable/relinkable, their complete corresponding source is made available (or a written offer is given), and the LGPL notice and text accompany the distribution. A Qt commercial license is the alternative."
+    },
+    {
+      "name": "libsndfile",
+      "version": "1.2.2",
+      "license": "LGPL-2.1",
+      "classification": "weak-copyleft",
+      "kind": "bundled-binary",
+      "source": "https://github.com/libsndfile/libsndfile",
+      "notice": "LGPL-2.1. Shipped as a separate shared library inside the soundfile wheel (_soundfile_data/), with its COPYING (LGPL-2.1 text) beside it. Replaceable: substitute a same-ABI build at that path. See docs/release/LGPL_FULFILLMENT.md."
+    },
+    {
+      "name": "libsoxr",
+      "version": "0.1.3",
+      "license": "LGPL-2.1",
+      "classification": "weak-copyleft",
+      "kind": "bundled-binary",
+      "source": "https://sourceforge.net/projects/soxr/",
+      "notice": "LGPL-2.1. Statically linked into the soxr extension module; the soxr wheel carries libsoxr's COPYING.LGPL. Relink path: rebuild the soxr package against a modified libsoxr and replace the installed soxr module. See docs/release/LGPL_FULFILLMENT.md."
+    },
+    {
+      "name": "ResembleAI/chatterbox",
+      "version": "pinned (models/pins.py)",
+      "license": "MIT",
+      "classification": "permissive",
+      "kind": "model",
+      "source": "https://huggingface.co/ResembleAI/chatterbox",
+      "notice": "Copyright (c) 2025 Resemble AI. MIT license; commercial use permitted."
+    },
+    {
+      "name": "ResembleAI/chatterbox-turbo",
+      "version": "pinned (models/pins.py)",
+      "license": "MIT",
+      "classification": "permissive",
+      "kind": "model",
+      "source": "https://huggingface.co/ResembleAI/chatterbox-turbo",
+      "notice": "MIT license; commercial use permitted."
+    },
+    {
+      "name": "SamLowe/roberta-base-go_emotions",
+      "version": "pinned (models/pins.py)",
+      "license": "MIT",
+      "classification": "permissive",
+      "kind": "model",
+      "source": "https://huggingface.co/SamLowe/roberta-base-go_emotions",
+      "notice": "Copyright (c) 2023 SamLowe. MIT license."
+    },
+    {
+      "name": "oliverguhr/fullstop-punctuation-multilang-large",
+      "version": "pinned (models/pins.py)",
+      "license": "MIT",
+      "classification": "permissive",
+      "kind": "model",
+      "source": "https://huggingface.co/oliverguhr/fullstop-punctuation-multilang-large",
+      "notice": "Copyright (c) 2021 Oliver Guhr. MIT license."
+    },
+    {
+      "name": "audio.cpp",
+      "version": "built at install time from a pinned clone",
+      "license": "Apache-2.0",
+      "classification": "permissive",
+      "kind": "external",
+      "source": "https://github.com/0xShug0/audio.cpp",
+      "notice": "Copyright 2026 ShugoAI LLC. Apache-2.0. Modified by Rhetoric's vendored patches; see scripts/patches/."
+    },
+    {
+      "name": "ggml",
+      "version": "vendored in the audio.cpp checkout",
+      "license": "MIT",
+      "classification": "permissive",
+      "kind": "external",
+      "source": "https://github.com/ggml-org/ggml",
+      "notice": "Copyright (c) 2023-2026 The ggml authors. MIT license."
+    },
+    {
+      "name": "ffmpeg",
+      "version": "host-provided",
+      "license": "LGPL/GPL depending on the build",
+      "classification": "weak-copyleft",
+      "kind": "external",
+      "source": "https://ffmpeg.org/",
+      "notice": "Not bundled. The host supplies ffmpeg; its own build determines the exact license."
+    },
+    {
+      "name": "chinese_female_1.wav",
+      "version": "",
+      "license": "Apache-2.0",
+      "classification": "permissive",
+      "kind": "voice",
+      "source": "Seashells/generic/ATTRIBUTION.md",
+      "notice": "audio.cpp demo voice, Copyright 2026 ShugoAI LLC"
+    },
+    {
+      "name": "chinese_male_2.wav",
+      "version": "",
+      "license": "Apache-2.0",
+      "classification": "permissive",
+      "kind": "voice",
+      "source": "Seashells/generic/ATTRIBUTION.md",
+      "notice": "audio.cpp demo voice, Copyright 2026 ShugoAI LLC"
+    },
+    {
+      "name": "confidant_chinese_male_1.wav",
+      "version": "",
+      "license": "Apache-2.0",
+      "classification": "permissive",
+      "kind": "voice",
+      "source": "Seashells/generic/ATTRIBUTION.md",
+      "notice": "audio.cpp demo voice, Copyright 2026 ShugoAI LLC"
+    },
+    {
+      "name": "english_male_1.wav",
+      "version": "",
+      "license": "Apache-2.0",
+      "classification": "permissive",
+      "kind": "voice",
+      "source": "Seashells/generic/ATTRIBUTION.md",
+      "notice": "audio.cpp demo voice, Copyright 2026 ShugoAI LLC"
+    },
+    {
+      "name": "exuberant_chinese_female.wav",
+      "version": "",
+      "license": "Apache-2.0",
+      "classification": "permissive",
+      "kind": "voice",
+      "source": "Seashells/generic/ATTRIBUTION.md",
+      "notice": "audio.cpp demo voice, Copyright 2026 ShugoAI LLC"
+    },
+    {
+      "name": "Cody's Seashell.wav",
+      "version": "",
+      "license": "Owner-owned; all rights reserved",
+      "classification": "proprietary",
+      "kind": "voice",
+      "source": "Seashells/ASSETS.md",
+      "notice": "Original recording by the Owner; no third-party rights."
+    },
+    {
+      "name": "Cody's Seashell1.wav",
+      "version": "",
+      "license": "Owner-owned; all rights reserved",
+      "classification": "proprietary",
+      "kind": "voice",
+      "source": "Seashells/ASSETS.md",
+      "notice": "Original recording by the Owner; no third-party rights."
+    },
+    {
+      "name": "Fransisco_MONSTER.wav",
+      "version": "",
+      "license": "Owner-owned; all rights reserved",
+      "classification": "proprietary",
+      "kind": "voice",
+      "source": "Seashells/ASSETS.md",
+      "notice": "Original recording by the Owner; no third-party rights."
+    },
+    {
+      "name": "Fransisco_MONSTER_Edited.wav",
+      "version": "",
+      "license": "Owner-owned; all rights reserved",
+      "classification": "proprietary",
+      "kind": "voice",
+      "source": "Seashells/ASSETS.md",
+      "notice": "Original recording by the Owner; no third-party rights."
+    },
+    {
+      "name": "Seashell_ fransisco.wav",
+      "version": "",
+      "license": "Owner-owned; all rights reserved",
+      "classification": "proprietary",
+      "kind": "voice",
+      "source": "Seashells/ASSETS.md",
+      "notice": "Original recording by the Owner; no third-party rights."
+    },
+    {
+      "name": "seashell fransisco.wav",
+      "version": "",
+      "license": "Owner-owned; all rights reserved",
+      "classification": "proprietary",
+      "kind": "voice",
+      "source": "Seashells/ASSETS.md",
+      "notice": "Original recording by the Owner; no third-party rights."
+    },
+    {
+      "name": "seashell fransisco_TTS_clean_v5_aggressive_targeted_cleanup.wav",
+      "version": "",
+      "license": "Owner-owned; all rights reserved",
+      "classification": "proprietary",
+      "kind": "voice",
+      "source": "Seashells/ASSETS.md",
+      "notice": "Original recording by the Owner; no third-party rights."
+    }
+  ]
+}

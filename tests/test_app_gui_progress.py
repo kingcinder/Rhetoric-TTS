@@ -4,8 +4,8 @@ import pytest
 
 from PySide6.QtWidgets import QApplication
 
-from the_oracle.app_gui import LivePanel, RenderProgressDialog
-from the_oracle.pipeline import RenderProgress
+from rhetoric.app_gui import LivePanel, RenderProgressDialog
+from rhetoric.pipeline import RenderProgress
 
 pytestmark = pytest.mark.slow
 
@@ -164,7 +164,7 @@ def test_time_weighted_progress_advances_and_pins_completion() -> None:
     one of many steps), never exceeds 99% before completion, and Complete pins
     to 1.0 with a zero ETA. The ETA appears only once the EWMA is measured
     and enough segments have landed."""
-    from the_oracle.pipeline import _time_weighted_progress
+    from rhetoric.pipeline import _time_weighted_progress
 
     state = {"backend": "vulkan", "segments_total": 5, "segments_done": 0, "segment_avg": None}
 

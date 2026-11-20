@@ -4,7 +4,7 @@ from pathlib import Path
 import pytest
 from PySide6.QtWidgets import QComboBox, QApplication
 
-from the_oracle.models.project import RenderPlan, Utterance, VoiceProfile, VoiceSettings
+from rhetoric.models.project import RenderPlan, Utterance, VoiceProfile, VoiceSettings
 
 from tests.test_app_gui_profiles import _build_window
 

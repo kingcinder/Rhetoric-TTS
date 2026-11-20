@@ -10,8 +10,8 @@ against numbers instead of impressions.
 
 - Command profiled: `scripts/smoke_render.py` — the Rhetoric pipeline driven by
   the deterministic engine (`_DeterministicChatterboxEngine`) and
-  `_SmokeEmotionClassifier` from `src/the_oracle/smoke.py`. Two output formats
-  plus a cache-reuse pass; two `OraclePipeline` constructions.
+  `_SmokeEmotionClassifier` from `src/rhetoric/smoke.py`. Two output formats
+  plus a cache-reuse pass; two `RhetoricPipeline` constructions.
 - Profiler: `cProfile` wrapping the script entry (no monkeypatching, no synthetic
   micro-benchmarks). Wall-clock checked alongside each profile run.
 - Deterministic by construction: same stems, same "Cache reused on second pass:
@@ -30,15 +30,15 @@ against numbers instead of impressions.
 | `_pickle.load` cumulative | 0.786 s (34% of profiled time) |
 
 The pickle load was the top non-render cost: the 19 MB SymSpell frequency
-dictionary cache (`~/.cache/the-oracle/symspell/freq_dict_b23a6a8439c0.pkl`,
+dictionary cache (`~/.cache/rhetoric/symspell/freq_dict_b23a6a8439c0.pkl`,
 19,302,189 bytes) was deserialized **twice** — once per `SpellCorrector`
-instance — at ~0.393 s each. Two `OraclePipeline` constructions per render each
+instance — at ~0.393 s each. Two `RhetoricPipeline` constructions per render each
 build a `TextRepairer` → `SpellCorrector`, and the dictionary is read-only after
 load, so the second deserialization bought nothing.
 
 ## Top win landed: load the SymSpell dictionary once per process
 
-`src/the_oracle/text_repair/spelling.py` now memoizes the dictionary load at
+`src/rhetoric/text_repair/spelling.py` now memoizes the dictionary load at
 module level (`_load_symspell_once`), caching **both** outcomes — success and
 failure — so a broken environment also fails fast instead of retrying per
 instance. `_try_load_symspell` is a module-level function with its body
@@ -71,8 +71,8 @@ warnings, 261 s); smoke render rc=0 with identical output ("Stem count: 4",
 
 ## Second candidate observed, not taken
 
-`multiprocessing` `pool.join` in `OraclePipeline._generate`
-(`src/the_oracle/pipeline.py:347`) accounted for 0.751 s cumulative. Bounded
+`multiprocessing` `pool.join` in `RhetoricPipeline._generate`
+(`src/rhetoric/pipeline.py:347`) accounted for 0.751 s cumulative. Bounded
 follow-up candidate for a later unit — likely needs worker-pool reuse or a
 shorter join strategy, and touches the render path rather than an
 initialization cost, so it was out of U4.3's "no behavior change" scope.

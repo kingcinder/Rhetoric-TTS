@@ -1,0 +1,324 @@
+start=2026-11-17T08:01:56.895809-08:00
+source_commit=b9ee5979757d3d731c4189c3b53a2069405bb8a
+source_export=/tmp/rhetoric-source-b9ee597
+command=['/usr/bin/time', '-v', '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/bin/python', '/tmp/rhetoric-source-b9ee597/scripts/build_frozen_linux.py', '--outdir', '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/release_artifacts/linux-rc-b9ee597', '--format', 'deb']
+PYTHONPATH=/tmp/rhetoric-source-b9ee597/src
+PYINSTALLER_CONFIG_DIR=/tmp/rhetoric-v100a-pyinstaller-cache
+74 INFO: PyInstaller: 6.16.0, contrib hooks: 2026.10
+74 INFO: Python: 3.12.3
+77 INFO: Platform: Linux-6.8.0-138-generic-x86_64-with-glibc2.39
+77 INFO: Python environment: /media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv
+78 INFO: Removing temporary files and cleaning cache in /tmp/rhetoric-v100a-pyinstaller-cache/pyinstaller
+104 INFO: Module search paths (PYTHONPATH):
+['/tmp/rhetoric-source-b9ee597/src',
+ '/usr/lib/python312.zip',
+ '/usr/lib/python3.12',
+ '/usr/lib/python3.12/lib-dynload',
+ '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages',
+ '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/src',
+ '/tmp/rhetoric-source-b9ee597/packaging/linux',
+ '/tmp/rhetoric-source-b9ee597/src']
+507 INFO: Appending 'datas' from .spec
+508 INFO: checking Analysis
+508 INFO: Building Analysis because Analysis-00.toc is non existent
+508 INFO: Looking for Python shared library...
+665 INFO: Using Python shared library: /lib/x86_64-linux-gnu/libpython3.12.so.1.0
+665 INFO: Running Analysis Analysis-00.toc
+665 INFO: Target bytecode optimization level: 0
+665 INFO: Initializing module dependency graph...
+666 INFO: Initializing module graph hook caches...
+674 INFO: Analyzing modules for base_library.zip ...
+1770 INFO: Processing standard module hook 'hook-encodings.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/PyInstaller/hooks'
+2432 INFO: Processing standard module hook 'hook-heapq.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/PyInstaller/hooks'
+3656 INFO: Processing standard module hook 'hook-pickle.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/PyInstaller/hooks'
+5437 INFO: Caching module dependency graph...
+5482 INFO: Analyzing /tmp/rhetoric-source-b9ee597/packaging/linux/entrypoint.py
+5522 INFO: Processing standard module hook 'hook-multiprocessing.util.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/PyInstaller/hooks'
+5714 INFO: Processing standard module hook 'hook-xml.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/PyInstaller/hooks'
+6053 INFO: Processing standard module hook 'hook-_ctypes.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/PyInstaller/hooks'
+6237 INFO: Processing standard module hook 'hook-numpy.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/PyInstaller/hooks'
+6928 INFO: Processing standard module hook 'hook-difflib.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/PyInstaller/hooks'
+7705 INFO: Processing standard module hook 'hook-platform.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/PyInstaller/hooks'
+7747 INFO: Processing standard module hook 'hook-sysconfig.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/PyInstaller/hooks'
+10800 INFO: Processing standard module hook 'hook-certifi.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+10987 INFO: Processing standard module hook 'hook-anyio.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+11224 INFO: Processing pre-safe-import-module hook 'hook-typing_extensions.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/PyInstaller/hooks/pre_safe_import_module'
+11224 INFO: SetuptoolsInfo: initializing cached setuptools info...
+13065 INFO: Processing standard module hook 'hook-pygments.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/PyInstaller/hooks'
+14321 INFO: Processing standard module hook 'hook-rich.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+16513 INFO: Processing standard module hook 'hook-sqlite3.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/PyInstaller/hooks'
+17142 INFO: Processing standard module hook 'hook-pydantic.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+18542 INFO: Processing standard module hook 'hook-zoneinfo.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+19816 INFO: Processing pre-safe-import-module hook 'hook-importlib_resources.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/PyInstaller/hooks/pre_safe_import_module'
+20959 INFO: Processing standard module hook 'hook-PIL.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/PyInstaller/hooks'
+21089 INFO: Processing standard module hook 'hook-PIL.Image.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/PyInstaller/hooks'
+21459 INFO: Processing standard module hook 'hook-xml.etree.cElementTree.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/PyInstaller/hooks'
+21665 INFO: Processing standard module hook 'hook-PIL.ImageFilter.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/PyInstaller/hooks'
+21996 INFO: Processing standard module hook 'hook-xml.dom.domreg.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/PyInstaller/hooks'
+23056 INFO: Processing standard module hook 'hook-jinja2.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+23778 INFO: Processing standard module hook 'hook-torch.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+6162 WARNING: Failed to collect submodules for 'torch.utils.tensorboard' because importing 'torch.utils.tensorboard' raised: ModuleNotFoundError: No module named 'tensorboard'
+No ROCm runtime is found, using ROCM_HOME='/usr'
+/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/PyInstaller/utils/hooks/__init__.py:665: DeprecationWarning: `torch.distributed._sharding_spec` will be deprecated, use `torch.distributed._shard.sharding_spec` instead
+  __import__(name)
+/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/PyInstaller/utils/hooks/__init__.py:665: DeprecationWarning: `torch.distributed._sharded_tensor` will be deprecated, use `torch.distributed._shard.sharded_tensor` instead
+  __import__(name)
+/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/PyInstaller/utils/hooks/__init__.py:665: DeprecationWarning: `torch.distributed._shard.checkpoint` will be deprecated, use `torch.distributed.checkpoint` instead
+  __import__(name)
+/usr/lib/python3.12/tempfile.py:1075: ResourceWarning: Implicitly cleaning up <TemporaryDirectory '/tmp/tmpsfo5xbd9'>
+  _warnings.warn(warn_message, ResourceWarning)
+45355 INFO: hook-torch: inferred hidden imports for CUDA libraries: []
+47347 INFO: Processing standard module hook 'hook-py.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+48135 INFO: Processing pre-safe-import-module hook 'hook-packaging.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/PyInstaller/hooks/pre_safe_import_module'
+48464 INFO: Processing pre-safe-import-module hook 'hook-tomli.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/PyInstaller/hooks/pre_safe_import_module'
+61872 INFO: Processing standard module hook 'hook-scipy.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/PyInstaller/hooks'
+62271 INFO: Processing standard module hook 'hook-pycparser.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+62610 INFO: Processing standard module hook 'hook-setuptools.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/PyInstaller/hooks'
+62637 INFO: Processing pre-safe-import-module hook 'hook-distutils.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/PyInstaller/hooks/pre_safe_import_module'
+62712 INFO: Processing pre-safe-import-module hook 'hook-jaraco.functools.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/PyInstaller/hooks/pre_safe_import_module'
+62726 INFO: Setuptools: 'jaraco.functools' appears to be a setuptools-vendored copy - creating alias to 'setuptools._vendor.jaraco.functools'!
+62774 INFO: Processing pre-safe-import-module hook 'hook-more_itertools.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/PyInstaller/hooks/pre_safe_import_module'
+62775 INFO: Setuptools: 'more_itertools' appears to be a setuptools-vendored copy - creating alias to 'setuptools._vendor.more_itertools'!
+63026 INFO: Processing standard module hook 'hook-_osx_support.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/PyInstaller/hooks'
+63273 INFO: Processing pre-safe-import-module hook 'hook-jaraco.text.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/PyInstaller/hooks/pre_safe_import_module'
+63274 INFO: Setuptools: 'jaraco.text' appears to be a setuptools-vendored copy - creating alias to 'setuptools._vendor.jaraco.text'!
+63287 INFO: Processing standard module hook 'hook-setuptools._vendor.jaraco.text.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/PyInstaller/hooks'
+63289 INFO: Processing pre-safe-import-module hook 'hook-jaraco.context.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/PyInstaller/hooks/pre_safe_import_module'
+63301 INFO: Setuptools: 'jaraco.context' appears to be a setuptools-vendored copy - creating alias to 'setuptools._vendor.jaraco.context'!
+65166 INFO: Processing pre-safe-import-module hook 'hook-wheel.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/PyInstaller/hooks/pre_safe_import_module'
+65823 INFO: Processing standard module hook 'hook-scipy.linalg.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/PyInstaller/hooks'
+67357 INFO: Processing standard module hook 'hook-scipy.sparse.csgraph.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/PyInstaller/hooks'
+67604 INFO: Processing standard module hook 'hook-scipy.special._ufuncs.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/PyInstaller/hooks'
+67823 INFO: Processing standard module hook 'hook-scipy.special._ellip_harm_2.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/PyInstaller/hooks'
+68388 INFO: Processing standard module hook 'hook-scipy.spatial._ckdtree.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/PyInstaller/hooks'
+69514 INFO: Processing standard module hook 'hook-scipy.spatial.transform.rotation.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/PyInstaller/hooks'
+71066 INFO: Processing standard module hook 'hook-scipy.stats._stats.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/PyInstaller/hooks'
+86563 INFO: Processing standard module hook 'hook-torchvision.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+101243 INFO: Processing pre-safe-import-module hook 'hook-win32com.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/_pyinstaller_hooks_contrib/pre_safe_import_module'
+106952 INFO: Processing standard module hook 'hook-transformers.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+117546 INFO: Processing standard module hook 'hook-regex.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+121579 INFO: Processing standard module hook 'hook-fsspec.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+124846 INFO: Processing standard module hook 'hook-soundfile.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+124948 INFO: Processing standard module hook 'hook-librosa.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+125391 INFO: Processing standard module hook 'hook-torchaudio.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+131632 INFO: Processing standard module hook 'hook-torchvision.io.image.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+134079 INFO: Processing standard module hook 'hook-scipy.io.matlab.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/PyInstaller/hooks'
+139158 INFO: Processing standard module hook 'hook-sklearn.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+139524 INFO: Processing standard module hook 'hook-sklearn.utils.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+139664 INFO: Processing standard module hook 'hook-cloudpickle.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+140646 INFO: Processing standard module hook 'hook-sklearn.metrics.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+146788 INFO: Processing standard module hook 'hook-sklearn.metrics.cluster.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+147159 INFO: Processing standard module hook 'hook-sklearn.cluster.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+147257 INFO: Processing standard module hook 'hook-sklearn.metrics.pairwise.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+147881 INFO: Processing standard module hook 'hook-sklearn.neighbors.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+148072 INFO: Processing standard module hook 'hook-sklearn.linear_model.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+183542 INFO: Processing pre-safe-import-module hook 'hook-importlib_metadata.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/PyInstaller/hooks/pre_safe_import_module'
+183585 INFO: Processing standard module hook 'hook-importlib_metadata.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/PyInstaller/hooks'
+183643 INFO: Processing pre-safe-import-module hook 'hook-zipp.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/PyInstaller/hooks/pre_safe_import_module'
+186188 INFO: Processing standard module hook 'hook-urllib3.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+186748 INFO: Processing standard module hook 'hook-charset_normalizer.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+219276 INFO: Processing pre-safe-import-module hook 'hook-tensorflow.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/_pyinstaller_hooks_contrib/pre_safe_import_module'
+219425 INFO: Processing standard module hook 'hook-numba.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+219583 INFO: Processing standard module hook 'hook-llvmlite.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+238678 INFO: Processing pre-safe-import-module hook 'hook-platformdirs.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/PyInstaller/hooks/pre_safe_import_module'
+238739 INFO: Processing standard module hook 'hook-platformdirs.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+240762 INFO: Processing standard module hook 'hook-PySide6.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/PyInstaller/hooks'
+241512 INFO: Processing standard module hook 'hook-shiboken6.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/PyInstaller/hooks'
+241763 INFO: Processing standard module hook 'hook-PySide6.QtNetwork.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/PyInstaller/hooks'
+244726 INFO: Processing standard module hook 'hook-PySide6.QtCore.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/PyInstaller/hooks'
+246311 INFO: Processing standard module hook 'hook-PySide6.QtGui.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/PyInstaller/hooks'
+256715 INFO: Processing standard module hook 'hook-PySide6.QtMultimedia.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/PyInstaller/hooks'
+258700 INFO: Processing standard module hook 'hook-PySide6.QtWidgets.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/PyInstaller/hooks'
+259401 INFO: Processing standard module hook 'hook-sounddevice.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+259730 INFO: Processing module hooks (post-graph stage)...
+260760 WARNING: Hidden import "pycparser.lextab" not found!
+260760 WARNING: Hidden import "pycparser.yacctab" not found!
+273678 INFO: Processing standard module hook 'hook-sklearn.tree.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+273970 INFO: Processing pre-safe-import-module hook 'hook-gi.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/PyInstaller/hooks/pre_safe_import_module'
+275291 INFO: Processing standard module hook 'hook-PIL.SpiderImagePlugin.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/PyInstaller/hooks'
+279169 INFO: Processing standard module hook 'hook-PySide6.QtDBus.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/PyInstaller/hooks'
+279691 INFO: Processing standard module hook 'hook-PySide6.QtMultimediaWidgets.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/PyInstaller/hooks'
+280275 WARNING: Hidden import "scipy.special._cdflib" not found!
+280527 INFO: Performing binary vs. data reclassification (757 entries)
+286212 INFO: Looking for ctypes DLLs
+286333 WARNING: Library ntdll required via ctypes not found
+286681 WARNING: Ignoring /usr/lib64/libgomp.so.1 imported from /media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/torch/_inductor/codecache.py - only basenames are supported with ctypes imports!
+286787 WARNING: Library libcudart.so required via ctypes not found
+287135 WARNING: Library ole32 required via ctypes not found
+287153 WARNING: Library shell32 required via ctypes not found
+287374 INFO: Analyzing run-time hooks ...
+287462 INFO: Including run-time hook 'pyi_rth_inspect.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/PyInstaller/hooks/rthooks'
+287466 INFO: Including run-time hook 'pyi_rth_pkgutil.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/PyInstaller/hooks/rthooks'
+287469 INFO: Including run-time hook 'pyi_rth_setuptools.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/PyInstaller/hooks/rthooks'
+287474 INFO: Including run-time hook 'pyi_rth_pyside6.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/PyInstaller/hooks/rthooks'
+287477 INFO: Processing pre-find-module-path hook 'hook-_pyi_rth_utils.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/PyInstaller/hooks/pre_find_module_path'
+287493 INFO: Processing standard module hook 'hook-_pyi_rth_utils.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/PyInstaller/hooks'
+287505 INFO: Including run-time hook 'pyi_rth_multiprocessing.py' from '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/PyInstaller/hooks/rthooks'
+287743 INFO: Creating base_library.zip...
+287789 INFO: Looking for dynamic libraries
+410637 WARNING: Library not found: could not resolve 'libsox.so', dependency of '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/torchaudio/lib/libtorchaudio_sox.so'.
+410642 INFO: Missing dependency handling: skipping symbolic link from 'torch/lib/libtorch_cpu.so' to top-level application directory due to source path matching one of symlink suppression path patterns.
+410644 INFO: Missing dependency handling: skipping symbolic link from 'torch/lib/libc10.so' to top-level application directory due to source path matching one of symlink suppression path patterns.
+410648 INFO: Missing dependency handling: skipping symbolic link from 'torch/lib/libtorch.so' to top-level application directory due to source path matching one of symlink suppression path patterns.
+410652 INFO: Missing dependency handling: skipping symbolic link from 'torch/lib/libc10.so' to top-level application directory due to source path matching one of symlink suppression path patterns.
+410655 INFO: Missing dependency handling: skipping symbolic link from 'torch/lib/libtorch_cpu.so' to top-level application directory due to source path matching one of symlink suppression path patterns.
+410655 INFO: Missing dependency handling: skipping symbolic link from 'torch/lib/libtorch.so' to top-level application directory due to source path matching one of symlink suppression path patterns.
+410655 INFO: Missing dependency handling: skipping symbolic link from 'torch/lib/libtorch_python.so' to top-level application directory due to source path matching one of symlink suppression path patterns.
+410655 INFO: Missing dependency handling: skipping symbolic link from 'torch/lib/libc10.so' to top-level application directory due to source path matching one of symlink suppression path patterns.
+410655 INFO: Missing dependency handling: skipping symbolic link from 'torch/lib/libtorch_cpu.so' to top-level application directory due to source path matching one of symlink suppression path patterns.
+410655 INFO: Missing dependency handling: skipping symbolic link from 'torch/lib/libtorch.so' to top-level application directory due to source path matching one of symlink suppression path patterns.
+410655 INFO: Missing dependency handling: skipping symbolic link from 'torch/lib/libtorch_python.so' to top-level application directory due to source path matching one of symlink suppression path patterns.
+410655 INFO: Missing dependency handling: skipping symbolic link from 'torch/lib/libc10.so' to top-level application directory due to source path matching one of symlink suppression path patterns.
+410655 INFO: Missing dependency handling: skipping symbolic link from 'torch/lib/libtorch_cpu.so' to top-level application directory due to source path matching one of symlink suppression path patterns.
+410655 INFO: Missing dependency handling: skipping symbolic link from 'torch/lib/libtorch.so' to top-level application directory due to source path matching one of symlink suppression path patterns.
+410655 INFO: Missing dependency handling: adding symbolic link from 'torchaudio/lib/libtorchaudio_sox.so' to top-level application directory.
+410674 INFO: Missing dependency handling: skipping symbolic link from 'torch/lib/libtorch_python.so' to top-level application directory due to source path matching one of symlink suppression path patterns.
+410674 INFO: Missing dependency handling: skipping symbolic link from 'torch/lib/libc10.so' to top-level application directory due to source path matching one of symlink suppression path patterns.
+410674 INFO: Missing dependency handling: skipping symbolic link from 'torch/lib/libtorch_cpu.so' to top-level application directory due to source path matching one of symlink suppression path patterns.
+410674 INFO: Missing dependency handling: skipping symbolic link from 'torch/lib/libtorch.so' to top-level application directory due to source path matching one of symlink suppression path patterns.
+410674 INFO: Missing dependency handling: adding symbolic link from 'torchaudio/lib/libtorchaudio.so' to top-level application directory.
+410674 INFO: Missing dependency handling: skipping symbolic link from 'torch/lib/libtorch_python.so' to top-level application directory due to source path matching one of symlink suppression path patterns.
+410674 INFO: Missing dependency handling: skipping symbolic link from 'torch/lib/libc10.so' to top-level application directory due to source path matching one of symlink suppression path patterns.
+410675 INFO: Missing dependency handling: skipping symbolic link from 'torch/lib/libtorch_cpu.so' to top-level application directory due to source path matching one of symlink suppression path patterns.
+410675 INFO: Missing dependency handling: skipping symbolic link from 'torch/lib/libtorch.so' to top-level application directory due to source path matching one of symlink suppression path patterns.
+411025 INFO: Warnings written to /media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/release_artifacts/linux-rc-b9ee597/pyinstaller-build/rhetoric/warn-rhetoric.txt
+412017 INFO: Graph cross-reference written to /media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/release_artifacts/linux-rc-b9ee597/pyinstaller-build/rhetoric/xref-rhetoric.html
+412413 INFO: checking PYZ
+412413 INFO: Building PYZ because PYZ-00.toc is non existent
+412413 INFO: Building PYZ (ZlibArchive) /media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/release_artifacts/linux-rc-b9ee597/pyinstaller-build/rhetoric/PYZ-00.pyz
+420927 INFO: Building PYZ (ZlibArchive) /media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/release_artifacts/linux-rc-b9ee597/pyinstaller-build/rhetoric/PYZ-00.pyz completed successfully.
+421293 INFO: checking PKG
+421293 INFO: Building PKG because PKG-00.toc is non existent
+421293 INFO: Building PKG (CArchive) rhetoric.pkg
+421438 INFO: Building PKG (CArchive) rhetoric.pkg completed successfully.
+421438 INFO: Bootloader /media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/PyInstaller/bootloader/Linux-64bit-intel/run
+421438 INFO: checking EXE
+421438 INFO: Building EXE because EXE-00.toc is non existent
+421438 INFO: Building EXE from EXE-00.toc
+421439 INFO: Copying bootloader EXE to /media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/release_artifacts/linux-rc-b9ee597/pyinstaller-build/rhetoric/rhetoric
+421439 INFO: Appending PKG archive to custom ELF section in EXE
+422229 INFO: Building EXE from EXE-00.toc completed successfully.
+422310 INFO: checking COLLECT
+422311 INFO: Building COLLECT because COLLECT-00.toc is non existent
+422311 INFO: Building COLLECT COLLECT-00.toc
+446434 INFO: Building COLLECT COLLECT-00.toc completed successfully.
+446571 INFO: Build complete! The results are available in: /media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/release_artifacts/linux-rc-b9ee597/pyinstaller-dist
+dpkg-deb: building package 'rhetoric' in '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/release_artifacts/linux-rc-b9ee597/rhetoric_1.5.0_amd64.deb'.
+WARNING: The directory '/home/cody/.cache/pip' or its parent directory is not owned or is not writable by the current user. The cache has been disabled. Check the permissions and owner of that directory. If executing pip with sudo, you should use sudo's -H flag.
+Traceback (most recent call last):
+  File "/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/urllib3/connection.py", line 239, in _new_conn
+    sock = connection.create_connection(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/urllib3/util/connection.py", line 60, in create_connection
+    for res in socket.getaddrinfo(host, port, family, socket.SOCK_STREAM):
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/socket.py", line 963, in getaddrinfo
+    for res in _socket.getaddrinfo(host, port, family, type, proto, flags):
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+socket.gaierror: [Errno -5] No address associated with hostname
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/urllib3/connectionpool.py", line 793, in urlopen
+    response = self._make_request(
+               ^^^^^^^^^^^^^^^^^^^
+  File "/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/urllib3/connectionpool.py", line 494, in _make_request
+    raise new_e
+  File "/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/urllib3/connectionpool.py", line 470, in _make_request
+    self._validate_conn(conn)
+  File "/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/urllib3/connectionpool.py", line 1125, in _validate_conn
+    conn.connect()
+  File "/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/urllib3/connection.py", line 827, in connect
+    self.sock = sock = self._new_conn()
+                       ^^^^^^^^^^^^^^^^
+  File "/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/urllib3/connection.py", line 246, in _new_conn
+    raise NameResolutionError(self.host, self, e) from e
+urllib3.exceptions.NameResolutionError: HTTPSConnection(host='pypi.org', port=443): Failed to resolve 'pypi.org' ([Errno -5] No address associated with hostname)
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/requests/adapters.py", line 696, in send
+    resp = conn.urlopen(
+           ^^^^^^^^^^^^^
+  File "/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/urllib3/connectionpool.py", line 847, in urlopen
+    retries = retries.increment(
+              ^^^^^^^^^^^^^^^^^^
+  File "/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/urllib3/util/retry.py", line 555, in increment
+    raise MaxRetryError(_pool, url, reason) from reason  # type: ignore[arg-type]
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+urllib3.exceptions.MaxRetryError: HTTPSConnectionPool(host='pypi.org', port=443): Max retries exceeded with url: /pypi/altgraph/0.17.5/json (Caused by NameResolutionError("HTTPSConnection(host='pypi.org', port=443): Failed to resolve 'pypi.org' ([Errno -5] No address associated with hostname)"))
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/bin/pip-audit", line 8, in <module>
+    sys.exit(audit())
+             ^^^^^^^
+  File "/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/pip_audit/_cli.py", line 554, in audit
+    for spec, vulns in auditor.audit(source):
+  File "/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/pip_audit/_audit.py", line 68, in audit
+    for dep, vulns in self._service.query_all(specs):
+  File "/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/pip_audit/_service/interface.py", line 180, in query_all
+    yield self.query(spec)
+          ^^^^^^^^^^^^^^^^
+  File "/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/pip_audit/_service/pypi.py", line 64, in query
+    response: requests.Response = self.session.get(url=url, timeout=self.timeout)
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/requests/sessions.py", line 671, in get
+    return self.request("GET", url, params=params, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/requests/sessions.py", line 651, in request
+    resp = self.send(prep, **send_kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/requests/sessions.py", line 784, in send
+    r = adapter.send(request, **kwargs)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/cachecontrol/adapter.py", line 76, in send
+    resp = super().send(request, stream, timeout, verify, cert, proxies)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/lib/python3.12/site-packages/requests/adapters.py", line 729, in send
+    raise ConnectionError(e, request=request)
+requests.exceptions.ConnectionError: HTTPSConnectionPool(host='pypi.org', port=443): Max retries exceeded with url: /pypi/altgraph/0.17.5/json (Caused by NameResolutionError("HTTPSConnection(host='pypi.org', port=443): Failed to resolve 'pypi.org' ([Errno -5] No address associated with hostname)"))
+Traceback (most recent call last):
+  File "/tmp/rhetoric-source-b9ee597/scripts/build_frozen_linux.py", line 238, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "/tmp/rhetoric-source-b9ee597/scripts/build_frozen_linux.py", line 232, in main
+    paths = build(REPO_ROOT, args.outdir.resolve(), version=version, formats=formats)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rhetoric-source-b9ee597/scripts/build_frozen_linux.py", line 213, in build
+    sbom = write_cyclonedx_sbom(repo, outdir / "sbom.json")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rhetoric-source-b9ee597/scripts/build_frozen_linux.py", line 79, in write_cyclonedx_sbom
+    subprocess.run(
+  File "/usr/lib/python3.12/subprocess.py", line 571, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/bin/pip-audit', '--format', 'cyclonedx-json', '--output', '/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/release_artifacts/linux-rc-b9ee597/sbom.json']' returned non-zero exit status 1.
+Command exited with non-zero status 1
+	Command being timed: "/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/bin/python /tmp/rhetoric-source-b9ee597/scripts/build_frozen_linux.py --outdir /media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/release_artifacts/linux-rc-b9ee597 --format deb"
+	User time (seconds): 1330.96
+	System time (seconds): 44.73
+	Percent of CPU this job got: 207%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 11:04.07
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 2195460
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 1659
+	Minor (reclaiming a frame) page faults: 2610831
+	Voluntary context switches: 108187
+	Involuntary context switches: 1659968
+	Swaps: 0
+	File system inputs: 3287408
+	File system outputs: 10892088
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 1
+finish=2026-11-17T08:13:00.979471-08:00
+exit_code=1

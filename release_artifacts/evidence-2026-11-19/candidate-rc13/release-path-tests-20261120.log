@@ -1,0 +1,22 @@
+=== Rhetoric release-path test suite re-run 2026-11-20 ===
+2026-11-20T22:00:43Z
+V1.00a-beta_build
+49f0678 test(ci): record final ship-today evidence count
+
+--- Command 1: 176-test release-path suite ---
+........................................................................ [ 40%]
+........................................................................ [ 81%]
+................................                                         [100%]
+176 passed in 142.45s (0:02:22)
+EXIT-1: 0
+
+--- Command 2: recorder/studio-only run ---
+..............................                                           [100%]
+30 passed in 74.27s (0:01:14)
+EXIT-2: 0
+
+--- Command 3: git diff --check ---
+EXIT-3: 0
+
+2026-11-20T22:06:21Z
+=== end ===

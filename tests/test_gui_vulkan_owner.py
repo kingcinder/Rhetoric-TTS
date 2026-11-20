@@ -10,7 +10,7 @@ invisible to app_gui-level monkeypatching.
 Two slices landed under that constraint:
 
 1. (2026-09-20) only the patch-free helpers moved — ``_device_row_text``,
-   ``_parse_oracle_model_path`` — and the patch-coupled policies
+   ``_parse_rhetoric_model_path`` — and the patch-coupled policies
    (``_vulkan_prerequisite_missing``, ``_vulkan_preflight_report``) STAY on
    app_gui, with their source-level patch behavior intact.
 2. (2026-09-27) the four background threads — ``VulkanDeviceProbeThread``,
@@ -46,16 +46,16 @@ def _import(name: str):
 
 
 def test_patch_free_helpers_live_in_gui_vulkan() -> None:
-    owner = _import("the_oracle.gui_vulkan")
-    for name in ("_device_row_text", "_parse_oracle_model_path"):
+    owner = _import("rhetoric.gui_vulkan")
+    for name in ("_device_row_text", "_parse_rhetoric_model_path"):
         assert callable(getattr(owner, name)), name
 
 
 def test_app_gui_delegates_device_row_text_to_the_owner() -> None:
-    owner = _import("the_oracle.gui_vulkan")
-    app_gui = _import("the_oracle.app_gui")
+    owner = _import("rhetoric.gui_vulkan")
+    app_gui = _import("rhetoric.app_gui")
     assert app_gui._device_row_text is owner._device_row_text
-    assert app_gui._parse_oracle_model_path is owner._parse_oracle_model_path
+    assert app_gui._parse_rhetoric_model_path is owner._parse_rhetoric_model_path
     assert owner._device_row_text(2, "AMD Radeon") == "Device 2: AMD Radeon"
 
 
@@ -66,8 +66,8 @@ def test_policy_bodies_live_in_gui_vulkan_behind_the_injection_seam() -> None:
     globals at call time — the property the ~12 app_gui-level patch sites
     depend on, and the deliberate resolution of the 2026-09-20 failed
     extraction recorded in this file's docstring."""
-    owner = _import("the_oracle.gui_vulkan")
-    app_gui = _import("the_oracle.app_gui")
+    owner = _import("rhetoric.gui_vulkan")
+    app_gui = _import("rhetoric.app_gui")
     import inspect
 
     # The bodies (with the injected seam parameter) are gui_vulkan's.
@@ -105,11 +105,11 @@ def test_prerequisite_missing_sees_app_gui_level_binary_patch(monkeypatch) -> No
     """The load-bearing patch property, exercised live through the delegate:
     patching app_gui.find_audiocpp_binary must change what the moved body
     sees — the injected seam carries the app_gui-resolved probe across."""
-    app_gui = _import("the_oracle.app_gui")
-    from the_oracle.tts_engines import vulkan_backend
+    app_gui = _import("rhetoric.app_gui")
+    from rhetoric.tts_engines import vulkan_backend
 
     monkeypatch.setattr(app_gui, "find_audiocpp_binary", lambda: None)
-    monkeypatch.delenv("ORACLE_AUDIOCPP_MODEL", raising=False)
+    monkeypatch.delenv("RHETORIC_AUDIOCPP_MODEL", raising=False)
     # find_audiocpp_model() is patched too so the check isolates the binary probe.
     monkeypatch.setattr(vulkan_backend, "find_audiocpp_model", lambda: None)
     missing = app_gui._vulkan_prerequisite_missing()
@@ -118,7 +118,7 @@ def test_prerequisite_missing_sees_app_gui_level_binary_patch(monkeypatch) -> No
 
 def test_gui_vulkan_has_no_wholesale_patch_targets() -> None:
     """Nothing in gui_vulkan is monkeypatched by name anywhere in the suite."""
-    owner = _import("the_oracle.gui_vulkan")
+    owner = _import("rhetoric.gui_vulkan")
     owner_names = {name for name in vars(owner) if not name.startswith("__")}
     tests_dir = REPO_ROOT / "tests"
     offenders: list[str] = []
@@ -136,15 +136,15 @@ def test_gui_vulkan_imports_nothing_from_app_gui() -> None:
 
     The bare-name check this replaces (added 2026-09-20) only caught
     ``import app_gui`` / ``from app_gui import x``; it would pass green over
-    ``from the_oracle import app_gui``, ``from . import app_gui`` and friends.
+    ``from rhetoric import app_gui``, ``from . import app_gui`` and friends.
     The harm this guards is someone "fixing" the injected preflight seam with
-    ``from the_oracle.app_gui import _vulkan_preflight_report`` — a cycle the
+    ``from rhetoric.app_gui import _vulkan_preflight_report`` — a cycle the
     direction guards exist to refuse.
     """
     from tests.test_gui_import_direction import _module_root, _scan_imports
 
     _forbids_app_gui = lambda module: _module_root(module) == "app_gui"
-    owner = _import("the_oracle.gui_vulkan")
+    owner = _import("rhetoric.gui_vulkan")
     source = Path(owner.__file__).read_text(encoding="utf-8")
     scan = _scan_imports(source, forbidden=_forbids_app_gui)
     assert scan.violations == () and scan.unresolved == (), (
@@ -153,20 +153,20 @@ def test_gui_vulkan_imports_nothing_from_app_gui() -> None:
     )
     # Vacuity: each forbidden spelling must still trip this exact gate.
     for form in (
-        "import the_oracle.app_gui",
+        "import rhetoric.app_gui",
         "import app_gui",
-        "from the_oracle.app_gui import _vulkan_preflight_report",
-        "from the_oracle import app_gui",
+        "from rhetoric.app_gui import _vulkan_preflight_report",
+        "from rhetoric import app_gui",
         "from . import app_gui",
         "from .app_gui import _vulkan_preflight_report",
-        "importlib.import_module('the_oracle.app_gui')",
+        "importlib.import_module('rhetoric.app_gui')",
     ):
         assert _scan_imports(form, forbidden=_forbids_app_gui).violations, form
     # ...and the scan must see gui_vulkan's real imports (which are legal):
     assert {
-        "the_oracle.gui_utils",
-        "the_oracle.tts_engines.vulkan_backend",
-        "the_oracle.vulkan_setup",
+        "rhetoric.gui_utils",
+        "rhetoric.tts_engines.vulkan_backend",
+        "rhetoric.vulkan_setup",
     } <= set(scan.modules), scan.modules
 
 
@@ -179,8 +179,8 @@ def test_vulkan_thread_cluster_has_one_owner() -> None:
     (``monkeypatch.setattr(app_gui, "VulkanPreflightThread", fake)``)
     intercept construction only while ``app_gui.X is gui_vulkan.X``.
     """
-    owner = _import("the_oracle.gui_vulkan")
-    app_gui = _import("the_oracle.app_gui")
+    owner = _import("rhetoric.gui_vulkan")
+    app_gui = _import("rhetoric.app_gui")
     owner_tree = ast.parse(Path(owner.__file__).read_text(encoding="utf-8"))
     defined = {
         node.name for node in owner_tree.body if isinstance(node, ast.ClassDef)
@@ -232,7 +232,7 @@ def test_thread_bodies_never_resolve_app_gui_patched_policy_names() -> None:
     its builder by constructor injection instead (the seam pin below); the
     other three have no patch-coupled dependency at all.
     """
-    owner = _import("the_oracle.gui_vulkan")
+    owner = _import("rhetoric.gui_vulkan")
     source = Path(owner.__file__).read_text(encoding="utf-8")
     tree = ast.parse(source)
     threads = {
@@ -269,7 +269,7 @@ def test_preflight_builder_is_injected_from_app_gui_namespace() -> None:
     reaches the seam; a captured reference, literal, or attribute lookup
     would pin the unpatched builder and re-open the harm class.
     """
-    app_gui = _import("the_oracle.app_gui")
+    app_gui = _import("rhetoric.app_gui")
     tree = ast.parse(Path(app_gui.__file__).read_text(encoding="utf-8"))
     injections: list[ast.AST | None] = []
     for node in ast.walk(tree):

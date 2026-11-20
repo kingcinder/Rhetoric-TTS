@@ -7,10 +7,10 @@ from unittest.mock import patch
 
 import pytest
 
-from the_oracle.models.project import VoiceSettings
-from the_oracle.models.settings import RenderSettings, SpeakerSettings; from the_oracle.pipeline import OraclePipeline
-from the_oracle.smoke import _write_reference
-from the_oracle.text_repair.directives import apply_directives, parse_directives
+from rhetoric.models.project import VoiceSettings
+from rhetoric.models.settings import RenderSettings, SpeakerSettings; from rhetoric.pipeline import RhetoricPipeline
+from rhetoric.smoke import _write_reference
+from rhetoric.text_repair.directives import apply_directives, parse_directives
 
 
 class _FixedClassifier:
@@ -83,8 +83,8 @@ def test_prepare_plan_strips_and_applies_directives(tmp_path: Path) -> None:
         "A": SpeakerSettings(reference_path=str(ref), voice_settings=VoiceSettings()),
         "B": SpeakerSettings(reference_path=str(ref), voice_settings=VoiceSettings()),
     }
-    with patch("the_oracle.pipeline.GoEmotionsClassifier", _FixedClassifier):
-        pipeline = OraclePipeline()
+    with patch("rhetoric.pipeline.GoEmotionsClassifier", _FixedClassifier):
+        pipeline = RhetoricPipeline()
         plan = pipeline.prepare_plan(dialogue, tmp_path / "out", speakers, settings)
 
     utterance = plan.utterances[0]

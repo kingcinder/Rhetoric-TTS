@@ -11,21 +11,21 @@ Base commit: `ef5abbe5b204` (`release/1.4.0`)
 - Checkout status before baseline: clean.
 - Repository size: `9.6G` including ignored local runtime/build data.
 - Interpreter: Python 3.12.3.
-- Fresh environment: `/tmp/oracle-baseline-uV4W9R`.
+- Fresh environment: `/tmp/rhetoric-baseline-uV4W9R`.
 - Installation: `python3.12 -m venv ...` followed by `python -m pip install --upgrade pip` and `python -m pip install -e '.[dev]'`.
-- The repository `.venv` was not used because its pip launcher referenced the stale path `/home/USER/Documents/the oracle tts/.venv/bin/python`.
+- The repository `.venv` was not used because its pip launcher referenced the stale path `/home/USER/Documents/Rhetoric tts/.venv/bin/python`.
 
 ## Required commands
 
 | Command | Result |
 | --- | --- |
-| `/tmp/oracle-baseline-uV4W9R/bin/python scripts/release.py --check` | Pass: `single-source version invariant holds` |
-| `/tmp/oracle-baseline-uV4W9R/bin/python scripts/certify_suite_counts.py --availability` | Fail: no baseline recorded for `ef5abbe5b204` |
-| `/tmp/oracle-baseline-uV4W9R/bin/python scripts/generate_third_party_notices.py --check` | Fail: stale notices; missing `cloudpickle` |
-| `/tmp/oracle-baseline-uV4W9R/bin/python scripts/soft_launch.py --check --json` | Fail: 8 blockers, 1 warning |
-| `/tmp/oracle-baseline-uV4W9R/bin/python -m pip check` | Pass: `No broken requirements found.` |
-| `/tmp/oracle-baseline-uV4W9R/bin/python -m pip_audit` | Pass: `No known vulnerabilities found`; local `the-oracle` was not auditable on PyPI |
-| `/tmp/oracle-baseline-uV4W9R/bin/python scripts/release.py` | Fail: 2,078 passed, 11 failed, 6 warnings in 282.41s |
+| `/tmp/rhetoric-baseline-uV4W9R/bin/python scripts/release.py --check` | Pass: `single-source version invariant holds` |
+| `/tmp/rhetoric-baseline-uV4W9R/bin/python scripts/certify_suite_counts.py --availability` | Fail: no baseline recorded for `ef5abbe5b204` |
+| `/tmp/rhetoric-baseline-uV4W9R/bin/python scripts/generate_third_party_notices.py --check` | Fail: stale notices; missing `cloudpickle` |
+| `/tmp/rhetoric-baseline-uV4W9R/bin/python scripts/soft_launch.py --check --json` | Fail: 8 blockers, 1 warning |
+| `/tmp/rhetoric-baseline-uV4W9R/bin/python -m pip check` | Pass: `No broken requirements found.` |
+| `/tmp/rhetoric-baseline-uV4W9R/bin/python -m pip_audit` | Pass: `No known vulnerabilities found`; local `rhetoric` was not auditable on PyPI |
+| `/tmp/rhetoric-baseline-uV4W9R/bin/python scripts/release.py` | Fail: 2,078 passed, 11 failed, 6 warnings in 282.41s |
 
 ## Explanation of baseline failures
 

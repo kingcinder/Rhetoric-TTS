@@ -1,6 +1,6 @@
 include LICENSE
 include PRIVACY.md
-include EULA-DRAFT.md
+include EULA.md
 include THIRD_PARTY_NOTICES.md
 recursive-include THIRD_PARTY_LICENSES *
 include docs/SOFT_LAUNCH.md

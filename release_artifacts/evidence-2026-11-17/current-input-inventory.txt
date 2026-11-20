@@ -1,0 +1,14 @@
+Checked: 2026-11-17 07:58 PST; source directory: Input/
+The text below records file path, byte size, and SHA-256. Content was reviewed for case selection.
+Input/High_Quality_Seashells_Instruction_set_and_Teleprompter_Text.txt	2936	3acb652092906b59877db7bbbe1ed3f950d3d6b3b71341e7c2a8ee8514429dac
+Input/README.md	1200	646fb6493271230f45f449871bb2faa2073bef4700e2eecd57827d9ca8ec3e4d
+Input/Recording_Studio_Generic_Teleprompter_File.txt	1299	174b2ff9e1c7d8aeb51981fdf2f7575ece978a8ed5085167db2e8b4cb0b1e9cf
+Input/Release_Qualification_5Speaker_Test_File.txt	12440	cc1ce81c2fb64d3e3a8dbf1b87c4ff49a3dd53e697bddaf418e19ac8813a71fb
+Input/Stream_of_Consciousness_Dialogue_2Party_AI_Generated_Test_File.txt	12154	eff1483d75d391440ff01d5d97c7106bd1296d68fe5a348c9817506d76c4b2f2
+Input/What_Is_Reality_Output_Test_File.txt	2054	3000cd1802830dca091691c0e42ae365ec1918c41964a7466520d7b05ef20afe
+
+Selected for required production TTS cases:
+G05/G06 monologue: Input/What_Is_Reality_Output_Test_File.txt
+G05/G06 two-speaker: Input/Stream_of_Consciousness_Dialogue_2Party_AI_Generated_Test_File.txt
+G05/G06 five-speaker: Input/Release_Qualification_5Speaker_Test_File.txt (new, label-only deterministic derivation from the selected two-speaker file; original turn text/order preserved).
+Speaker reference recordings will be selected from the documented bundled generic voice set and will not be copied into the evidence archive.

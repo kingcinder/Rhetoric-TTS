@@ -1,6 +1,6 @@
 """The GUI Report a Problem dialog: wiring, not pixel dressing.
 
-The dialog is Qt-presentation only; all rules live in ``the_oracle.support``.
+The dialog is Qt-presentation only; all rules live in ``rhetoric.support``.
 These tests drive the real widgets (fields, checkboxes, buttons) on an
 offscreen QApplication and pin the three outcomes the Help menu can produce:
 a saved draft, a packaged zip, and a copied issue link. Validation failures
@@ -30,7 +30,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from the_oracle import crash, gui_crash, support
+from rhetoric import crash, gui_crash, support
 
 
 @pytest.fixture(scope="module")
@@ -44,6 +44,21 @@ def parent(qt_app):
     widget = QWidget()
     yield widget
     widget.deleteLater()
+
+
+@pytest.fixture(autouse=True)
+def _support_gate_session_current(monkeypatch):
+    """The share actions are support-gated now: they need a session whose
+    automated update check already found the install current. Seed that
+    session state so these tests exercise the share flow itself."""
+    from rhetoric import update_service
+
+    session = update_service.UpdateSession()
+    session.record(
+        update_service.UpdateCheckResult(status="current", current_version="1.5.0")
+    )
+    monkeypatch.setattr(update_service, "SESSION", session)
+
 
 
 class _MessageBox:
@@ -180,6 +195,34 @@ def test_issue_copies_a_prefilled_link(parent, tmp_path: Path) -> None:
     report = support.list_reports(tmp_path)[0]
     assert copied[0] == support.issue_url(report)
     assert "Copied" in _MessageBox.instances[-1].title
+
+
+def test_issue_is_blocked_when_updates_opted_out(parent, tmp_path: Path, monkeypatch) -> None:
+    """The support gate in the real dialog: opting out of automated updates
+    blocks the share action — nothing is copied, and the user is told
+    exactly how to restore support."""
+    from rhetoric import gui_settings
+
+    settings_path = tmp_path / "app-settings.json"
+    monkeypatch.setattr(gui_settings, "app_settings_path", lambda: settings_path)
+    gui_settings.save_app_settings({"automatic_updates_enabled": False})
+
+    copied: list[str] = []
+    dialog_cls = _dialog("issue_button", _base_fields())
+    gui_crash.run_problem_report_dialog(
+        parent,
+        tmp_path,
+        dialog_cls=dialog_cls,
+        message_box_cls=_MessageBox,
+        copy_text_fn=copied.append,
+        run_doctor=False,
+    )
+    assert copied == []
+    titles = [box.title for box in _MessageBox.instances]
+    assert "Support Unavailable" in titles
+    blocked = [box for box in _MessageBox.instances if box.title == "Support Unavailable"][0]
+    assert "automatic bug catcher" in blocked.text
+    assert support.list_reports(tmp_path) == []
 
 
 def test_email_opens_the_prefilled_mailto(parent, tmp_path: Path) -> None:

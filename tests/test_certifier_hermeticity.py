@@ -21,7 +21,7 @@ it is a measurable contract with two halves:
    the native-crash dump arm (consent-ON machines append to an existing
    ``crash_reports/native-crash.txt`` without changing its bytes, and a
    consent-OFF machine creates nothing, so both look clean), the config
-   redirect's position before the first ``the_oracle`` import, and the
+   redirect's position before the first ``rhetoric`` import, and the
    drift between the script's patch and ``app_gui``'s real seam.
 
 Mutation contract (proven live, reverted byte-identical):
@@ -83,23 +83,45 @@ def _source() -> str:
 
 
 def _package_source(name: str) -> str:
-    return (REPO_ROOT / "src" / "the_oracle" / name).read_text(encoding="utf-8")
+    return (REPO_ROOT / "src" / "rhetoric" / name).read_text(encoding="utf-8")
 
 
 # --- behavioral: a real run writes nothing ----------------------------------
 
 
 def test_sweep_never_touches_the_real_repo_or_config() -> None:
-    """Run the real script as CI does; the repo and the real config root must
-    come out byte-identical (see the module docstring for the measured
-    pre-fix writes and the honest limits)."""
-    from the_oracle.platform_support import user_config_root
+    """Run the real script as CI does; the repo, the real config root and the
+    real data root must come out byte-identical (see the module docstring for
+    the measured pre-fix writes and the honest limits).
 
-    from tests.helpers import repo_tree_snapshot, snapshot_differences
+    The data root joined the watched set on 2026-11-09: with certify_gui's
+    paths patch removed (mutation M1), MainWindow's paths fall back to
+    app_paths' installed-root diversion, which lands in
+    ``user_data_root()/rhetoric`` — a third tree this test did not watch,
+    so the leak (a real gui_startup_timing.json write) was invisible and M1
+    scored SURVIVED. Watching only where a leak was expected is not a net."""
+    from rhetoric.platform_support import user_config_root, user_data_root
 
-    config_root = user_config_root() / "the_oracle"
-    before_repo = repo_tree_snapshot(REPO_ROOT)
-    before_config = repo_tree_snapshot(config_root) if config_root.exists() else {}
+    from tests.helpers import DEFAULT_SNAPSHOT_EXCLUDED_DIRS, repo_tree_snapshot, snapshot_differences
+
+    # These paths are user data or generated offline deliverables, outside the
+    # certifier's write surface. Never open user content or recurse into the
+    # extracted frozen app while checking source-tree hermeticity.
+    snapshot_exclusions = DEFAULT_SNAPSHOT_EXCLUDED_DIRS | {
+        "Input",
+        "Seashells",
+        "crash_reports",
+        "release_artifacts",
+        "squashfs-root",
+    }
+
+    config_root = user_config_root() / "rhetoric"
+    data_root = user_data_root() / "rhetoric"
+    before_repo = repo_tree_snapshot(
+        REPO_ROOT, excluded_dirs=snapshot_exclusions, hash_contents=False
+    )
+    before_config = repo_tree_snapshot(config_root, hash_contents=False) if config_root.exists() else {}
+    before_data = repo_tree_snapshot(data_root, hash_contents=False) if data_root.exists() else {}
 
     proc = subprocess.run(
         [sys.executable, "scripts/certify_gui.py"],
@@ -110,19 +132,28 @@ def test_sweep_never_touches_the_real_repo_or_config() -> None:
         env={**os.environ, "QT_QPA_PLATFORM": "offscreen"},
     )
 
-    after_repo = repo_tree_snapshot(REPO_ROOT)
-    after_config = repo_tree_snapshot(config_root) if config_root.exists() else {}
+    after_repo = repo_tree_snapshot(
+        REPO_ROOT, excluded_dirs=snapshot_exclusions, hash_contents=False
+    )
+    after_config = repo_tree_snapshot(config_root, hash_contents=False) if config_root.exists() else {}
+    after_data = repo_tree_snapshot(data_root, hash_contents=False) if data_root.exists() else {}
 
     detail = (
         f"rc={proc.returncode}\n"
         f"stdout tail:\n{proc.stdout[-2000:]}\n"
-        f"stderr tail:\n{proc.stderr[-2000:]}"
+        # stderr keeps 40k, not 2k: on a native fault the certifier's
+        # faulthandler dump lands in this stream, and the crash stack sits
+        # a whole extension-module list (~15k) before the end of it — a 2k
+        # tail shows only the module list's tail (hosted-runner SIGSEGV,
+        # 2026-11-09).
+        f"stderr tail:\n{proc.stderr[-40000:]}"
     )
     assert proc.returncode == 0, f"the sweep itself failed\n{detail}"
 
     for label, before, after in (
         ("real repo tree", before_repo, after_repo),
         ("real app-config root", before_config, after_config),
+        ("real app-data root", before_data, after_data),
     ):
         created, changed, removed = snapshot_differences(before, after)
         assert not (created or changed or removed), (
@@ -134,28 +165,28 @@ def test_sweep_never_touches_the_real_repo_or_config() -> None:
 # --- source: channels a snapshot cannot see ---------------------------------
 
 
-def test_config_root_redirect_precedes_every_the_oracle_import() -> None:
+def test_config_root_redirect_precedes_every_rhetoric_import() -> None:
     """The env redirect is the first thing the module does after its
-    docstring: a ``the_oracle`` import resolved before it would read (and
+    docstring: a ``rhetoric`` import resolved before it would read (and
     potentially cache) the real config root.
 
     The redirect itself moved to the certifier family's shared helper on
     2026-10-11, so what this pins is the ORDER and the delegation: a call to the
-    shared ``isolated_config_root``, above every ``the_oracle`` import. The
+    shared ``isolated_config_root``, above every ``rhetoric`` import. The
     substance — that the helper redirects BOTH ``XDG_CONFIG_HOME`` and
     ``%APPDATA%`` and arms the reap — is pinned where it lives, in
     tests/test_certifier_isolation.py.
     """
     source = _source()
-    first_import = re.search(r"^(?:from|import) the_oracle", source, re.MULTILINE)
-    assert first_import is not None, "no the_oracle import found — the scan went blind"
+    first_import = re.search(r"^(?:from|import) rhetoric", source, re.MULTILINE)
+    assert first_import is not None, "no rhetoric import found — the scan went blind"
     assert "from certifier_isolation import isolated_config_root, reap_isolated_root" in source, (
         "the throwaway root no longer comes from the shared helper — a hand-rolled "
         "second copy is what this refactor removed, and a copy has no owner"
     )
     redirect = source.index("_CONFIG_ROOT = isolated_config_root(")
-    assert redirect < first_import.start(), "config redirect must precede every the_oracle import"
-    assert 'isolated_config_root("oracle_gui_cert_cfg_")' in source, (
+    assert redirect < first_import.start(), "config redirect must precede every rhetoric import"
+    assert 'isolated_config_root("rhetoric_gui_cert_cfg_")' in source, (
         "the sweep's throwaway root must keep its own prefix, so a leaked root names its sweep"
     )
 
@@ -164,7 +195,7 @@ def test_window_default_paths_are_rooted_at_the_throwaway() -> None:
     """MainWindow's ``self.paths`` (and the ``Output/logs`` timing writes
     hanging off it) must resolve under the throwaway for the whole run —
     through the REAL builder, not a hand-rolled stub that could drift from
-    ``OraclePaths``."""
+    ``RhetoricPaths``."""
     source = _source()
     assert "_app_gui.ensure_repo_default_paths = _hermetic_paths" in source, (
         "the paths seam is no longer redirected — MainWindow would write "
@@ -172,7 +203,7 @@ def test_window_default_paths_are_rooted_at_the_throwaway() -> None:
     )
     assert "return ensure_repo_default_paths(_CONFIG_ROOT)" in source, (
         "_hermetic_paths must delegate to the real builder with the "
-        "throwaway root, not reconstruct OraclePaths itself"
+        "throwaway root, not reconstruct RhetoricPaths itself"
     )
     # Redirect before the sweep builds anything.
     assert source.index("_app_gui.ensure_repo_default_paths") < source.index("for key in THEMES:")

@@ -15,8 +15,8 @@ from urllib.parse import quote
 
 import pytest
 
-from the_oracle import support
-from the_oracle.support import channels, report as report_module
+from rhetoric import support
+from rhetoric.support import channels, report as report_module
 
 
 def _report(tmp_path: Path, **overrides):
@@ -123,7 +123,7 @@ def test_issue_url_targets_the_tracked_repo_and_fits_url_limits(tmp_path: Path) 
     assert len(url) <= channels.MAX_ISSUE_URL_CHARS
     assert channels.ISSUE_REPO == "kingcinder/Rhetoric-TTS"
     assert "Rhetoric" in channels.issue_title(report)
-    assert "The Oracle" not in channels.issue_title(report)
+    assert "Oracle" not in channels.issue_title(report)
 
 
 def test_pathological_report_still_yields_a_bounded_url(

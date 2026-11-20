@@ -8,7 +8,7 @@ no network access, on Linux or Windows:
         manifest.json          # pins, versions, platform wheel sets
         repo.tar.gz            # git archive of the built commit
         hf_cache/              # pre-downloaded HF hub cache (models--<org>--<name>/),
-                               # every model pinned to the_oracle.models.pins
+                               # every model pinned to rhetoric.models.pins
         wheels/
             linux/             # every wheel the installer needs on Linux
             windows/           # every wheel the installer needs on Windows
@@ -23,7 +23,7 @@ and the managed launcher then runs with HF_HUB_OFFLINE=1 so no model fetch
 can ever touch the network.
 
 Usage:
-    python3 scripts/build_offline_bundle.py --output dist/oracle-offline-bundle
+    python3 scripts/build_offline_bundle.py --output dist/rhetoric-offline-bundle
     python3 scripts/build_offline_bundle.py --output dist/bundle --platform windows --pytorch cpu
 """
 
@@ -49,7 +49,7 @@ for candidate in (str(SRC_ROOT), str(REPO_ROOT / "scripts")):
     if candidate not in sys.path:
         sys.path.insert(0, candidate)
 
-from the_oracle.models.pins import (  # noqa: E402
+from rhetoric.models.pins import (  # noqa: E402
     CHATTERBOX_MULTILINGUAL_PATTERNS,
     CHATTERBOX_REPO,
     CHATTERBOX_STANDARD_PATTERNS,
@@ -72,12 +72,12 @@ from distribution_locks import build_lock  # noqa: E402
 #: same on every platform.
 TORCH_RUNTIME_DEPS = (
     "filelock",
-    "typing-extensions",
+    "typing-extensions>=4.13.0",
+    "setuptools>=77.0.3",
     "networkx",
     "jinja2",
-    "MarkupSafe",
     "fsspec",
-    "sympy",
+    "sympy>=1.13.3",
     "mpmath",
 )
 
@@ -86,8 +86,7 @@ TORCH_RUNTIME_DEPS = (
 #: evaluates torch's ``platform_system == "Linux"`` nvidia markers against the
 #: *building* host, so a resolving cross-platform download of any package that
 #: requires torch fails on a Linux builder even when the target is Windows and
-#: needs none of those packages. Newer PyPI torch releases also require
-#: ``setuptools<82``, which conflicts with the pinned bootstrap setuptools.
+#: needs none of those packages.
 TORCH_CONSUMER_NAMES = (
     "chatterbox-tts",
     "conformer",
@@ -253,7 +252,7 @@ def torch_constraints(wheels_dir: Path) -> Path:
     wheel, whose ``platform_system == "Linux"`` nvidia pins are evaluated
     against the *building* host and can never be satisfied for a cross-platform
     Windows target. Constraining to the exact version of the wheel on disk —
-    e.g. ``torch==2.6.0+cpu``, a local version PyPI does not publish — leaves
+        e.g. ``torch==2.15.0+cpu``, a local version PyPI does not publish — leaves
     the bundled cpu wheel as the only candidate, and it declares no nvidia
     dependencies at all.
     """
@@ -509,10 +508,10 @@ def write_launchers(bundle_dir: Path) -> None:
         "# Offline install of Rhetoric from this bundle. No network needed.\n"
         "set -Eeuo pipefail\n"
         'BUNDLE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"\n'
-        'INSTALL_ROOT="${1:-$HOME/The_Oracle_TTS}"\n'
+        'INSTALL_ROOT="${1:-$HOME/The_Rhetoric_TTS}"\n'
         'mkdir -p "$INSTALL_ROOT"\n'
         'tar -xzf "$BUNDLE_DIR/repo.tar.gz" -C "$INSTALL_ROOT"\n'
-        'exec "$INSTALL_ROOT/install_oracle_tts.sh" --offline-bundle "$BUNDLE_DIR"\n',
+        'exec "$INSTALL_ROOT/install_rhetoric.sh" --offline-bundle "$BUNDLE_DIR"\n',
         encoding="utf-8",
     )
     (bundle_dir / "install.bat").write_text(
@@ -523,13 +522,27 @@ def write_launchers(bundle_dir: Path) -> None:
         # --offline-bundle argument does not end in a backslash-quote, which
         # PowerShell reads as an escaped quote and mangles the path with.
         'if "%BUNDLE_DIR:~-1%"=="\\" set "BUNDLE_DIR=%BUNDLE_DIR:~0,-1%"\r\n'
-        'if "%~1"=="" ( set "INSTALL_ROOT=%USERPROFILE%\\The_Oracle_TTS" ) else ( set "INSTALL_ROOT=%~1" )\r\n'
+        'if "%~1"=="" ( set "INSTALL_ROOT=%USERPROFILE%\\The_Rhetoric_TTS" ) else ( set "INSTALL_ROOT=%~1" )\r\n'
         'mkdir "%INSTALL_ROOT%" 2>nul\r\n'
         'tar -xzf "%BUNDLE_DIR%\\repo.tar.gz" -C "%INSTALL_ROOT%"\r\n'
-        'powershell -ExecutionPolicy Bypass -File "%INSTALL_ROOT%\\install_oracle_tts.ps1" --offline-bundle "%BUNDLE_DIR%"\r\n',
+        'powershell -ExecutionPolicy Bypass -File "%INSTALL_ROOT%\\install_rhetoric.ps1" --offline-bundle "%BUNDLE_DIR%"\r\n',
         encoding="utf-8",
     )
     (bundle_dir / "install.sh").chmod(0o755)
+
+
+def archive_repo(repo_root: Path, output: Path) -> None:
+    """Archive the install tree without copying the owner's voice recordings."""
+    with output.open("wb") as stream:
+        subprocess.run(
+            [
+                "git", "archive", "--format=tar.gz", "HEAD", "--", ".",
+                ":(exclude)Seashells/**",
+            ],
+            cwd=repo_root,
+            stdout=stream,
+            check=True,
+        )
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -558,9 +571,7 @@ def main(argv: list[str] | None = None) -> int:
                             capture_output=True, text=True, check=True).stdout.strip()
 
     log(f"archiving repo @ {commit[:12]}")
-    with open(bundle_dir / "repo.tar.gz", "wb") as fh:
-        subprocess.run(["git", "archive", "--format=tar.gz", "HEAD"], cwd=REPO_ROOT,
-                       stdout=fh, check=True)
+    archive_repo(REPO_ROOT, bundle_dir / "repo.tar.gz")
 
     model_sizes: dict[str, str] = {}
     if not args.skip_models:
@@ -587,12 +598,13 @@ def main(argv: list[str] | None = None) -> int:
                 lock_manifest,
                 platform=platform,
                 python_version=args.python_version,
+                lock_exclude=CLOSURE_IGNORED_DISTRIBUTIONS,
             )
 
     write_launchers(bundle_dir)
 
     manifest = {
-        "app": "the-oracle",
+        "app": "rhetoric",
         "repo_commit": commit,
         "built_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
         "model_pins": dict(MODEL_PINS),

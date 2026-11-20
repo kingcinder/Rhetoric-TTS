@@ -20,8 +20,8 @@ import pytest
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
-from the_oracle import _native  # noqa: E402
-from the_oracle.licensing import LicenseStatus, current_license  # noqa: E402
+from rhetoric import _native  # noqa: E402
+from rhetoric.licensing import LicenseStatus, current_license  # noqa: E402
 
 
 def _load_build_script():
@@ -36,7 +36,7 @@ def _load_build_script():
 def test_a_development_core_carries_no_manifest() -> None:
     if not _native.available():
         pytest.skip("compiled core is not built in this checkout")
-    verdict = _native.attest(REPO_ROOT / "src" / "the_oracle")
+    verdict = _native.attest(REPO_ROOT / "src" / "rhetoric")
     assert verdict is not None
     assert verdict["enforced"] is False
     assert verdict["ok"] is True
@@ -47,7 +47,7 @@ def test_a_development_core_carries_no_manifest() -> None:
 def test_manifest_writer_hashes_every_protected_module(tmp_path: Path) -> None:
     module = _load_build_script()
     manifest = module.write_manifest(
-        REPO_ROOT / "src" / "the_oracle", tmp_path / "integrity-manifest.txt"
+        REPO_ROOT / "src" / "rhetoric", tmp_path / "integrity-manifest.txt"
     )
     lines = manifest.read_text(encoding="utf-8").splitlines()
     assert len(lines) == len(module.PROTECTED_MODULES)
@@ -57,7 +57,7 @@ def test_manifest_writer_hashes_every_protected_module(tmp_path: Path) -> None:
         digest, relative = line.split("  ")
         entries[relative] = digest
         expected = hashlib.sha256(
-            (REPO_ROOT / "src" / "the_oracle" / relative).read_bytes()
+            (REPO_ROOT / "src" / "rhetoric" / relative).read_bytes()
         ).hexdigest()
         assert digest == expected, relative
 
@@ -74,7 +74,7 @@ def test_manifest_writer_hashes_every_protected_module(tmp_path: Path) -> None:
 
 def test_manifest_writer_refuses_a_package_missing_gates(tmp_path: Path) -> None:
     module = _load_build_script()
-    package = tmp_path / "the_oracle"
+    package = tmp_path / "rhetoric"
     (package / "licensing").mkdir(parents=True)
     with pytest.raises(SystemExit, match="missing protected modules"):
         module.write_manifest(package, tmp_path / "integrity-manifest.txt")
@@ -83,7 +83,7 @@ def test_manifest_writer_refuses_a_package_missing_gates(tmp_path: Path) -> None
 def test_a_native_mismatch_is_reported_as_integrity(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from the_oracle.licensing import _attestation_memo
+    from rhetoric.licensing import _attestation_memo
 
     _attestation_memo.clear()
     monkeypatch.setattr(
@@ -108,7 +108,7 @@ def test_a_native_mismatch_is_reported_as_integrity(
 def test_a_clean_manifest_does_not_change_the_verdict(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from the_oracle.licensing import _attestation_memo
+    from rhetoric.licensing import _attestation_memo
 
     _attestation_memo.clear()
     monkeypatch.setattr(
@@ -131,7 +131,7 @@ def test_a_clean_manifest_does_not_change_the_verdict(
 def test_attestation_is_memoized_once_per_process(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from the_oracle.licensing import _attestation_memo
+    from rhetoric.licensing import _attestation_memo
 
     _attestation_memo.clear()
     calls: list[str] = []
@@ -149,7 +149,7 @@ def test_attestation_is_memoized_once_per_process(
 def test_a_core_that_cannot_answer_does_not_brick_the_install(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from the_oracle.licensing import _attestation_memo
+    from rhetoric.licensing import _attestation_memo
 
     _attestation_memo.clear()
 

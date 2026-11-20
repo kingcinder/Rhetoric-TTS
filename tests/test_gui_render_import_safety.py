@@ -26,8 +26,8 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 #: gui_render is even usable — never inside a QThread.
 WORKER_REACHABLE_LAZY_IMPORTS = (
     "tempfile",
-    "the_oracle.audio.export_srt",
-    "the_oracle.subtitle_targets",
+    "rhetoric.audio.export_srt",
+    "rhetoric.subtitle_targets",
 )
 
 
@@ -57,10 +57,10 @@ def test_importing_gui_render_preloads_worker_reachable_modules() -> None:
     which, before any window exists, is the main thread. If this assertion
     fails, a worker can be the first importer again.
     """
-    import the_oracle.gui_render  # noqa: F401 - the import IS the assertion
+    import rhetoric.gui_render  # noqa: F401 - the import IS the assertion
 
     missing = [name for name in WORKER_REACHABLE_LAZY_IMPORTS if name not in sys.modules]
-    assert not missing, f"not preloaded by the_oracle.gui_render import: {missing}"
+    assert not missing, f"not preloaded by rhetoric.gui_render import: {missing}"
 
 
 def test_background_thread_performs_no_first_imports() -> None:
@@ -72,7 +72,7 @@ def test_background_thread_performs_no_first_imports() -> None:
     """
     import threading
 
-    import the_oracle.gui_render  # noqa: F401 - ensure preload already ran
+    import rhetoric.gui_render  # noqa: F401 - ensure preload already ran
 
     before = frozenset(sys.modules)
     added: list[str] = []
@@ -81,9 +81,9 @@ def test_background_thread_performs_no_first_imports() -> None:
     def worker_body() -> None:
         # The exact call-graph shape RenderWorker.run() exercises after the
         # fix: srt export path, subtitle target naming, flac export.
-        from the_oracle.audio.export_srt import write_srt  # noqa: F401
-        from the_oracle.audio.export_flac import write_flac  # noqa: F401
-        from the_oracle.subtitle_targets import subtitle_sidecar_target  # noqa: F401
+        from rhetoric.audio.export_srt import write_srt  # noqa: F401
+        from rhetoric.audio.export_flac import write_flac  # noqa: F401
+        from rhetoric.subtitle_targets import subtitle_sidecar_target  # noqa: F401
 
         done.set()
 
@@ -105,7 +105,7 @@ def test_no_function_level_imports_in_worker_call_graph_modules() -> None:
     keeps them clean.
     """
     offenders: dict[str, list[str]] = {}
-    for rel in ("src/the_oracle/gui_render.py", "src/the_oracle/pipeline.py"):
+    for rel in ("src/rhetoric/gui_render.py", "src/rhetoric/pipeline.py"):
         lazy = _function_level_imports(REPO_ROOT / rel)
         if lazy:
             offenders[rel] = lazy

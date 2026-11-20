@@ -41,8 +41,8 @@ from PySide6.QtWidgets import (  # noqa: E402
     QWidget,
 )
 
-from the_oracle import gui_crash, gui_license  # noqa: E402
-from the_oracle.crash import bundle, consent  # noqa: E402
+from rhetoric import gui_crash, gui_license  # noqa: E402
+from rhetoric.crash import bundle, consent  # noqa: E402
 
 AUDITS: list[dict] = []
 
@@ -140,7 +140,7 @@ def main() -> int:
     # runs the REAL gui_crash/gui_license dialogs (Qt-native widget code)
     # without ever passing through cli.main's install+arm. Idempotent;
     # fails closed without consent.
-    from the_oracle.crash import handlers as crash_handlers
+    from rhetoric.crash import handlers as crash_handlers
 
     crash_handlers.arm_native_capture()
     (QApplication.instance() or QApplication([]))
@@ -203,7 +203,7 @@ def main() -> int:
     activated = gui_license.run_activation_dialog(
         parent,
         sandbox,
-        dialog_cls=scripted(("TYPE:ORACLE1.not-a-real-token", "Activate")),
+        dialog_cls=scripted(("TYPE:RHETORIC1.not-a-real-token", "Activate")),
         message_box_cls=_AuditMessageBox,
     )
     scenarios["activation_invalid_token"] = {"activated": activated, "audit": [dict(a) for a in AUDITS]}

@@ -2,7 +2,7 @@
 # Download the Chatterbox ggml model used by Rhetoric's opt-in Vulkan
 # backend (--inference-backend vulkan). Wraps audio.cpp's own model manager
 # (tools/model_manager_v2.py) so the model lands in the expected location and
-# prints the ORACLE_AUDIOCPP_MODEL export line to paste into your shell.
+# prints the RHETORIC_AUDIOCPP_MODEL export line to paste into your shell.
 #
 # Requirements: python3 and a clone of audio.cpp (see scripts/build_audio_cpp.sh).
 #
@@ -113,6 +113,11 @@ if [[ ! -e "$MODEL_PATH" ]]; then
   exit 1
 fi
 
+python3 "$REPO_ROOT/scripts/record_audio_cpp_model_provenance.py" \
+  --model-manager "$MODEL_MANAGER" \
+  --package "$AUDIOCPP_MODEL_PACKAGE" \
+  --model "$MODEL_PATH"
+
 cat <<EOF
 
 Chatterbox model installed: $MODEL_PATH
@@ -121,13 +126,13 @@ For Rhetoric this is automatic: the CLI (--inference-backend vulkan) and the
 GUI locate this model and the built audiocpp_cli on their own, so nothing
 needs to be exported:
 
-    export ORACLE_AUDIOCPP_MODEL="$MODEL_PATH"
+    export RHETORIC_AUDIOCPP_MODEL="$MODEL_PATH"
 
 (The export line is only for raw shell sessions.) Render with:
 
-    the-oracle render --input Input/cli_short.txt --outdir Output \\
-      --speakerA-ref "Seashells/generic/english_reader_1.wav" \\
-      --speakerB-ref "Seashells/generic/english_reader_2.wav" \\
+    rhetoric render --input Input/cli_short.txt --outdir Output \\
+      --speakerA-ref "Seashells/generic/english_male_1.wav" \\
+      --speakerB-ref "Seashells/generic/chinese_female_1.wav" \\
       --inference-backend vulkan
 
 The model manager refuses to overwrite an existing install; pass --overwrite

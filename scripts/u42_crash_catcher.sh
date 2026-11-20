@@ -36,13 +36,13 @@ if [ "$#" -eq 0 ]; then
 set pagination off
 set confirm off
 handle SIGSEGV stop print
-run -m the_oracle.cli gui
+run -m rhetoric.cli gui
 bt full
 python-thread-apply-all-bt
 EOF
   echo "[catcher] interactive GUI under gdb; crash backtrace -> $LOG_BT"
   gdb -q -batch -x "$GDB_CMDS" -args "$PY" >"$LOG_FULL" 2>&1
-  gdb -q -batch -ex "set pagination off" -ex "run -m the_oracle.cli gui" -ex "bt full" -args "$PY" >"$LOG_BT" 2>&1
+  gdb -q -batch -ex "set pagination off" -ex "run -m rhetoric.cli gui" -ex "bt full" -args "$PY" >"$LOG_BT" 2>&1
 else
   # Scripted mode: drive a repro pass under gdb batch.
   cat > "$GDB_CMDS" <<'EOF'

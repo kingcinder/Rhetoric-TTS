@@ -3,23 +3,41 @@
 
 from pathlib import Path
 
-from PyInstaller.utils.hooks import collect_data_files
+from PyInstaller.utils.hooks import collect_data_files, collect_dynamic_libs, copy_metadata
 
 repo = Path(SPECPATH).parents[1]
-datas = collect_data_files("the_oracle")
+datas = collect_data_files("rhetoric")
+datas.extend(collect_data_files("perth"))
+datas.extend(collect_data_files("symspellpy"))
+# diffusers validates requests through importlib.metadata when loading the
+# Chatterbox pipeline; PyInstaller does not collect this metadata transitively.
+datas.extend(copy_metadata("requests"))
 datas.extend(
     [
         (str(repo / "LICENSE"), "."),
         (str(repo / "PRIVACY.md"), "."),
-        (str(repo / "EULA-DRAFT.md"), "."),
+        (str(repo / "EULA.md"), "."),
         (str(repo / "THIRD_PARTY_NOTICES.md"), "."),
     ]
+)
+# THIRD_PARTY_NOTICES.md sends readers to the license texts in
+# THIRD_PARTY_LICENSES/ and to the LGPL fulfillment doc, so both must ship
+# inside the frozen bundle as well. The wheel and sdist carry them through
+# setuptools license-files, a mechanism PyInstaller never consults; without
+# these entries the frozen artifacts omitted them entirely.
+datas.extend(
+    (str(path), "THIRD_PARTY_LICENSES")
+    for path in sorted((repo / "THIRD_PARTY_LICENSES").iterdir())
+    if path.is_file()
+)
+datas.append(
+    (str(repo / "docs" / "release" / "LGPL_FULFILLMENT.md"), "docs/release")
 )
 
 a = Analysis(
     [str(repo / "packaging" / "linux" / "entrypoint.py")],
     pathex=[str(repo / "src")],
-    binaries=[],
+    binaries=collect_dynamic_libs("torchvision", search_patterns=["**/*.so", "**/*.so.*"]),
     datas=datas,
     hiddenimports=[],
     excludes=["tests", "pytest"],

@@ -6,10 +6,10 @@ from types import SimpleNamespace
 import pytest
 from PySide6.QtWidgets import QApplication
 
-from the_oracle.models.project import RenderPlan, Utterance, VoiceProfile, VoiceSettings
-from the_oracle.models.settings import RenderSettings, SpeakerSettings; 
-from the_oracle.pipeline import RenderProgress
-from the_oracle.project_manifest import build_saved_project
+from rhetoric.models.project import RenderPlan, Utterance, VoiceProfile, VoiceSettings
+from rhetoric.models.settings import RenderSettings, SpeakerSettings; 
+from rhetoric.pipeline import RenderProgress
+from rhetoric.project_manifest import build_saved_project
 
 from tests.test_app_gui_profiles import _build_window, _FakeRenderWorker
 
@@ -100,7 +100,7 @@ def test_export_srt_flag_round_trips_through_gui_settings(qt_app, monkeypatch: p
 def test_render_worker_writes_srt_next_to_flac_when_enabled(
     qt_app, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
-    from the_oracle.app_gui import RenderWorker
+    from rhetoric.app_gui import RenderWorker
 
     window, paths = _build_window(monkeypatch, tmp_path)
     try:
@@ -135,7 +135,7 @@ def test_render_worker_forces_sequential_execution_for_gui_render(
     qt_app, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     """RenderWorker must not spawn native PyTorch workers from the Qt process."""
-    from the_oracle.app_gui import RenderWorker
+    from rhetoric.app_gui import RenderWorker
 
     window, paths = _build_window(monkeypatch, tmp_path)
     try:
@@ -160,8 +160,8 @@ def test_render_worker_fallback_uses_gui_safe_pipeline(
     its safe pipeline, the worker's fallback constructed the feature-rich
     pipeline in the QThread and could crash while importing native backends.
     """
-    import the_oracle.gui_render as gui_render
-    from the_oracle.app_gui import RenderWorker
+    import rhetoric.gui_render as gui_render
+    from rhetoric.app_gui import RenderWorker
 
     renderer = _FakeRenderer(tmp_path / "render_out.flac")
     pipeline_kwargs: dict[str, object] = {}
@@ -170,11 +170,11 @@ def test_render_worker_fallback_uses_gui_safe_pipeline(
         pipeline_kwargs.update(kwargs)
         return renderer
 
-    # The worker's direct (non-subprocess) fallback resolves OraclePipeline
+    # The worker's direct (non-subprocess) fallback resolves RhetoricPipeline
     # from its owner module's globals since the gui_render extraction — an
     # app_gui-level patch would be a silent no-op (the patch-surface test
     # enforces this for future slices).
-    monkeypatch.setattr(gui_render, "OraclePipeline", make_pipeline)
+    monkeypatch.setattr(gui_render, "RhetoricPipeline", make_pipeline)
     worker = RenderWorker(
         _plan_with_utterance(tmp_path),
         RenderSettings(model_variant="standard"),
@@ -209,7 +209,7 @@ def test_failed_render_preserves_partial_row_state(
         window.plan = RenderPlan.from_dict(plan.to_dict())
         window.render_worker = SimpleNamespace(plan=plan)
         monkeypatch.setattr(
-            "the_oracle.app_gui.QMessageBox.critical",
+            "rhetoric.app_gui.QMessageBox.critical",
             lambda *_args, **_kwargs: None,
         )
 
@@ -358,7 +358,7 @@ def test_render_project_resets_the_retry_tally_for_the_next_session(
         # A custom output name keeps the generic-filename warning modal out of
         # the way (the established pattern in the profiles suite), and the
         # fake worker never spawns a real QThread.
-        monkeypatch.setattr("the_oracle.app_gui.RenderWorker", _FakeRenderWorker)
+        monkeypatch.setattr("rhetoric.app_gui.RenderWorker", _FakeRenderWorker)
         window.output_name.setText("custom_render")
         window.render_project()
         assert isinstance(window.render_worker, _FakeRenderWorker)
@@ -380,7 +380,7 @@ def test_failed_render_returns_the_live_sidebar_to_idle(
         window.plan = RenderPlan.from_dict(plan.to_dict())
         window.render_worker = SimpleNamespace(plan=plan)
         monkeypatch.setattr(
-            "the_oracle.app_gui.QMessageBox.critical",
+            "rhetoric.app_gui.QMessageBox.critical",
             lambda *_args, **_kwargs: None,
         )
         window._update_render_progress(
@@ -468,7 +468,7 @@ def test_preview_fail_returns_the_live_sidebar_to_idle(
     window, _paths = _build_window(monkeypatch, tmp_path)
     try:
         monkeypatch.setattr(
-            "the_oracle.app_gui.QMessageBox.critical",
+            "rhetoric.app_gui.QMessageBox.critical",
             lambda *_args, **_kwargs: None,
         )
         window._update_preview_progress(
@@ -509,7 +509,7 @@ def test_render_child_environment_uses_the_managed_runtime(qt_app, tmp_path: Pat
     import subprocess
     import sys
 
-    from the_oracle.app_gui import _render_child_environment
+    from rhetoric.app_gui import _render_child_environment
 
     env = _render_child_environment(tmp_path)
     probe = subprocess.run(
@@ -536,8 +536,8 @@ def test_render_worker_uses_a_new_process_session_for_native_children(
 ) -> None:
     """Cancelling a render must stop the child process group, not just bash."""
     import io
-    import the_oracle.app_gui as app_gui
-    from the_oracle.app_gui import RenderWorker
+    import rhetoric.app_gui as app_gui
+    from rhetoric.app_gui import RenderWorker
 
     class _RunningProcess:
         stdout = io.StringIO("")
@@ -581,8 +581,8 @@ def test_render_worker_windows_cancel_kills_the_child_process_tree(
     qt_app, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     """Windows cancellation must terminate descendants, not only the wrapper."""
-    import the_oracle.app_gui as app_gui
-    from the_oracle.app_gui import RenderWorker
+    import rhetoric.app_gui as app_gui
+    from rhetoric.app_gui import RenderWorker
 
     class _RunningProcess:
         pid = 4321
@@ -629,8 +629,8 @@ def test_render_worker_surfaces_native_child_crash_without_crashing_qt(
     into the worker's normal failure signal with diagnostic output.
     """
     import io
-    import the_oracle.app_gui as app_gui
-    from the_oracle.app_gui import RenderWorker
+    import rhetoric.app_gui as app_gui
+    from rhetoric.app_gui import RenderWorker
 
     class _CrashedProcess:
         returncode = -11
@@ -661,7 +661,7 @@ def test_render_worker_surfaces_native_child_crash_without_crashing_qt(
 
 
 def test_render_worker_skips_srt_when_disabled(qt_app, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
-    from the_oracle.app_gui import RenderWorker
+    from rhetoric.app_gui import RenderWorker
 
     window, paths = _build_window(monkeypatch, tmp_path)
     try:
@@ -724,8 +724,8 @@ def test_preview_worker_runs_in_subprocess_and_never_inits_model_inline(
     """
     import io
     import json
-    import the_oracle.app_gui as app_gui
-    from the_oracle.app_gui import PreviewWorker
+    import rhetoric.app_gui as app_gui
+    from rhetoric.app_gui import PreviewWorker
 
     class _NoInlinePipeline:
         def render_preview(self, *_args, **_kwargs):
@@ -791,8 +791,8 @@ def test_preview_worker_surfaces_native_child_crash_without_crashing_qt(
 ) -> None:
     """A native Chatterbox crash during preview becomes a normal failure."""
     import io
-    import the_oracle.app_gui as app_gui
-    from the_oracle.app_gui import PreviewWorker
+    import rhetoric.app_gui as app_gui
+    from rhetoric.app_gui import PreviewWorker
 
     class _CrashedProcess:
         returncode = -11
@@ -829,7 +829,7 @@ def test_gui_preview_opts_into_isolated_child_process(
     qt_app, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     """The GUI's Preview button must request subprocess isolation."""
-    import the_oracle.app_gui as app_gui
+    import rhetoric.app_gui as app_gui
 
     window, paths = _build_window(monkeypatch, tmp_path)
     try:

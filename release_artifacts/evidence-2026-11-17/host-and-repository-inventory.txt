@@ -1,0 +1,156 @@
+2026-11-17T07:44:10-08:00
+PST
+repo=/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric
+branch=release/1.5.0-final
+head=b9ee5979757d3d731c4189c3b53a2069405bb8a8
+
+status
+## release/1.5.0-final
+ D Input/READ_THIS_TO_RECORD_SEASHELLS.txt
+ D "Input/Read Aloud transcript.txt"
+ D "Input/What is, reality.txt"
+ D Input/cli_short.txt
+ D Input/local_audio_test.txt
+ D "Input/recording prompt.txt"
+ D Input/stream_of_consciousness_dialogue_with_typos.txt
+ D Input/test.txt
+?? Input/High_Quality_Seashells_Instruction_set_and_Teleprompter_Text.txt
+?? Input/Recording_Studio_Generic_Teleprompter_File.txt
+?? Input/Stream_of_Consciousness_Dialogue_2Party_AI_Generated_Test_File.txt
+?? Input/What_Is_Reality_Output_Test_File.txt
+?? docs/release/EXECUTION_CHECKLIST_2026-11-17.md
+?? release_artifacts/evidence-2026-11-17/
+?? release_artifacts/linux-frozen-33618789/AppDir/
+?? release_artifacts/linux-frozen-33618789/deb-root/
+?? release_artifacts/linux-frozen-33618789/offline-ubuntu24.04-amd64/
+?? release_artifacts/linux-frozen-33618789/pyinstaller-build/
+?? release_artifacts/linux-frozen-33618789/pyinstaller-dist/
+?? release_artifacts/linux-frozen-33618789/qualification-2026-11-16/final-checksums.log
+?? release_artifacts/linux-frozen-33618789/qualification-2026-11-16/final-install.log
+?? release_artifacts/linux-frozen-33618789/qualification-2026-11-16/final2-checksums.log
+?? release_artifacts/linux-frozen-33618789/qualification-2026-11-16/final2-install.log
+?? release_artifacts/linux-frozen-33618789/qualification-2026-11-16/final3-checksums.log
+?? release_artifacts/linux-frozen-33618789/qualification-2026-11-16/final3-install.log
+?? release_artifacts/linux-frozen-33618789/qualification-2026-11-16/final4-checksums.log
+?? release_artifacts/linux-frozen-33618789/qualification-2026-11-16/final4-gui-start.log
+?? release_artifacts/linux-frozen-33618789/qualification-2026-11-16/final4-install.log
+?? release_artifacts/linux-frozen-33618789/qualification-2026-11-16/final4-uninstall-updated.log
+?? release_artifacts/linux-frozen-33618789/qualification-2026-11-16/final4-uninstall.log
+?? release_artifacts/linux-frozen-33618789/qualification-2026-11-16/final5-install.log
+?? release_artifacts/linux-frozen-33618789/qualification-2026-11-16/final5-uninstall.log
+?? release_artifacts/linux-frozen-33618789/qualification-2026-11-16/fixtures/
+?? release_artifacts/linux-frozen-33618789/qualification-2026-11-16/gui-start.log
+?? release_artifacts/linux-frozen-33618789/qualification-2026-11-16/install.log
+?? release_artifacts/linux-frozen-33618789/qualification-2026-11-16/output/
+?? release_artifacts/linux-frozen-33618789/rhetoric-1.5.0-x86_64.AppImage
+?? release_artifacts/linux-frozen-33618789/rhetoric_1.5.0_amd64.deb
+?? release_artifacts/linux-frozen-35185ca/
+?? release_artifacts/linux-v100a-review/
+?? release_artifacts/offline-bundles/
+?? squashfs-root/
+
+refs
+  main                     17c9886 [origin/main] fix(install): make update rebuild the desktop launchers, and point doctor hints at rhetoric
+  release/1.4.0            ef5abbe docs(release): record verified 1.4.2 artifacts
+* release/1.5.0-final      b9ee597 docs: select current input for test renders
+  release/1.5.0-rc         77f21dc Initial release: Rhetoric offline advanced TTS
++ slow-hardware-resilience 1805aef (/media/cody/Data/DOCUMENTS_PROJECT_FILES/rhetoric-resilience) feat(eta): seed render ETA from the machines measured rate (P4)
+
+recent_history
+b9ee597 (HEAD -> release/1.5.0-final) docs: select current input for test renders
+a828c00 chore(release): capture source and ownership scope
+3361878 fix(gui): refresh recording studio input scripts
+10b6034 feat(setup): choose output folder and enable studio maximize
+2e551d8 fix(cli): reject output paths below files
+bff70fc fix(release): harden offline kit and smoke diagnostics
+35185ca Record the cleanup head's suite counts from the hosted Ubuntu run
+a24f6ab Record the frozen Linux lifecycle evidence and what remains open
+dce0695 Declare the frozen app's runtime libraries as .deb dependencies
+3785558 Add the 1.5.0 audio listening checklist
+45b4ecb Add a dry-run sweep for legacy render working material
+56a3798 Record the cleanup head's hosted results and the local measurement blocker
+
+submodules
+
+OS
+PRETTY_NAME="Ubuntu 24.04.5 LTS"
+NAME="Ubuntu"
+VERSION_ID="24.04"
+VERSION="24.04.5 LTS (Noble Numbat)"
+VERSION_CODENAME=noble
+ID=ubuntu
+ID_LIKE=debian
+HOME_URL="https://www.ubuntu.com/"
+SUPPORT_URL="https://help.ubuntu.com/"
+BUG_REPORT_URL="https://bugs.launchpad.net/ubuntu/"
+PRIVACY_POLICY_URL="https://www.ubuntu.com/legal/terms-and-policies/privacy-policy"
+UBUNTU_CODENAME=noble
+LOGO=ubuntu-logo
+
+kernel=Linux a1 6.8.0-138-generic #138-Ubuntu SMP PREEMPT_DYNAMIC Fri Jul 31 22:41:49 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux
+
+CPU
+Architecture:                            x86_64
+CPU op-mode(s):                          32-bit, 64-bit
+Address sizes:                           43 bits physical, 48 bits virtual
+Byte Order:                              Little Endian
+CPU(s):                                  16
+On-line CPU(s) list:                     0-15
+Vendor ID:                               AuthenticAMD
+Model name:                              AMD Ryzen 7 3700X 8-Core Processor
+CPU family:                              23
+Model:                                   113
+Thread(s) per core:                      2
+Core(s) per socket:                      8
+Socket(s):                               1
+Stepping:                                0
+Frequency boost:                         enabled
+CPU(s) scaling MHz:                      78%
+CPU max MHz:                             4630.0781
+CPU min MHz:                             2200.0000
+BogoMIPS:                                7199.88
+Flags:                                   fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm constant_tsc rep_good nopl nonstop_tsc cpuid extd_apicid aperfmperf rapl pni pclmulqdq monitor ssse3 fma cx16 sse4_1 sse4_2 x2apic movbe popcnt aes xsave avx f16c rdrand lahf_lm cmp_legacy svm extapic cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw ibs skinit wdt tce topoext perfctr_core perfctr_nb bpext perfctr_llc mwaitx cpb cat_l3 cdp_l3 hw_pstate ssbd mba ibpb stibp vmmcall fsgsbase bmi1 avx2 smep bmi2 cqm rdt_a rdseed adx smap clflushopt clwb sha_ni xsaveopt xsavec xgetbv1 cqm_llc cqm_occup_llc cqm_mbm_total cqm_mbm_local clzero irperf xsaveerptr rdpru wbnoinvd arat npt lbrv svm_lock nrip_save tsc_scale vmcb_clean flushbyasid decodeassists pausefilter pfthreshold avic v_vmsave_vmload vgif v_spec_ctrl umip rdpid overflow_recov succor smca sev sev_es ibpb_exit_to_user
+Virtualization:                          AMD-V
+L1d cache:                               256 KiB (8 instances)
+L1i cache:                               256 KiB (8 instances)
+L2 cache:                                4 MiB (8 instances)
+L3 cache:                                32 MiB (2 instances)
+NUMA node(s):                            1
+NUMA node0 CPU(s):                       0-15
+Vulnerability Gather data sampling:      Not affected
+
+MEMORY
+               total        used        free      shared  buff/cache   available
+Mem:            31Gi        17Gi       293Mi       178Mi        13Gi        13Gi
+Swap:          8.0Gi       826Mi       7.2Gi
+
+STORAGE
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/sdb1       916G  540G  367G  60% /media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric
+/dev/nvme0n1p2  457G  394G   40G  91% /tmp
+Filesystem       Inodes   IUsed    IFree IUse% Mounted on
+/dev/sdb1      61014016  692738 60321278    2% /media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric
+/dev/nvme0n1p2 30457856 3160219 27297637   11% /tmp
+
+GPU_PCI
+06:00.0 VGA compatible controller: NVIDIA Corporation GK107GL [Quadro K600] (rev a1)
+0b:00.0 VGA compatible controller: Advanced Micro Devices, Inc. [AMD/ATI] Navi 10 [Radeon RX 5600 OEM/5600 XT / 5700/5700 XT] (rev c1)
+
+DRM
+ls: cannot access '/dev/dri': No such file or directory
+
+VULKAN
+ERROR: [Loader Message] Code 0 : setup_loader_term_phys_devs:  Failed to detect any valid GPUs in the current config
+ERROR at ./vulkaninfo/./vulkaninfo.h:245:vkEnumeratePhysicalDevices failed with ERROR_INITIALIZATION_FAILED
+
+TOOLING
+/usr/bin/python3
+/home/cody/.local/bin/poetry
+/usr/bin/dpkg-deb
+/usr/bin/docker
+/usr/bin/qemu-system-x86_64
+/usr/bin/vulkaninfo
+/usr/bin/glxinfo
+Python 3.12.3
+
+permission denied while trying to connect to the docker API at unix:///var/run/docker.sock

@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 import soundfile as sf
 
-from the_oracle.audio.voice_effects import process_voice_audio, process_voice_file
+from rhetoric.audio.voice_effects import process_voice_audio, process_voice_file
 
 
 def test_pitch_processing_changes_pitch_without_changing_duration():

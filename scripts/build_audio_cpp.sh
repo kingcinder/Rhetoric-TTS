@@ -5,7 +5,7 @@
 # RDNA1 ggml fix (scripts/patch_audio_cpp_ggml.sh) before building.
 #
 # Requirements: GCC 13+, CMake, and the Vulkan SDK (for ENGINE_ENABLE_VULKAN).
-# The build itself is heavy; run it once and point ORACLE_AUDIOCPP_CLI at the
+# The build itself is heavy; run it once and point RHETORIC_AUDIOCPP_CLI at the
 # resulting binary.
 #
 # Pass --with-model to also fetch the Chatterbox model afterwards, so a single
@@ -70,6 +70,7 @@ if ! command -v cmake >/dev/null 2>&1; then
   exit 1
 fi
 
+PIN_VERIFIED=1
 if [[ ! -d "$AUDIOCPP_DIR/.git" ]]; then
   echo "[1/4] Cloning pinned audio.cpp tree into $AUDIOCPP_DIR (ggml is vendored in-tree)"
   git clone "$AUDIOCPP_REPO" "$AUDIOCPP_DIR"
@@ -96,6 +97,7 @@ if [[ "${AUDIOCPP_SKIP_PIN_VERIFY:-0}" != "1" ]]; then
   echo "[1/4] Verified audio.cpp commit $actual_commit"
 else
   echo "[1/4] WARNING: AUDIOCPP_SKIP_PIN_VERIFY=1; pin verification disabled for a test harness" >&2
+  PIN_VERIFIED=0
 fi
 
 echo "[2/4] Applying Rhetoric's vendored RDNA1 ggml fix (idempotent)"
@@ -103,6 +105,8 @@ echo "[2/4] Applying Rhetoric's vendored RDNA1 ggml fix (idempotent)"
 
 echo "[3/4] Building audiocpp_cli with the Vulkan backend (ENGINE_ENABLE_VULKAN=ON, model-set=$AUDIOCPP_MODEL_SET)"
 # audio.cpp's build helper resolves the CMake source tree from its cwd.
+BINARY="$AUDIOCPP_DIR/build/linux-vulkan-release/bin/audiocpp_cli"
+rm -f "$BINARY.rhetoric-provenance.json"
 (
   cd "$AUDIOCPP_DIR"
   ./scripts/build_linux.sh \
@@ -112,7 +116,31 @@ echo "[3/4] Building audiocpp_cli with the Vulkan backend (ENGINE_ENABLE_VULKAN=
     --target audiocpp_cli
 )
 
-BINARY="$AUDIOCPP_DIR/build/linux-vulkan-release/bin/audiocpp_cli"
+if [[ ! -x "$BINARY" ]]; then
+  echo "ERROR: expected binary not found or not executable after build: $BINARY" >&2
+  exit 1
+fi
+if [[ "$PIN_VERIFIED" -eq 1 ]]; then
+python3 - "$BINARY" "$AUDIOCPP_PINNED_COMMIT" <<'PY'
+import hashlib
+import json
+import sys
+from pathlib import Path
+
+binary = Path(sys.argv[1])
+digest = hashlib.sha256(binary.read_bytes()).hexdigest()
+provenance = {
+    "format": 1,
+    "source_commit": sys.argv[2],
+    "binary_sha256": digest,
+}
+Path(f"{binary}.rhetoric-provenance.json").write_text(
+    json.dumps(provenance, indent=2) + "\n", encoding="utf-8"
+)
+PY
+else
+  echo "[3/4] Skipping provenance record because source pin verification was bypassed." >&2
+fi
 
 if [[ "$WITH_MODEL" -eq 1 ]]; then
   if [[ ! -x "$BINARY" ]]; then
@@ -140,9 +168,9 @@ Next steps:
    (use --dry-run to preview, AUDIOCPP_MODEL_PACKAGE=chatterbox_f16 to pick
    a different precision, or --overwrite to re-download)
 2. Render -- Rhetoric locates the binary and model automatically:
-     the-oracle render --input Input/cli_short.txt --outdir Output \\
-       --speakerA-ref "Seashells/generic/english_reader_1.wav" \\
-       --speakerB-ref "Seashells/generic/english_reader_2.wav" \\
+     rhetoric render --input Input/cli_short.txt --outdir Output \\
+       --speakerA-ref "Seashells/generic/english_male_1.wav" \\
+       --speakerB-ref "Seashells/generic/chinese_female_1.wav" \\
        --inference-backend vulkan
 EOF
 fi
@@ -150,7 +178,7 @@ fi
 cat <<EOF
 
 The vendored RDNA1 fix (ggml_vk_buffer_memset on the compute queue for RDNA1)
-was applied to audio.cpp/external/ggml and is marked with ORACLE_VENDORED
+was applied to audio.cpp/external/ggml and is marked with RHETORIC_VENDORED
 comments; scripts/patch_audio_cpp_ggml.sh re-applies it idempotently and fails
 loudly on ggml version bumps. If audio.cpp still reports VK_ERROR_DEVICE_LOST,
 the Python backend surfaces it with a clear error and you can fall back to

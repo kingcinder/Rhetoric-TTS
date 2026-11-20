@@ -1,5 +1,1 @@
-{
-  "policy": "Strong-copyleft or unknown licenses block commercial distribution until the owner records a decision. Weak-copyleft components are allowed only with their notice and replacement/source obligations documented.",
-  "allow": [],
-  "review": {}
-}
+{"allow":["PySide6 / shiboken6 / Qt","libsndfile","libsoxr"],"policy":"Strong-copyleft or unknown licenses block commercial distribution until the owner records a decision. Weak-copyleft components are allowed only with their notice and replacement/source obligations documented.","review":{"PySide6 / shiboken6 / Qt":{"basis":"Owner decision under the 2026-11-11 ship-blocker authorization; fulfillment (notices, source offer, set-wise library replacement verified on frozen and venv installs) in docs/release/LGPL_FULFILLMENT.md. Counsel ratification tracked with the EULA counsel review.","date":"2026-11-11","decision":"allow under LGPL-3.0 comply-as-is"},"libsndfile":{"basis":"Loose shared library in the soundfile wheel with its COPYING beside it; replacement path in docs/release/LGPL_FULFILLMENT.md.","date":"2026-11-11","decision":"allow under LGPL-2.1 comply-as-is"},"libsoxr":{"basis":"Statically linked into the soxr extension module; relink-by-rebuild path in docs/release/LGPL_FULFILLMENT.md.","date":"2026-11-11","decision":"allow under LGPL-2.1 comply-as-is"}}}

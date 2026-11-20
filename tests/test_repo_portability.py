@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from the_oracle.platform_support import invalid_windows_path_parts
+from rhetoric.platform_support import invalid_windows_path_parts
 
 
 def test_repository_paths_are_windows_portable() -> None:

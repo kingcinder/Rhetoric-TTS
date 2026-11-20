@@ -1,6 +1,6 @@
 # Rhetoric
 
-The supported command name is `rhetoric`. The legacy `the-oracle` command and `./oracle` launcher remain available for existing installations.
+The supported command name is `rhetoric`. The legacy `rhetoric` command and `./rhetoric` launcher remain available for existing installations.
 
 **Release V1.5.0 — Rhetoric engineering candidate; not approved for commercial release.**
 
@@ -21,6 +21,9 @@ existing install: [docs/UPGRADING.md](docs/UPGRADING.md). Problems:
 workflow in [docs/SUPPORT.md](docs/SUPPORT.md). Data and privacy:
 [PRIVACY.md](PRIVACY.md) — what is collected (nothing automatically), what
 stays on your disk, and what sharing a crash report means.
+
+Project content and ownership scope, including `Input/` and `Seashells/`, is
+recorded in [docs/PROJECT_AUTHORITY.md](docs/PROJECT_AUTHORITY.md).
 
 Rhetoric is a local PySide6 desktop app and CLI for turning a `.txt` or `.md` two-person dialogue into a single FLAC render with Chatterbox. The repository includes Linux and Windows installer scripts; Windows is experimental.
 
@@ -195,7 +198,7 @@ The doctor checks:
 - subtitle files under `Input/` that would take the CP1252 fallback, and the
   ones it would **block** outright
 - project `previews/` directories for files outside the gated preview
-  owner's naming scheme (`OraclePipeline.render_preview` via
+  owner's naming scheme (`RhetoricPipeline.render_preview` via
   `ProjectCache.preview_path`) — runtime evidence of a writer that bypassed
   the gated owner
 - release-metadata drift (version, banners, and the `CHANGELOG.md` gate)
@@ -239,7 +242,7 @@ Windows:
 ## Fully Offline Install
 
 Every model Rhetoric uses is pinned to an exact Hugging Face commit
-(`src/the_oracle/models/pins.py`), and the installer can run with zero
+(`src/rhetoric/models/pins.py`), and the installer can run with zero
 network access from a pre-built offline bundle. The bundle contains
 everything: the repo snapshot, every pinned model, and every wheel for the
 target platform(s).
@@ -269,7 +272,7 @@ Windows:
 The offline installer creates the venv purely from the bundled wheels,
 seeds the local Hugging Face cache with the pinned models, and the managed
 launcher then runs with `HF_HUB_OFFLINE=1`, so no model fetch can ever touch
-the network. Delete the `.oracle_offline` file in the install directory to
+the network. Delete the `.rhetoric_offline` file in the install directory to
 re-enable network model fetches.
 
 ## CLI Usage
@@ -319,7 +322,7 @@ the local repair workflow can be used.
 
 ### First-run inference setup and tutorial
 
-On the first launch after installation, Rhetoric opens a non-modal **Inference Setup & Tour**. It inventories NVIDIA devices through PyTorch and `nvidia-smi`, reports each card's name/VRAM/runtime status, disables cards that are below the 4 GiB Chatterbox suitability floor, and leaves CPU/system DRAM as the guaranteed fallback. It also explains that AMD GPUs cannot use CUDA and that Vulkan/audio.cpp is the separate GPU path. The Continue button advances through a dependency-ordered tour: hardware discovery, backend choice, input/output, model and correction behavior, voice character, timing, hybrid voices, and finally Analyze/Preview/Render. The tutorial highlights the live control and positions itself beside it so its explanation and the control's tooltip remain readable.
+On the first launch after installation, Rhetoric opens a non-modal **Inference Setup & Tour**. It inventories NVIDIA devices through PyTorch and `nvidia-smi`, reports each card's name/VRAM/runtime status, disables cards that are below the 4 GiB Chatterbox suitability floor, and leaves CPU/system DRAM as the guaranteed fallback. It also explains that AMD GPUs cannot use CUDA and that Vulkan/audio.cpp is the separate GPU path. The Continue button advances through a dependency-ordered tour: hardware discovery, backend choice, input/output, model and correction behavior, voice character, timing, and finally Analyze/Preview/Render. The tutorial highlights the live control and positions itself beside it so its explanation and the control's tooltip remain readable.
 
 After completion, use **Settings → Replay Setup & Tutorial** to replay the **Entire Setup & Tutorial**, **Hardware Discovery Only**, or **Main GUI Tour Only**. The selected PyTorch CPU/CUDA device or Vulkan backend is applied to the real inference picker and persisted with the existing Remember GPU/CPU choice setting. A skipped first-run tour can be replayed from the same menu at any time. The first-run page also sets independent default Input and Output folders; its checkboxes control whether those folder choices persist, while the last-used input file remains remembered separately.
 
@@ -366,7 +369,7 @@ manual script runs: Rhetoric completes the switch by itself.
   (`scripts/build_audio_cpp.sh`) if it is missing and downloads the Chatterbox
   model (`scripts/download_audio_cpp_model.sh`) if it is missing, streaming
   progress into the backend status panel. The queued render/preview starts by
-  itself once setup finishes, and `ORACLE_AUDIOCPP_CLI`/`ORACLE_AUDIOCPP_MODEL`
+  itself once setup finishes, and `RHETORIC_AUDIOCPP_CLI`/`RHETORIC_AUDIOCPP_MODEL`
   are set for the session.
 - **CLI** — `rhetoric render --inference-backend vulkan` runs the same
   automatic setup first (output streamed to stderr; a ready backend prints a
@@ -421,14 +424,14 @@ when you want to pre-install or persist the environment across sessions:
 
 rhetoric render \
   --input Input/cli_short.txt --outdir Output \
-  --speakerA-ref "Seashells/generic/english_reader_1.wav" \
-  --speakerB-ref "Seashells/generic/english_reader_2.wav" \
+  --speakerA-ref "Seashells/generic/english_male_1.wav" \
+  --speakerB-ref "Seashells/generic/chinese_female_1.wav" \
   --inference-backend vulkan
 ```
 
 `scripts/download_audio_cpp_model.sh` wraps audio.cpp's own model manager
 (`tools/model_manager_v2.py`) so the model lands in the right place and it
-prints the exact `export ORACLE_AUDIOCPP_MODEL=...` line to paste. The default
+prints the exact `export RHETORIC_AUDIOCPP_MODEL=...` line to paste. The default
 package is the spec's recommended Chatterbox Q8_0 GGUF; override with
 `AUDIOCPP_MODEL_PACKAGE=chatterbox_f16` (or set `AUDIOCPP_MODELS_ROOT` to
 install elsewhere), and pass `--dry-run` to preview the download or
@@ -459,7 +462,7 @@ therefore synthesizes every cache-missing stem through audio.cpp
 `--request-sequence` batches (a JSON file of `{id, text, voice_ref, options}`
 requests, output per request to `--out-dir/<id>.wav`), so the model load and
 shader compile happen once per batch instead of once per line. Batches are
-capped at 32 requests per subprocess (`ORACLE_AUDIOCPP_MAX_BATCH=<n>` to
+capped at 32 requests per subprocess (`RHETORIC_AUDIOCPP_MAX_BATCH=<n>` to
 override), so an enormous render is split into several processes instead of
 shipping one gigantic `requests.json` — and a failed batch only takes down
 its own group, never the whole render. Per-request `[TIMING]` lines keep the
@@ -477,16 +480,19 @@ of the PyTorch path.
 
 Optional environment knobs:
 
-- `ORACLE_AUDIOCPP_DEVICE=<n>` — select a specific Vulkan device on multi-GPU
+- `RHETORIC_AUDIOCPP_DEVICE=<n>` — select a specific Vulkan device on multi-GPU
   machines (passed as `--device <n>`). See the devices audio.cpp detects with
   `audiocpp_cli --backend vulkan --list-devices` (or the doctor).
-- `ORACLE_AUDIOCPP_THREADS=<n>` — pass `--threads <n>` to audio.cpp
+- `RHETORIC_AUDIOCPP_THREADS=<n>` — pass `--threads <n>` to audio.cpp
   (default is 4).
-- `ORACLE_AUDIOCPP_TIMEOUT=<seconds>` — per-synthesis timeout (default 600).
-  A batched render scales this by its request count (one `--request-sequence`
-  process synthesizes N utterances, so it gets N x the per-synthesis timeout)
-  so long renders are not killed just because they are one long subprocess.
-- `ORACLE_AUDIOCPP_MAX_BATCH=<n>` — maximum cache-missing stems per
+- `RHETORIC_AUDIOCPP_TIMEOUT=<seconds>` — per-synthesis timeout (default 600,
+  minimum 60). Values below 60 s are raised to 60 s: a subprocess must load the
+  model and compile RADV shaders before its first utterance, and warm
+  synthesis alone is 2–4 s. A batched render scales this by its request count
+  (one `--request-sequence` process synthesizes N utterances, so it gets N x
+  the per-synthesis timeout) plus a fixed 120 s startup allowance, so long
+  renders are not killed just because they are one long subprocess.
+- `RHETORIC_AUDIOCPP_MAX_BATCH=<n>` — maximum cache-missing stems per
   `--request-sequence` subprocess (default 32). An enormous render is split
   into several processes at this cap, and a failed batch only takes down its
   own group. The engine also enforces the same cap as defense-in-depth:
@@ -499,13 +505,13 @@ The same device/threads/timeout/batch-cap knobs work without environment
 variables as render CLI flags and are persisted in saved project manifests
 (so a project re-renders with the same knobs):
 
-- `--audio-cpp-device <n>` — equivalent of `ORACLE_AUDIOCPP_DEVICE`; requires
+- `--audio-cpp-device <n>` — equivalent of `RHETORIC_AUDIOCPP_DEVICE`; requires
   `--inference-backend vulkan`.
-- `--audio-cpp-threads <n>` — equivalent of `ORACLE_AUDIOCPP_THREADS`; requires
+- `--audio-cpp-threads <n>` — equivalent of `RHETORIC_AUDIOCPP_THREADS`; requires
   `--inference-backend vulkan`.
-- `--audio-cpp-timeout <seconds>` — equivalent of `ORACLE_AUDIOCPP_TIMEOUT`;
+- `--audio-cpp-timeout <seconds>` — equivalent of `RHETORIC_AUDIOCPP_TIMEOUT`;
   requires `--inference-backend vulkan`.
-- `--audio-cpp-max-batch <n>` — equivalent of `ORACLE_AUDIOCPP_MAX_BATCH`
+- `--audio-cpp-max-batch <n>` — equivalent of `RHETORIC_AUDIOCPP_MAX_BATCH`
   (requests per `--request-sequence` subprocess); requires
   `--inference-backend vulkan`.
 
@@ -517,7 +523,7 @@ In the desktop GUI, the backend is chosen with the **Inference Backend**
 dropdown in Shared Render Settings: `PyTorch (CPU)` (default) or `Vulkan
 (audio.cpp)` (opt-in). It governs both render and preview, so previewing a
 row uses the same backend you render with, and it requires the same setup as
-the CLI path — a Vulkan-enabled `audiocpp_cli` plus `ORACLE_AUDIOCPP_MODEL`
+the CLI path — a Vulkan-enabled `audiocpp_cli` plus `RHETORIC_AUDIOCPP_MODEL`
 (see Build/Enable above). If either is missing when you select Vulkan, the
 GUI warns inline right at selection time (and blocks render with the same
 message), so the failure is surfaced before the render worker starts instead
@@ -528,8 +534,8 @@ to PyTorch, so the GUI never offers the unusable turbo+Vulkan combination.
 The GUI can also fetch the model for you: **Settings → Download Vulkan
 Model...** runs `scripts/download_audio_cpp_model.sh` in a background thread
 (the UI stays responsive — model downloads are large) and, when it finishes,
-sets `ORACLE_AUDIOCPP_MODEL` for the current session, clears the inline
-prerequisite warning, and shows the exact `export ORACLE_AUDIOCPP_MODEL=...`
+sets `RHETORIC_AUDIOCPP_MODEL` for the current session, clears the inline
+prerequisite warning, and shows the exact `export RHETORIC_AUDIOCPP_MODEL=...`
 line — and applies it automatically for the session.
 
 Next to the backend dropdown is a **Test Vulkan Backend** button. It runs a
@@ -575,9 +581,10 @@ guessing at a blind 0-15 index range. A stale saved device index that is no
 longer detected is kept as an explicit `Device N: (not detected)` row (never
 silently changed), and the label under the picker lists everything audio.cpp
 sees. The **Vulkan Timeout (s)** spin sets the per-synthesis timeout
-(equivalent of `ORACLE_AUDIOCPP_TIMEOUT`, default 600), with 0 meaning
-"Default (600s)". The **Vulkan Max Batch** spin sets the requests-per-
-subprocess cap (equivalent of `ORACLE_AUDIOCPP_MAX_BATCH`, default 32), with
+(equivalent of `RHETORIC_AUDIOCPP_TIMEOUT`, default 600, minimum 60), with 0
+meaning "Default (600s)"; the spin's tooltip states the floor and the backend
+raises sub-floor values rather than failing every synthesis. The **Vulkan Max Batch** spin sets the requests-per-
+subprocess cap (equivalent of `RHETORIC_AUDIOCPP_MAX_BATCH`, default 32), with
 0 meaning "Default (32)". These values are persisted in the same
 profiles/templates and manifests, so a GUI session needs no environment
 variables to pin the device, thread count, timeout, or batch cap.
@@ -592,7 +599,7 @@ applies it to the cloned audio.cpp tree before building — `ggml_vk_buffer_mems
 routes through the compute queue when the device architecture is `AMD_RDNA1`
 (`vk_command_pool` binds its queue, so the submission follows it too).
 
-The change is marked in the source with `ORACLE VENDORED PATCH` comment blocks
+The change is marked in the source with `RHETORIC VENDORED PATCH` comment blocks
 and documented as reviewable artifacts in `scripts/patches/`:
 
 - `ggml_rdna1_buffer_memset.patch` — the RDNA1 compute-queue fix, vendored
@@ -602,6 +609,15 @@ and documented as reviewable artifacts in `scripts/patches/`:
 - `audio_cpp_space_safe_build.patch` — quotes sentencepiece's
   `-fmacro-prefix-map` so the build works from checkout paths containing
   spaces (required for the repository's own directory).
+- `ggml_shader_compile_robustness.patch` — makes the Vulkan shader generator
+  deterministic under load: a `fork()` that fails with `EAGAIN` (the generator
+  runs up to 16 `glslc` processes at once) is waited out for up to 10 seconds
+  instead of dropping that shader, and a shader that produced no `.spv` -- the
+  file `glslc` writes only on success -- stops the generator before it emits a
+  header/cpp pair, instead of leaving a symbol undefined for the linker to find
+  minutes later. The wait is bounded per generator rather than per shader: once
+  one shader has used its whole window the shortage is not a burst, so the rest
+  fail at once. Anything `glslc` writes to stderr is reported, not fatal.
 
 The patch script is idempotent and is invoked automatically by
 `scripts/build_audio_cpp.sh` before compiling. If audio.cpp still reports
@@ -614,20 +630,22 @@ silently.
 
 - `Input/` sample dialogue files (place new dialogue sources here)
 - `Seashells/` repo-local reference voice clips
-- `Profiles/` voice profiles and saved blends (runtime-generated, gitignored)
-- `Output/` rendered audio, stems, and caches (runtime-generated, gitignored)
+- `Profiles/` voice profiles (runtime-generated, gitignored)
+- `Output/` rendered audio only (runtime-generated, gitignored); stems, caches,
+  logs, previews, and render plans live in the app's `render-work` folder
+  (`~/.local/share/rhetoric/render-work/` on Linux)
 - `user_settings/` GUI settings persistence (runtime-generated, gitignored)
 - `release_artifacts/` release-script output (generated, gitignored)
 - `release_checksums/` each release's sha256 manifest, tracked so a published
   artifact can be verified from a clone rather than the build folder
 - `scripts/` install, doctor, smoke, and model utility entrypoints
-- `src/the_oracle/` application code
+- `src/rhetoric/` application code
 - `tests/` unit and integration-style coverage
 - `docs/` design specs, the [upgrade guide](docs/UPGRADING.md), and the
   [troubleshooting guide](docs/TROUBLESHOOTING.md)
 - `packaging/` Linux desktop install/uninstall assets
 - `bootstrap_rhetoric.sh` / `.ps1` one-command setup (install, doctor,
-  run, uninstall wrappers follow the same `*_oracle_tts` naming)
+  run, uninstall wrappers follow the same `*_rhetoric` naming)
 
 ## Sample Inputs
 
@@ -643,25 +661,31 @@ The portable sample inputs under `Input/` include:
 
 ## Development
 
-Create a local development environment with a supported interpreter:
+Create a local development environment with a supported interpreter. The
+managed installer is the supported setup: it creates `.venv`, installs the
+audited runtime plus the dev tools, and applies the engine-package metadata
+patch. Use it instead of installing the extras by hand.
 
 Linux:
 
 ```bash
-python3.12 -m venv .venv
-./.venv/bin/python -m pip install --upgrade pip
-./.venv/bin/python -m pip install -e ".[dev]"
+python3.12 scripts/manage_install.py bootstrap --include-dev --pytorch-runtime cpu
 ./.venv/bin/pytest
 ```
 
 Windows:
 
 ```powershell
-py -3.12 -m venv .venv
-.\.venv\Scripts\python.exe -m pip install --upgrade pip
-.\.venv\Scripts\python.exe -m pip install -e ".[dev]"
+py -3.12 scripts\manage_install.py bootstrap --include-dev --pytorch-runtime cpu
 .\.venv\Scripts\pytest.exe
 ```
+
+Do not install the `dev`, `ml` and `chatterbox` extras in one command. That
+combination does not co-resolve:
+`[ml]` pins `transformers==5.20.0` while `chatterbox-tts 0.1.7` pins a different
+Transformers version, so the resolver aborts. The managed installer installs
+the same audited stack in the order that works. Changing those pins is an owner
+decision, not a setup workaround.
 
 A bare `pytest` runs everything. For the faster loop between changes, exclude the
 `slow` marker:
@@ -676,7 +700,7 @@ fast run must not be possible without them. What stays behind the marker is the
 model-heavy work and the sweeps that cost minutes. `tests/test_fast_subset.py`
 holds that contract by asking pytest's own collector what the subset keeps.
 
-## Generic Voices And Voice Blending
+## Generic Voices
 
 **Generic voices.** The repo ships a small bundled generic voice library under
 `Seashells/generic/` (male and female narrator references copied from
@@ -686,25 +710,8 @@ voice picker under **Default Voices**, so a render never needs a custom
 recording. Drop your own neutral recordings into `Seashells/generic/` to
 extend the library.
 
-**Voice blending.** Chatterbox conditions each speaker on one reference
-payload, so combining two voices works by deriving a single **blended
-reference clip** from two sources. In each speaker panel: pick a second clip
-under **Blend With Voice**, choose how strongly the base voice dominates with
-**Base Voice Presence** (0–100%), and pick a **Blend Mode**: `Mix`
-(weight-averaged), `Alternate` (the two clips take turns), or `Layer` (base
-voice with the second underneath). The blend is deterministic and cached by
-its inputs' content hashes, so a given (base, target, weight, mode) always
-renders the same voice, on both the PyTorch and Vulkan backends, and stem
-caches re-key automatically when the blend changes. Blend settings round-trip
-through saved projects and GUI settings profiles.
-
-**Saving blends as named voices.** **Save Blend As...** next to the blend
-picker saves the current combination as a named voice that appears under
-**Saved Blends** in every speaker panel's picker, right alongside the bundled
-generic voices — so a favorite blend becomes a one-click voice like any
-other. Saved blends live in `Profiles/blend_voices.json` (user-generated,
-gitignored) with deterministic clips in `Profiles/.blends/`; saving the same
-name again replaces the entry.
+Each speaker is conditioned on exactly one reference clip. To change a voice,
+pick a different clip (or record one); there is no second-voice blending.
 
 ## Product Notes
 
@@ -712,7 +719,10 @@ name again replaces the entry.
 - Multilingual mode requires the multilingual Chatterbox variant and a real language code.
 - Turbo is optional and lower-latency, but not the default backend.
 - Better voice quality comes from stronger local reference clips, not from a separate packaged voice library.
-- Voice blending (combining two references into one conditioning clip) is supported; see "Generic Voices And Voice Blending" above.
+- There is no hybrid/second-voice blending: each speaker uses one reference clip.
+- **Output folder:** the chosen folder receives only the finished audio (and the `.srt` when subtitles are enabled). Stems, caches, logs, previews, and render plans live in the app's `render-work` folder, so the output folder never fills with working material.
+- **Output filename:** loading a script proposes `<script>_No_<n>` with the next free number in the output folder, so a render never silently overwrites an earlier one. Typing a name always uses that name.
+- **Automatic updates:** on by default. The opt-out is a checkable action in the Settings menu, and turning it off also disables the support/bug-report gate until updates are re-enabled and the install is current.
 - **Correction Mode → Verbatim (no changes)** passes the source text through exactly as written — no spelling, grammar, or punctuation edits — so narration is always faithful to the file. (The TTS engine applies its own required text normalization internally, identically on both backends.)
 
 ## Licensing

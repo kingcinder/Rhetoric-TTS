@@ -22,7 +22,7 @@ from pathlib import Path
 import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-SRC = REPO_ROOT / "src" / "the_oracle"
+SRC = REPO_ROOT / "src" / "rhetoric"
 
 NAMING_OWNER = SRC / "subtitle_targets.py"
 WORDING_OWNER = SRC / "speaker_ref_hints.py"
@@ -103,13 +103,13 @@ def test_the_naming_scan_can_actually_see_its_literals() -> None:
 )
 def test_converted_script_names_are_unchanged(name: str, expected: str) -> None:
     """The names the rest of the project and its tests already depend on."""
-    from the_oracle.subtitle_targets import converted_script_target
+    from rhetoric.subtitle_targets import converted_script_target
 
     assert converted_script_target(name).name == expected
 
 
 def test_sidecar_subtitles_replace_the_render_suffix() -> None:
-    from the_oracle.subtitle_targets import subtitle_sidecar_target
+    from rhetoric.subtitle_targets import subtitle_sidecar_target
 
     assert subtitle_sidecar_target("out/episode.flac").name == "episode.srt"
     assert subtitle_sidecar_target("out/part 1.wav").name == "part 1.srt"
@@ -145,11 +145,11 @@ def test_no_surface_spells_the_hint_wording_out(surface: str) -> None:
 
     assert "is not accepted as a speaker label" not in text, (
         f"{surface} restates the rejected-label advice; it should render "
-        "the_oracle.speaker_ref_hints instead"
+        "rhetoric.speaker_ref_hints instead"
     )
     assert "Speaker voices to provide" not in text, (
         f"{surface} restates the hint header; it should render "
-        "the_oracle.speaker_ref_hints instead"
+        "rhetoric.speaker_ref_hints instead"
     )
 
 
@@ -163,7 +163,7 @@ def test_each_surface_calls_the_owner() -> None:
 
 def test_the_two_surfaces_produce_the_same_sentences() -> None:
     """The drift that existed: one surface stopped short of the other's advice."""
-    from the_oracle.speaker_ref_hints import hint_lines, sentence_lines
+    from rhetoric.speaker_ref_hints import hint_lines, sentence_lines
 
     refs = [{"speaker": "winston", "voice_key": "A", "flag": "--speakerA-ref PATH", "new": False}]
     rejected = ["Chapter", {"label": "Assistant", "rename_flag": "--speaker-ref C=PATH"}]
@@ -180,7 +180,7 @@ def test_the_two_surfaces_produce_the_same_sentences() -> None:
 
 def test_the_advice_for_a_rejected_label_is_identical_on_both_surfaces() -> None:
     """The exact sentence that used to differ."""
-    from the_oracle.speaker_ref_hints import hint_lines, sentence_lines
+    from rhetoric.speaker_ref_hints import hint_lines, sentence_lines
 
     cli = [line for line in hint_lines([], ["Chapter"]) if "Chapter" in line]
     gui = [line for line in sentence_lines([], ["Chapter"], bullet="  \u2022 ") if "Chapter" in line]
@@ -191,7 +191,7 @@ def test_the_advice_for_a_rejected_label_is_identical_on_both_surfaces() -> None
 
 
 def test_additional_voices_are_the_ones_needing_a_new_flag() -> None:
-    from the_oracle.speaker_ref_hints import is_additional_voice, voice_flag
+    from rhetoric.speaker_ref_hints import is_additional_voice, voice_flag
 
     assert voice_flag("A") == "--speakerA-ref PATH"
     assert voice_flag("B") == "--speakerB-ref PATH"
@@ -202,7 +202,7 @@ def test_additional_voices_are_the_ones_needing_a_new_flag() -> None:
 
 
 def test_the_owner_only_says_nothing_when_there_is_nothing_to_say() -> None:
-    from the_oracle.speaker_ref_hints import hint_lines
+    from rhetoric.speaker_ref_hints import hint_lines
 
     assert hint_lines([], []) == []
     # The header is dropped with no references, so a panel showing only warnings

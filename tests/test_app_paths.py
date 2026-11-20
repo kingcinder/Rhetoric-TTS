@@ -1,10 +1,13 @@
 from pathlib import Path
 
-from the_oracle.app_paths import (
+from rhetoric.app_paths import (
     PORTABLE_MARKER,
     default_output_filename,
     ensure_repo_default_paths,
     normalize_output_filename,
+    resolve_default_input_dir,
+    render_project_dir,
+    render_work_dir,
     resolve_output_filename,
 )
 
@@ -17,19 +20,43 @@ def test_portable_marker_keeps_repo_local_paths(tmp_path: Path) -> None:
 
 
 def test_installed_root_migrates_repo_content_without_deleting_it(tmp_path: Path, monkeypatch) -> None:
-    import the_oracle.app_paths as app_paths
+    import rhetoric.app_paths as app_paths
 
     repo = tmp_path / "repo"
     (repo / "Input").mkdir(parents=True)
     (repo / "Input" / "story.txt").write_text("A: hello\n", encoding="utf-8")
-    monkeypatch.setattr(app_paths, "__file__", str(repo / "src" / "the_oracle" / "app_paths.py"))
-    monkeypatch.setattr(app_paths, "app_data_dir", lambda: tmp_path / "data" / "the_oracle")
+    monkeypatch.setattr(app_paths, "__file__", str(repo / "src" / "rhetoric" / "app_paths.py"))
+    monkeypatch.setattr(app_paths, "app_data_dir", lambda: tmp_path / "data" / "rhetoric")
 
     paths = app_paths.ensure_repo_default_paths(repo)
 
-    assert paths.input_dir == tmp_path / "data" / "the_oracle" / "Input"
+    assert paths.input_dir == tmp_path / "data" / "rhetoric" / "Input"
     assert (paths.input_dir / "story.txt").read_text(encoding="utf-8") == "A: hello\n"
     assert (repo / "Input" / "story.txt").is_file()
+
+
+def test_installed_root_uses_live_repo_input_over_its_migrated_default(tmp_path: Path) -> None:
+    repo = tmp_path / "repo"
+    repo_input = repo / "Input"
+    repo_input.mkdir(parents=True)
+    (repo / "pyproject.toml").touch()
+    app_input = tmp_path / "data" / "rhetoric" / "Input"
+    app_input.mkdir(parents=True)
+    (app_input / "stale.txt").write_text("stale copy", encoding="utf-8")
+
+    assert resolve_default_input_dir(app_input, app_input, repo) == repo_input
+
+
+def test_custom_input_directory_is_preserved(tmp_path: Path) -> None:
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    (repo / "pyproject.toml").touch()
+    (repo / "Input").mkdir()
+    app_default = tmp_path / "data" / "Input"
+    custom = tmp_path / "selected" / "Input"
+    custom.mkdir(parents=True)
+
+    assert resolve_default_input_dir(custom, app_default, repo) == custom
 
 
 def test_ensure_repo_default_paths_creates_expected_directories(tmp_path: Path) -> None:
@@ -51,7 +78,50 @@ def test_output_filename_resolution_uses_default_input_stem_only_for_default_out
     input_path = tmp_path / "story.md"
 
     assert normalize_output_filename("chapter_one") == "chapter_one.flac"
-    assert default_output_filename(input_path) == "story.flac"
-    assert resolve_output_filename(input_path, default_output_dir, default_output_dir, "") == "story.flac"
+    # The auto name is the input stem plus the next free _No_N number, matching
+    # the recorder's Seashell_No_N scheme.
+    assert default_output_filename(input_path) == "story_No_1.flac"
+    assert resolve_output_filename(input_path, default_output_dir, default_output_dir, "") == "story_No_1.flac"
     assert resolve_output_filename(input_path, custom_output_dir, default_output_dir, "") == ""
     assert resolve_output_filename(input_path, custom_output_dir, default_output_dir, "custom_name") == "custom_name.flac"
+
+
+def test_default_output_filename_increments_past_existing_renders(tmp_path: Path) -> None:
+    output_dir = tmp_path / "Output"
+    output_dir.mkdir()
+    input_path = tmp_path / "story.md"
+
+    assert default_output_filename(input_path, output_dir) == "story_No_1.flac"
+    (output_dir / "story_No_1.flac").write_bytes(b"first render")
+    assert default_output_filename(input_path, output_dir) == "story_No_2.flac"
+    (output_dir / "story_No_2.flac").write_bytes(b"second render")
+    assert default_output_filename(input_path, output_dir) == "story_No_3.flac"
+    # A gap is not skipped over: the counter stops at the first free number.
+    (output_dir / "story_No_4.flac").write_bytes(b"fourth render")
+    assert default_output_filename(input_path, output_dir) == "story_No_3.flac"
+
+
+def test_render_work_lives_outside_any_output_folder(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setenv("RHETORIC_RENDER_WORK", str(tmp_path / "render-work"))
+    output_dir = tmp_path / "Output"
+    output_dir.mkdir()
+
+    work = render_work_dir()
+    project = render_project_dir(tmp_path / "Chapter One.txt")
+
+    assert work == tmp_path / "render-work"
+    assert project == work / "Chapter_One_rhetoric"
+    assert project.is_dir()
+    # Working material is never inside the folder the user chose for audio.
+    assert project != output_dir and output_dir not in project.parents
+
+
+def test_an_explicit_output_name_is_never_replaced(tmp_path: Path) -> None:
+    default_output_dir = tmp_path / "Output"
+    custom_output_dir = tmp_path / "Elsewhere"
+    input_path = tmp_path / "story.md"
+
+    assert (
+        resolve_output_filename(input_path, custom_output_dir, default_output_dir, "chapter one")
+        == "chapter one.flac"
+    )

@@ -5,9 +5,9 @@ import pytest
 
 pytestmark = pytest.mark.slow  # runs the full repair pipeline
 
-from the_oracle.models.project import VoiceSettings
-from the_oracle.models.settings import RenderSettings, SpeakerSettings; from the_oracle.pipeline import OraclePipeline
-from the_oracle.smoke import _write_reference
+from rhetoric.models.project import VoiceSettings
+from rhetoric.models.settings import RenderSettings, SpeakerSettings; from rhetoric.pipeline import RhetoricPipeline
+from rhetoric.smoke import _write_reference
 
 
 class _JoyClassifier:
@@ -26,8 +26,8 @@ def test_emotion_intensity_scales_emotion_mapping(tmp_path: Path) -> None:
     high = VoiceSettings(emotion_intensity=1.5, naturalness=0.0, pause_ms=180)
     settings = RenderSettings(model_variant="standard", language="en")
 
-    with patch("the_oracle.pipeline.GoEmotionsClassifier", _JoyClassifier):
-        pipeline = OraclePipeline()
+    with patch("rhetoric.pipeline.GoEmotionsClassifier", _JoyClassifier):
+        pipeline = RhetoricPipeline()
         low_plan = pipeline.prepare_plan(
             dialogue,
             tmp_path / "out_low",
@@ -53,8 +53,8 @@ def test_naturalness_heuristic_changes_sampling_controls(tmp_path: Path) -> None
     loose = VoiceSettings(emotion_intensity=1.0, naturalness=1.0)
     settings = RenderSettings(model_variant="standard", language="en")
 
-    with patch("the_oracle.pipeline.GoEmotionsClassifier", _JoyClassifier):
-        pipeline = OraclePipeline()
+    with patch("rhetoric.pipeline.GoEmotionsClassifier", _JoyClassifier):
+        pipeline = RhetoricPipeline()
         plain_plan = pipeline.prepare_plan(
             dialogue,
             tmp_path / "out_plain",

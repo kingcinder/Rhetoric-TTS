@@ -12,8 +12,18 @@
 #   checkout paths containing spaces because sentencepiece's
 #   -fmacro-prefix-map=... flag is emitted unquoted and split on the space.
 #   The value is quoted so builds work from any path.
+# Patch 3 - Vulkan shader-compile robustness (vulkan-shaders-gen): the shader
+#   generator forks up to min(16, cores) glslc processes at once. On a loaded
+#   runner fork() fails with EAGAIN; the generator printed the error, dropped
+#   that shader from the generated .cpp, and carried on, so the gap surfaced
+#   much later as `undefined reference to matmul_id_subgroup_*` at link time.
+#   Retry the fork with a bounded wait, and fail the generator instead of
+#   emitting a header/cpp pair with missing definitions. The wait is bounded
+#   per generator, not per shader: once one shader uses up its window the
+#   shortage is not a burst, so the rest fail at once instead of each waiting
+#   another minute (882 shaders would otherwise stall for an hour).
 #
-# Both patches are idempotent (no-op when their ORACLE_VENDORED marker is
+# All patches are idempotent (no-op when their RHETORIC_VENDORED marker is
 # present) and FAIL LOUDLY if the source changes shape on an audio.cpp/ggml
 # update, so the fixes can never be silently lost on a version bump.
 set -Eeuo pipefail
@@ -22,13 +32,91 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 AUDIOCPP_DIR="${AUDIOCPP_DIR:-$REPO_ROOT/audio.cpp}"
 GGML_FILE="$AUDIOCPP_DIR/external/ggml/src/ggml-vulkan/ggml-vulkan.cpp"
 SP_FILE="$AUDIOCPP_DIR/external/sentencepiece/CMakeLists.txt"
-GGML_MARKER="===== BEGIN ORACLE VENDORED PATCH (RDNA1 buffer memset) ====="
-SP_MARKER="===== BEGIN ORACLE VENDORED PATCH (space-safe macro-prefix-map) ====="
-SPIRV_MARKER="===== BEGIN ORACLE VENDORED PATCH (portable SPIR-V headers) ====="
+GGML_MARKER="===== BEGIN RHETORIC VENDORED PATCH (RDNA1 buffer memset) ====="
+SP_MARKER="===== BEGIN RHETORIC VENDORED PATCH (space-safe macro-prefix-map) ====="
+SPIRV_MARKER="===== BEGIN RHETORIC VENDORED PATCH (portable SPIR-V headers) ====="
+# Superseded markers from the pre-rename revision. Commit a98a307 renamed the
+# markers ORACLE_* -> RHETORIC_*; the old script wrote the same lines with
+# "ORACLE" where "RHETORIC" is now, so a tree it patched is NOT idempotent under
+# this one (it would be patched a second time). Detect that shape and send the
+# developer back to a clean audio.cpp instead of double-patching it.
+SUPERSEDED_MARKER="===== BEGIN ORACLE VENDORED PATCH"
+SHADERS_GEN_FILE="$AUDIOCPP_DIR/external/ggml/src/ggml-vulkan/vulkan-shaders/vulkan-shaders-gen.cpp"
 PYTHON_BIN="${PYTHON_BIN:-python3}"
 
 if [[ ! -f "$GGML_FILE" ]]; then
   echo "ERROR: ggml-vulkan.cpp not found at $GGML_FILE (run scripts/build_audio_cpp.sh first)." >&2
+  exit 1
+fi
+
+# The shader generator carries the fork-retry and fail-loud patch; refuse to run
+# without it rather than shipping a build whose race is silently unpatched.
+# The retry window is a patch-time constant compiled into the generator, not a
+# runtime switch: FORK_FAIL_RETRY_COUNT attempts x 250ms, 40 by default.
+FORK_FAIL_RETRY_COUNT=${FORK_FAIL_RETRY_COUNT:-40}
+#: The most attempts a patch-time constant can ask for (about 69 hours of
+#: 250 ms waits). Past this the number is a typo or an attack, not a window.
+FORK_FAIL_RETRY_MAX=1000000
+case "$FORK_FAIL_RETRY_COUNT" in
+  ''|*[!0-9]*)
+    echo "ERROR: FORK_FAIL_RETRY_COUNT must be a positive integer, got '$FORK_FAIL_RETRY_COUNT'." >&2
+    exit 1
+    ;;
+esac
+# Strip leading zeros so the magnitude check below is about the value, not the
+# padding: "000000040" is 40, not a nine-digit number.
+FORK_FAIL_RETRY_DIGITS=${FORK_FAIL_RETRY_COUNT#"${FORK_FAIL_RETRY_COUNT%%[!0]*}"}
+# Refuse an absurd value BEFORE bash converts it. `10#` aborts with "value too
+# great for base" on a digits-only string that does not fit its integer, which
+# is an arithmetic error rather than the friendly message -- the same failure
+# the leading-zero case had. Seven digits covers every value up to the bound.
+if (( ${#FORK_FAIL_RETRY_DIGITS} > 7 )); then
+  echo "ERROR: FORK_FAIL_RETRY_COUNT must be a positive integer, got '$FORK_FAIL_RETRY_COUNT'." >&2
+  exit 1
+fi
+# Bash reads a leading zero as octal, so "08" would abort the comparison below
+# with "value too great for base". Normalise to base 10 first; the case above has
+# already rejected everything that is not digits.
+FORK_FAIL_RETRY_COUNT=$((10#${FORK_FAIL_RETRY_DIGITS:-0}))
+if [[ "$FORK_FAIL_RETRY_COUNT" -gt "$FORK_FAIL_RETRY_MAX" ]]; then
+  echo "ERROR: FORK_FAIL_RETRY_COUNT must be a positive integer, got '$FORK_FAIL_RETRY_COUNT'." >&2
+  exit 1
+fi
+if [[ "$FORK_FAIL_RETRY_COUNT" -lt 1 ]]; then
+  echo "ERROR: FORK_FAIL_RETRY_COUNT must be at least 1, got '$FORK_FAIL_RETRY_COUNT'." >&2
+  exit 1
+fi
+# The comment written into the generator states the whole window as well as the
+# count that produces it, so a reader does not have to do 40 x 250ms in their
+# head to know how long a shader can stall the build.
+FORK_FAIL_RETRY_WINDOW_MS=$((FORK_FAIL_RETRY_COUNT * 250))
+FORK_FAIL_RETRY_WINDOW_SECONDS=$((FORK_FAIL_RETRY_WINDOW_MS / 1000))
+FORK_FAIL_RETRY_WINDOW_REMAINDER=$((FORK_FAIL_RETRY_WINDOW_MS % 1000))
+if [[ "$FORK_FAIL_RETRY_WINDOW_REMAINDER" -eq 0 ]]; then
+  FORK_FAIL_RETRY_WINDOW_DISPLAY="${FORK_FAIL_RETRY_WINDOW_SECONDS}s"
+else
+  FORK_FAIL_RETRY_FRACTION=$(printf '%03d' "$FORK_FAIL_RETRY_WINDOW_REMAINDER")
+  while [[ "$FORK_FAIL_RETRY_FRACTION" == *0 ]]; do
+    FORK_FAIL_RETRY_FRACTION=${FORK_FAIL_RETRY_FRACTION%0}
+  done
+  FORK_FAIL_RETRY_WINDOW_DISPLAY="${FORK_FAIL_RETRY_WINDOW_SECONDS}.${FORK_FAIL_RETRY_FRACTION}s"
+fi
+if [[ ! -f "$SHADERS_GEN_FILE" ]]; then
+  echo "ERROR: vulkan-shaders-gen.cpp not found at $SHADERS_GEN_FILE (run scripts/build_audio_cpp.sh first)." >&2
+  exit 1
+fi
+
+# A tree patched by the pre-rename script is detected here, after the existence
+# checks above: grepping a file that is not there only prints noise.
+if grep -Fq "$SUPERSEDED_MARKER" "$GGML_FILE" \
+   || { [[ -f "$SP_FILE" ]] && grep -Fq "$SUPERSEDED_MARKER" "$SP_FILE"; } \
+   || grep -Fq "$SUPERSEDED_MARKER" "$SHADERS_GEN_FILE"; then
+  echo "" >&2
+  echo "=== TREE PATCHED WITH A PRE-RENAME REVISION ===" >&2
+  echo "The audio.cpp tree carries '===== BEGIN ORACLE VENDORED PATCH' markers," >&2
+  echo "written by the script from before commit a98a307 renamed them to RHETORIC." >&2
+  echo "Reset or re-clone the audio.cpp directory, then re-run this script." >&2
+  echo "" >&2
   exit 1
 fi
 
@@ -47,7 +135,7 @@ raw = open(path, "rb").read()
 anchor = b"#include <vulkan/vulkan.hpp>"
 block = b"""#include <vulkan/vulkan.hpp>
 
-// ===== BEGIN ORACLE VENDORED PATCH (portable SPIR-V headers) =====
+// ===== BEGIN RHETORIC VENDORED PATCH (portable SPIR-V headers) =====
 // ggml uses the `spv::` opcode constants below; include the Khronos header
 // explicitly because Vulkan-Hpp does not provide it transitively on Linux.
 #if __has_include(<spirv/unified1/spirv.hpp>)
@@ -59,7 +147,7 @@ block = b"""#include <vulkan/vulkan.hpp>
 #else
 #    include <spirv/unified1/spirv.hpp>
 #endif
-// ===== END ORACLE VENDORED PATCH (portable SPIR-V headers) ====="""
+// ===== END RHETORIC VENDORED PATCH (portable SPIR-V headers) ====="""
 if raw.count(anchor) != 1:
     raise SystemExit(f"ANCHOR NOT FOUND or duplicated in {path}")
 open(path, "wb").write(raw.replace(anchor, block, 1))
@@ -135,7 +223,7 @@ GGML_PATCHED="$(printf '%s\n' \
   '    // RDNA1; vk_command_pool binds its queue so ggml_vk_submit follows it.' \
   "    // Vendored against ggml $(git -C "$AUDIOCPP_DIR/external/ggml" rev-parse --short HEAD 2>/dev/null || echo unknown)." \
   '    // Re-check this block after any audio.cpp/ggml update.' \
-  '    // ===== END ORACLE VENDORED PATCH (RDNA1 buffer memset) =====' \
+  '    // ===== END RHETORIC VENDORED PATCH (RDNA1 buffer memset) =====' \
   '    vk_context subctx = ggml_vk_create_temporary_context(' \
   '        dst->device->architecture == vk_device_architecture::AMD_RDNA1' \
   '            ? dst->device->compute_queue.cmd_pool' \
@@ -151,13 +239,200 @@ SP_PATCHED="  # $SP_MARKER
   # audio.cpp fails to build from checkout paths containing spaces: the
   # unquoted -fmacro-prefix-map=... flag is split on the space. Quote the
   # value so builds work from any path.
-  # ===== END ORACLE VENDORED PATCH (space-safe macro-prefix-map) =====
+  # ===== END RHETORIC VENDORED PATCH (space-safe macro-prefix-map) =====
   string(APPEND CMAKE_CXX_FLAGS \" -fmacro-prefix-map=\\\"\${CMAKE_SOURCE_DIR}/=\\\"\")"
 apply_patch "space-safe sentencepiece build fix" "$SP_MARKER" "$SP_FILE" "$SP_ORIGINAL" "$SP_PATCHED"
+
+# --- Patch 3: Vulkan shader-compile robustness in vulkan-shaders-gen ---------
+SH_MARKER_CHRONO="===== BEGIN RHETORIC VENDORED PATCH (shader chrono include) ====="
+SH_MARKER_FORK="===== BEGIN RHETORIC VENDORED PATCH (shader fork retry) ====="
+SH_MARKER_DECL="===== BEGIN RHETORIC VENDORED PATCH (shader compile latch: declaration) ====="
+SH_MARKER_STDERR="===== BEGIN RHETORIC VENDORED PATCH (shader compile: stderr is not fatal) ====="
+SH_MARKER_CATCH="===== BEGIN RHETORIC VENDORED PATCH (shader compile latch: catch) ====="
+SH_MARKER_EMBED="===== BEGIN RHETORIC VENDORED PATCH (shader compile latch: embed) ====="
+SH_MARKER_EXIT="===== BEGIN RHETORIC VENDORED PATCH (shader compile latch: exit) ====="
+SH_MARKER_STATUS="===== BEGIN RHETORIC VENDORED PATCH (shader compile latch: exit code) ====="
+
+SH_INCLUDES_ORIGINAL="$(printf '%s\n' \
+  '#include <thread>' \
+  '#include <mutex>')"
+SH_INCLUDES_PATCHED="$(printf '%s\n' \
+  '#include <thread>' \
+  "// $SH_MARKER_CHRONO" \
+  '#include <chrono>' \
+  '// ===== END RHETORIC VENDORED PATCH (shader chrono include) =====' \
+  '#include <mutex>')"
+apply_patch "shader chrono include" "$SH_MARKER_CHRONO" "$SHADERS_GEN_FILE" \
+  "$SH_INCLUDES_ORIGINAL" "$SH_INCLUDES_PATCHED"
+
+SH_FORK_ORIGINAL="$(printf '%s\n' \
+  '    pid_t pid = fork();' \
+  '    if (pid < 0) {' \
+  '        std::cerr << strerror(errno) << "\n";' \
+  '        throw std::runtime_error("Failed to fork process");' \
+  '    }')"
+SH_FORK_PATCHED="$(printf '%s\n' \
+  '    pid_t pid = fork();' \
+  "    // $SH_MARKER_FORK" \
+  '    // This process runs up to min(16, cores) glslc forks at once. On a loaded' \
+  '    // CI runner the pids cgroup limit makes fork() fail with EAGAIN; the old' \
+  '    // code threw, the caller logged and dropped that shader, and the gap only' \
+  '    // surfaced much later as undefined matmul_id_subgroup_* at link time.' \
+  "    // Wait up to $FORK_FAIL_RETRY_WINDOW_DISPLAY ($FORK_FAIL_RETRY_COUNT x 250ms) for a slot instead of losing the shader. A" \
+  '    // shader that uses the whole window means the shortage is not a burst, and' \
+  '    // the compile latch it then sets stops every other wait immediately.' \
+  "    for (int rhetoric_fork_attempt = 0; pid < 0 && rhetoric_fork_attempt < $FORK_FAIL_RETRY_COUNT; ++rhetoric_fork_attempt) {" \
+  '        if (errno != EAGAIN && errno != ENOMEM) {' \
+  '            break;' \
+  '        }' \
+  '        {' \
+  '            std::lock_guard<std::mutex> rhetoric_guard(lock);' \
+  '            if (rhetoric_shader_compile_failed) {' \
+  '                break;' \
+  '            }' \
+  '        }' \
+  '        std::this_thread::sleep_for(std::chrono::milliseconds(250));' \
+  '        pid = fork();' \
+  '    }' \
+  '    // ===== END RHETORIC VENDORED PATCH (shader fork retry) =====' \
+  '    if (pid < 0) {' \
+  '        std::cerr << strerror(errno) << "\n";' \
+  '        throw std::runtime_error("Failed to fork process");' \
+  '    }')"
+apply_patch "shader fork retry" "$SH_MARKER_FORK" "$SHADERS_GEN_FILE" \
+  "$SH_FORK_ORIGINAL" "$SH_FORK_PATCHED"
+
+# Declared next to the mutex that guards it, which is above execute_command: the
+# retry loop reads the flag, so the declaration has to precede it.
+SH_DECL_ORIGINAL="$(printf '%s\n' 'std::mutex lock;')"
+SH_DECL_PATCHED="$(printf '%s\n' \
+  'std::mutex lock;' \
+  '' \
+  "// $SH_MARKER_DECL" \
+  '// A shader that failed to compile used to be dropped silently: the generated' \
+  '// .cpp lacked its definitions while the header still declared them, so the' \
+  '// build failed far away at link time. Latch it and fail the generator.' \
+  '// glslc writes no .spv when it fails, so an empty embed is the failure test;' \
+  '// its exit status is not consulted and warnings on stderr are not fatal.' \
+  'static bool rhetoric_shader_compile_failed = false;' \
+  '// ===== END RHETORIC VENDORED PATCH (shader compile latch: declaration) =====')"
+apply_patch "shader compile latch declaration" "$SH_MARKER_DECL" "$SHADERS_GEN_FILE" \
+  "$SH_DECL_ORIGINAL" "$SH_DECL_PATCHED"
+
+# Upstream treats any stderr output as a compile failure and drops the shader.
+# glslc reports warnings there too, so keep the text for diagnosis but let the
+# .spv decide: a warning must not lose a shader, and a failed compile writes no
+# binary, which the embed latch below turns into a hard failure.
+SH_STDERR_ORIGINAL="$(printf '%s\n' \
+  '        if (!stderr_str.empty()) {' \
+  '            std::cerr << "cannot compile " << name << "\n\n";' \
+  '            for (const auto& part : cmd) {' \
+  '                std::cerr << part << " ";' \
+  '            }' \
+  '            std::cerr << "\n\n" << stderr_str << std::endl;' \
+  '            return;' \
+  '        }')"
+SH_STDERR_PATCHED="$(printf '%s\n' \
+  '        if (!stderr_str.empty()) {' \
+  "            // $SH_MARKER_STDERR" \
+  '            // glslc writes warnings to stderr as well, so text here does not' \
+  '            // mean the shader failed. Print it and carry on; the embed step' \
+  '            // rejects a missing .spv, which glslc writes only on success.' \
+  '            std::cerr << "glslc wrote to stderr for " << name << "\n\n";' \
+  '            for (const auto& part : cmd) {' \
+  '                std::cerr << part << " ";' \
+  '            }' \
+  '            std::cerr << "\n\n" << stderr_str << std::endl;' \
+  '            // ===== END RHETORIC VENDORED PATCH (shader compile: stderr is not fatal) =====' \
+  '        }')"
+apply_patch "shader compile: stderr is not fatal" "$SH_MARKER_STDERR" "$SHADERS_GEN_FILE" \
+  "$SH_STDERR_ORIGINAL" "$SH_STDERR_PATCHED"
+
+SH_CATCH_ORIGINAL="$(printf '%s\n' \
+  '    } catch (const std::exception& e) {' \
+  '        std::cerr << "Error executing command for " << name << ": " << e.what() << std::endl;' \
+  '    }')"
+SH_CATCH_PATCHED="$(printf '%s\n' \
+  '    } catch (const std::exception& e) {' \
+  "        // $SH_MARKER_CATCH" \
+  '        {' \
+  '            std::lock_guard<std::mutex> rhetoric_guard(lock);' \
+  '            rhetoric_shader_compile_failed = true;' \
+  '        }' \
+  '        // ===== END RHETORIC VENDORED PATCH (shader compile latch: catch) =====' \
+  '        std::cerr << "Error executing command for " << name << ": " << e.what() << std::endl;' \
+  '    }')"
+apply_patch "shader compile latch on exception" "$SH_MARKER_CATCH" "$SHADERS_GEN_FILE" \
+  "$SH_CATCH_ORIGINAL" "$SH_CATCH_PATCHED"
+
+SH_EMBED_ORIGINAL="$(printf '%s\n' \
+  '            std::string data = read_binary_file(path);' \
+  '            if (data.empty()) {' \
+  '                continue;' \
+  '            }')"
+SH_EMBED_PATCHED="$(printf '%s\n' \
+  '            std::string data = read_binary_file(path);' \
+  '            if (data.empty()) {' \
+  "                // $SH_MARKER_EMBED" \
+  '                {' \
+  '                    std::lock_guard<std::mutex> rhetoric_guard(lock);' \
+  '                    rhetoric_shader_compile_failed = true;' \
+  '                }' \
+  '                // ===== END RHETORIC VENDORED PATCH (shader compile latch: embed) =====' \
+  '                continue;' \
+  '            }')"
+apply_patch "shader compile latch on empty embed" "$SH_MARKER_EMBED" "$SHADERS_GEN_FILE" \
+  "$SH_EMBED_ORIGINAL" "$SH_EMBED_PATCHED"
+
+# The check sits inside write_output_files, just before it writes: a failed shader
+# leaves no partial pair behind, and main still turns the latch into exit code 1.
+SH_EXIT_ORIGINAL="$(printf '%s\n' \
+  '    if (input_filepath == "") {' \
+  '        write_file_if_changed(target_hpp, hdr.str());' \
+  '    }' \
+  '    if (target_cpp != "") {' \
+  '        write_binary_file(target_cpp, src.str());' \
+  '    }' \
+  '}')"
+SH_EXIT_PATCHED="$(printf '%s\n' \
+  "    // $SH_MARKER_EXIT" \
+  '    // Refuse to emit a header/cpp pair with shader definitions missing: the' \
+  '    // linker would report an undefined matmul_id_subgroup_* symbol much later,' \
+  '    // far from the shader that actually failed.' \
+  '    if (rhetoric_shader_compile_failed) {' \
+  '        std::cerr << "a Vulkan shader failed to compile or embed; refusing to write "' \
+  '                     "a shader pair with missing definitions" << std::endl;' \
+  '        return;' \
+  '    }' \
+  '    // ===== END RHETORIC VENDORED PATCH (shader compile latch: exit) =====' \
+  '    if (input_filepath == "") {' \
+  '        write_file_if_changed(target_hpp, hdr.str());' \
+  '    }' \
+  '    if (target_cpp != "") {' \
+  '        write_binary_file(target_cpp, src.str());' \
+  '    }' \
+  '}')"
+apply_patch "shader compile latch exit" "$SH_MARKER_EXIT" "$SHADERS_GEN_FILE" \
+  "$SH_EXIT_ORIGINAL" "$SH_EXIT_PATCHED"
+
+SH_STATUS_ORIGINAL="$(printf '%s\n' '    write_output_files();')"
+SH_STATUS_PATCHED="$(printf '%s\n' \
+  '    write_output_files();' \
+  '' \
+  "    // $SH_MARKER_STATUS" \
+  '    // write_output_files() reports the failure above and writes nothing; the' \
+  '    // build has to stop here rather than compile an incomplete translation unit.' \
+  '    if (rhetoric_shader_compile_failed) {' \
+  '        return 1;' \
+  '    }' \
+  '    // ===== END RHETORIC VENDORED PATCH (shader compile latch: exit code) =====')"
+apply_patch "shader compile latch exit code" "$SH_MARKER_STATUS" "$SHADERS_GEN_FILE" \
+  "$SH_STATUS_ORIGINAL" "$SH_STATUS_PATCHED"
 
 # Regenerate the reviewable patch artifacts so they always match what is applied.
 mkdir -p "$REPO_ROOT/scripts/patches"
 git -C "$AUDIOCPP_DIR/external/ggml" diff -- src/ggml-vulkan/ggml-vulkan.cpp > "$REPO_ROOT/scripts/patches/ggml_rdna1_buffer_memset.patch" || true
 git -C "$AUDIOCPP_DIR" diff -- external/sentencepiece/CMakeLists.txt > "$REPO_ROOT/scripts/patches/audio_cpp_space_safe_build.patch" || true
+git -C "$AUDIOCPP_DIR/external/ggml" diff -- src/ggml-vulkan/vulkan-shaders/vulkan-shaders-gen.cpp > "$REPO_ROOT/scripts/patches/ggml_shader_compile_robustness.patch" || true
 echo "[patch] ggml commit: $(git -C "$AUDIOCPP_DIR/external/ggml" rev-parse HEAD 2>/dev/null || echo '?')"
 echo "[patch] Patch artifacts: $REPO_ROOT/scripts/patches/"

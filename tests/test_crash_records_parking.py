@@ -24,7 +24,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from the_oracle.crash import bundle
+from rhetoric.crash import bundle
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 CERTIFIERS = (REPO_ROOT / "scripts" / "certify_gui.py",)
@@ -140,7 +140,7 @@ def test_both_certifiers_park_and_restore_the_store() -> None:
 
 def test_the_park_scan_can_actually_see_its_literals() -> None:
     """Vacuity guard: the scans above must match real call sites."""
-    owner = (REPO_ROOT / "src" / "the_oracle" / "crash" / "bundle.py").read_text(encoding="utf-8")
+    owner = (REPO_ROOT / "src" / "rhetoric" / "crash" / "bundle.py").read_text(encoding="utf-8")
     assert "def park_records(" in owner
     assert "def restore_parked_records(" in owner
 

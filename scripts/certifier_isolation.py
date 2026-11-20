@@ -2,7 +2,7 @@
 """The certifier family's throwaway config root: one owner for the whole policy.
 
 ``certify_gui.py`` and ``certify_theme_switch.py`` both need the same three
-things before they touch Qt or ``the_oracle``, and each used to implement them
+things before they touch Qt or ``rhetoric``, and each used to implement them
 itself — the mkdtemp, the two environment redirects, and a reap loop with the
 same five attempts, the same pause and the same warning, byte-for-byte. This
 module is that preamble once, so the policy has one place to be right and one
@@ -39,8 +39,8 @@ What the policy is, and why each part of it exists:
   exactly where the harnesses' /tmp litter came from, one root per run.
 
 Ordering, and the one rule callers cannot delegate: **the redirect has to happen
-before the first ``the_oracle`` import.** Nothing here imports the package (this
-module is deliberately Qt-free and ``the_oracle``-free — it must be importable
+before the first ``rhetoric`` import.** Nothing here imports the package (this
+module is deliberately Qt-free and ``rhetoric``-free — it must be importable
 before the config root is known, and it must stay importable at interpreter exit,
 when Qt's C++ application may already be gone), so the ordering holds only if the
 caller imports THIS module and calls ``isolated_config_root`` above its own

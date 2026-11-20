@@ -8,7 +8,7 @@ Chatterbox ggml model — and a skip is indistinguishable from a pass in a green
 run, so the suite stayed green while covering nothing.
 
 This prepares all three and then refuses to let anything skip: it runs the suite
-with ``ORACLE_FAIL_ON_SKIP=1`` (see ``tests/skip_audit.py``), so a skip fails the
+with ``RHETORIC_FAIL_ON_SKIP=1`` (see ``tests/skip_audit.py``), so a skip fails the
 job instead of hiding in it.
 
 Before running the suite it asserts the smoke's *own* three gates resolve — the
@@ -88,7 +88,7 @@ def check_gates() -> dict[str, object]:
     from what the test checks. Raises with the failing gate named.
     """
     sys.path.insert(0, str(REPO_ROOT / "src"))
-    from the_oracle.tts_engines.vulkan_backend import (
+    from rhetoric.tts_engines.vulkan_backend import (
         find_audiocpp_binary,
         find_audiocpp_model,
         vulkan_device_available,
@@ -135,9 +135,9 @@ def run_suite(*, strict: bool, extra_args: Sequence[str]) -> None:
     env = dict(os.environ)
     if strict:
         # tests/skip_audit.py turns any skip into a failed run.
-        env["ORACLE_FAIL_ON_SKIP"] = "1"
+        env["RHETORIC_FAIL_ON_SKIP"] = "1"
     argv = [sys.executable, "-m", "pytest", *extra_args]
-    print(f"\n=== {' '.join(argv)}  (ORACLE_FAIL_ON_SKIP={env.get('ORACLE_FAIL_ON_SKIP', 'unset')}) ===", flush=True)
+    print(f"\n=== {' '.join(argv)}  (RHETORIC_FAIL_ON_SKIP={env.get('RHETORIC_FAIL_ON_SKIP', 'unset')}) ===", flush=True)
     completed = subprocess.run(argv, cwd=str(REPO_ROOT), env=env, check=False)
     if completed.returncode != 0:
         raise VulkanSmokeError(f"the suite failed (exit {completed.returncode}) with skips disallowed")
@@ -147,7 +147,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--skip-build", action="store_true", help="Reuse an audiocpp_cli that is already built.")
     parser.add_argument("--skip-model", action="store_true", help="Reuse an already-downloaded model.")
-    parser.add_argument("--allow-skips", action="store_true", help="Run the suite without ORACLE_FAIL_ON_SKIP.")
+    parser.add_argument("--allow-skips", action="store_true", help="Run the suite without RHETORIC_FAIL_ON_SKIP.")
     # Everything after the known flags goes to pytest, so `-- -q tests/...` works
     # with pytest's own option syntax instead of argparse eating the leading dash.
     parser.add_argument("pytest_args", nargs=argparse.REMAINDER, help="Arguments passed to pytest (after --).")

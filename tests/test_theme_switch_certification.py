@@ -45,7 +45,7 @@ def _load(name: str, filename: str):
 
 @pytest.fixture(scope="module")
 def certifier():
-    return _load("oracle_certify_theme_switch", "certify_theme_switch.py")
+    return _load("rhetoric_certify_theme_switch", "certify_theme_switch.py")
 
 
 # --- the verdicts ---------------------------------------------------------------
@@ -73,6 +73,7 @@ def _good(certifier, **overrides):
         "switch_open_gate_events": 18506,
         "switch_rounds": 4,
         "filter_installed": True,
+        "instrumented": True,
         "filter_window_scoped": True,
         "filter_app_scope_installs": 0,
         "filter_calls_ungated": 2920,
@@ -96,6 +97,7 @@ def test_windows_safe_polling_mode_needs_no_native_filter_events(certifier) -> N
     measured = _good(
         certifier,
         safe_polling_mode=True,
+        instrumented=False,
         storm_change_events=0,
         storm_all_events=0,
         storm_after_events=0,
@@ -253,27 +255,27 @@ def test_the_three_terms_and_ours_are_named_in_the_contract(certifier) -> None:
         assert term in docstring, f"{term} vanished from the certifier's contract"
 
 
-def test_the_config_redirect_precedes_every_the_oracle_import() -> None:
-    """A ``the_oracle`` import resolved first would read the real config root.
+def test_the_config_redirect_precedes_every_rhetoric_import() -> None:
+    """A ``rhetoric`` import resolved first would read the real config root.
 
     Since 2026-10-11 the redirect itself is the certifier family's shared helper
     (``scripts/certifier_isolation.py``), so this pins the order and the
-    delegation: a call to ``isolated_config_root`` above every ``the_oracle``
+    delegation: a call to ``isolated_config_root`` above every ``rhetoric``
     import. That the helper redirects both variables — XDG for POSIX, APPDATA
     for Windows — and arms the reap is pinned where it lives, in
     tests/test_certifier_isolation.py.
     """
     source = SCRIPT.read_text(encoding="utf-8")
-    first_import = re.search(r"^(?:from|import) the_oracle", source, re.MULTILINE)
+    first_import = re.search(r"^(?:from|import) rhetoric", source, re.MULTILINE)
 
-    assert first_import is not None, "no the_oracle import found -- the scan went blind"
+    assert first_import is not None, "no rhetoric import found -- the scan went blind"
     assert "from certifier_isolation import isolated_config_root, reap_isolated_root" in source, (
         "the throwaway root no longer comes from the shared helper — a hand-rolled "
         "second copy is what this refactor removed, and a copy has no owner"
     )
     redirect = source.index("_CONFIG_ROOT = isolated_config_root(")
     assert redirect < first_import.start()
-    assert 'isolated_config_root("oracle_theme_switch_cfg_")' in source, (
+    assert 'isolated_config_root("rhetoric_theme_switch_cfg_")' in source, (
         "the sweep's throwaway root must keep its own prefix, so a leaked root names its sweep"
     )
 
@@ -285,7 +287,7 @@ def test_the_window_paths_are_drained_into_the_throwaway() -> None:
     assert "_app_gui.ensure_repo_default_paths = _throwaway_paths" in source
     assert "return ensure_repo_default_paths(_CONFIG_ROOT)" in source
     # Drift guard: app_gui must still expose the seam the drain patches.
-    app_gui = (REPO_ROOT / "src" / "the_oracle" / "app_gui.py").read_text(encoding="utf-8")
+    app_gui = (REPO_ROOT / "src" / "rhetoric" / "app_gui.py").read_text(encoding="utf-8")
     assert "ensure_repo_default_paths(" in app_gui
 
 
@@ -311,13 +313,24 @@ def _run_in_scratch(
     about whatever happens to be sitting in the shared ``/tmp``.
     """
     scratch.mkdir(parents=True, exist_ok=True)
+    # A controlled XDG_RUNTIME_DIR beside (not inside) the scratch: with no
+    # runtime dir in the environment, libpulse falls back to a
+    # ``pulse-<hash>`` directory under TMPDIR that is never removed, which
+    # would land in the scratch and read as the certifier leaving litter.
+    runtime = scratch.with_name(scratch.name + "-runtime")
+    runtime.mkdir(parents=True, exist_ok=True)
+    runtime.chmod(0o700)
     proc = subprocess.run(
         [sys.executable, str(SCRIPT), *args],
         cwd=REPO_ROOT,
         capture_output=True,
         text=True,
         timeout=300,
-        env={**os.environ, "TMPDIR": str(scratch)},
+        env={
+            **os.environ,
+            "TMPDIR": str(scratch),
+            "XDG_RUNTIME_DIR": str(runtime),
+        },
     )
     return proc, sorted(path.name for path in scratch.iterdir())
 
@@ -348,18 +361,18 @@ def test_a_real_run_certifies_and_writes_nothing(tmp_path: Path) -> None:
     without measuring the theme switch at all. tests/test_fast_subset.py asks
     pytest's own collector whether the fast subset still keeps this gate.
     """
-    from the_oracle.platform_support import user_config_root
+    from rhetoric.platform_support import user_config_root
 
-    from tests.helpers import repo_tree_snapshot, snapshot_differences
+    from tests.helpers import repo_tree_snapshot, snapshot_differences, workspace_tree_snapshot
 
-    config_root = user_config_root() / "the_oracle"
-    before_repo = repo_tree_snapshot(REPO_ROOT)
-    before_config = repo_tree_snapshot(config_root) if config_root.exists() else {}
+    config_root = user_config_root() / "rhetoric"
+    before_repo = workspace_tree_snapshot(REPO_ROOT)
+    before_config = repo_tree_snapshot(config_root, hash_contents=False) if config_root.exists() else {}
 
     proc, leftover = _run_in_scratch(tmp_path / "scratch")
 
-    after_repo = repo_tree_snapshot(REPO_ROOT)
-    after_config = repo_tree_snapshot(config_root) if config_root.exists() else {}
+    after_repo = workspace_tree_snapshot(REPO_ROOT)
+    after_config = repo_tree_snapshot(config_root, hash_contents=False) if config_root.exists() else {}
 
     detail = f"rc={proc.returncode}\nstdout tail:\n{proc.stdout[-2000:]}\nstderr tail:\n{proc.stderr[-2000:]}"
     assert proc.returncode == 0, f"the certifier itself failed\n{detail}"

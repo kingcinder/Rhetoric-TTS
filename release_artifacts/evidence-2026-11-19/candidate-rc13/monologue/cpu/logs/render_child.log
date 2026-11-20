@@ -1,0 +1,4 @@
+2026-11-20 03:18:49,021 | INFO | rhetoric.pipeline | Queuing segment 1/1 | utterance=0 | speaker=A
+2026-11-20 03:19:35,344 | INFO | root | input frame rate=25
+2026-11-20 03:19:36,762 | INFO | perth.perth_net.perth_net_implicit.model.perth_net | loaded PerthNet (Implicit) at step 250,000
+2026-11-20 03:19:58,718 | INFO | chatterbox.models.t3.t3 | ✅ EOS token detected! Stopping generation at step 120

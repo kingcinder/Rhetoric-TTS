@@ -33,7 +33,7 @@ sys.modules.setdefault("huggingface_hub", _hub)
 sys.modules.setdefault("huggingface_hub.errors", _hub_errors)
 sys.modules.setdefault("huggingface_hub.utils", _hub_utils)
 
-from the_oracle.utils.audio import sanitize_engine_audio  # noqa: E402
+from rhetoric.utils.audio import sanitize_engine_audio  # noqa: E402
 
 SAMPLE_RATE = 24000
 
@@ -167,7 +167,7 @@ class _FakeModel:
 
 
 def _engine_with(audio, *, variant: str = "standard"):
-    from the_oracle.tts_engines.chatterbox_engine import ChatterboxEngine
+    from rhetoric.tts_engines.chatterbox_engine import ChatterboxEngine
 
     engine = object.__new__(ChatterboxEngine)
     engine.variant = variant
@@ -187,7 +187,7 @@ def _engine_with(audio, *, variant: str = "standard"):
 
 
 def _conditioning():
-    from the_oracle.tts_engines.chatterbox_engine import ChatterboxConditioning
+    from rhetoric.tts_engines.chatterbox_engine import ChatterboxConditioning
 
     return ChatterboxConditioning("id", Path("cond.pt"), "hash", "A", "standard")
 
@@ -226,7 +226,7 @@ def test_chatterbox_engine_still_strips_pain_point_markers() -> None:
 
 
 def _voice_settings():
-    from the_oracle.models.project import VoiceSettings
+    from rhetoric.models.project import VoiceSettings
 
     return VoiceSettings()
 
@@ -234,7 +234,7 @@ def _voice_settings():
 def _vulkan_engine(tmp_path: Path, wav_bytes: bytes, sample_rate: int = SAMPLE_RATE):
     import soundfile as sf
 
-    from the_oracle.tts_engines.vulkan_backend import AudioCppVulkanEngine
+    from rhetoric.tts_engines.vulkan_backend import AudioCppVulkanEngine
 
     engine = AudioCppVulkanEngine.__new__(AudioCppVulkanEngine)
     engine.variant = "standard"
@@ -256,7 +256,7 @@ def _vulkan_engine(tmp_path: Path, wav_bytes: bytes, sample_rate: int = SAMPLE_R
 
 def test_vulkan_engine_rejects_silent_wav(tmp_path, monkeypatch) -> None:
     import soundfile as sf
-    from the_oracle.tts_engines.vulkan_backend import AudioCppVulkanEngine, VulkanConditioning
+    from rhetoric.tts_engines.vulkan_backend import AudioCppVulkanEngine, VulkanConditioning
 
     # The gate under test runs BEFORE _run_command (the stubbed boundary),
     # but constructing the engine's _build_command resolves self.binary /
@@ -289,7 +289,7 @@ def _run_vulkan_synthesize_with_wav(
     """
     import shutil
     import subprocess as _sp
-    from the_oracle.tts_engines.vulkan_backend import AudioCppVulkanEngine, VulkanConditioning
+    from rhetoric.tts_engines.vulkan_backend import AudioCppVulkanEngine, VulkanConditioning
 
     def fake_run(self, command, *, timeout=None):
         command[command.index("--model") + 1] = str(engine._model)
@@ -319,4 +319,4 @@ def test_vulkan_engine_passes_healthy_wav_through(tmp_path, monkeypatch) -> None
 
 def test_cached_reference_type_hides_unused_import() -> None:
     # Silence linters about the conditional import in _vulkan_engine.
-    from the_oracle.models.cache import CachedReference  # noqa: F401
+    from rhetoric.models.cache import CachedReference  # noqa: F401

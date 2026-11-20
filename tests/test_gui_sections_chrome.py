@@ -26,8 +26,8 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QApplication, QSplitter, QWidget
 
-from the_oracle.gui_sections import QHSectionGroup, _COLLAPSED_HEADER_HEIGHT
-from the_oracle.gui_themes import THEMES
+from rhetoric.gui_sections import QHSectionGroup, _COLLAPSED_HEADER_HEIGHT
+from rhetoric.gui_themes import THEMES
 from tests.test_app_gui_profiles import _build_window
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -235,7 +235,7 @@ def _harness_aspects() -> tuple[str, ...]:
     That tuple is what ``--aspects`` validates against, so it is the contract
     CI has to cover. Read from the source rather than imported: importing the
     script makes its throwaway config root and redirects the config environment
-    before any ``the_oracle`` import — the isolation that makes the sweep safe
+    before any ``rhetoric`` import — the isolation that makes the sweep safe
     to run on a developer's machine — so an import here would make the test
     part of what it grades.
     """
@@ -356,7 +356,12 @@ def test_section_chrome_certification_runs_locally_and_passes() -> None:
     detail = (
         f"rc={proc.returncode}\n"
         f"stdout tail:\n{proc.stdout[-2000:]}\n"
-        f"stderr tail:\n{proc.stderr[-2000:]}"
+        # stderr keeps 40k, not 2k: on a native fault the certifier's
+        # faulthandler dump lands in this stream, and the crash stack sits
+        # a whole extension-module list (~15k) before the end of it — a 2k
+        # tail shows only the module list's tail (hosted-runner SIGSEGV,
+        # 2026-11-09).
+        f"stderr tail:\n{proc.stderr[-40000:]}"
     )
     assert proc.returncode == 0, f"the section-chrome certification failed\n{detail}"
 

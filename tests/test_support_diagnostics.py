@@ -11,7 +11,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from the_oracle.support import collect_diagnostics, compact_diagnostics
+from rhetoric.support import collect_diagnostics, compact_diagnostics
 
 
 def _root(tmp_path: Path) -> Path:
@@ -61,13 +61,13 @@ def test_snapshot_has_the_sections_a_triager_needs(tmp_path: Path) -> None:
 
 
 def test_no_home_paths_or_environment_values_leak(tmp_path: Path, monkeypatch) -> None:
-    monkeypatch.setenv("ORACLE_LICENSE_TOKEN", "ORACLE1.secret.value")
+    monkeypatch.setenv("RHETORIC_LICENSE_TOKEN", "ORACLE1.secret.value")
     diagnostics = collect_diagnostics(_root(tmp_path), run_doctor=False)
     text = json.dumps(diagnostics)
     assert str(Path.home()) not in text
     assert "private/story.txt" not in text
     assert "ORACLE1." not in text
-    assert "ORACLE_LICENSE_TOKEN" in diagnostics["environment"]["variables_present"]
+    assert "RHETORIC_LICENSE_TOKEN" in diagnostics["environment"]["variables_present"]
     assert "secret.value" not in text
     assert diagnostics["environment"]["values_included"] is False
 

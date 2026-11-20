@@ -1,0 +1,11 @@
+2026-11-17 local, fresh Docker ubuntu:24.04; command ran with --network none and read-only kit bind mount.
+Pre-install /kit/SHA256SUMS verification completed with all 116 entries OK.
+/kit/install.sh installed the kit's runtime packages, Rhetoric 1.5.0 package, CPU model cache, GGUF and audio.cpp binary.
+/usr/bin/rhetoric --version -> rhetoric 1.5.0
+/usr/bin/rhetoric --help -> exit 0
+/usr/bin/rhetoric license-status -> JSON state=no_token, exit 1 (expected; confirms no activation was present).
+/usr/share/applications/rhetoric.desktop present; CPU model cache ref present.
+/kit/uninstall.sh -> Removing rhetoric (1.5.0) ...
+Postconditions: dpkg rhetoric absent; /usr/bin/rhetoric, /opt/rhetoric and desktop entry absent; CPU model cache ref retained.
+Overall scoped lifecycle smoke: PASS. Full personal-data, settings, project and reinstall/upgrade lifecycle: NOT TESTED.
+Docker command exit: 0. No network was configured for the container. The original failed smoke log remains preserved separately.

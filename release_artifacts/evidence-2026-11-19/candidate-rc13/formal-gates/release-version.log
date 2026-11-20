@@ -1,0 +1,8 @@
+COMMAND: /media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/bin/python scripts/release.py --check
+EXIT: 0
+
+STDOUT:
+single-source version invariant holds
+
+STDERR:
+POST-CUT: CHANGELOG.md:6: the 1.5.0 section is dated 2026-11-12 and today is 2026-11-19 — the by-design post-cut state, not drift: release_checksums/checksums-1.5.0.sha256 is tracked, so that release already ran and its section carries the day it ran. Nothing to fix; --sync-changelog stamps a NEW release, not this one.

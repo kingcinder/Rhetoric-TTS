@@ -25,12 +25,25 @@ def test_packaging_uses_rhetoric_distribution_filenames() -> None:
 
 def _load_builder():
     path = REPO_ROOT / "scripts" / "build_frozen_linux.py"
-    spec = importlib.util.spec_from_file_location("oracle_frozen_linux_builder", path)
+    spec = importlib.util.spec_from_file_location("rhetoric_frozen_linux_builder", path)
     assert spec and spec.loader
     module = importlib.util.module_from_spec(spec)
     sys.modules[spec.name] = module
     spec.loader.exec_module(module)
     return module
+
+
+def test_deb_declares_the_runtime_libraries_the_frozen_app_needs() -> None:
+    """Measured in a clean ubuntu:24.04 container on 2026-11-14.
+
+    Without these the frozen binary aborts before the window appears:
+    libGL.so.1, then libpulse.so.0, then the xcb platform plugin. The .deb
+    previously declared no Depends at all, so a clean machine installed it and
+    could not start it.
+    """
+    builder = _load_builder()
+    depends = {name.strip() for name in builder.DEB_DEPENDS.split(",")}
+    assert {"libgl1", "libpulse0", "libxcb-cursor0", "libxkbcommon0"} <= depends
 
 
 def test_frozen_spec_has_no_model_or_secret_inputs() -> None:
@@ -40,6 +53,12 @@ def test_frozen_spec_has_no_model_or_secret_inputs() -> None:
     assert "HF_HOME" not in spec
     assert "license-signing-seed" not in spec
     assert "packaging" in spec and "entrypoint.py" in spec
+
+
+def test_frozen_spec_collects_torchvision_stable_native_libraries() -> None:
+    spec = (REPO_ROOT / "packaging" / "linux" / "rhetoric.spec").read_text(encoding="utf-8")
+    assert "collect_dynamic_libs(\"torchvision\"" in spec
+    assert 'search_patterns=["**/*.so", "**/*.so.*"]' in spec
 
 
 def test_update_manifest_and_checksums_are_deterministic(tmp_path: Path) -> None:
@@ -78,6 +97,8 @@ def test_cyclonedx_sbom_uses_the_frozen_build_environment(tmp_path: Path, monkey
     assert output.is_file()
     assert captured["command"] == [
         "/venv/bin/pip-audit",
+        "--vulnerability-service",
+        "osv",
         "--format",
         "cyclonedx-json",
         "--output",
@@ -111,6 +132,30 @@ def test_frozen_build_checksums_sbom_but_keeps_it_out_of_update_targets(
     assert update["artifacts"] == []
 
 
+def test_deb_launcher_resolves_binary_from_usr_bin_symlink(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    builder = _load_builder()
+    appdir = tmp_path / "AppDir"
+    (appdir / "usr" / "bin").mkdir(parents=True)
+    (appdir / "usr" / "lib" / "rhetoric").mkdir(parents=True)
+    (appdir / "usr" / "share" / "applications").mkdir(parents=True)
+    (appdir / "usr" / "bin" / "rhetoric").write_text("#!/bin/sh\n", encoding="utf-8")
+    (appdir / "usr" / "lib" / "rhetoric" / "rhetoric").write_bytes(b"frozen executable")
+    (appdir / "usr" / "share" / "applications" / "rhetoric.desktop").write_text(
+        "[Desktop Entry]\nName=Rhetoric\n", encoding="utf-8"
+    )
+
+    def fake_dpkg_build(command, *, check):
+        Path(command[-1]).write_bytes(b"test deb")
+
+    monkeypatch.setattr(builder, "_require_tool", lambda _name: "dpkg-deb")
+    monkeypatch.setattr(builder.subprocess, "run", fake_dpkg_build)
+    builder._build_deb(appdir, tmp_path, "1.5.0")
+
+    link = tmp_path / "deb-root" / "usr" / "bin" / "rhetoric"
+    assert link.is_symlink()
+    assert link.readlink() == Path("/opt/rhetoric/usr/lib/rhetoric/rhetoric")
+
+
 def test_stage_appdir_uses_replaceable_runtime_and_keeps_user_data(tmp_path: Path) -> None:
     builder = _load_builder()
     frozen = tmp_path / "frozen"
@@ -127,7 +172,7 @@ def test_stage_appdir_uses_replaceable_runtime_and_keeps_user_data(tmp_path: Pat
     )
     assert "Exec=rhetoric" in desktop
     assert "models" not in desktop.lower()
-    assert "~/.config/the-oracle" in (appdir / "AppRun").read_text(encoding="utf-8")
+    assert "~/.config/rhetoric" in (appdir / "AppRun").read_text(encoding="utf-8")
 
 
 def test_build_refuses_non_linux_or_non_x86_64(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:

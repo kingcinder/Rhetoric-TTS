@@ -1,0 +1,135 @@
+diff --git a/external/ggml/src/ggml-vulkan/vulkan-shaders/vulkan-shaders-gen.cpp b/external/ggml/src/ggml-vulkan/vulkan-shaders/vulkan-shaders-gen.cpp
+index 7295ef1..df39774 100644
+--- a/external/ggml/src/ggml-vulkan/vulkan-shaders/vulkan-shaders-gen.cpp
++++ b/external/ggml/src/ggml-vulkan/vulkan-shaders/vulkan-shaders-gen.cpp
+@@ -7,6 +7,9 @@
+ #include <vector>
+ #include <map>
+ #include <thread>
++// ===== BEGIN RHETORIC VENDORED PATCH (shader chrono include) =====
++#include <chrono>
++// ===== END RHETORIC VENDORED PATCH (shader chrono include) =====
+ #include <mutex>
+ #include <future>
+ #include <queue>
+@@ -33,6 +36,15 @@
+ #define ASYNCIO_CONCURRENCY 64
+ 
+ std::mutex lock;
++
++// ===== BEGIN RHETORIC VENDORED PATCH (shader compile latch: declaration) =====
++// A shader that failed to compile used to be dropped silently: the generated
++// .cpp lacked its definitions while the header still declared them, so the
++// build failed far away at link time. Latch it and fail the generator.
++// glslc writes no .spv when it fails, so an empty embed is the failure test;
++// its exit status is not consulted and warnings on stderr are not fatal.
++static bool rhetoric_shader_compile_failed = false;
++// ===== END RHETORIC VENDORED PATCH (shader compile latch: declaration) =====
+ std::vector<std::pair<std::string, std::string>> shader_fnames;
+ std::locale c_locale("C");
+ 
+@@ -138,6 +150,28 @@ void execute_command(std::vector<std::string>& command, std::string& stdout_str,
+     }
+ 
+     pid_t pid = fork();
++    // ===== BEGIN RHETORIC VENDORED PATCH (shader fork retry) =====
++    // This process runs up to min(16, cores) glslc forks at once. On a loaded
++    // CI runner the pids cgroup limit makes fork() fail with EAGAIN; the old
++    // code threw, the caller logged and dropped that shader, and the gap only
++    // surfaced much later as undefined matmul_id_subgroup_* at link time.
++    // Wait up to 10s (40 x 250ms) for a slot instead of losing the shader. A
++    // shader that uses the whole window means the shortage is not a burst, and
++    // the compile latch it then sets stops every other wait immediately.
++    for (int rhetoric_fork_attempt = 0; pid < 0 && rhetoric_fork_attempt < 40; ++rhetoric_fork_attempt) {
++        if (errno != EAGAIN && errno != ENOMEM) {
++            break;
++        }
++        {
++            std::lock_guard<std::mutex> rhetoric_guard(lock);
++            if (rhetoric_shader_compile_failed) {
++                break;
++            }
++        }
++        std::this_thread::sleep_for(std::chrono::milliseconds(250));
++        pid = fork();
++    }
++    // ===== END RHETORIC VENDORED PATCH (shader fork retry) =====
+     if (pid < 0) {
+         std::cerr << strerror(errno) << "\n";
+         throw std::runtime_error("Failed to fork process");
+@@ -373,12 +407,16 @@ void string_to_spv_func(std::string name, std::string in_path, std::string out_p
+ 
+         execute_command(cmd, stdout_str, stderr_str);
+         if (!stderr_str.empty()) {
+-            std::cerr << "cannot compile " << name << "\n\n";
++            // ===== BEGIN RHETORIC VENDORED PATCH (shader compile: stderr is not fatal) =====
++            // glslc writes warnings to stderr as well, so text here does not
++            // mean the shader failed. Print it and carry on; the embed step
++            // rejects a missing .spv, which glslc writes only on success.
++            std::cerr << "glslc wrote to stderr for " << name << "\n\n";
+             for (const auto& part : cmd) {
+                 std::cerr << part << " ";
+             }
+             std::cerr << "\n\n" << stderr_str << std::endl;
+-            return;
++            // ===== END RHETORIC VENDORED PATCH (shader compile: stderr is not fatal) =====
+         }
+ 
+         if (dep_file) {
+@@ -396,6 +434,12 @@ void string_to_spv_func(std::string name, std::string in_path, std::string out_p
+         std::lock_guard<std::mutex> guard(lock);
+         shader_fnames.push_back(std::make_pair(name, out_path));
+     } catch (const std::exception& e) {
++        // ===== BEGIN RHETORIC VENDORED PATCH (shader compile latch: catch) =====
++        {
++            std::lock_guard<std::mutex> rhetoric_guard(lock);
++            rhetoric_shader_compile_failed = true;
++        }
++        // ===== END RHETORIC VENDORED PATCH (shader compile latch: catch) =====
+         std::cerr << "Error executing command for " << name << ": " << e.what() << std::endl;
+     }
+ }
+@@ -1038,6 +1082,12 @@ void write_output_files() {
+         if (input_filepath != "") {
+             std::string data = read_binary_file(path);
+             if (data.empty()) {
++                // ===== BEGIN RHETORIC VENDORED PATCH (shader compile latch: embed) =====
++                {
++                    std::lock_guard<std::mutex> rhetoric_guard(lock);
++                    rhetoric_shader_compile_failed = true;
++                }
++                // ===== END RHETORIC VENDORED PATCH (shader compile latch: embed) =====
+                 continue;
+             }
+ 
+@@ -1133,6 +1183,16 @@ void write_output_files() {
+     }
+     }
+ 
++    // ===== BEGIN RHETORIC VENDORED PATCH (shader compile latch: exit) =====
++    // Refuse to emit a header/cpp pair with shader definitions missing: the
++    // linker would report an undefined matmul_id_subgroup_* symbol much later,
++    // far from the shader that actually failed.
++    if (rhetoric_shader_compile_failed) {
++        std::cerr << "a Vulkan shader failed to compile or embed; refusing to write "
++                     "a shader pair with missing definitions" << std::endl;
++        return;
++    }
++    // ===== END RHETORIC VENDORED PATCH (shader compile latch: exit) =====
+     if (input_filepath == "") {
+         write_file_if_changed(target_hpp, hdr.str());
+     }
+@@ -1184,5 +1244,13 @@ int main(int argc, char** argv) {
+ 
+     write_output_files();
+ 
++    // ===== BEGIN RHETORIC VENDORED PATCH (shader compile latch: exit code) =====
++    // write_output_files() reports the failure above and writes nothing; the
++    // build has to stop here rather than compile an incomplete translation unit.
++    if (rhetoric_shader_compile_failed) {
++        return 1;
++    }
++    // ===== END RHETORIC VENDORED PATCH (shader compile latch: exit code) =====
++
+     return EXIT_SUCCESS;
+ }

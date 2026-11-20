@@ -17,21 +17,20 @@ from unittest.mock import MagicMock
 import numpy as np
 import pytest
 
-from the_oracle.emotion.goemotions import EmotionResult, GoEmotionsClassifier
-from the_oracle.emotion.infer import EmotionInferer, apply_emotion_settings
-from the_oracle.models.project import Utterance, VoiceSettings
-from the_oracle.speaker_attribution.assign import SpeakerAttributor
-from the_oracle.speaker_attribution.heuristics import (
+from rhetoric.emotion.goemotions import EmotionResult, GoEmotionsClassifier
+from rhetoric.emotion.infer import EmotionInferer, apply_emotion_settings
+from rhetoric.models.project import Utterance, VoiceSettings
+from rhetoric.speaker_attribution.assign import SpeakerAttributor
+from rhetoric.speaker_attribution.heuristics import (
     MAX_SPEAKERS,
     AnchorAssignments,
     DualSpeakerAttributor,
 )
-from the_oracle.text_ingest import TextIngestor, ingest_text_file
-from the_oracle.text_repair.directives import parse_directives
-from the_oracle.text_repair.grammar import GrammarCorrector
-from the_oracle.text_repair.normalize import normalize_text
-from the_oracle.text_repair.punctuation import PunctuationRestorer
-from the_oracle.voice_catalog import blend_catalog_path, blend_voice_choices
+from rhetoric.text_ingest import TextIngestor, ingest_text_file
+from rhetoric.text_repair.directives import parse_directives
+from rhetoric.text_repair.grammar import GrammarCorrector
+from rhetoric.text_repair.normalize import normalize_text
+from rhetoric.text_repair.punctuation import PunctuationRestorer
 
 
 @contextlib.contextmanager
@@ -57,7 +56,7 @@ def _stubbed_heavy_imports():
             else:
                 sys.modules.pop(name, None)
         for name in set(sys.modules) - before:
-            if name.split(".")[0] == "the_oracle":
+            if name.split(".")[0] == "rhetoric":
                 sys.modules.pop(name, None)
 
 
@@ -160,46 +159,6 @@ def test_empty_input_does_not_break_strict_zip_wrapper() -> None:
 # ----------------------------------------------------------------------
 
 
-def test_malformed_blend_catalog_entries_are_skipped(tmp_path: Path) -> None:
-    catalog = blend_catalog_path(tmp_path)
-    catalog.parent.mkdir(parents=True, exist_ok=True)
-    catalog.write_text(
-        json.dumps(
-            {
-                "version": 1,
-                "voices": [
-                    "not a dict",
-                    None,
-                    {"name": ""},
-                    {"name": "missing-paths"},
-                    {"name": "bad-weight", "path_a": "a.wav", "path_b": "b.wav", "weight": "abc"},
-                    {"name": "none-weight", "path_a": "a.wav", "path_b": "b.wav", "weight": None},
-                    {"name": 123, "path_a": "a.wav", "path_b": "b.wav"},
-                    {"name": "bad-mode", "path_a": "a.wav", "path_b": "b.wav", "mode": 42},
-                ],
-            }
-        ),
-        encoding="utf-8",
-    )
-
-    # Must not raise (previously: KeyError on voice["path_a"], TypeError on
-    # float(None), and uncaught errors from blend_references).
-    assert blend_voice_choices(tmp_path) == []
-
-
-def test_corrupt_blend_catalog_json_is_treated_as_empty(tmp_path: Path) -> None:
-    catalog = blend_catalog_path(tmp_path)
-    catalog.parent.mkdir(parents=True, exist_ok=True)
-    catalog.write_text("{not valid json", encoding="utf-8")
-
-    assert blend_voice_choices(tmp_path) == []
-
-
-# ----------------------------------------------------------------------
-# 6. Static emotion control mapping (no pipeline instantiation)
-# ----------------------------------------------------------------------
-
-
 def test_controls_for_emotion_needs_no_classifier_instance(monkeypatch: pytest.MonkeyPatch) -> None:
     def _boom(self, *args, **kwargs):
         raise AssertionError("classifier must not be instantiated for a static mapping")
@@ -222,7 +181,7 @@ def _import_smoke_module():
     with _stubbed_heavy_imports():
         import importlib
 
-        return importlib.import_module("the_oracle.real_engine_smoke")
+        return importlib.import_module("rhetoric.real_engine_smoke")
 
 
 def test_smoke_validation_rejects_silent_output(tmp_path: Path) -> None:
@@ -302,7 +261,7 @@ def test_real_smoke_inputs_use_bundled_speech_references(tmp_path: Path) -> None
         repository / "Seashells" / "generic" / "english_male_1.wav"
     ).read_bytes()
     assert paths["speaker_b_reference"].read_bytes() == (
-        repository / "Seashells" / "generic" / "english_reader_1.wav"
+        repository / "Seashells" / "generic" / "chinese_female_1.wav"
     ).read_bytes()
 
 
