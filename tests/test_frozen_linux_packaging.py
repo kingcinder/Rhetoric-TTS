@@ -55,6 +55,12 @@ def test_frozen_spec_has_no_model_or_secret_inputs() -> None:
     assert "packaging" in spec and "entrypoint.py" in spec
 
 
+def test_frozen_spec_collects_torchvision_stable_native_libraries() -> None:
+    spec = (REPO_ROOT / "packaging" / "linux" / "rhetoric.spec").read_text(encoding="utf-8")
+    assert "collect_dynamic_libs(\"torchvision\"" in spec
+    assert 'search_patterns=["**/*.so", "**/*.so.*"]' in spec
+
+
 def test_update_manifest_and_checksums_are_deterministic(tmp_path: Path) -> None:
     builder = _load_builder()
     artifact = tmp_path / "rhetoric.AppImage"
@@ -91,6 +97,8 @@ def test_cyclonedx_sbom_uses_the_frozen_build_environment(tmp_path: Path, monkey
     assert output.is_file()
     assert captured["command"] == [
         "/venv/bin/pip-audit",
+        "--vulnerability-service",
+        "osv",
         "--format",
         "cyclonedx-json",
         "--output",

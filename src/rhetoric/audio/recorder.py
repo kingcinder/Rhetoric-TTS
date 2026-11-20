@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import os
 import re
+import sys
 import threading
 import time
 from dataclasses import dataclass
@@ -41,13 +42,46 @@ class RecorderUnavailableError(RuntimeError):
     """Raised when no capture backend (sounddevice) is importable."""
 
 
+def _import_sounddevice():
+    """Import sounddevice against the PortAudio library bundled by PyInstaller."""
+    runtime_dir = getattr(sys, "_MEIPASS", None)
+    bundled_portaudio = (
+        Path(runtime_dir) / "libportaudio.so.2"
+        if sys.platform == "linux" and getattr(sys, "frozen", False) and runtime_dir
+        else None
+    )
+    if bundled_portaudio is None or not bundled_portaudio.is_file():
+        import sounddevice as backend  # type: ignore[import-not-found]
+
+        return backend
+
+    # PyInstaller collects the versioned library, but Linux find_library may
+    # only consult the system cache. Route sounddevice's import-time lookup to
+    # the exact bundled file so a fresh offline install needs no host PortAudio.
+    import ctypes.util
+
+    find_library = ctypes.util.find_library
+
+    def find_bundled_portaudio(name: str) -> str | None:
+        if name == "portaudio":
+            return str(bundled_portaudio)
+        return find_library(name)
+
+    ctypes.util.find_library = find_bundled_portaudio
+    try:
+        import sounddevice as backend  # type: ignore[import-not-found]
+    finally:
+        ctypes.util.find_library = find_library
+    return backend
+
+
 def initialize_capture_backend() -> bool:
     """Load PortAudio only when microphone capture is requested."""
     global _sd
     if _sd is not None:
         return True
     try:  # sounddevice ships its own PortAudio; degrade gracefully if absent.
-        import sounddevice as backend  # type: ignore[import-not-found]
+        backend = _import_sounddevice()
     except Exception:  # pragma: no cover - depends on local install state
         return False
     _sd = backend

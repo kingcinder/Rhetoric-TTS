@@ -3,7 +3,7 @@
 
 from pathlib import Path
 
-from PyInstaller.utils.hooks import collect_data_files, copy_metadata
+from PyInstaller.utils.hooks import collect_data_files, collect_dynamic_libs, copy_metadata
 
 repo = Path(SPECPATH).parents[1]
 datas = collect_data_files("rhetoric")
@@ -37,7 +37,7 @@ datas.append(
 a = Analysis(
     [str(repo / "packaging" / "linux" / "entrypoint.py")],
     pathex=[str(repo / "src")],
-    binaries=[],
+    binaries=collect_dynamic_libs("torchvision", search_patterns=["**/*.so", "**/*.so.*"]),
     datas=datas,
     hiddenimports=[],
     excludes=["tests", "pytest"],

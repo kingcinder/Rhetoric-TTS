@@ -374,7 +374,7 @@ def test_release_check_ignores_nested_runtime_dependency_versions(tmp_path: Path
     appdir.mkdir(parents=True)
     wheels.mkdir(parents=True)
     (appdir / "libXau-6.0.0.so").write_bytes(b"runtime library")
-    (wheels / "torch-2.6.0+cpu-cp312-cp312-manylinux.whl").write_bytes(b"dependency wheel")
+    (wheels / "torch-2.15.0+cpu-cp312-cp312-manylinux.whl").write_bytes(b"dependency wheel")
 
     assert release.check(repo) == []
 

@@ -479,8 +479,8 @@ def test_torch_and_chatterbox_wheels_are_downloaded_without_deps(bundle_builder,
 
     pip evaluates torch's ``platform_system == "Linux"`` nvidia markers against
     the building host, so a resolving `pip download --platform win_amd64
-    torch==2.6.0` fails on a Linux builder ("No matching distribution found for
-    nvidia-cudnn-cu12"). chatterbox-tts has the same effect one level up: it
+    torch==2.15.0` fails on a Linux builder when pip evaluates requirements
+    against the host instead of the target. chatterbox-tts has the same effect one level up: it
     requires torch, which would pull the PyPI wheel family instead of the
     bundled one. Both are installed --no-deps by manage_install, so both are
     downloaded --no-deps here.
@@ -499,7 +499,10 @@ def test_torch_and_chatterbox_wheels_are_downloaded_without_deps(bundle_builder,
     assert "--no-deps" in torch_download
     assert "--no-deps" not in torch_deps, "torch's runtime deps must resolve normally"
     assert set(bundle_builder.TORCH_RUNTIME_DEPS) <= set(torch_deps)
-    assert all(pkg in torch_deps for pkg in ("sympy", "networkx", "jinja2"))
+    assert all(
+        any(requirement.startswith(pkg) for requirement in torch_deps)
+        for pkg in ("sympy", "networkx", "jinja2")
+    )
     assert "--platform" in torch_deps and "win_amd64" in torch_deps
 
     # Every package that requires torch or torchaudio is bundled --no-deps:
@@ -524,7 +527,7 @@ def test_torch_and_chatterbox_wheels_are_downloaded_without_deps(bundle_builder,
     assert "--constraint" in resolving_download
     constraints = Path(resolving_download[resolving_download.index("--constraint") + 1])
     pinned = constraints.read_text(encoding="utf-8")
-    assert "torch==2.6.0" in pinned
+    assert "torch==2.15.0" in pinned
 
 
 def _write_fake_torch_wheel(wheels: Path, metadata_lines: list[str]) -> Path:
@@ -569,6 +572,16 @@ def test_torch_runtime_deps_come_from_the_bundled_wheel_metadata(bundle_builder,
 def test_torch_runtime_deps_fall_back_without_a_torch_wheel(bundle_builder, tmp_path) -> None:
     wheels = tmp_path / "wheels"
     wheels.mkdir()
+    assert bundle_builder.TORCH_RUNTIME_DEPS == (
+        "filelock",
+        "typing-extensions>=4.13.0",
+        "setuptools>=77.0.3",
+        "networkx",
+        "jinja2",
+        "fsspec",
+        "sympy>=1.13.3",
+        "mpmath",
+    )
     assert bundle_builder.torch_dependency_pins(
         wheels, platform="windows", python_version="3.12"
     ) == list(bundle_builder.TORCH_RUNTIME_DEPS)
@@ -658,9 +671,9 @@ def test_torch_constraints_use_the_local_cpu_wheel_versions(bundle_builder, tmp_
     wheels = tmp_path / "wheels" / "windows"
     wheels.mkdir(parents=True)
     for name in (
-        "torch-2.6.0+cpu-cp312-cp312-win_amd64.whl",
-        "torchaudio-2.6.0+cpu-cp312-cp312-win_amd64.whl",
-        "torchvision-0.21.0+cpu-cp312-cp312-win_amd64.whl",
+        "torch-2.15.0+cpu-cp312-cp312-win_amd64.whl",
+        "torchaudio-2.11.1+cpu-cp312-cp312-win_amd64.whl",
+        "torchvision-0.29.2+cpu-cp312-cp312-win_amd64.whl",
         "numpy-2.4.5-cp312-cp312-win_amd64.whl",
     ):
         (wheels / name).write_bytes(b"")
@@ -668,9 +681,9 @@ def test_torch_constraints_use_the_local_cpu_wheel_versions(bundle_builder, tmp_
     constraints = bundle_builder.torch_constraints(wheels)
     pins = constraints.read_text(encoding="utf-8").split()
     assert pins == [
-        "torch==2.6.0+cpu",
-        "torchaudio==2.6.0+cpu",
-        "torchvision==0.21.0+cpu",
+        "torch==2.15.0+cpu",
+        "torchaudio==2.11.1+cpu",
+        "torchvision==0.29.2+cpu",
     ]
 def _make_fake_run_capture():
     captured: dict = {}

@@ -205,6 +205,9 @@ fi
 dpkg -i "$ROOT"/runtime-debs/*.deb
 dpkg --configure --pending
 dpkg -i "$ROOT"/rhetoric_1.5.0_amd64.deb
+install -m 0644 /dev/null "$app_root/.rhetoric_offline"
+install -d -m 0755 "$app_root/Seashells"
+cp -an "$ROOT/Seashells/." "$app_root/Seashells/"
 if [ -e "$audiocpp_path" ]; then
   cmp -s "$ROOT/audio.cpp/bin/audiocpp_cli" "$audiocpp_path" || { echo "Existing audio.cpp binary differs; refusing to overwrite: $audiocpp_path" >&2; exit 2; }
 else
@@ -230,7 +233,7 @@ target_gid=$4
 target_home=$6
 hf_cache=$target_home/.cache/huggingface/hub
 hf_repo=$hf_cache/models--ResembleAI--chatterbox
-install -d -o "$target_uid" -g "$target_gid" -m 0755 "$hf_cache" "$hf_repo"
+install -d -o "$target_uid" -g "$target_gid" -m 0755 "$target_home/.cache" "$target_home/.cache/huggingface" "$hf_cache" "$hf_repo"
 cp -a "$ROOT/models/hf_cache/models--ResembleAI--chatterbox/." "$hf_repo/"
 chown -R "$target_uid:$target_gid" "$hf_repo"
 echo "Installed pinned CPU Chatterbox cache for $target_user."
@@ -256,7 +259,7 @@ if [ -f "$model_marker" ]; then
   rmdir /opt/rhetoric/models/Chatterbox-GGUF /opt/rhetoric/models 2>/dev/null || true
 fi
 dpkg --remove rhetoric
-rm -f "$app_root/rhetoric_license.json"
+rm -f "$app_root/.rhetoric_offline"
 rmdir "$app_root" /opt/rhetoric/usr/lib /opt/rhetoric/usr /opt/rhetoric 2>/dev/null || true
 """
 
@@ -268,15 +271,18 @@ def _write_readme(kit_dir: Path, manifest: dict[str, object]) -> None:
     (kit_dir / "README.md").write_text(
         "# Rhetoric 1.5.0 Ubuntu 24.04 amd64 offline kit\n\n"
         "This kit installs the frozen CPU application, its declared Ubuntu runtime packages, "
-        "the pinned Chatterbox CPU and Vulkan models, the audio.cpp CLI, and Ubuntu 24.04's Mesa RADV Vulkan ICD.\n\n"
+        "the pinned Chatterbox CPU and Vulkan models, owner-provided Seashells voice references, the audio.cpp CLI, "
+        "and Ubuntu 24.04's Mesa RADV Vulkan ICD.\n\n"
         "Run `sudo ./install.sh` after extraction. The installer seeds the invoking user (or root) "
         "Hugging Face cache and installs the GGUF under `/opt/rhetoric/models`. Remove the app with "
-        "`sudo ./uninstall.sh`; the per-user CPU model cache is retained.\n\n"
+        "`sudo ./uninstall.sh`; the per-user CPU model cache, activated license, and installed Seashells directory are retained.\n\n"
         f"CPU model: `{CHATTERBOX_REPO}` at `{CHATTERBOX_REVISION}`, {cpu_size:,} bytes across five files.\n\n"
         f"Vulkan model: `{vulkan['file']}`, {vulkan['size']:,} bytes, from the audio.cpp `chatterbox_q8_0` package.\n\n"
         "The kit includes `audiocpp_cli`, the Vulkan loader, and the Mesa RADV userspace driver. "
         "The AMDGPU kernel module, firmware, kernel, and `/dev/dri` device access remain host requirements. "
-        "Uninstall removes kit-owned app/model files; shared Ubuntu runtime packages and the user's CPU cache remain.\n",
+        "Uninstall removes kit-owned app/model files; shared Ubuntu runtime packages, the user's CPU cache, "
+        "the activation license, and installed voice references remain. The voice inventory's specific licenses "
+        "and attribution notices are included.\n",
         encoding="utf-8",
     )
 
@@ -296,6 +302,13 @@ def build_kit(
     if release_deb.is_file():
         shutil.copy2(release_deb, kit_dir / release_deb.name)
     manifest = stage_models(model_cache, vulkan_model, kit_dir / "models")
+    seashell_source = REPO_ROOT / "Seashells"
+    if not seashell_source.is_dir():
+        raise BuildError(f"missing owner-provided voice reference directory: {seashell_source}")
+    shutil.copytree(seashell_source, kit_dir / "Seashells", dirs_exist_ok=True)
+    voice_files = sorted(path for path in (kit_dir / "Seashells").rglob("*") if path.is_file())
+    if not voice_files:
+        raise BuildError("the offline kit must include at least one default voice reference")
     audio_manifest = stage_audio_cpp(audiocpp_binary, kit_dir)
     if not mesa_vulkan_deb.is_file() or not mesa_vulkan_deb.name.startswith("mesa-vulkan-drivers_"):
         raise BuildError(f"expected the Ubuntu mesa-vulkan-drivers amd64 package: {mesa_vulkan_deb}")
@@ -305,6 +318,17 @@ def build_kit(
         "format": 1,
         "target": "Ubuntu 24.04 amd64",
         "models": manifest,
+        "voice_assets": {
+            "directory": "Seashells",
+            "files": [
+                {
+                    "file": str(path.relative_to(kit_dir)),
+                    "size": path.stat().st_size,
+                    "sha256": _sha256(path),
+                }
+                for path in voice_files
+            ],
+        },
         "audio_cpp": audio_manifest,
         "vulkan_runtime": {
             "package": staged_mesa.name,
@@ -329,6 +353,7 @@ def build_kit(
         kit_dir / "manifest.json",
         kit_dir / "models" / "SHA256SUMS",
         *sorted(path for path in (kit_dir / "models").rglob("*") if path.is_file()),
+        *voice_files,
         *sorted(path for path in (kit_dir / "audio.cpp").rglob("*") if path.is_file()),
     ]
     (kit_dir / "SHA256SUMS").write_text(
@@ -346,10 +371,12 @@ def build_kit(
 
 def _write_release_manifests(artifact_dir: Path, offline_archive: Path) -> None:
     artifacts = [
-        artifact_dir / "rhetoric-1.5.0-x86_64.AppImage",
         artifact_dir / "rhetoric_1.5.0_amd64.deb",
         offline_archive,
     ]
+    appimage = artifact_dir / "rhetoric-1.5.0-x86_64.AppImage"
+    if appimage.is_file():
+        artifacts.append(appimage)
     missing = [path.name for path in artifacts if not path.is_file()]
     if missing:
         raise BuildError(f"release artifacts missing beside offline kit: {', '.join(missing)}")

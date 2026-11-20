@@ -80,6 +80,20 @@ def test_record_stores_digest_of_current_text(root: Path) -> None:
     assert os.path.exists(path)
 
 
+def test_readonly_install_stores_acceptance_in_user_config(
+    root: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config_home = root / "home" / ".config"
+    monkeypatch.setenv("XDG_CONFIG_HOME", str(config_home))
+    monkeypatch.setattr(eula_acceptance.os, "access", lambda path, mode: Path(path) != root)
+
+    path = eula_acceptance.record_acceptance(root)
+
+    assert path == config_home / "rhetoric" / eula_acceptance.ACCEPTANCE_FILENAME
+    assert eula_acceptance.is_accepted(root) is True
+    assert not (root / eula_acceptance.ACCEPTANCE_FILENAME).exists()
+
+
 def test_frozen_bundle_eula_found_via_meipass(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """In a PyInstaller build __file__ is a pseudo-path; the bundle base
     (sys._MEIPASS) is where the collected EULA text actually lives."""

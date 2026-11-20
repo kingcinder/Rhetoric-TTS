@@ -79,6 +79,8 @@ def write_cyclonedx_sbom(repo: Path, output: Path) -> Path:
     subprocess.run(
         [
             _require_tool("pip-audit"),
+            "--vulnerability-service",
+            "osv",
             "--format",
             "cyclonedx-json",
             "--output",

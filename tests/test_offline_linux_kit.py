@@ -147,7 +147,17 @@ def test_model_install_script_seeds_user_hub_cache_and_system_vulkan_model() -> 
     assert 'models/Chatterbox-GGUF/chatterbox-q8_0.gguf' in script
     assert "hf_cache=$target_home/.cache/huggingface/hub" in script
     assert "install -d -m 0755 /opt/rhetoric/models/Chatterbox-GGUF" in script
+    assert 'install -m 0644 /dev/null "$app_root/.rhetoric_offline"' in script
+    assert 'cp -an "$ROOT/Seashells/." "$app_root/Seashells/"' in script
     assert script.index("Existing Vulkan model differs") < script.index('dpkg -i "$ROOT"/rhetoric_1.5.0_amd64.deb')
+
+
+def test_model_install_script_gives_user_ownership_of_cache_parents() -> None:
+    builder = _load_builder()
+
+    script = builder.install_script_text()
+
+    assert 'install -d -o "$target_uid" -g "$target_gid" -m 0755 "$target_home/.cache" "$target_home/.cache/huggingface" "$hf_cache" "$hf_repo"' in script
 
 
 def test_uninstaller_removes_only_a_gguf_owned_by_the_offline_kit() -> None:
@@ -158,7 +168,9 @@ def test_uninstaller_removes_only_a_gguf_owned_by_the_offline_kit() -> None:
     assert ".rhetoric-offline-kit-owns-gguf" in script
     assert "rm -f /opt/rhetoric/models/Chatterbox-GGUF/chatterbox-q8_0.gguf" in script
     assert ".cache/huggingface" not in script
-    assert 'rm -f "$app_root/rhetoric_license.json"' in script
+    assert 'rm -f "$app_root/rhetoric_license.json"' not in script
+    assert 'rm -f "$app_root/.rhetoric_offline"' in script
+    assert 'rm -rf "$app_root/Seashells"' not in script
     assert 'rmdir "$app_root" /opt/rhetoric/usr/lib /opt/rhetoric/usr /opt/rhetoric' in script
 
 
@@ -180,6 +192,10 @@ def test_audio_cpp_install_and_uninstall_are_scoped_to_kit_owned_paths() -> None
 def test_kit_builder_stages_pinned_audio_cpp_binary_and_radv_package(tmp_path: Path) -> None:
     builder = _load_builder()
     _install_fake_audio_cpp_checkout(builder, tmp_path / "checkout")
+    voice = builder.REPO_ROOT / "Seashells" / "generic" / "english_male_1.wav"
+    voice.parent.mkdir(parents=True)
+    voice.write_bytes(b"stock reference")
+    (voice.parent / "ATTRIBUTION.md").write_text("Apache-2.0 attribution\n", encoding="utf-8")
     cache = tmp_path / "source-hub"
     repo = cache / "models--ResembleAI--chatterbox"
     snapshot = repo / "snapshots" / builder.CHATTERBOX_REVISION
@@ -211,11 +227,17 @@ def test_kit_builder_stages_pinned_audio_cpp_binary_and_radv_package(tmp_path: P
     assert staged_cli.stat().st_mode & 0o111
     assert (kit / "runtime-debs" / mesa.name).read_bytes() == b"debian package"
     assert "audio.cpp/bin/audiocpp_cli" in (kit / "SHA256SUMS").read_text()
+    assert (kit / "Seashells/generic/english_male_1.wav").read_bytes() == b"stock reference"
+    assert "Seashells/generic/ATTRIBUTION.md" in (kit / "SHA256SUMS").read_text()
 
 
 def test_kit_checksums_cover_the_hub_revision_ref(tmp_path: Path) -> None:
     builder = _load_builder()
     _install_fake_audio_cpp_checkout(builder, tmp_path / "checkout")
+    voice = builder.REPO_ROOT / "Seashells" / "generic" / "english_male_1.wav"
+    voice.parent.mkdir(parents=True)
+    voice.write_bytes(b"stock reference")
+    (voice.parent / "ATTRIBUTION.md").write_text("Apache-2.0 attribution\n", encoding="utf-8")
     cache = tmp_path / "source-hub"
     repo = cache / "models--ResembleAI--chatterbox"
     snapshot = repo / "snapshots" / builder.CHATTERBOX_REVISION
@@ -254,6 +276,22 @@ def test_kit_checksums_cover_the_hub_revision_ref(tmp_path: Path) -> None:
     release = __import__("json").loads((tmp_path / "update-manifest.json").read_text())
     assert {item["name"] for item in release["artifacts"]} == {
         "rhetoric-1.5.0-x86_64.AppImage",
+        "rhetoric_1.5.0_amd64.deb",
+        "offline.tar.gz",
+    }
+
+
+def test_release_manifests_support_offline_kit_without_appimage(tmp_path: Path) -> None:
+    builder = _load_builder()
+    deb = tmp_path / "rhetoric_1.5.0_amd64.deb"
+    archive = tmp_path / "offline.tar.gz"
+    deb.write_bytes(b"deb")
+    archive.write_bytes(b"offline installer")
+
+    builder._write_release_manifests(tmp_path, archive)
+
+    release = __import__("json").loads((tmp_path / "update-manifest.json").read_text())
+    assert {item["name"] for item in release["artifacts"]} == {
         "rhetoric_1.5.0_amd64.deb",
         "offline.tar.gz",
     }

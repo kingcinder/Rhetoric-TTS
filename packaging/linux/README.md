@@ -27,5 +27,8 @@ serial-number gate. The AppImage and package keep per-user settings and model
 caches under `~/.config/rhetoric` and `~/.cache`; uninstall removes the
 installed application tree and leaves those paths in place.
 
-The owner supplies signing keys later. Signing, publication, and clean-machine
-acceptance are release-phase steps and are not performed by this recipe.
+This recipe emits unsigned artifacts. Release artifact signing uses the
+separate GPG workflow in `docs/release/SIGNING.md`; the release identity,
+candidate signing authorization, publication, and clean-machine acceptance are
+owner-controlled steps and are not performed by this recipe. The activation
+license seed is a separate Ed25519 key and is never used to sign artifacts.

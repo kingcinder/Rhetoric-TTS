@@ -72,12 +72,12 @@ from distribution_locks import build_lock  # noqa: E402
 #: same on every platform.
 TORCH_RUNTIME_DEPS = (
     "filelock",
-    "typing-extensions",
+    "typing-extensions>=4.13.0",
+    "setuptools>=77.0.3",
     "networkx",
     "jinja2",
-    "MarkupSafe",
     "fsspec",
-    "sympy",
+    "sympy>=1.13.3",
     "mpmath",
 )
 
@@ -86,8 +86,7 @@ TORCH_RUNTIME_DEPS = (
 #: evaluates torch's ``platform_system == "Linux"`` nvidia markers against the
 #: *building* host, so a resolving cross-platform download of any package that
 #: requires torch fails on a Linux builder even when the target is Windows and
-#: needs none of those packages. Newer PyPI torch releases also require
-#: ``setuptools<82``, which conflicts with the pinned bootstrap setuptools.
+#: needs none of those packages.
 TORCH_CONSUMER_NAMES = (
     "chatterbox-tts",
     "conformer",
@@ -253,7 +252,7 @@ def torch_constraints(wheels_dir: Path) -> Path:
     wheel, whose ``platform_system == "Linux"`` nvidia pins are evaluated
     against the *building* host and can never be satisfied for a cross-platform
     Windows target. Constraining to the exact version of the wheel on disk —
-    e.g. ``torch==2.6.0+cpu``, a local version PyPI does not publish — leaves
+        e.g. ``torch==2.15.0+cpu``, a local version PyPI does not publish — leaves
     the bundled cpu wheel as the only candidate, and it declares no nvidia
     dependencies at all.
     """

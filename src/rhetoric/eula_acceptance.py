@@ -1,8 +1,9 @@
 """EULA acceptance record (first-run click-through).
 
-The record is one small JSON file under the install root. It stores the
-SHA-256 of the exact EULA text the user accepted, so a changed agreement
-asks again. Missing, unreadable, or malformed record = NOT accepted.
+Writable source checkouts keep the record locally; system installs use the
+per-user config directory. It stores the SHA-256 of the exact EULA text the
+user accepted, so a changed agreement asks again. Missing, unreadable, or
+malformed record = NOT accepted.
 """
 
 from __future__ import annotations
@@ -13,6 +14,8 @@ import json
 import os
 import sys
 from pathlib import Path
+
+from rhetoric.platform_support import app_config_dir
 
 ACCEPTANCE_FILENAME = "eula_acceptance.json"
 EULA_FILENAME = "EULA.md"
@@ -44,7 +47,10 @@ def eula_path(root: str | Path) -> Path:
 
 
 def acceptance_path(root: str | Path) -> Path:
-    return Path(root) / ACCEPTANCE_FILENAME
+    install_root = Path(root)
+    if os.access(install_root, os.W_OK):
+        return install_root / ACCEPTANCE_FILENAME
+    return app_config_dir() / ACCEPTANCE_FILENAME
 
 
 def eula_text_and_digest(root: str | Path) -> tuple[str, str] | None:

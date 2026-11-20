@@ -42,14 +42,19 @@ import tempfile  # noqa: F401 - used inside the subprocess helpers
 
 from rhetoric.app_paths import render_work_dir
 from rhetoric.audio.export_srt import write_srt
+from rhetoric.offline import OFFLINE_ENV, is_offline_install
 from rhetoric.subtitle_targets import subtitle_sidecar_target
 
 from rhetoric.models.project import RenderPlan, Utterance, VoiceProfile
 from rhetoric.models.settings import RenderSettings
 from rhetoric.pipeline import RhetoricPipeline, RenderProgress
 
+_RADEON_ICD_MANIFEST = Path("/usr/share/vulkan/icd.d/radeon_icd.json")
 
-def _render_child_environment(repo_root: Path) -> dict[str, str]:
+
+def _render_child_environment(
+    repo_root: Path, *, inference_backend: str | None = None
+) -> dict[str, str]:
     """Build the exact runtime environment for an isolated render child.
 
     The GUI may be launched through the managed ``rhetoric`` entry point,
@@ -65,7 +70,27 @@ def _render_child_environment(repo_root: Path) -> dict[str, str]:
     env["PYTHONPATH"] = src_path + (os.pathsep + existing_pythonpath if existing_pythonpath else "")
     env["PYTHONNOUSERSITE"] = "1"
     env["PYTHONUNBUFFERED"] = "1"
+    if is_offline_install(repo_root):
+        env.update(OFFLINE_ENV)
+    if (
+        sys.platform == "linux"
+        and inference_backend == "vulkan"
+        and not env.get("VK_ICD_FILENAMES")
+        and not env.get("VK_DRIVER_FILES")
+        and _RADEON_ICD_MANIFEST.is_file()
+    ):
+        # On the Ubuntu 24.04 AMD target, loader-wide ICD enumeration caused
+        # audio.cpp's SDMA buffer initialization to lose the RX 5700 XT device.
+        # Keep explicit loader overrides intact and scope this to Vulkan jobs.
+        env["VK_ICD_FILENAMES"] = str(_RADEON_ICD_MANIFEST)
     return env
+
+
+def _render_subprocess_command(python_executable: str, arguments: list[str]) -> list[str]:
+    """Launch the native-safe child through Python or the frozen app entrypoint."""
+    if sys.platform == "linux" and getattr(sys, "frozen", False):
+        return [python_executable, "--rhetoric-render-subprocess", *arguments]
+    return [python_executable, "-m", "rhetoric.render_subprocess", *arguments]
 
 
 class RenderWorker(QThread):
@@ -200,16 +225,18 @@ class RenderWorker(QThread):
             ),
             encoding="utf-8",
         )
-        env = _render_child_environment(self._repo_root)
-        command = [
+        env = _render_child_environment(
+            self._repo_root, inference_backend=self.settings.inference_backend
+        )
+        command = _render_subprocess_command(
             self._python_executable,
-            "-m",
-            "rhetoric.render_subprocess",
-            "--job",
-            str(job_path),
-            "--result",
-            str(result_path),
-        ]
+            [
+                "--job",
+                str(job_path),
+                "--result",
+                str(result_path),
+            ],
+        )
         process = None
         try:
             process = subprocess.Popen(
@@ -398,17 +425,17 @@ class PreviewWorker(QThread):
             ),
             encoding="utf-8",
         )
-        env = _render_child_environment(self._repo_root)
-        command = [
+        env = _render_child_environment(self._repo_root, inference_backend=self.inference_backend)
+        command = _render_subprocess_command(
             self._python_executable,
-            "-m",
-            "rhetoric.render_subprocess",
-            "--preview",
-            "--job",
-            str(job_path),
-            "--result",
-            str(result_path),
-        ]
+            [
+                "--preview",
+                "--job",
+                str(job_path),
+                "--result",
+                str(result_path),
+            ],
+        )
         process = None
         try:
             process = subprocess.Popen(

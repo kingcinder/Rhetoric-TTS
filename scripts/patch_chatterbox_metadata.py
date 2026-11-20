@@ -16,6 +16,8 @@ _REQUIREMENT_UPDATES = {
     "transformers==5.2.0": "transformers==5.20.0",
     "diffusers==0.29.0": "diffusers==0.38.0",
     "safetensors==0.5.3": "safetensors==0.8.0",
+    'torch==2.6.0; python_version < "3.14"': 'torch==2.15.0; python_version < "3.14"',
+    'torchaudio==2.6.0; python_version < "3.14"': 'torchaudio==2.11.1; python_version < "3.14"',
 }
 
 

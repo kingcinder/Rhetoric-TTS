@@ -1,10 +1,9 @@
-"""Token persistence — one JSON file, repo-local, atomic write.
+"""Token persistence with repo-local development and per-user installed stores.
 
-No XDG user-data dir exists in this suite (app_paths is repo-local by design),
-so the license store is repo-local too, consistent with app_settings.json and
-the design doc's correction (docs/LICENSING_DESIGN.md, store.py note). The
-write is atomic (temp file + os.replace) so a crash mid-write can never leave
-a half-written serial number that would masquerade as corruption.
+The source checkout keeps its existing repo-local activation. A system
+installation under a root-owned directory stores activation in the user's
+XDG config directory, while still reading an existing system-wide token.
+Writes are atomic so interruption cannot leave a partial token.
 
 Load failures are typed, never raised: corrupted_content (parseable JSON but
 wrong shape), unreadable (permission/OS error). A missing file is simply
@@ -38,7 +37,12 @@ class LoadResult:
 
 
 def store_path(repo_root: str | Path) -> Path:
-    return Path(repo_root) / STORE_FILENAME
+    root = Path(repo_root)
+    if os.access(root, os.W_OK):
+        return root / STORE_FILENAME
+    config_home = os.environ.get("XDG_CONFIG_HOME")
+    config_root = Path(config_home) if config_home else Path.home() / ".config"
+    return config_root / "rhetoric" / STORE_FILENAME
 
 
 def _migrate_legacy_store(repo_root: str | Path) -> None:
@@ -61,19 +65,26 @@ def save_token(repo_root: str | Path, token: str, *, verify_before_save) -> Load
     is refused *before* any bytes are written, so the store can never hold a
     token the verifier would reject on next load (M4 pins this).
     """
-    _migrate_legacy_store(repo_root)
+    if os.access(repo_root, os.W_OK):
+        _migrate_legacy_store(repo_root)
     verdict = verify_before_save(token)
     if not verdict.ok:
         return LoadResult(state="refused", detail=verdict.detail or verdict.state)
 
     path = store_path(repo_root)
     try:
-        path.parent.mkdir(parents=True, exist_ok=True)
+        path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
         temp_path = path.with_name(path.name + ".tmp")
-        with open(temp_path, "w", encoding="utf-8") as handle:
+        descriptor = os.open(
+            temp_path,
+            os.O_WRONLY | os.O_CREAT | os.O_TRUNC,
+            0o600,
+        )
+        with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
             json.dump({"token": token}, handle)
             handle.flush()
             os.fsync(handle.fileno())
+        os.chmod(temp_path, 0o600)
         os.replace(temp_path, path)
     except OSError as error:
         return LoadResult(state="unreadable", detail=f"could not write {path}: {error}")
@@ -82,14 +93,27 @@ def save_token(repo_root: str | Path, token: str, *, verify_before_save) -> Load
 
 def load_token(repo_root: str | Path) -> LoadResult:
     """Read the stored token. Missing file -> no_token (the normal case)."""
-    _migrate_legacy_store(repo_root)
-    path = store_path(repo_root)
-    try:
-        raw = path.read_text(encoding="utf-8")
-    except FileNotFoundError:
+    root = Path(repo_root)
+    root_path = root / STORE_FILENAME
+    path = store_path(root)
+    if path == root_path:
+        _migrate_legacy_store(root)
+        candidates = (path, root / LEGACY_STORE_FILENAME)
+    else:
+        candidates = (path, root_path, root / LEGACY_STORE_FILENAME)
+
+    raw = None
+    for candidate in candidates:
+        try:
+            raw = candidate.read_text(encoding="utf-8")
+            path = candidate
+            break
+        except FileNotFoundError:
+            continue
+        except OSError as error:
+            return LoadResult(state="unreadable", detail=f"could not read {candidate}: {error}")
+    if raw is None:
         return LoadResult(state="no_token")
-    except OSError as error:
-        return LoadResult(state="unreadable", detail=f"could not read {path}: {error}")
 
     try:
         data = json.loads(raw)
@@ -108,7 +132,8 @@ def load_token(repo_root: str | Path) -> LoadResult:
 
 def clear_token(repo_root: str | Path) -> bool:
     """Deactivation is local: remove the file, move the seat. True if removed."""
-    _migrate_legacy_store(repo_root)
+    if os.access(repo_root, os.W_OK):
+        _migrate_legacy_store(repo_root)
     path = store_path(repo_root)
     try:
         path.unlink()

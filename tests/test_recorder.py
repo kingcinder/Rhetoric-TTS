@@ -68,6 +68,41 @@ def test_have_capture_backend_reflects_import(monkeypatch):
     assert recorder.have_capture_backend() is False
 
 
+def test_frozen_linux_imports_sounddevice_from_bundled_portaudio(
+    monkeypatch, tmp_path: Path
+) -> None:
+    import builtins
+    import ctypes.util
+    import sys
+
+    bundled_portaudio = tmp_path / "libportaudio.so.2"
+    bundled_portaudio.write_bytes(b"bundled library placeholder")
+    monkeypatch.setattr(sys, "platform", "linux")
+    monkeypatch.setattr(sys, "frozen", True, raising=False)
+    monkeypatch.setattr(sys, "_MEIPASS", str(tmp_path), raising=False)
+    monkeypatch.setattr(recorder, "_sd", None)
+
+    system_find_library = lambda name: f"system:{name}"
+    monkeypatch.setattr(ctypes.util, "find_library", system_find_library)
+    observed: dict[str, object] = {}
+    backend = object()
+    original_import = builtins.__import__
+
+    def capture_sounddevice_import(name, *args, **kwargs):
+        if name == "sounddevice":
+            observed["portaudio"] = ctypes.util.find_library("portaudio")
+            observed["other"] = ctypes.util.find_library("other")
+            return backend
+        return original_import(name, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, "__import__", capture_sounddevice_import)
+
+    assert recorder.initialize_capture_backend() is True
+    assert recorder.have_capture_backend() is True
+    assert observed == {"portaudio": str(bundled_portaudio), "other": "system:other"}
+    assert ctypes.util.find_library is system_find_library
+
+
 def test_list_input_devices_excludes_non_inputs_and_defaults_first(fake_sd):
     devices = recorder.list_input_devices()
     assert [d.name for d in devices] == ["First Mic", "Studio Interface"]

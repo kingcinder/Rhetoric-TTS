@@ -40,7 +40,7 @@ def _online_pip_commands(venv_python: Path) -> list[tuple[str, ...]]:
         (
             python, "-m", "pip", "install",
             "--index-url", "https://download.pytorch.org/whl/cpu",
-            "torch==2.6.0", "torchaudio==2.6.0", "torchvision==0.21.0",
+            "torch==2.15.0", "torchaudio==2.11.1", "torchvision==0.29.2",
         ),
         (python, "-m", "pip", "install", "-e", ".[ml]"),
         (
@@ -158,7 +158,7 @@ def _offline_pip_commands(venv_python: Path, wheels_dir: Path) -> list[tuple[str
         (python, "-m", "pip", "install", *wheel_args, "--upgrade", "pip", "setuptools>=83.0.0", "wheel", "packaging>=24.0"),
         (
             python, "-m", "pip", "install", *wheel_args,
-            "torch==2.6.0", "torchaudio==2.6.0", "torchvision==0.21.0",
+            "torch==2.15.0", "torchaudio==2.11.1", "torchvision==0.29.2",
         ),
         (python, "-m", "pip", "install", *wheel_args, "-e", ".[ml]"),
         (

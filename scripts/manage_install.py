@@ -37,7 +37,7 @@ CUDA_WHEEL_PYTHON = "CUDA 12.4"
 # Canonical package sets installed by install_dependencies(). The offline bundle
 # builder (scripts/build_offline_bundle.py) imports these so the wheel set it
 # downloads can never drift from what the installer installs.
-TORCH_PACKAGES = ("torch==2.6.0", "torchaudio==2.6.0", "torchvision==0.21.0")
+TORCH_PACKAGES = ("torch==2.15.0", "torchaudio==2.11.1", "torchvision==0.29.2")
 BOOTSTRAP_PACKAGES = ("pip", "setuptools>=83.0.0", "wheel", "packaging>=24.0")
 PERTH_GIT_PACKAGE = (
     "resemble-perth @ git+https://github.com/resemble-ai/Perth.git@"
