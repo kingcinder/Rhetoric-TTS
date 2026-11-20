@@ -1,0 +1,11 @@
+Traceback (most recent call last):
+  File "/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/release_artifacts/evidence-2026-11-20/candidate-rc13/rerun-microphone-owner-confirmed-20261120/run_gui_worker_rc13.py", line 176, in <module>
+    plan_payload, output_path = worker._run_subprocess_render()
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/src/rhetoric/gui_render.py", line 299, in _run_subprocess_render
+    raise RuntimeError(reason)
+RuntimeError: Render subprocess failed with exit code 1.
+ValueError: Voice profile A reference audio does not exist: /mnt/repo-voices/Cody's Seashell1.wav
+Child output:
+2026-11-20 13:51:43,794 | INFO | rhetoric.pipeline | Queuing segment 1/4 | utterance=0 | speaker=A
+RHETORIC_RENDER_ERROR ValueError: Voice profile A reference audio does not exist: /mnt/repo-voices/Cody's Seashell1.wav

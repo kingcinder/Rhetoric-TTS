@@ -1,0 +1,17 @@
+2026-11-20 02:54:20,662 | INFO | rhetoric.pipeline | Queuing segment 1/4 | utterance=0 | speaker=A
+2026-11-20 02:54:20,663 | INFO | rhetoric.pipeline | Queuing segment 2/4 | utterance=1 | speaker=B
+2026-11-20 02:54:20,663 | INFO | rhetoric.pipeline | Queuing segment 3/4 | utterance=2 | speaker=A
+2026-11-20 02:54:20,663 | INFO | rhetoric.pipeline | Queuing segment 4/4 | utterance=3 | speaker=B
+2026-11-20 02:57:39,838 | INFO | rhetoric.pipeline | Queuing segment 1/4 | utterance=0 | speaker=A
+2026-11-20 02:57:39,856 | INFO | rhetoric.pipeline | Queuing segment 2/4 | utterance=1 | speaker=B
+2026-11-20 02:57:39,856 | INFO | rhetoric.pipeline | Queuing segment 3/4 | utterance=2 | speaker=A
+2026-11-20 02:57:39,856 | INFO | rhetoric.pipeline | Queuing segment 4/4 | utterance=3 | speaker=B
+2026-11-20 02:57:39,873 | ERROR | rhetoric.pipeline | Vulkan batch synthesis failed for 4 tasks: [Errno 28] No space left on device: '/tmp/rhetoric_vulkan_batch_g71a_vn4'
+2026-11-20 02:57:39,874 | WARNING | rhetoric.pipeline | Chunk 1/4 for utterance 0 failed: [Errno 28] No space left on device: '/tmp/rhetoric_vulkan_batch_g71a_vn4'
+2026-11-20 02:57:39,874 | WARNING | rhetoric.pipeline | Chunk 2/4 for utterance 1 failed: [Errno 28] No space left on device: '/tmp/rhetoric_vulkan_batch_g71a_vn4'
+2026-11-20 02:57:39,874 | WARNING | rhetoric.pipeline | Chunk 3/4 for utterance 2 failed: [Errno 28] No space left on device: '/tmp/rhetoric_vulkan_batch_g71a_vn4'
+2026-11-20 02:57:39,874 | WARNING | rhetoric.pipeline | Chunk 4/4 for utterance 3 failed: [Errno 28] No space left on device: '/tmp/rhetoric_vulkan_batch_g71a_vn4'
+2026-11-20 02:58:47,805 | INFO | rhetoric.pipeline | Queuing segment 1/4 | utterance=0 | speaker=A
+2026-11-20 02:58:47,805 | INFO | rhetoric.pipeline | Queuing segment 2/4 | utterance=1 | speaker=B
+2026-11-20 02:58:47,806 | INFO | rhetoric.pipeline | Queuing segment 3/4 | utterance=2 | speaker=A
+2026-11-20 02:58:47,806 | INFO | rhetoric.pipeline | Queuing segment 4/4 | utterance=3 | speaker=B

@@ -9,10 +9,12 @@ model and the residual-risk record.
 ## 1. What the scheme is
 
 The client embeds **public verify keys only** and verifies a signed token
-locally. The signing seed exists solely on the vendor's machine, read from
-`RHETORIC_LICENSE_SIGNING_KEY` by the sibling `rhetoric-license-generator/license_sign.py`,
-which is outside the product repository. Verification is a pure function of (token bytes, embedded key
-registry, wall clock) — no network, ever.
+locally. The activation seed stays in a GPG-sealed file outside the product
+repository. The sibling `rhetoric-license-generator/license_sign.py` opens it
+through GPG pinentry and checks that its derived public key matches the
+requested registry key ID before minting. Verification is a pure function of
+(token bytes, embedded key registry, wall clock) — no network, ever. Installer
+release signatures use a separate OpenPGP identity.
 
 Token: `RHETORIC1.<base64url(canonical-json payload)>.<base64url(signature)>`,
 Ed25519 over the canonical bytes. Failures are typed (`malformed`,

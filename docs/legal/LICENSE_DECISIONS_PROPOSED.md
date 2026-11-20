@@ -11,9 +11,9 @@ The versions and metadata below were read from the managed CPU environment at
 
 | Component | Installed version | Metadata license | Proposed handling | Open verification |
 |---|---:|---|---|---|
-| `torch` | 2.6.0+cpu | BSD-3-Clause | Separate notice and allow only after counsel confirms the PyTorch bundle terms | Read the exact wheel license files for the selected CPU/CUDA wheels |
-| `torchaudio` | 2.6.0+cpu | missing | Separate notice; conditional approval only | Confirm upstream audio license and wheel notices |
-| `torchvision` | 0.21.0+cpu | BSD | Separate notice; conditional approval only | Confirm exact upstream license text |
+| `torch` | 2.15.0+cpu | BSD-3-Clause | Separate notice and allow only after counsel confirms the PyTorch bundle terms | Read the exact wheel license files for the selected CPU/CUDA wheels |
+| `torchaudio` | 2.11.1+cpu | missing | Separate notice; conditional approval only | Confirm upstream audio license and wheel notices |
+| `torchvision` | 0.29.2+cpu | BSD | Separate notice; conditional approval only | Confirm exact upstream license text |
 | `chatterbox-tts` | 0.1.7+rhetoric1 | MIT | Proposed allow, with upstream MIT notice and local metadata patch disclosure | Counsel confirms the patched distribution and model terms |
 | `huggingface-hub` | 1.33.0 | Apache-2.0 | Proposed allow with Apache notice | Confirm installed license file is shipped |
 | `PySide6` / Qt | 6.8.2.1 | LGPL | Proposed allow only with replaceable libraries, source offer, and relink instructions | Frozen-package replacement test and counsel review |

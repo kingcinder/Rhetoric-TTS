@@ -1,11 +1,15 @@
 # Rhetoric 1.5.0 — Commercial Release Gate
 
-Status: **commercial distribution is blocked; this is the Rhetoric 1.5.0
-engineering candidate**. Linux x86_64 is the intended qualification target, but
-clean installed-artifact and real-audio acceptance are still open. Windows is
-**unsupported**. `python scripts/soft_launch.py --check` is the authority for
-distribution readiness; the current run has one blocker (draft EULA) and one
-warning (LGPL notice and replacement/source obligations).
+Status as of **2026-11-19**: the project `.venv` soft-launch gate reports
+**ready, 0 blockers, 1 weak-copyleft warning**. This is not commercial
+clearance. The exact RC13 offline kit passed a network-disabled clean install
+on Ubuntu 24.04.5 amd64. Owner desktop GUI review, human listening, and
+hosted CI against an owner-selected source revision, and independent counsel
+review remain open; release signing and publication also require owner
+authorization. Windows is **unsupported** for this release.
+`python scripts/soft_launch.py --check` is the authority for the automated
+gate. Exact-candidate evidence and owner actions are tracked in
+[`release/V100A_SHIP_TODAY_CHECKLIST.md`](release/V100A_SHIP_TODAY_CHECKLIST.md).
 
 ## Product model
 
@@ -151,16 +155,18 @@ changed.
 
 ## Owner go-live checklist
 
-Run the gate, then clear each blocker:
+Run the gate and review each finding; an automated ready result is not
+commercial clearance:
 
 ```bash
 .venv/bin/python scripts/soft_launch.py --check
 ```
 
-| Blocker | Owner action |
+| Finding | Owner action |
 |---|---|
-| `eula` | Complete the governing-law/venue section, rename `EULA-DRAFT.md` to `EULA.md`, remove the DRAFT marker, and have counsel review it. |
-| `third_party_notices` | Regenerate with `python scripts/generate_third_party_notices.py --check` and commit the diff. |
+| `eula` | The EULA is adopted and the automated check passes. Obtain independent counsel review before commercial clearance. |
+| `license_policy` warning | Keep the notices and source-offer/replacement instructions current; the exact RC13 Qt library set was hash-matched to the previously replacement-tested set. See `release/LGPL_FULFILLMENT.md` and the RC13 release evidence. |
+| `third_party_notices` | Keep generated notices current with `python scripts/generate_third_party_notices.py --check`; exact RC13 package notice evidence is in the release checklist. |
 | `version` | Keep `__version__`, the README banner, and `CHANGELOG.md` in agreement (`scripts/release.py --check`). |
 | `checksums` | The 1.5.0 manifest is generated locally and must be committed with the release record; rebuilds must not silently replace it. |
 | `windows_scope` | Keep Windows explicitly unsupported until current-head qualification passes. |

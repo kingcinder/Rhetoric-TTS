@@ -1,0 +1,7 @@
+COMMAND: /media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/.venv/bin/python scripts/release.py --check-packaging
+EXIT: 0
+
+STDOUT:
+packaging and artifact versions match 1.5.0
+
+STDERR:

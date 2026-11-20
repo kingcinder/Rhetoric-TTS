@@ -12,33 +12,36 @@ works fully offline on the vendor side too.
 
 ## 1. Key custody (do this once, guard it forever)
 
-The signing seed is the **only secret** in the whole system. It never
-touches the repo, the wheel, or any shipped artifact. The vendor generator
-also lives outside the product repository.
+The signing seed is the **only activation-signing secret** in this system. It
+never touches the repo, the wheel, or any shipped artifact. The vendor
+generator also lives outside the product repository. Installer release
+signatures use a separate OpenPGP identity; never reuse the Ed25519 activation
+seed.
 
-Generate the signing seed and its matching verify key. Prefer `--seal`: it
-writes an AES-256 gpg-symmetric file and prints **only** the verify key, so
-the seed never appears in a terminal, a log, or shell history.
+The vendor issuer supports a GPG-sealed seed. `keygen --seal` writes an
+AES-256 GPG-symmetric file and prints **only** the public verify key, so the
+seed never appears in a terminal, a log, or shell history.
 
 ```bash
-python ../rhetoric-license-generator/license_sign.py keygen \
-  --seal ~/secrets/rhetoric-seed.gpg
+python3 ../rhetoric-license-generator/license_sign.py \
+  --repo-root "$PWD" keygen --seal "$HOME/secrets/rhetoric-seed-k3.gpg"
 ```
 
-- A plain `keygen` still prints `signing_seed_hex` for a secret manager; if
-  you use it, treat the printed value as the only copy and never let it
-  reach a chat transcript, an issue tracker, or a CI log.
-- `RHETORIC_LICENSE_SIGNING_KEY_FILE` (a sealed file) or
-  `RHETORIC_LICENSE_SIGNING_KEY` (64-hex, 32 bytes) is how the seed enters
-  the minting environment at mint time. `RHETORIC_SEED_PASSPHRASE` supplies
-  the passphrase to gpg for unattended minting; omit it and gpg prompts.
-  Export per-command, never from a shell dotfile.
-- Record ONLY `verify_key_hex` in `src/rhetoric/licensing/keys.py` under
-  a key id — the two steps above this one are the whole procedure:
+- As of 2026-11-18, the documented `k2` seed is absent from both
+  `$HOME/secrets/rhetoric-seed.gpg` and `$HOME/.config/rhetoric/license-signing-seed`
+  in this environment. Other owner-controlled stores have not been checked.
+  Do not overwrite or recreate `k2`; recover its matching seed or perform an
+  additive key rotation.
+- `keygen` creates a **new** candidate key. It does not modify `keys.py`, and
+  tokens signed by it remain invalid until its public key is registered and a
+  release containing that key is installed.
+- Record ONLY `verify_key_hex` in `src/rhetoric/licensing/keys.py` under a new
+  key id, retaining existing keys during the overlap:
 
   ```python
   KEYS: tuple[VerifyKey, ...] = (
-      VerifyKey(key_id="k2", public_key=bytes.fromhex("<verify_key_hex>")),
+      VerifyKey(key_id="k2", public_key=bytes.fromhex("<existing-public-key>")),
+      VerifyKey(key_id="k3", public_key=bytes.fromhex("<verify_key_hex>")),
   )
   ```
 
@@ -52,9 +55,10 @@ tests — any reader could mint a licence every shipped install accepted.
 It is gone. The production key **`k2` was registered on 2026-10-19**; its
 signing seed was generated on the owner's machine on 2026-11-01 (the
 provisioning run wrote it to `~/.config/rhetoric/license-signing-seed`,
-mode `0600`). Custody as of 2026-11-09: the plaintext copy has been deleted
-and the seed exists only as the sealed file `~/secrets/rhetoric-seed.gpg`
-(PGP symmetric, AES-256, mode `0600`, sealed 2026-11-01 07:16 PT). A
+mode `0600`). Earlier custody records say the plaintext copy was deleted and
+the seed was sealed as `~/secrets/rhetoric-seed.gpg` with PGP symmetric
+AES-256. The file is absent at that path in the current environment; present
+custody elsewhere has not been verified. A
 production serial minted 2026-11-01 (licensee "Cody", lic_id
 b0a7fe4c-8ab2-4629-8d2b-6eb06cccbc14, no expiry, not machine-bound) is
 activated in the vendor checkout root (`rhetoric_license.json`). Only the public verify key is
@@ -80,9 +84,11 @@ with the procedure below. Deliver only the `token` string; never include the
 signing seed or the minting environment in the reply.
 
 ```bash
-RHETORIC_LICENSE_SIGNING_KEY=<seed_hex> python ../rhetoric-license-generator/license_sign.py mint \
-  --licensee "customer name or email (their choice)" \
-  --key-id k2 \  # required: a defaulted key id is how k1 got used
+python3 ../rhetoric-license-generator/license_sign.py \
+  --repo-root "$PWD" mint \
+  --key-file "$HOME/secrets/rhetoric-seed.gpg" \
+  --key-id k2 \
+  --licensee "customer name or email" \
   [--expires 2027-01-31T00:00:00Z] \
   [--machine-hash <32-hex from `rhetoric machine-id`>]
 ```
@@ -92,9 +98,11 @@ RHETORIC_LICENSE_SIGNING_KEY=<seed_hex> python ../rhetoric-license-generator/lic
   if used, take the hash from the *customer's* run of
   `rhetoric machine-id` — the client stores and reports the hash only,
   never the raw machine id.
-- The output is a JSON document with the token and its payload. **Deliver
-  only the `token` string** to the customer; activation is
-  `rhetoric activate <token>` (or pipe it via stdin).
+- The command emits one token string. **Deliver only that token** to the
+  customer; activation is `rhetoric activate <token>` (or pipe it via stdin).
+- The sealed seed is decrypted through GPG pinentry. For unattended minting,
+  `RHETORIC_SEED_PASSPHRASE` supplies the passphrase to that one process; prefer
+  pinentry for manual work and never store it in a shell startup file.
 - Mint with an ephemeral seed for tests, never the production seed — the
   repo's own tests do exactly that.
 
@@ -118,12 +126,14 @@ the typed `bad_signature` status, not an exception at the call site.
 Rotation is embedding a new verify key and phasing out the old one
 (LICENSING §3):
 
-1. `license_sign.py keygen` → new `seed_hex` + `verify_key_hex`.
-2. Add the new verify key to `keys.py` under a **new key id** (`k2`).
-   Keep the old entry — both verify during the overlap.
-3. Mint new licenses with `--key-id k2`.
-4. After one release cycle (every deployed client carries `k2`), remove
-   the old key entry from `keys.py`.
+1. `license_sign.py --repo-root "$PWD" keygen --seal <new-seed-file>` prints
+   the new `verify_key_hex` while sealing the private seed.
+2. Add that public key to `keys.py` under a **new key id** (`k3`). Keep `k2`
+   registered so existing tokens continue to verify.
+3. Build and verify a release containing `k3`; then mint new licenses with
+   `--key-id k3`.
+4. After a release cycle and an owner decision about outstanding `k2` tokens,
+   remove `k2` only in a later release.
 
 The rotation pin (`test_key_rotation_old_key_keeps_verifying_until_dropped`)
 proves the overlap contract: a token minted under `k1` still verifies while

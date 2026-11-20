@@ -1,0 +1,68 @@
+{
+  "candidate": "RC13",
+  "worker_result": "PASS",
+  "candidate_version": "1.5.0",
+  "runtime_execution": "RC13 offline-kit installed frozen package",
+  "case": "2speaker",
+  "backend": "vulkan",
+  "seed": 7342,
+  "selected_input": "Input/Stream_of_Consciousness_Dialogue_2Party_AI_Generated_Test_File.txt",
+  "input_sha256": "eff1483d75d391440ff01d5d97c7106bd1296d68fe5a348c9817506d76c4b2f2",
+  "source_lines": [
+    3,
+    5,
+    7,
+    9
+  ],
+  "utterance_count": 4,
+  "utterance_word_count": 32,
+  "selected_utterances": [
+    {
+      "speaker": "A",
+      "source_line": 3,
+      "text": "I woke up alreayd in the middle of"
+    },
+    {
+      "speaker": "B",
+      "source_line": 5,
+      "text": "That hapens to me too, like there\u2019s some"
+    },
+    {
+      "speaker": "A",
+      "source_line": 7,
+      "text": "The strange part is how convincing it feels,"
+    },
+    {
+      "speaker": "B",
+      "source_line": 9,
+      "text": "Mood is the residue, isn\u2019t it, the ash"
+    }
+  ],
+  "casting": {
+    "A": {
+      "voice": "Cody1",
+      "reference_path": "/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/Seashells/Cody's Seashell1.wav",
+      "reference_origin": "project Seashells",
+      "reference_sha256": "2dd90d2bb9fb029ef53c48af515a0431b555506457fb7b8415285df97fad0e92"
+    },
+    "B": {
+      "voice": "Fransisco Monster Edited",
+      "reference_path": "/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/Seashells/Fransisco_MONSTER_Edited.wav",
+      "reference_origin": "project Seashells",
+      "reference_sha256": "70f65e9b1aac3c9d7420aa581c22e5ba62d4b4152754a84214ac79458ab62fca"
+    }
+  },
+  "offline_child_environment": {
+    "HF_HUB_OFFLINE": "1",
+    "TRANSFORMERS_OFFLINE": "1",
+    "VK_ICD_FILENAMES": "/usr/share/vulkan/icd.d/radeon_icd.json"
+  },
+  "output_path": "/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/release_artifacts/evidence-2026-11-20/candidate-rc13/rerun-microphone-owner-confirmed-20261120/2speaker/vulkan/rc13-micconfirmed-20261120-2speaker-vulkan-7342.flac",
+  "final_progress": {
+    "stage": "Complete",
+    "backend": "vulkan",
+    "device_label": "AMD Radeon RX 5700 XT (RADV NAVI10)",
+    "elapsed_seconds": 14.928705124999397,
+    "synth_seconds_total": 9.342310000000001
+  }
+}

@@ -1,0 +1,86 @@
+{
+  "candidate": "RC13",
+  "worker_result": "PASS",
+  "candidate_version": "1.5.0",
+  "runtime_execution": "RC13 offline-kit installed frozen package",
+  "case": "3speaker",
+  "backend": "vulkan",
+  "seed": 7442,
+  "selected_input": "Input/Release_Qualification_5Speaker_Test_File.txt",
+  "input_sha256": "cc1ce81c2fb64d3e3a8dbf1b87c4ff49a3dd53e697bddaf418e19ac8813a71fb",
+  "source_lines": [
+    8,
+    10,
+    12,
+    18,
+    20,
+    24
+  ],
+  "utterance_count": 6,
+  "utterance_word_count": 48,
+  "selected_utterances": [
+    {
+      "speaker": "A",
+      "source_line": 8,
+      "text": "I woke up alreayd in the middle of"
+    },
+    {
+      "speaker": "B",
+      "source_line": 10,
+      "text": "That hapens to me too, like there\u2019s some"
+    },
+    {
+      "speaker": "C",
+      "source_line": 12,
+      "text": "The strange part is how convincing it feels,"
+    },
+    {
+      "speaker": "B",
+      "source_line": 18,
+      "text": "Premature nostalgia is one of the great absurd"
+    },
+    {
+      "speaker": "A",
+      "source_line": 20,
+      "text": "I do that constantly, full imaginary courtroom drama,"
+    },
+    {
+      "speaker": "C",
+      "source_line": 24,
+      "text": "Hands are suspicious, every time I look at"
+    }
+  ],
+  "casting": {
+    "A": {
+      "voice": "Cody1",
+      "reference_path": "/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/Seashells/Cody's Seashell1.wav",
+      "reference_origin": "project Seashells",
+      "reference_sha256": "2dd90d2bb9fb029ef53c48af515a0431b555506457fb7b8415285df97fad0e92"
+    },
+    "B": {
+      "voice": "Fransisco Monster Edited",
+      "reference_path": "/media/cody/Data/DOCUMENTS_PROJECT_FILES/Rhetoric/Seashells/Fransisco_MONSTER_Edited.wav",
+      "reference_origin": "project Seashells",
+      "reference_sha256": "70f65e9b1aac3c9d7420aa581c22e5ba62d4b4152754a84214ac79458ab62fca"
+    },
+    "C": {
+      "voice": "Christopher2",
+      "reference_path": "/home/cody/.local/share/rhetoric/Seashells/Christopher_seashell2.wav",
+      "reference_origin": "installed user Seashells",
+      "reference_sha256": "eb5bd76e4f76da8779d75afc5734be38cb84abc756b5219c5594fe071d6c7ec4"
+    }
+  },
+  "offline_child_environment": {
+    "HF_HUB_OFFLINE": "1",
+    "TRANSFORMERS_OFFLINE": "1",
+    "VK_ICD_FILENAMES": "/usr/share/vulkan/icd.d/radeon_icd.json"
+  },
+  "output_path": "/mnt/evidence/rerun-microphone-20261119/3speaker/vulkan/rc13-micfixed-3speaker-vulkan-7442.flac",
+  "final_progress": {
+    "stage": "Complete",
+    "backend": "vulkan",
+    "device_label": "AMD Radeon RX 5700 XT (RADV NAVI10)",
+    "elapsed_seconds": 202.71646317798877,
+    "synth_seconds_total": 198.6112
+  }
+}

@@ -1,0 +1,3 @@
+(Reading database ... 13644 files and directories currently installed.)
+Removing rhetoric (1.5.0) ...
+dpkg: warning: while removing rhetoric, directory '/opt/rhetoric/usr/lib/rhetoric' not empty so not removed

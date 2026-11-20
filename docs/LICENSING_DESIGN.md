@@ -37,9 +37,14 @@ src/rhetoric/licensing/
 ├── keys.py         # embedded verify keys + key-id registry (ONLY place key material lives)
 ├── tokens.py       # token parse/verify over a versioned, canonical-payload envelope
 ├── machine.py      # machine fingerprint: SHA-256 of OS machine id — hash only, never raw
-├── store.py        # token persistence, repo-local (no XDG user dir exists); atomic write
+├── store.py        # atomic token persistence; repo-local in source, per-user in system installs
 └── policy.py       # licensed/unlicensed gate; single source
 ```
+
+System installs keep activation in `${XDG_CONFIG_HOME:-~/.config}/rhetoric/`
+so desktop users can activate without write access to `/opt`. The client reads
+an existing system-wide token from the install root as a fallback; deactivation
+removes only the current user's token.
 
 Vendor-only tooling lives in `../rhetoric-license-generator/`, a sibling
 directory outside the Git repository:
@@ -48,9 +53,11 @@ directory outside the Git repository:
 license_sign.py   # vendor-only minting CLI; not uploaded with the product repo
 ```
 
-The signing key enters the release process through an environment variable
-(`RHETORIC_LICENSE_SIGNING_KEY`); losing it means key rotation (supported, see
-below), not disaster. A GUI slice later adds a small `gui_license.py`
+The vendor issuer reads a GPG-sealed activation seed from an explicit
+`--key-file` path. It validates that the seed derives the public key registered
+for the requested key id before minting. Losing the matching seed means
+additive key rotation (supported, see below), not disaster. Installer release
+signatures use a separate OpenPGP identity. A GUI slice later adds a small `gui_license.py`
 (activation + About panel) following the `gui_ingest.py` injected-Qt pattern —
 out of scope for the first slice.
 
